@@ -4,8 +4,6 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
-    tags: ["v*"]
 
 jobs:
   release:
