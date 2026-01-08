@@ -123,7 +123,12 @@ jobs:
         run: bundle install
 
       - name: Update version from git tag
-        run: bundle exec rake version
+        run: |
+          bundle exec rake version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add lib/archsight/version.rb
+          git commit -m "Release ${GITHUB_REF#refs/tags/}"
 
       - name: Build and publish gem
         uses: rubygems/release-gem@v1
