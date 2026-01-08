@@ -9,9 +9,9 @@ module Archsight
       @attrs = { rankdir: :LR }.merge(attrs)
     end
 
-    def draw_and_render_file(&block)
+    def draw_and_render_file(&)
       File.open("#{@name}.dot", "w") do |f|
-        render(f, &block)
+        render(f, &)
       end
       system "#{@renderer} -Tpng #{@name}.dot -o #{@name}.png"
     end
@@ -22,9 +22,9 @@ module Archsight
       f.string
     end
 
-    def draw_svg(&block)
+    def draw_svg(&)
       IO.popen([@renderer, "-Tsvg"], "r+") do |pipe|
-        render(pipe, &block)
+        render(pipe, &)
         pipe.close_write
         pipe.read
       end

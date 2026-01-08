@@ -11,8 +11,8 @@ RUN apk add --no-cache \
 # Set working directory
 WORKDIR /app
 
-# Copy gemspec and Gemfile for dependency installation
-COPY archsight.gemspec Gemfile Gemfile.lock* ./
+# Copy gemspec, Gemfile, and .ruby-version for dependency installation
+COPY archsight.gemspec Gemfile Gemfile.lock* .ruby-version ./
 COPY lib/archsight/version.rb lib/archsight/version.rb
 
 # Install Ruby dependencies

@@ -4,7 +4,7 @@ plugins:
   - rubocop-rake
 
 AllCops:
-  TargetRubyVersion: 3.2
+  # TargetRubyVersion is read from .ruby-version automatically
   NewCops: enable
 
 Style/StringLiterals:

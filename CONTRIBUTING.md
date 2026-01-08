@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Archsight! This guide will help y
 
 ### Prerequisites
 
-- Ruby 3.2 or later
+- Ruby 3.4 or later
 - Bundler
 - GraphViz (for visualization features)
 
