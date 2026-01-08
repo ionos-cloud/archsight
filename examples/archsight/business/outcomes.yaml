@@ -1,0 +1,29 @@
+apiVersion: architecture/v1alpha1
+kind: MotivationOutcome
+metadata:
+  name: Outcome:DeveloperProductivity
+  annotations:
+    architecture/description: |
+      Developers can quickly understand system architecture and dependencies,
+      reducing onboarding time and enabling faster decision-making.
+    architecture/tags: productivity,developers
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationOutcome
+metadata:
+  name: Outcome:ArchitectureVisibility
+  annotations:
+    architecture/description: |
+      Enterprise architecture becomes visible and queryable, enabling
+      stakeholders to understand system relationships and impacts.
+    architecture/tags: visibility,architecture
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationOutcome
+metadata:
+  name: Outcome:CommunityAdoption
+  annotations:
+    architecture/description: |
+      Open source licensing and good documentation enable community
+      adoption and contribution to the project.
+    architecture/tags: community,opensource

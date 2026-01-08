@@ -1,0 +1,35 @@
+apiVersion: architecture/v1alpha1
+kind: StrategyCapability
+metadata:
+  name: Architecture:Documentation
+  annotations:
+    architecture/description: |
+      Capability to document enterprise architecture using YAML-based
+      resource definitions with ArchiMate-inspired semantics.
+    architecture/tags: documentation,archimate
+spec:
+  realizes:
+    businessRequirements:
+      - Requirement:OpenSource
+  servedBy:
+    applicationServices:
+      - Archsight:CLI
+      - Archsight:WebUI
+---
+apiVersion: architecture/v1alpha1
+kind: StrategyCapability
+metadata:
+  name: Architecture:DependencyAnalysis
+  annotations:
+    architecture/description: |
+      Capability to analyze dependencies between architecture resources
+      through relation traversal and impact analysis.
+    architecture/tags: analysis,dependencies
+spec:
+  realizes:
+    businessRequirements:
+      - Requirement:QueryLanguage
+  servedBy:
+    applicationServices:
+      - Archsight:MCPServer
+      - Archsight:WebUI

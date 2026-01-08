@@ -1,0 +1,89 @@
+module Archsight
+  module Annotations
+    class Annotation
+      attr_reader key: String
+      attr_reader description: String?
+      attr_reader filter: Symbol?
+      attr_reader format: Symbol?
+      attr_reader enum: untyped
+      attr_reader sidebar: bool
+      attr_reader type: Class?
+      attr_reader list: bool
+
+      @explicit_title: String?
+      @regex: untyped
+
+      def initialize: (String, ?Hash[Symbol, untyped]) -> void
+      def pattern?: () -> bool
+      def matches?: (String) -> bool
+      def title: () -> String
+      def filterable?: () -> boolish
+      def list?: () -> bool
+      def list_display?: () -> bool
+      def has_validation?: () -> boolish
+      def value_for: (Resources::Base) -> untyped
+      def validate: (untyped) -> Array[String]
+      def valid?: (untyped) -> bool
+      def markdown?: () -> bool
+      def example_value: () -> untyped
+
+      private
+
+      def type_error_message: () -> String
+      def derive_format: () -> Symbol?
+      def build_regex: () -> Regexp
+    end
+
+    class Computed
+      attr_reader key: String
+      attr_reader description: String?
+      attr_reader type: Class?
+      attr_reader block: Proc
+
+      def initialize: (String, ?description: String?, ?type: Class?) { () -> untyped } -> void
+      def matches?: (String) -> bool
+    end
+
+    class ComputedEvaluator
+      @instance: Resources::Base
+      @database: Database
+      @manager: ComputedManager
+      @resolver: untyped
+
+      def initialize: (Resources::Base, Database, ComputedManager) -> void
+      def annotation: (String) -> untyped
+      def computed: (String) -> untyped
+      def outgoing: (?String?) -> Array[Resources::Base]
+      def incoming: (?String?) -> Array[Resources::Base]
+      def transitive_outgoing: (?String?, ?max_depth: Integer) -> Array[Resources::Base]
+      def transitive_incoming: (?String?, ?max_depth: Integer) -> Array[Resources::Base]
+      def sum: (untyped, String) -> Numeric
+      def avg: (untyped, String) -> Numeric?
+      def min: (untyped, String) -> untyped
+      def max: (untyped, String) -> untyped
+      def count: (untyped) -> Integer
+      def collect: (untyped, String) -> Array[untyped]
+      def most_common: (untyped, String) -> untyped
+      def all_match: (untyped, String, untyped) -> bool
+
+      private
+
+      def extract_values: (untyped, String) -> Array[untyped]
+    end
+
+    class ComputedManager
+      @database: Database
+      @computed_cache: Hash[untyped, untyped]
+
+      def initialize: (Database) -> void
+      def compute_all!: () -> void
+      def compute_for_key: (Resources::Base, String) -> untyped
+
+      private
+
+      def compute_for: (Resources::Base, Computed) -> untyped
+      def coerce_value: (untyped, Class?) -> untyped
+      def meaningful_value?: (untyped) -> bool
+    end
+  end
+end

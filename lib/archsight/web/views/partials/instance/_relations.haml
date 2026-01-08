@@ -1,0 +1,43 @@
+- return unless instance.has_relations? || instance.references.any?
+%article.relations-section
+  %header
+    %h2 Relations
+  .relations-grid
+    .relations-column.relations-outgoing
+      %h3
+        Outgoing
+        %i.iconoir-arrow-right
+      - if instance.has_relations?
+        - instance.relations_grouped.each do |verb, kinds|
+          - kinds.each do |kind, instances|
+            - kind_class = Archsight::Resources[kind]
+            .relation-group
+              .relation-kind
+                %i{class: "iconoir-#{kind_class&.icon || 'cube'} icon-#{kind_class&.layer || 'technology'}"}
+                %span= kind
+              .relation-verb= verb
+              .instance-badges
+                - instances.sort_by(&:name).each do |item|
+                  %a.badge.badge-info{href: "/kinds/#{item.klass}/instances/#{item.name}"}
+                    = item.name
+      - else
+        .relations-empty None
+    .relations-column.relations-incoming
+      %h3
+        %i.iconoir-arrow-right
+        Incoming
+      - if instance.references.any?
+        - instance.references_grouped.each do |kind, verbs|
+          - kind_class = Archsight::Resources[kind]
+          - verbs.each do |verb, instances|
+            .relation-group
+              .relation-kind
+                %i{class: "iconoir-#{kind_class&.icon || 'cube'} icon-#{kind_class&.layer || 'technology'}"}
+                %span= kind
+              .relation-verb= verb || "references"
+              .instance-badges
+                - instances.sort_by(&:name).each do |item|
+                  %a.badge.badge-info{ href: "/kinds/#{item.klass}/instances/#{item.name}" }
+                    = item.name
+      - else
+        .relations-empty None

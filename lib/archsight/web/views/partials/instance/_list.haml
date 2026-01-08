@@ -1,0 +1,84 @@
+-# Parameters:
+-#   instances: Array of resource instances to display
+-#   omit_kind: Boolean - hide kind column (default: false)
+-#   fields: Array of annotation keys to display as columns (optional, overrides list_annotations)
+- omit_kind ||= false
+- fields ||= nil
+- if instances.nil? || instances.empty?
+  %p.empty-state
+    %i No resources found
+- else
+  - sample_class = instances.first.class
+  -# Determine which annotations to show as columns
+  - if fields
+    -# Use provided fields - convert to annotation-like objects
+    -# Always create wrapper with the actual field key to ensure correct value lookups
+    -# (pattern annotations like scc/language/*/loc have the pattern as key, not the actual field)
+    - field_annotation = Struct.new(:key, :title, :description, :type)
+    - list_annotations = fields.map do |field|
+      - if field.start_with?('@')
+        -# Component field - renders a partial from partials/components/
+        - component_name = field[1..-1]
+        - field_annotation.new(field, component_name.capitalize, "Component: #{component_name}", :component)
+      - else
+        - annotation_def = sample_class.annotation_matching(field)
+        - segments = field.split('/')
+        -# Generate title: for paths like scc/language/C/loc, use "C Loc" (language name + last segment)
+        - if segments.length >= 2
+          - title = "#{segments[-2]} #{segments[-1]}".split(/(?=[A-Z])/).map(&:capitalize).join(' ')
+        - else
+          - title = segments.last.split(/(?=[A-Z])/).map(&:capitalize).join(' ')
+        - field_annotation.new(field, title, annotation_def&.description, annotation_def&.type)
+    - list_annotations.compact!
+  - elsif omit_kind
+    -# Auto-detect from list: true annotations
+    - list_annotations = sample_class.list_annotations
+    - if list_annotations.empty?
+      - tags_annotation = sample_class.annotation_matching('architecture/tags')
+      - list_annotations = [tags_annotation] if tags_annotation
+  - else
+    - list_annotations = []
+  - if list_annotations.any?
+    %table.resource-list-table
+      %thead
+        %tr
+          %th.col-name Name
+          - unless omit_kind
+            %th.col-kind Kind
+          - list_annotations.each do |annotation|
+            %th.col-annotation{title: annotation.description}= annotation.title
+      %tbody
+        - instances.each do |instance|
+          %tr.resource-list-row
+            %td.col-name
+              %a.instance-name{href: "/kinds/#{instance.klass}/instances/#{instance.name}"}
+                %i{class: "iconoir-#{instance.class.icon} icon-#{instance.class.layer}"}
+                = instance.name
+            - unless omit_kind
+              %td.col-kind
+                %span.instance-kind= instance.klass
+            - list_annotations.each do |annotation|
+              %td.col-annotation
+                - if annotation.type == :component
+                  - component_name = annotation.key[1..-1]
+                  != haml :"partials/components/_#{component_name}", locals: { instance: instance }
+                - else
+                  - value = instance.annotations[annotation.key] || instance.computed_annotation_value(annotation.key)
+                  - if value
+                    - if annotation.type == Time
+                      - time_value = value.is_a?(Time) ? value : Time.parse(value.to_s)
+                      %span{title: time_value.strftime("%Y-%m-%d %H:%M:%S")}= time_ago(value)
+                    - else
+                      = value
+                  - else
+                    %span.empty-value —
+  - else
+    %ul.search-instance-list
+      - instances.each do |instance|
+        %li.search-instance-item
+          .instance-main
+            %a.instance-name{href: "/kinds/#{instance.klass}/instances/#{instance.name}"}
+              %i{ class: "iconoir-#{instance.class.icon} icon-#{instance.class.layer}" }
+              = instance.name
+            - unless omit_kind
+              %span.instance-kind= instance.klass

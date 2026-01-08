@@ -1,4 +1,12 @@
 module Archsight
   VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+
+  class Error < StandardError
+  end
+
+  def self.configuration: () -> Configuration
+  def self.configure: () { (Configuration) -> void } -> void
+  def self.resources_dir: () -> String
+  def self.resources_dir=: (String) -> String
+  def self.reset_configuration!: () -> Configuration
 end

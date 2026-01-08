@@ -1,0 +1,133 @@
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Query:Engine
+  annotations:
+    architecture/abbr: QE
+    architecture/description: |
+      Query engine implementing the archsight query language with
+      lexer, parser, AST, and evaluator components.
+    architecture/tags: query,parser,evaluator
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationInterfaces:
+      - Archsight:Core:ResourceAPI
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Core:Database
+  annotations:
+    architecture/abbr: DB
+    architecture/description: |
+      In-memory database loading YAML resources from disk, managing
+      instances, and providing query execution capabilities.
+    architecture/tags: database,yaml,loading
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  exposes:
+    applicationInterfaces:
+      - Archsight:Core:ResourceAPI
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Core:Resources
+  annotations:
+    architecture/abbr: RES
+    architecture/description: |
+      Resource class definitions implementing the ArchiMate-inspired
+      resource types with annotations and relations.
+    architecture/tags: resources,archimate,types
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Render:GraphViz
+  annotations:
+    architecture/abbr: GV
+    architecture/description: |
+      GraphViz renderer generating SVG and DOT output for architecture
+      visualization with customizable graph styling.
+    architecture/tags: graphviz,svg,visualization
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  servedBy:
+    technologyComponents:
+      - Tech:GraphViz
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Util:Linter
+  annotations:
+    architecture/abbr: LINT
+    architecture/description: |
+      Resource linter validating YAML resources against schema
+      definitions and checking for common issues.
+    architecture/tags: linting,validation
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationInterfaces:
+      - Archsight:Core:ResourceAPI
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Util:Template
+  annotations:
+    architecture/abbr: TPL
+    architecture/description: |
+      Template generator creating YAML templates for all resource
+      types with annotations and example values.
+    architecture/tags: templates,generation
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Annotations:Computed
+  annotations:
+    architecture/abbr: CA
+    architecture/description: |
+      Computed annotations system that aggregates values across
+      relations using configurable aggregation functions.
+    architecture/tags: annotations,computed,aggregation
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationInterfaces:
+      - Archsight:Core:ResourceAPI

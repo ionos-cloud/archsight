@@ -1,0 +1,12 @@
+!!!
+%html{lang: "en"}
+  != haml :'partials/layout/_head'
+  %body
+    - if @error
+      != haml :'partials/layout/_error'
+    - else
+      != haml :'partials/layout/_navigation'
+      %main.container-fluid
+        != haml :"partials/layout/_sidebar"
+        != haml :"partials/layout/_content"
+

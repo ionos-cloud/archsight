@@ -1,0 +1,53 @@
+- if @query_error
+  .search-error
+    .search-error-header
+      %i.iconoir-warning-triangle
+      Query Syntax Error
+    .search-error-message= @query_error.message
+    .search-error-query
+      Query:
+      %code= @q
+
+%article.search-context
+  %header
+    %h3 Search Query
+  .search-query-display
+    %p.query-item
+      %span.label Query:
+      %code.query-value= @q
+      - if @tag
+        - new_method = @method == '==' ? '!=' : '=='
+        - title_text = @method == '==' ? "Switch to != (NOT equal)" : "Switch to == (equal)"
+        - attrs = filter_link_attrs(@tag, @value, new_method, @kind).merge(title: title_text)
+        %a.link-light.query-toggle{**attrs}
+          %i.iconoir-flip
+    - if @kind
+      %p.query-item
+        %span.label Kind:
+        %code.kind-value= @kind
+    - unless @query_error
+      %p.query-item
+        %span.label Results:
+        %span.result-count
+          = (@instances || []).size
+          = (@instances || []).size == 1 ? "item" : "items"
+    %p.query-item
+      %span.label Time:
+      %span.search-time= "#{@search_time_ms} ms"
+
+- unless @query_error
+  %article.search-results
+    %header
+      %h3 Results
+    - if (@instances || []).empty?
+      %p
+        %em No results found
+    - else
+      != haml :"partials/instance/_list", locals: { instances: @instances, omit_kind: !@kind.nil? }
+
+-# Out-of-band swap to update search input with current query
+%input#search-input.search{ placeholder: "Query: kubernetes, activity/status == \"active\"", name: "q",
+              value: @q,
+              "hx-post": "/search", "hx-swap": "innerHTML", "hx-target": ".content",
+              "hx-indicator": ".search-spinner",
+              "hx-swap-oob": "true" }

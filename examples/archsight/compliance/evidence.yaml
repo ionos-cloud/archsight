@@ -1,0 +1,31 @@
+apiVersion: architecture/v1alpha1
+kind: ComplianceEvidence
+metadata:
+  name: Archsight:TestCoverage
+  annotations:
+    architecture/description: |
+      Comprehensive test suite with 350+ test cases covering
+      query parsing, evaluation, resource loading, and edge cases.
+    evidence/type: technical-control
+    evidence/status: implemented
+    architecture/tags: testing,quality
+spec:
+  satisfies:
+    businessRequirements:
+      - Requirement:QueryLanguage
+---
+apiVersion: architecture/v1alpha1
+kind: ComplianceEvidence
+metadata:
+  name: Archsight:CodeQuality
+  annotations:
+    architecture/description: |
+      Code quality ensured through RuboCop linting, Steep type checking,
+      and consistent code style enforcement.
+    evidence/type: technical-control
+    evidence/status: implemented
+    architecture/tags: linting,types,quality
+spec:
+  satisfies:
+    businessRequirements:
+      - Requirement:RubyCompatibility

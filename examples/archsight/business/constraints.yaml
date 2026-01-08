@@ -1,0 +1,19 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessConstraint
+metadata:
+  name: Constraint:GraphVizDependency
+  annotations:
+    architecture/description: |
+      GraphViz must be installed on the system for graph visualization
+      features to work. This is an external runtime dependency.
+    architecture/tags: dependency,graphviz
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessConstraint
+metadata:
+  name: Constraint:YAMLFormat
+  annotations:
+    architecture/description: |
+      All architecture resources must be defined in YAML format following
+      the architecture/v1alpha1 API version schema.
+    architecture/tags: format,yaml

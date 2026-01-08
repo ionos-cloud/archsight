@@ -1,0 +1,21 @@
+module Archsight
+  module Query
+    def self.parse: (String) -> Archsight::Query::Query
+
+    class Query
+      attr_reader source: String
+      attr_reader ast: untyped
+
+      def initialize: (String) -> void
+      def matches?: (Resources::Base, database: Database) -> bool
+      def filter: (Database) -> Array[Resources::Base]
+      def kind_filter: () -> String?
+      def to_s: () -> String
+      def inspect: () -> String
+
+      private
+
+      def parse: (String) -> untyped
+    end
+  end
+end

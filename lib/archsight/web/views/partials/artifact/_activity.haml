@@ -1,0 +1,55 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- annotations = instance.annotations
+- commits = annotations['activity/commits']
+- contributors = annotations['activity/contributors']
+- contributors_6m = annotations['activity/contributors/6m']
+- contributors_total = annotations['activity/contributors/total']
+- status = annotations['activity/status']
+- bus_factor = annotations['activity/busFactor']
+- created_at = annotations['activity/createdAt']
+- if commits || contributors || status || bus_factor || created_at
+  %tr
+    %th{scope: 'row'} Activity
+    %td
+      .activity-summary
+        - if commits && !commits.empty?
+          .activity-item
+            %i.iconoir-git-commit
+            %span.activity-label Commits:
+            .activity-sparkline{'data-values' => commits}
+            - total = commits.split(',').map(&:to_i).sum
+            %span.activity-value.sparkline-total= total
+        - if contributors && !contributors.empty?
+          .activity-item
+            %i.iconoir-community
+            %span.activity-label Contributors:
+            .activity-sparkline.contributors-sparkline{'data-values' => contributors}
+            - if contributors_6m
+              %span.activity-value.sparkline-total= contributors_6m
+            - if contributors_total
+              %span.activity-value.contributors-total= "(#{contributors_total} total)"
+        - if created_at
+          .activity-item
+            %i.iconoir-calendar
+            %span.activity-label Created:
+            - created_time = created_at.is_a?(Time) ? created_at : Time.parse(created_at.to_s)
+            %span.activity-value= created_time.strftime('%b %Y')
+        - if status
+          .activity-item
+            %i.iconoir-info-circle
+            %span.activity-label Status:
+            %a.activity-value{**filter_link_attrs("activity/status", status), class: "status-#{status}"}
+              = status
+        - if bus_factor
+          .activity-item
+            %i.iconoir-warning-triangle
+            %span.activity-label Bus Factor:
+            - bus_factor_title = case bus_factor
+            - when 'high' then "High risk: One contributor accounts for >75% of commits in the last 6 months"
+            - when 'medium' then "Medium risk: One contributor accounts for 50-75% of commits in the last 6 months"
+            - when 'low' then "Low risk: No single contributor dominates the codebase"
+            - else "Unknown: Not enough recent activity to assess"
+            - bus_factor_title += " (#{contributors_6m} unique contributors)" if contributors_6m
+            %a.activity-value{ **filter_link_attrs("activity/busFactor", bus_factor), class: "bus-factor-#{bus_factor}", title: bus_factor_title }
+              = bus_factor

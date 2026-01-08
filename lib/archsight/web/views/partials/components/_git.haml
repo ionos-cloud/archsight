@@ -1,0 +1,17 @@
+-# Git component - repository link
+- annotations = instance.annotations
+- git_url = annotations['repository/git']
+- visibility = annotations['repository/visibility']
+- if git_url
+  - display_name = git_url.sub(%r{^https?://}, '').sub(/\.git$/, '')
+  - short_name = display_name.split('/').last(2).join('/')
+  - tooltip = git_url
+  - tooltip += " (#{visibility})" if visibility
+  %a.component-link{href: git_url, target: "_blank", title: tooltip}
+    - if git_url.include?("gitlab")
+      %i.iconoir-git-fork
+    - else
+      %i.iconoir-github
+    = short_name
+- else
+  %span.empty-value —

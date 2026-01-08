@@ -1,0 +1,69 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- platforms = (instance.annotations['workflow/platforms'] || 'none').split(',').map(&:strip)
+- types = (instance.annotations['workflow/types'] || 'none').split(',').map(&:strip)
+
+- if platforms != ['none'] || types != ['none']
+  - has_generic_test = types.include?('test')
+  %tr
+    %th{scope: 'row'} CI/CD Platforms
+    %td
+      .workflow-platforms
+        %a.workflow-platform-item{**filter_link_attrs('workflow/platforms', 'github-actions')}
+          %input{type: 'checkbox', disabled: true, checked: platforms.include?('github-actions')}
+          %label GitHub Actions
+        %a.workflow-platform-item{**filter_link_attrs('workflow/platforms', 'gitlab-ci')}
+          %input{type: 'checkbox', disabled: true, checked: platforms.include?('gitlab-ci')}
+          %label GitLab CI
+        %a.workflow-platform-item{**filter_link_attrs('workflow/platforms', 'makefile')}
+          %input{type: 'checkbox', disabled: true, checked: platforms.include?('makefile')}
+          %label Makefile
+  %tr
+    %td.info-section-cell{colspan: 2}
+      %details{open: true}
+        %summary
+          %strong Workflow Types
+        .workflow-types
+          %div
+            .workflow-category
+              %strong Build & Deploy
+              %ul
+                %li
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('build')}
+                  %a{**filter_link_attrs('workflow/types', 'build')} Build
+                %li
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('deploy')}
+                  %a{**filter_link_attrs('workflow/types', 'deploy')} Deploy
+            .workflow-category
+              %strong Testing
+              %ul
+                %li
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('test')}
+                  %a{**filter_link_attrs('workflow/types', 'test')} Test (generic)
+                %li{class: has_generic_test ? 'grayed-out' : ''}
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('unit-test')}
+                  %a{**filter_link_attrs('workflow/types', 'unit-test')} Unit Tests
+                %li{class: has_generic_test ? 'grayed-out' : ''}
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('integration-test')}
+                  %a{**filter_link_attrs('workflow/types', 'integration-test')} Integration Tests
+                %li{class: has_generic_test ? 'grayed-out' : ''}
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('smoke-test')}
+                  %a{**filter_link_attrs('workflow/types', 'smoke-test')} Smoke Tests
+            .workflow-category
+              %strong Quality & Security
+              %ul
+                %li
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('lint')}
+                  %a{**filter_link_attrs('workflow/types', 'lint')} Linting
+                %li
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('security-scan')}
+                  %a{**filter_link_attrs('workflow/types', 'security-scan')} Security Scan
+            .workflow-category
+              %strong Automation
+              %ul
+                %li
+                  %input{type: 'checkbox', disabled: true, checked: types.include?('dependency-update')}
+                  %a{**filter_link_attrs("workflow/types", "dependency-update")} Dependency Updates
+                %li
+                  %input{ type: "checkbox", disabled: true, checked: types.include?("ticket-creation") }
+                  %a{ **filter_link_attrs("workflow/types", "ticket-creation") } Ticket Creation

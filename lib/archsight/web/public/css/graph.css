@@ -1,0 +1,106 @@
+/* ===== Global Styles ===== */
+
+/* Hide table borders in all nodes */
+.node polygon[fill="none"] {
+    stroke: none !important;
+}
+
+/* Default text color for all nodes */
+.node text {
+    fill: #000000 !important;
+}
+
+
+/* ===== Layer Colors (Light Mode) ===== */
+
+/* Strategy Layer - Orange */
+.layer-strategy path[fill="lightgrey"] {
+    stroke: #F4A261 !important;
+    fill: #F4A261 !important;
+}
+
+/* Business Layer - Yellow */
+.layer-business path[fill="lightgrey"] {
+    stroke: #F9DC5C !important;
+    fill: #F9DC5C !important;
+}
+
+/* Application Layer - Blue */
+.layer-application path[fill="lightgrey"] {
+    stroke: #6CBEED !important;
+    fill: #6CBEED !important;
+}
+
+/* Technology Layer - Green */
+.layer-technology path[fill="lightgrey"] {
+    stroke: #8AC926 !important;
+    fill: #8AC926 !important;
+}
+
+/* Motivation Layer - Purple */
+.layer-motivation path[fill="lightgrey"] {
+    stroke: #CE93D8 !important;
+    fill: #CE93D8 !important;
+}
+
+/* Other - Gray */
+.layer-other path[fill="lightgrey"] {
+    stroke: #cccccc !important;
+    fill: #cccccc !important;
+}
+
+
+/* ===== Dark Mode ===== */
+
+@media (prefers-color-scheme: dark) {
+
+    /* Override black strokes and fills for visibility */
+    [stroke="black"] {
+        stroke: white !important;
+    }
+
+    [fill="black"] {
+        fill: white !important;
+    }
+
+    /* White text for all nodes in dark mode */
+    .node text {
+        fill: #FFFFFF !important;
+    }
+
+    /* Strategy Layer - Orange */
+    .layer-strategy path[fill="lightgrey"] {
+        stroke: #D4824A !important;
+        fill: #C17A3A !important;
+    }
+
+    /* Business Layer - Yellow */
+    .layer-business path[fill="lightgrey"] {
+        stroke: #D9BC3C !important;
+        fill: #C9AC2C !important;
+    }
+
+    /* Application Layer - Blue */
+    .layer-application path[fill="lightgrey"] {
+        stroke: #4A9ECD !important;
+        fill: #2A7EAD !important;
+    }
+
+    /* Technology Layer - Green */
+    .layer-technology path[fill="lightgrey"] {
+        stroke: #7AB316 !important;
+        fill: #6A9916 !important;
+    }
+
+    /* Motivation Layer */
+    .layer-motivation path[fill="lightgrey"] {
+        stroke: #AB47BC !important;
+        fill: #8E24AA !important;
+    }
+
+    /* Other */
+    .layer-other path[fill="lightgrey"] {
+        stroke: #999999 !important;
+        fill: #666666 !important;
+    }
+}

@@ -1,0 +1,329 @@
+/* Instance Styles - Graphs, Tables, Lists, Views */
+
+/* Reduce article padding for tighter layout */
+.content article {
+  padding: 1rem;
+}
+
+/* Reduce graph container margin */
+.content article .graph-container {
+  margin-bottom: 0.5rem;
+}
+
+/* Reduce footer margin */
+.content article > footer {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+/* Instance header with kind subtitle */
+.instance-title-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.instance-kind-subtitle {
+  font-size: 0.4em;
+  font-weight: 400;
+  color: var(--muted-color);
+  opacity: 0.7;
+  margin-top: 0.1em;
+}
+
+/* Graph container for svg-pan-zoom */
+.graph-container {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--muted-border-color);
+  border-radius: 4px;
+  background-color: var(--card-background-color);
+  /* Let height adapt to content, cap at 70vh for large graphs */
+  height: auto;
+  min-height: 150px;
+  max-height: 70vh;
+}
+
+/* Expandable graphs (global view) - larger viewport */
+.graph-container.graph-expand {
+  height: 85vh;
+  max-height: none;
+}
+
+/* Graphviz canvas container */
+#graphviz {
+  width: 100%;
+  height: 100%;
+}
+
+#graphviz svg {
+  display: block;
+}
+
+/* Search instance list */
+.search-instance-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-instance-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 2px;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: 4px;
+  transition: border-color 0.15s ease;
+}
+
+.search-instance-item:hover {
+  border-color: var(--primary);
+}
+
+.instance-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.instance-name {
+  font-weight: 600;
+  font-size: 1em;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.instance-name:hover {
+  text-decoration: underline;
+}
+
+.instance-kind {
+  font-size: 0.85em;
+  color: var(--muted-color);
+  padding: 2px 8px;
+  background-color: var(--code-background-color);
+  border-radius: 4px;
+}
+
+.instance-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Resource list table styles */
+.resource-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.resource-list-table thead th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 0.85em;
+  color: var(--muted-color);
+  border-bottom: 2px solid var(--muted-border-color);
+  background-color: var(--card-background-color);
+}
+
+.resource-list-table tbody tr {
+  border-bottom: 1px solid var(--muted-border-color);
+  transition: background-color 0.15s ease;
+}
+
+.resource-list-table tbody tr:hover {
+  background-color: var(--card-background-color);
+}
+
+.resource-list-table td {
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+.resource-list-table .col-name {
+  min-width: 200px;
+}
+
+.resource-list-table .col-kind {
+  white-space: nowrap;
+}
+
+.resource-list-table .col-annotation {
+  color: var(--color);
+  font-size: 0.9em;
+}
+
+.resource-list-table .empty-value {
+  color: var(--muted-color);
+}
+
+.resource-list-table .instance-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* View resource styles */
+.view-header {
+  margin-bottom: 0.75rem;
+}
+
+.view-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-header h2 i {
+  color: var(--primary);
+}
+
+.view-description {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--card-background-color);
+  border-radius: 8px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.view-query-section {
+  margin-bottom: 0.75rem;
+}
+
+.view-query-display {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.view-fields-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.9em;
+}
+
+.view-fields-info .label {
+  font-weight: 600;
+  color: var(--muted-color);
+  text-transform: uppercase;
+  font-size: 0.85em;
+}
+
+.view-fields-info code {
+  padding: 0.25rem 0.5rem;
+  background-color: var(--code-background-color);
+  border-radius: 4px;
+}
+
+.view-result-meta {
+  font-size: 0.9em;
+  color: var(--muted-color);
+  margin-left: 1rem;
+}
+
+.view-empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--muted-color);
+}
+
+/* Requirement status icons */
+.requirement-status-icon {
+  font-size: 1.2em;
+}
+
+.requirement-status-icon.status-implemented {
+  color: #10b981;
+}
+
+.requirement-status-icon.status-partial {
+  color: #f59e0b;
+}
+
+.requirement-status-icon.status-planned {
+  color: #3b82f6;
+}
+
+.requirement-status-icon.status-not-started,
+.requirement-status-icon.status-unknown {
+  color: #9ca3af;
+}
+
+/* Relations section - two-column layout */
+.relations-section .relations-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* On desktop: Outgoing on right, Incoming on left */
+.relations-section .relations-outgoing {
+  order: 2;
+}
+
+.relations-section .relations-incoming {
+  order: 1;
+}
+
+@media (max-width: 768px) {
+  .relations-section .relations-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* On mobile: Outgoing on top */
+  .relations-section .relations-outgoing {
+    order: 1;
+  }
+
+  .relations-section .relations-incoming {
+    order: 2;
+  }
+}
+
+.relations-section .relations-column h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--muted-color);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.relations-section .relation-group {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: 0.5rem;
+}
+
+.relations-section .relation-kind {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.relations-section .relation-verb {
+  font-size: 0.875rem;
+  color: var(--muted-color);
+  margin-bottom: 0.5rem;
+}
+
+.relations-section .relations-empty {
+  color: var(--muted-color);
+  font-style: italic;
+}

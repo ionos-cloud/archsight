@@ -1,0 +1,16 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- annotations = instance.annotations
+- git_url = annotations['repository/git']
+- if git_url
+  - http_url = http_git(git_url)
+  %tr
+    %th{scope: "row"}
+      %a.git-link{ href: http_url, target: "_blank" }= "Git Repo"
+    %td
+      .git-info
+        .git-item
+          %i.iconoir-git-branch
+          %code.git-clone-command= "git clone #{git_url}"
+        %button.copy-button{ onclick: "navigator.clipboard.writeText('git clone #{git_url}'); this.classList.add('copied'); setTimeout(() => this.classList.remove('copied'), 2000);", title: "Copy to clipboard" }
+          %i.iconoir-copy

@@ -1,0 +1,81 @@
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Archsight:MCP:QueryTool
+  annotations:
+    architecture/description: |
+      MCP tool for querying architecture resources using the
+      archsight query language.
+    architecture/tags: mcp,query,tool
+    api/authenticationMethod: none
+spec:
+  servedBy:
+    technologyComponents:
+      - Tech:MCP:SSE
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Archsight:MCP:AnalyzeTool
+  annotations:
+    architecture/description: |
+      MCP tool for analyzing resource dependencies and impacts
+      with depth-limited traversal.
+    architecture/tags: mcp,analysis,tool
+    api/authenticationMethod: none
+spec:
+  servedBy:
+    technologyComponents:
+      - Tech:MCP:SSE
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Archsight:MCP:DocTool
+  annotations:
+    architecture/description: |
+      MCP tool for generating documentation about resource kinds
+      including annotations and relations.
+    architecture/tags: mcp,documentation,tool
+    api/authenticationMethod: none
+spec:
+  servedBy:
+    technologyComponents:
+      - Tech:MCP:SSE
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Archsight:CLI:Commands
+  annotations:
+    architecture/description: |
+      CLI commands: lint (validate resources), web (start server),
+      template (generate YAML), console (interactive REPL).
+    architecture/tags: cli,commands
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Archsight:Web:Routes
+  annotations:
+    architecture/description: |
+      HTTP routes for the web UI including search, resource browsing,
+      and SVG graph generation endpoints.
+    architecture/tags: http,routes,web
+    api/authenticationMethod: none
+spec:
+  servedBy:
+    technologyComponents:
+      - Tech:HTTP:REST
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Archsight:Core:ResourceAPI
+  annotations:
+    architecture/description: |
+      Internal API for accessing resource instances, executing queries,
+      and traversing relations.
+    architecture/tags: internal,api
+spec: {}

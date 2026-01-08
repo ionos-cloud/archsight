@@ -7,4 +7,4 @@
 * When interpreting the words and actions of others, participants should always assume good intentions.
 * Behaviour which can be reasonably considered harassment will not be tolerated.
 
-If you have any concerns about behaviour within this project, please contact us at ["vincent.landgraf@ionos.com"](mailto:"vincent.landgraf@ionos.com").
+If you have any concerns about behaviour within this project, please [open a GitHub issue](https://github.com/ionos-cloud/archsight/issues) or contact the maintainers directly.

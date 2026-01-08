@@ -1,0 +1,35 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyInterface
+metadata:
+  name: Tech:HTTP:REST
+  annotations:
+    architecture/description: |
+      HTTP REST interface for web API endpoints.
+    architecture/tags: http,rest,api
+spec:
+  suppliedBy:
+    technologyComponents:
+      - Tech:RubyGems:Sinatra
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyInterface
+metadata:
+  name: Tech:MCP:SSE
+  annotations:
+    architecture/description: |
+      Server-Sent Events transport for the MCP protocol.
+    architecture/tags: mcp,sse,streaming
+spec:
+  suppliedBy:
+    technologyComponents:
+      - Tech:RubyGems:FastMCP
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyInterface
+metadata:
+  name: Tech:GraphViz:DOT
+  annotations:
+    architecture/description: |
+      GraphViz DOT language interface for graph visualization.
+    architecture/tags: graphviz,dot,visualization
+spec: {}

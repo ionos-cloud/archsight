@@ -1,0 +1,38 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessProduct
+metadata:
+  name: Archsight
+  annotations:
+    architecture/abbr: AS
+    architecture/description: |
+      Enterprise architecture visualization and modeling tool.
+
+      A Ruby gem for modeling, querying, and visualizing enterprise
+      architecture using ArchiMate-inspired YAML resources with
+      GraphViz visualization and a powerful query language.
+
+      Key features:
+      - YAML-based resource definitions
+      - Powerful query language with relation traversal
+      - GraphViz visualization
+      - Web UI with search and filtering
+      - MCP server for AI integration
+      - Linting and validation
+    architecture/tags: ruby,architecture,visualization,archiMate,enterprise
+    architecture/documentation: https://github.com/ionos-cloud/archsight
+spec:
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+    applicationServices:
+      - Archsight:CLI
+      - Archsight:WebUI
+      - Archsight:MCPServer
+  realizes:
+    strategyCapabilities:
+      - Architecture:Documentation
+      - Architecture:DependencyAnalysis
+  provides:
+    complianceEvidences:
+      - Archsight:TestCoverage
+      - Archsight:CodeQuality

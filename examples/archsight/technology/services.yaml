@@ -1,0 +1,41 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Tech:RubyGems:Sinatra
+  annotations:
+    architecture/description: |
+      Sinatra web framework for building the archsight web UI.
+    architecture/tags: ruby,web,framework
+    architecture/documentation: https://sinatrarb.com
+spec:
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Tech:RubyGems:Thor
+  annotations:
+    architecture/description: |
+      Thor toolkit for building the archsight CLI with subcommands.
+    architecture/tags: ruby,cli,framework
+    architecture/documentation: http://whatisthor.com
+spec:
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Tech:RubyGems:FastMCP
+  annotations:
+    architecture/description: |
+      Fast MCP gem for implementing the Model Context Protocol server.
+    architecture/tags: ruby,mcp,ai
+    architecture/documentation: https://github.com/yjacket/fast-mcp
+spec:
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers

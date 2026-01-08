@@ -1,0 +1,28 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:GraphViz
+  annotations:
+    architecture/description: |
+      GraphViz graph visualization software used for generating
+      SVG diagrams from DOT graph descriptions.
+    architecture/tags: graphviz,visualization,external
+    architecture/documentation: https://graphviz.org
+spec:
+  exposes:
+    applicationInterfaces:
+      - Archsight:Core:ResourceAPI
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:Puma
+  annotations:
+    architecture/description: |
+      Puma web server used to serve the archsight web application.
+    architecture/tags: puma,webserver,ruby
+    architecture/documentation: https://puma.io
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight

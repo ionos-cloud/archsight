@@ -1,0 +1,57 @@
+- view_instance = db.instance_by_kind(@kind, @instance)
+- return unless view_instance
+- view_query = view_instance.annotations['view/query']
+- view_description = view_instance.annotations['architecture/description']
+- view_fields_raw = view_instance.annotations['view/fields'] || ''
+- view_fields = view_fields_raw.split(',').map(&:strip).reject(&:empty?)
+- view_type = view_instance.annotations['view/type'] || 'list:name+kind'
+- show_kind = view_type == 'list:name+kind'
+- view_sort_raw = view_instance.annotations['view/sort'] || ''
+- view_sort_fields = view_sort_raw.split(',').map(&:strip).reject(&:empty?)
+
+%article.view-header
+  %header
+    %h2
+      %i{class: "iconoir-#{view_instance.class.icon} icon-#{view_instance.class.layer}"}
+      = @instance
+  - if view_description
+    .view-description
+      != markdown(view_description)
+  - if view_query
+    .view-query-display
+      %p.query-item
+        %span.label Query:
+        %code.query-value= view_query
+
+- if view_query
+  - begin
+    - start_time = Time.now
+    - parsed_query = Archsight::Query.parse(view_query)
+    - results = parsed_query.filter(db)
+    - results = sort_instances(results, view_sort_fields)
+    - search_time_ms = ((Time.now - start_time) * 1000).round(2)
+    -# Hide kind if view_type is not 'list:name+kind' OR if query filters by a specific kind (redundant)
+    - show_kind = show_kind && parsed_query.kind_filter.nil?
+
+    %article.view-results
+      %header
+        %h3 Results
+        %span.view-result-meta
+          = results.size
+          = results.size == 1 ? "item" : "items"
+          in #{search_time_ms} ms
+
+      != haml :"partials/instance/_list", locals: { instances: results, omit_kind: !show_kind, fields: view_fields.any? ? view_fields : nil }
+
+  - rescue Archsight::Query::QueryError => e
+    .search-error
+      .search-error-header
+        %i.iconoir-warning-triangle
+        Query Error
+      .search-error-message= e.message
+      .search-error-query
+        Query:
+        %code= view_query
+- else
+  %p.view-empty-state
+    %em No query defined

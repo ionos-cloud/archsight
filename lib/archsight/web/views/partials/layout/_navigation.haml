@@ -1,0 +1,20 @@
+%nav.container-fluid
+  %ul
+    %li
+      %strong
+        %a{href: "/"}
+          %i.iconoir-home
+          Home
+    %li
+      %a{href: "/reload?redirect=#{request.path_info}"}
+        %i.iconoir-reload-window
+        Reload
+  %ul
+    %li.search-container
+      %a.search-help{ href: "/doc/index", "hx-get": "/doc/index", "hx-target": ".content", "hx-swap": "innerHTML", "hx-push-url": "true", title: "Help" }
+        %i.iconoir-help-circle
+      %input#search-input.search{ placeholder: "Query: kubernetes, activity/status == \"active\"", name: "q",
+                    "hx-post": "/search", "hx-swap": "innerHTML", "hx-target": ".content",
+                    "hx-indicator": ".search-spinner" }
+      %span.search-spinner.htmx-indicator
+        %i.iconoir-refresh.spinning

@@ -1,0 +1,41 @@
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: View:ActiveComponents
+  annotations:
+    architecture/description: |
+      List all active application components in the architecture.
+    view/query: 'ApplicationComponent:'
+    view/fields: name,architecture/tags,architecture/kind
+    view/type: list:name
+    view/sort: name
+    architecture/tags: components,overview
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: View:ServiceDependencies
+  annotations:
+    architecture/description: |
+      Show services and their component dependencies.
+    view/query: 'ApplicationService: -> ApplicationComponent'
+    view/fields: name,architecture/plane
+    view/type: list:name+kind
+    view/sort: name
+    architecture/tags: services,dependencies
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: View:MCPInterfaces
+  annotations:
+    architecture/description: |
+      List all MCP-related interfaces for AI integration.
+    view/query: 'ApplicationInterface: architecture/tags =~ "mcp"'
+    view/fields: name,architecture/description
+    view/type: list:name
+    view/sort: name
+    architecture/tags: mcp,interfaces
+spec: {}

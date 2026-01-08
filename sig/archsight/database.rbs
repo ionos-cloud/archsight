@@ -1,0 +1,48 @@
+module Archsight
+  class LineReference
+    attr_accessor path: String
+    attr_accessor line_no: Integer
+
+    def initialize: (String, Integer) -> void
+    def to_s: () -> String
+    def at_line: (Integer) -> LineReference
+  end
+
+  class ResourceError < StandardError
+    attr_reader ref: LineReference
+    attr_reader message: String
+
+    def initialize: (String, LineReference) -> void
+    def to_s: () -> String
+  end
+
+  class Database
+    attr_accessor instances: Hash[untyped, Hash[String, Resources::Base]]
+
+    @path: String
+    @verbose: bool
+    @verify: bool
+    @compute_annotations: bool
+    @current_ref: LineReference
+
+    def initialize: (String, ?verbose: bool, ?verify: bool, ?compute_annotations: bool) -> void
+    def reload!: () -> void
+    def instances_by_kind: (String) -> Hash[String, Resources::Base]
+    def instance_by_kind: (String, String) -> Resources::Base?
+    def annotation_values: (String, Annotations::Annotation) -> Array[untyped]
+    def filters_for_kind: (String) -> Array[untyped]
+    def query: (String) -> Array[Resources::Base]
+    def instance_matches?: (Resources::Base, String) -> bool
+
+    private
+
+    def create_valid_instance: (Hash[String, untyped]) -> Resources::Base
+    def load_file: (String) -> void
+    def <<: (Resources::Base) -> void
+    def raise: (String) -> bot
+    def raise_for: (Resources::Base, String) -> bot
+    def verify!: () -> void
+    def verify_instance_relations!: (Resources::Base) -> void
+    def compute_all_annotations!: () -> void
+  end
+end

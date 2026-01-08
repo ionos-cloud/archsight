@@ -1,0 +1,83 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- annotations = instance.annotations
+- lead = annotations['team/lead']
+- members = annotations['team/members']
+- team_size = annotations['team/size']
+- lead_size = annotations['team/lead/size']
+- jira_key = annotations['team/jira']
+- jira_url = annotations['jira/projectUrl']
+- jira_created = annotations['jira/issues/created']
+- jira_resolved = annotations['jira/issues/resolved']
+- is_team = instance.class.name == 'Resources::BusinessActor'
+- if is_team
+  - owned_query = "kind in (\"ApplicationService\", \"ApplicationComponent\") & ~> $(TechnologyArtifact: -{maintainedBy}> \"#{instance.name}\")"
+  %tr
+    %th{scope: 'row'} Owned Services
+    %td
+      %a.badge.badge-info{**search_link_attrs(owned_query)}
+        Show ApplicationServices & Components
+- if jira_key && jira_url
+  %tr
+    %th{scope: 'row'} Jira Project
+    %td
+      .jira-info
+        %a.badge.badge-info{href: jira_url, target: '_blank'}= jira_key
+        - if jira_created || jira_resolved
+          - created_values = (jira_created || '').split(',').map(&:to_i)
+          - resolved_values = (jira_resolved || '').split(',').map(&:to_i)
+          - created_total = created_values.sum
+          - resolved_total = resolved_values.sum
+          - created_avg = created_values.empty? ? 0 : (created_total.to_f / created_values.size).round(1)
+          - resolved_avg = resolved_values.empty? ? 0 : (resolved_total.to_f / resolved_values.size).round(1)
+          - backlog_change = created_avg - resolved_avg
+          - trend_class = backlog_change < -1 ? 'positive' : (backlog_change > 1 ? 'negative' : 'neutral')
+          .jira-metric
+            %span.jira-metric-label Created (6m):
+            .activity-sparkline.jira-created-sparkline{'data-values' => jira_created, 'data-type' => 'created'}
+            %span.jira-metric-total= created_total
+          .jira-metric
+            %span.jira-metric-label Resolved (6m):
+            .activity-sparkline.jira-resolved-sparkline{'data-values' => jira_resolved, 'data-type' => 'resolved'}
+            %span.jira-metric-total= resolved_total
+          .jira-trend{class: "jira-trend-#{trend_class}", title: "6-month average: #{created_avg} created/mo, #{resolved_avg} resolved/mo"}
+            - if trend_class == 'positive'
+              %i.iconoir-arrow-down-circle
+            - elsif trend_class == 'negative'
+              %i.iconoir-arrow-up-circle
+            - else
+              %i.iconoir-minus-circle
+            %span.jira-trend-text= "#{backlog_change > 0 ? '+' : ''}#{backlog_change.round(1)}/mo"
+- if lead
+  %tr
+    %th{scope: 'row'} Team Lead
+    %td
+      - email = Archsight::Annotations::EmailRecipient.extract_email(lead)
+      - if email
+        %a.team-value{href: "mailto:#{email}"}= lead
+      - else
+        %span.team-value= lead
+- if team_size || lead_size
+  %tr
+    %th{scope: 'row'} Team Stats
+    %td
+      .team-stats
+        - if lead_size
+          .team-stat-item
+            %span.team-stat-value= lead_size
+            %span.team-stat-label leads
+        - if team_size
+          .team-stat-item
+            %span.team-stat-value= team_size
+            %span.team-stat-label members
+- if members
+  %tr
+    %th{scope: "row"} Team Members
+    %td
+      .team-members
+        - members.split(/,|\n/).map(&:strip).reject(&:empty?).each do |member|
+          - email = Archsight::Annotations::EmailRecipient.extract_email(member)
+          - if email
+            %a.team-member{ href: "mailto:#{email}" }= member
+          - else
+            %span.team-member= member

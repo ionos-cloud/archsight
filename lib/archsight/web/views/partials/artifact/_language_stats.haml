@@ -1,0 +1,53 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- annotations = instance.annotations
+- languages = annotations['scc/languages']
+- if languages && !languages.empty?
+  - lang_data = []
+  - languages.split(',').each do |lang|
+    - loc_key = "scc/language/#{lang.strip}/loc"
+    - loc_value = annotations[loc_key]
+    - lang_data << { name: lang.strip, loc: loc_value ? loc_value.to_i : 0 }
+  - lang_data = lang_data.sort_by { |l| -l[:loc] }
+  - total_loc = lang_data.sum { |l| l[:loc] }
+  - if total_loc > 0
+    -# Show max 10 languages, group rest into "Other"
+    -# Also filter out languages below 0.1%
+    - max_languages = 10
+    - significant = lang_data.select { |l| (l[:loc].to_f / total_loc * 100) >= 0.1 }
+    - top_languages = significant.first(max_languages)
+    - other_languages = significant.drop(max_languages) + lang_data.select { |l| (l[:loc].to_f / total_loc * 100) < 0.1 }
+    - other_loc = other_languages.sum { |l| l[:loc] }
+    - display_data = top_languages.dup
+    - display_data << { name: 'Other', loc: other_loc, is_other: true, other_names: other_languages.map { |l| l[:name] } } if other_loc > 0
+    %tr
+      %th{scope: 'row'} Languages
+      %td
+        .language-distribution
+          .language-total
+            %span.language-count= number_with_delimiter(total_loc)
+            %span.language-label lines of code
+          .language-bar
+            - display_data.each_with_index do |lang, idx|
+              - pct = (lang[:loc].to_f / total_loc * 100).round(1)
+              - color_class = lang[:is_other] ? 'lang-other' : "lang-#{idx}"
+              - if pct > 0
+                .language-bar-segment{class: color_class, style: "width: #{pct}%", title: "#{lang[:name]}: #{number_with_delimiter(lang[:loc])} (#{pct}%)"}
+          .language-legend
+            - display_data.each_with_index do |lang, idx|
+              - pct = (lang[:loc].to_f / total_loc * 100).round(1)
+              - color_class = lang[:is_other] ? 'lang-other' : "lang-#{idx}"
+              .language-legend-item
+                .language-legend-dot{class: color_class}
+                - if lang[:is_other]
+                  %span Other #{pct}%
+                  %span.other-languages
+                    \(
+                    - lang[:other_names].each_with_index do |other_name, other_idx|
+                      %a{**filter_link_attrs("scc/languages", other_name)}= other_name
+                      - if other_idx < lang[:other_names].length - 1
+                        ,
+                    \)
+                - else
+                  %a{ **filter_link_attrs("scc/languages", lang[:name]) }
+                    = "#{lang[:name]} #{pct}%"

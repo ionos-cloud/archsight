@@ -1,0 +1,10 @@
+module Archsight
+  class Configuration
+    attr_accessor resources_dir: String
+    attr_accessor verbose: bool
+    attr_accessor verify: bool
+    attr_accessor compute_annotations: bool
+
+    def initialize: () -> void
+  end
+end

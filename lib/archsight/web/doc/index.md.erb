@@ -1,0 +1,74 @@
+# Documentation
+
+Welcome to the Architecture Documentation System. This documentation covers how to use the tool, architecture modeling concepts, and reference material for all resource types.
+
+## Getting Started
+
+- [Tool Guide](/doc/tool) - How to use the architecture tool
+- [Query Syntax](/doc/search) - Search and filter resources
+- [Architecture Modeling](/doc/modeling) - How to model your architecture
+
+## Resource Model
+
+The following diagram shows all resource types organized by layer and their relationships:
+
+```mermaid
+<%= Documentation.generate_mermaid_diagram %>
+```
+
+## Resource Types
+
+### Motivation Layer
+
+Resources representing stakeholders, goals, and outcomes that drive architectural decisions.
+
+- [MotivationStakeholder](/doc/resources/motivation_stakeholder) - Roles with interests in the architecture
+- [MotivationGoal](/doc/resources/motivation_goal) - High-level statements of intent
+- [MotivationOutcome](/doc/resources/motivation_outcome) - End results or consequences
+
+### Business Layer
+
+Resources representing business processes, actors, and products.
+
+- [BusinessActor](/doc/resources/business_actor) - Teams and organizations
+- [BusinessProcess](/doc/resources/business_process) - Structured business workflows
+- [BusinessProduct](/doc/resources/business_product) - Products offered to customers
+- [BusinessRequirement](/doc/resources/business_requirement) - Business and compliance requirements
+- [BusinessConstraint](/doc/resources/business_constraint) - Limitations and restrictions
+
+### Strategy Layer
+
+Resources representing strategic capabilities and planning.
+
+- [StrategyCapability](/doc/resources/strategy_capability) - Strategic abilities and functions
+
+### Application Layer
+
+Resources representing application services, components, and interfaces.
+
+- [ApplicationService](/doc/resources/application_service) - High-level application services
+- [ApplicationComponent](/doc/resources/application_component) - Logical parts of services
+- [ApplicationInterface](/doc/resources/application_interface) - APIs and interfaces between components
+- [DataObject](/doc/resources/data_object) - Data structures and schemas
+
+### Technology Layer
+
+Resources representing technology infrastructure and artifacts.
+
+- [TechnologyService](/doc/resources/technology_service) - Infrastructure services
+- [TechnologyArtifact](/doc/resources/technology_artifact) - Source code repositories
+- [TechnologyInterface](/doc/resources/technology_interface) - Technical interfaces
+- [TechnologySystemSoftware](/doc/resources/technology_system_software) - Logical infrastructure components
+- [TechnologyNode](/doc/resources/technology_node) - Physical infrastructure
+
+### Other
+
+- [ComplianceEvidence](/doc/resources/compliance_evidence) - Evidence for compliance requirements
+- [View](/doc/resources/view) - Saved queries and custom views
+
+## References
+
+- [ArchiMate](/doc/archimate) - ArchiMate 3.2 specification reference
+- [TOGAF](/doc/togaf) - TOGAF framework reference
+- [Icons Reference](/doc/icons) - Available icons for resource types
+- [Computed Annotations](/doc/computed_annotations) - Available computed annotations

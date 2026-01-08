@@ -1,0 +1,303 @@
+# Icons Reference
+
+This tool uses [Iconoir](https://iconoir.com/), an open-source icon library with 1,671 icons. Icons are used to visually represent resource types.
+
+## Resource Type Icons
+
+Current icon assignments for each resource type:
+
+| Resource | Icon | Preview |
+|----------|------|---------|
+| ApplicationInterface | `usb` | <i class="iconoir-usb"></i> |
+| ApplicationService | `cube` | <i class="iconoir-cube"></i> |
+| BusinessActor | `community` | <i class="iconoir-community"></i> |
+| BusinessConstraint | `prohibition` | <i class="iconoir-prohibition"></i> |
+| BusinessProcess | `kanban-board` | <i class="iconoir-kanban-board"></i> |
+| BusinessProduct | `box-iso` | <i class="iconoir-box-iso"></i> |
+| BusinessRequirement | `task-list` | <i class="iconoir-task-list"></i> |
+| ComplianceEvidence | `shield-check` | <i class="iconoir-shield-check"></i> |
+| DataObject | `database` | <i class="iconoir-database"></i> |
+| ApplicationComponent | `component` | <i class="iconoir-component"></i> |
+| TechnologySystemSoftware | `terminal-tag` | <i class="iconoir-terminal-tag"></i> |
+| MotivationGoal | `archery` | <i class="iconoir-archery"></i> |
+| MotivationOutcome | `badge-check` | <i class="iconoir-badge-check"></i> |
+| MotivationStakeholder | `user-crown` | <i class="iconoir-user-crown"></i> |
+| TechnologyNode | `server-connection` | <i class="iconoir-server-connection"></i> |
+| StrategyCapability | `strategy` | <i class="iconoir-strategy"></i> |
+| TechnologyArtifact | `puzzle` | <i class="iconoir-puzzle"></i> |
+| TechnologyInterface | `data-transfer-both` | <i class="iconoir-data-transfer-both"></i> |
+| TechnologyService | `cloud` | <i class="iconoir-cloud"></i> |
+| View | `view-grid` | <i class="iconoir-view-grid"></i> |
+
+## Icon Categories
+
+### Technology & Development
+
+Code, servers, databases, and development tools.
+
+| Icon | Name |
+|------|------|
+| code | `code` |
+| code-brackets | `code-brackets` |
+| code-brackets-square | `code-brackets-square` |
+| terminal | `terminal` |
+| terminal-tag | `terminal-tag` |
+| server | `server` |
+| server-connection | `server-connection` |
+| database | `database` |
+| database-tag | `database-tag` |
+| database-backup | `database-backup` |
+| database-check | `database-check` |
+| database-export | `database-export` |
+| database-restore | `database-restore` |
+| database-settings | `database-settings` |
+| database-stats | `database-stats` |
+| cpu | `cpu` |
+| cpu-warning | `cpu-warning` |
+| cloud | `cloud` |
+| cloud-check | `cloud-check` |
+| cloud-download | `cloud-download` |
+| cloud-upload | `cloud-upload` |
+| cloud-sync | `cloud-sync` |
+| git | `git` |
+| git-branch | `git-branch` |
+| git-commit | `git-commit` |
+| git-fork | `git-fork` |
+| git-merge | `git-merge` |
+| git-pull-request | `git-pull-request` |
+| github | `github` |
+| gitlab-full | `gitlab-full` |
+| repository | `repository` |
+| npm | `npm` |
+| bug | `bug` |
+| developer | `developer` |
+
+### Network & Connectivity
+
+Network, connections, and data transfer.
+
+| Icon | Name |
+|------|------|
+| network | `network` |
+| network-left | `network-left` |
+| network-right | `network-right` |
+| network-reverse | `network-reverse` |
+| wifi | `wifi` |
+| wifi-off | `wifi-off` |
+| internet | `internet` |
+| globe | `globe` |
+| link | `link` |
+| link-slash | `link-slash` |
+| data-transfer-both | `data-transfer-both` |
+| data-transfer-down | `data-transfer-down` |
+| data-transfer-up | `data-transfer-up` |
+| plug-type-a | `plug-type-a` |
+| plug-type-c | `plug-type-c` |
+| plug-type-g | `plug-type-g` |
+| plug-type-l | `plug-type-l` |
+| antenna | `antenna` |
+| antenna-signal | `antenna-signal` |
+| bluetooth | `bluetooth` |
+| dns | `dns` |
+| ip-address-tag | `ip-address-tag` |
+
+### Security & Compliance
+
+Security, shields, and access control.
+
+| Icon | Name |
+|------|------|
+| shield | `shield` |
+| shield-check | `shield-check` |
+| shield-alert | `shield-alert` |
+| shield-broken | `shield-broken` |
+| shield-eye | `shield-eye` |
+| shield-loading | `shield-loading` |
+| shield-question | `shield-question` |
+| shield-search | `shield-search` |
+| shield-xmark | `shield-xmark` |
+| lock | `lock` |
+| lock-slash | `lock-slash` |
+| key | `key` |
+| key-command | `key-command` |
+| fingerprint | `fingerprint` |
+| fingerprint-check-circle | `fingerprint-check-circle` |
+| security-pass | `security-pass` |
+| password-check | `password-check` |
+| password-cursor | `password-cursor` |
+| privacy-policy | `privacy-policy` |
+| prohibition | `prohibition` |
+
+### Users & People
+
+People, teams, and organizations.
+
+| Icon | Name |
+|------|------|
+| user | `user` |
+| user-badge-check | `user-badge-check` |
+| user-circle | `user-circle` |
+| user-crown | `user-crown` |
+| user-plus | `user-plus` |
+| user-star | `user-star` |
+| user-xmark | `user-xmark` |
+| community | `community` |
+| group | `group` |
+| people-tag | `people-tag` |
+| male | `male` |
+| female | `female` |
+| profile-circle | `profile-circle` |
+
+### Business & Strategy
+
+Business, strategy, and organizational concepts.
+
+| Icon | Name |
+|------|------|
+| strategy | `strategy` |
+| kanban-board | `kanban-board` |
+| agile | `agile` |
+| okrs | `okrs` |
+| building | `building` |
+| bank | `bank` |
+| briefcase | - |
+| presentation | `presentation` |
+| leaderboard | `leaderboard` |
+| leaderboard-star | `leaderboard-star` |
+| graph-up | `graph-up` |
+| graph-down | `graph-down` |
+| stats-up-square | `stats-up-square` |
+| stats-down-square | `stats-down-square` |
+| candlestick-chart | `candlestick-chart` |
+| dashboard | `dashboard` |
+| dashboard-dots | `dashboard-dots` |
+| dashboard-speed | `dashboard-speed` |
+
+### Goals & Achievements
+
+Goals, targets, and accomplishments.
+
+| Icon | Name |
+|------|------|
+| archery | `archery` |
+| archery-match | `archery-match` |
+| trophy | `trophy` |
+| medal | `medal` |
+| medal-1st | `medal-1st` |
+| badge-check | `badge-check` |
+| star | `star` |
+| star-solid | `star-solid` |
+| crown | `crown` |
+| bright-crown | `bright-crown` |
+
+### Documents & Files
+
+Documents, pages, and file management.
+
+| Icon | Name |
+|------|------|
+| page | `page` |
+| page-edit | `page-edit` |
+| page-plus | `page-plus` |
+| page-search | `page-search` |
+| page-star | `page-star` |
+| multiple-pages | `multiple-pages` |
+| clipboard-check | `clipboard-check` |
+| task-list | `task-list` |
+| list | `list` |
+| numbered-list-left | `numbered-list-left` |
+| journal | `journal` |
+| book | `book` |
+| book-stack | `book-stack` |
+| folder | `folder` |
+| folder-plus | `folder-plus` |
+| folder-settings | `folder-settings` |
+| archive | `archive` |
+
+### Components & Structure
+
+Components, boxes, and structural elements.
+
+| Icon | Name |
+|------|------|
+| component | `component` |
+| cube | `cube` |
+| box | `box` |
+| box-iso | `box-iso` |
+| package | `package` |
+| package-lock | `package-lock` |
+| packages | `packages` |
+| puzzle | `puzzle` |
+| layers | - |
+| view-grid | `view-grid` |
+| view-columns-2 | `view-columns-2` |
+| view-columns-3 | `view-columns-3` |
+
+### Status & Alerts
+
+Warnings, errors, and status indicators.
+
+| Icon | Name |
+|------|------|
+| warning-triangle | `warning-triangle` |
+| warning-circle | `warning-circle` |
+| warning-hexagon | `warning-hexagon` |
+| warning-square | `warning-square` |
+| info-circle | `info-circle` |
+| help-circle | `help-circle` |
+| check | `check` |
+| check-circle | `check-circle` |
+| xmark | `xmark` |
+| xmark-circle | `xmark-circle` |
+| bell | `bell` |
+| bell-notification | `bell-notification` |
+| bell-off | `bell-off` |
+
+### Actions & Operations
+
+Common action icons.
+
+| Icon | Name |
+|------|------|
+| plus | `plus` |
+| plus-circle | `plus-circle` |
+| minus | `minus` |
+| minus-circle | `minus-circle` |
+| refresh | `refresh` |
+| reload-window | `reload-window` |
+| download | `download` |
+| upload | `upload` |
+| import | `import` |
+| settings | `settings` |
+| settings-profiles | `settings-profiles` |
+| tools | `tools` |
+| wrench | `wrench` |
+| edit | `edit` |
+| edit-pencil | `edit-pencil` |
+| trash | `trash` |
+| copy | `copy` |
+| search | `search` |
+| filter | `filter` |
+| sort | `sort` |
+
+## Usage
+
+To use an icon in resource definitions, specify the icon name in the resource class:
+
+```ruby
+icon 'shield-check'
+```
+
+Icons are rendered in templates using the CSS class pattern `iconoir-{name}`:
+
+```html
+<i class="iconoir-shield-check"></i>
+```
+
+## Full Icon List
+
+All 1,671 available icons (alphabetical):
+
+`accessibility`, `accessibility-sign`, `accessibility-tech`, `activity`, `adobe-after-effects`, `adobe-illustrator`, `adobe-indesign`, `adobe-lightroom`, `adobe-photoshop`, `adobe-xd`, `african-tree`, `agile`, `air-conditioner`, `airplane`, `airplane-helix`, `airplane-off`, `airplane-rotation`, `airplay`, `alarm`, `album`, `album-carousel`, `album-list`, `album-open`, `align-bottom-box`, `align-center`, `align-horizontal-centers`, `align-horizontal-spacing`, `align-justify`, `align-left`, `align-left-box`, `align-right`, `align-right-box`, `align-top-box`, `align-vertical-centers`, `align-vertical-spacing`, `angle-tool`, `antenna`, `antenna-off`, `antenna-signal`, `antenna-signal-tag`, `app-notification`, `app-store`, `app-window`, `apple`, `apple-half`, `apple-imac-2021`, `apple-mac`, `apple-shortcuts`, `apple-swift`, `apple-wallet`, `ar-tag`, `arc-3d`, `arc-3d-center-point`, `arcade`, `archery`, `archery-match`, `archive`, `area-search`, `arrow-archery`, `arrow-down`, `arrow-down-circle`, `arrow-down-left`, `arrow-down-left-circle`, `arrow-down-left-square`, `arrow-down-right`, `arrow-down-right-circle`, `arrow-down-right-square`, `arrow-down-tag`, `arrow-email-forward`, `arrow-enlarge-tag`, `arrow-left`, `arrow-left-circle`, `arrow-left-tag`, `arrow-reduce-tag`, `arrow-right`, `arrow-right-circle`, `arrow-right-tag`, `arrow-separate`, `arrow-separate-vertical`, `arrow-union`, `arrow-union-vertical`, `arrow-up`, `arrow-up-circle`, `arrow-up-left`, `arrow-up-left-circle`, `arrow-up-left-square`, `arrow-up-right`, `arrow-up-right-circle`, `arrow-up-right-square`, `arrow-up-tag`, `arrows-up-from-line`, `asana`, `asterisk`, `at-sign`, `at-sign-circle`, `atom`, `attachment`, `augmented-reality`, `auto-flash`, `avi-format`, `axes`, `backward-15-seconds`, `badge-check`, `bag`, `balcony`, `bank`, `barcode`, `basketball`, `basketball-field`, `bathroom`, `battery-25`, `battery-50`, `battery-75`, `battery-charging`, `battery-empty`, `battery-full`, `battery-indicator`, `battery-slash`, `battery-warning`, `bbq`, `beach-bag`, `bed`, `bed-ready`, `behance`, `behance-tag`, `bell`, `bell-notification`, `bell-off`, `bicycle`, `bin`, `bin-full`, `bin-half`, `bin-minus-in`, `bin-plus-in`, `binocular`, `birthday-cake`, `bishop`, `bitbucket`, `bitcoin-circle`, `bitcoin-rotate-out`, `bluetooth`, `bluetooth-tag`, `bold`, `bold-square`, `bonfire`, `book`, `book-lock`, `book-stack`, `bookmark`, `bookmark-book`, `bookmark-circle`, `border-bl`, `border-bottom`, `border-br`, `border-inner`, `border-left`, `border-out`, `border-right`, `border-tl`, `border-top`, `border-tr`, `bounce-left`, `bounce-right`, `bowling-ball`, `box`, `box-3d-center`, `box-3d-point`, `box-3d-three-points`, `box-iso`, `boxing-glove`, `brain`, `brain-electricity`, `brain-research`, `brain-warning`, `bread-slice`, `bridge-3d`, `bridge-surface`, `bright-crown`, `bright-star`, `brightness`, `brightness-window`, `bubble-download`, `bubble-income`, `bubble-outcome`, `bubble-search`, `bubble-star`, `bubble-upload`, `bubble-warning`, `bubble-xmark`, `bug`, `building`, `bus`, `bus-green`, `bus-stop`, `c-square`, `cable-tag`, `calculator`, `calendar`, `calendar-arrow-down`, `calendar-arrow-up`, `calendar-check`, `calendar-minus`, `calendar-plus`, `calendar-rotate`, `calendar-xmark`, `camera`, `candlestick-chart`, `car`, `card-lock`, `card-no-access`, `card-reader`, `card-shield`, `card-wallet`, `cart`, `cart-alt`, `cart-minus`, `cart-plus`, `cash`, `cell-2x2`, `cellar`, `center-align`, `chat-bubble`, `chat-bubble-check`, `chat-bubble-empty`, `chat-bubble-question`, `chat-bubble-translate`, `chat-bubble-warning`, `chat-bubble-xmark`, `chat-lines`, `chat-minus-in`, `chat-plus-in`, `check`, `check-circle`, `check-square`, `chocolate`, `chromecast`, `chromecast-active`, `church`, `church-side`, `cigarette-slash`, `cinema-old`, `circle`, `circle-spark`, `city`, `clipboard-check`, `clock`, `clock-rotate-right`, `closed-captions-tag`, `closet`, `cloud`, `cloud-bookmark`, `cloud-check`, `cloud-desync`, `cloud-download`, `cloud-square`, `cloud-sunny`, `cloud-sync`, `cloud-upload`, `cloud-xmark`, `code`, `code-brackets`, `code-brackets-square`, `codepen`, `coffee-cup`, `coin-slash`, `coins`, `coins-swap`, `collage-frame`, `collapse`, `color-filter`, `color-picker`, `color-wheel`, `combine`, `commodity`, `community`, `comp-align-bottom`, `comp-align-left`, `comp-align-right`, `comp-align-top`, `compact-disc`, `compass`, `component`, `compress`, `compress-lines`, `computer`, `constrained-surface`, `consumable`, `contactless`, `control-slider`, `cookie`, `cooling-square`, `copy`, `copyright`, `corner-bottom-left`, `corner-bottom-right`, `corner-top-left`, `corner-top-right`, `cpu`, `cpu-warning`, `cracked-egg`, `creative-commons`, `credit-card`, `credit-card-slash`, `credit-cards`, `crib`, `crop`, `crop-rotate-bl`, `crop-rotate-br`, `crop-rotate-tl`, `crop-rotate-tr`, `crown`, `crown-circle`, `css3`, `cube`, `cube-bandage`, `cube-cut-with-curve`, `cube-dots`, `cube-hole`, `cube-replace-face`, `cube-scan`, `cursor-pointer`, `curve-array`, `cut`, `cutlery`, `cycling`, `cylinder`, `dash-flag`, `dashboard`, `dashboard-dots`, `dashboard-speed`, `data-transfer-both`, `data-transfer-check`, `data-transfer-down`, `data-transfer-up`, `data-transfer-warning`, `database`, `database-backup`, `database-check`, `database-export`, `database-monitor`, `database-restore`, `database-script`, `database-script-minus`, `database-script-plus`, `database-search`, `database-settings`, `database-star`, `database-stats`, `database-tag`, `database-warning`, `database-xmark`, `de-compress`, `delivery`, `delivery-truck`, `depth`, `design-nib`, `design-pencil`, `desk`, `developer`, `dew-point`, `dialpad`, `diameter`, `dice-five`, `dice-four`, `dice-one`, `dice-six`, `dice-three`, `dice-two`, `dimmer-switch`, `director-chair`, `discord`, `dishwasher`, `display-4k`, `divide`, `divide-three`, `dna`, `dns`, `doc-magnifying-glass`, `doc-magnifying-glass-in`, `doc-star`, `doc-star-in`, `dogecoin-circle`, `dogecoin-rotate-out`, `dollar`, `dollar-circle`, `domotic-warning`, `donate`, `dot-arrow-down`, `dot-arrow-left`, `dot-arrow-right`, `dot-arrow-up`, `dots-grid-3x3`, `double-check`, `download`, `download-circle`, `download-data-window`, `download-square`, `drag`, `drag-hand-gesture`, `drawer`, `dribbble`, `drone`, `drone-charge-full`, `drone-charge-half`, `drone-charge-low`, `drone-check`, `drone-landing`, `drone-refresh`, `drone-take-off`, `drone-xmark`, `droplet`, `droplet-check`, `droplet-half`, `droplet-snow-flake-in`, `ease-curve-control-points`, `ease-in`, `ease-in-control-point`, `ease-in-out`, `ease-out`, `ease-out-control-point`, `ecology-book`, `edit`, `edit-pencil`, `egg`, `eject`, `electronics-chip`, `electronics-transistor`, `elevator`, `ellipse-3d`, `ellipse-3d-three-points`, `emoji`, `emoji-ball`, `emoji-blink-left`, `emoji-blink-right`, `emoji-look-down`, `emoji-look-left`, `emoji-look-right`, `emoji-look-up`, `emoji-puzzled`, `emoji-quite`, `emoji-really`, `emoji-sad`, `emoji-satisfied`, `emoji-sing-left`, `emoji-sing-left-note`, `emoji-sing-right`, `emoji-sing-right-note`, `emoji-surprise`, `emoji-surprise-alt`, `emoji-talking-angry`, `emoji-talking-happy`, `emoji-think-left`, `emoji-think-right`, `empty-page`, `energy-usage-window`, `enlarge`, `erase`, `ethereum-circle`, `ethereum-rotate-out`, `euro`, `euro-square`, `ev-charge`, `ev-charge-alt`, `ev-plug`, `ev-plug-charging`, `ev-plug-xmark`, `ev-station`, `ev-tag`, `exclude`, `expand`, `expand-lines`, `extrude`, `eye`, `eye-closed`, `f-square`, `face-3d-draft`, `face-id`, `facebook`, `facebook-tag`, `facetime`, `farm`, `fast-arrow-down`, `fast-arrow-down-square`, `fast-arrow-left`, `fast-arrow-left-square`, `fast-arrow-right`, `fast-arrow-right-square`, `fast-arrow-up`, `fast-arrow-up-square`, `fast-down-circle`, `fast-left-circle`, `fast-right-circle`, `fast-up-circle`, `favourite-book`, `favourite-window`, `female`, `figma`, `file-not-found`, `fill-color`, `fillet-3d`, `filter`, `filter-alt`, `filter-list`, `filter-list-circle`, `finder`, `fingerprint`, `fingerprint-check-circle`, `fingerprint-circle`, `fingerprint-lock-circle`, `fingerprint-scan`, `fingerprint-square`, `fingerprint-window`, `fingerprint-xmark-circle`, `fire-flame`, `fish`, `fishing`, `flare`, `flash`, `flash-off`, `flask`, `flip`, `flip-reverse`, `floppy-disk`, `floppy-disk-arrow-in`, `floppy-disk-arrow-out`, `flower`, `fog`, `folder`, `folder-minus`, `folder-plus`, `folder-settings`, `folder-warning`, `font-question`, `football`, `football-ball`, `forward`, `forward-15-seconds`, `forward-message`, `frame`, `frame-alt`, `frame-alt-empty`, `frame-minus-in`, `frame-plus-in`, `frame-select`, `frame-simple`, `frame-tool`, `fridge`, `fx`, `fx-tag`, `gamepad`, `garage`, `gas`, `gas-tank`, `gas-tank-droplet`, `gif-format`, `gift`, `git`, `git-branch`, `git-cherry-pick-commit`, `git-commit`, `git-compare`, `git-fork`, `git-merge`, `git-pull-request`, `git-pull-request-closed`, `github`, `github-circle`, `gitlab-full`, `glass-empty`, `glass-fragile`, `glass-half`, `glass-half-alt`, `glasses`, `globe`, `golf`, `google`, `google-circle`, `google-docs`, `google-drive`, `google-drive-check`, `google-drive-sync`, `google-drive-warning`, `google-home`, `google-one`, `gps`, `graduation-cap`, `graph-down`, `graph-up`, `grid-minus`, `grid-plus`, `grid-xmark`, `group`, `gym`, `h-square`, `half-cookie`, `half-moon`, `hammer`, `hand-brake`, `hand-card`, `hand-cash`, `hand-contactless`, `handbag`, `hard-drive`, `hashtag`, `hat`, `hd`, `hd-display`, `hdr`, `headset`, `headset-bolt`, `headset-help`, `headset-warning`, `health-shield`, `healthcare`, `heart`, `heart-arrow-down`, `heating-square`, `heavy-rain`, `help-circle`, `help-square`, `heptagon`, `hexagon`, `hexagon-dice`, `hexagon-plus`, `historic-shield`, `historic-shield-alt`, `home`, `home-alt`, `home-alt-slim`, `home-alt-slim-horiz`, `home-hospital`, `home-sale`, `home-secure`, `home-shield`, `home-simple`, `home-simple-door`, `home-table`, `home-temperature-in`, `home-temperature-out`, `home-user`, `horiz-distribution-left`, `horiz-distribution-right`, `horizontal-merge`, `horizontal-split`, `hospital`, `hospital-circle`, `hot-air-balloon`, `hourglass`, `house-rooms`, `html5`, `ice-cream`, `iconoir`, `import`, `inclination`, `industry`, `infinite`, `info-circle`, `input-field`, `input-output`, `input-search`, `instagram`, `internet`, `intersect`, `intersect-alt`, `ios-settings`, `ip-address-tag`, `iris-scan`, `italic`, `italic-square`, `jellyfish`, `journal`, `journal-page`, `jpeg-format`, `jpg-format`, `kanban-board`, `key`, `key-back`, `key-command`, `key-minus`, `key-plus`, `key-xmark`, `keyframe`, `keyframe-align-center`, `keyframe-align-horizontal`, `keyframe-align-vertical`, `keyframe-minus`, `keyframe-minus-in`, `keyframe-plus`, `keyframe-plus-in`, `keyframe-position`, `keyframes`, `keyframes-couple`, `keyframes-minus`, `keyframes-plus`, `label`, `lamp`, `language`, `laptop`, `laptop-charging`, `laptop-dev-mode`, `laptop-fix`, `laptop-warning`, `layout-left`, `layout-right`, `leaderboard`, `leaderboard-star`, `leaf`, `learning`, `lens`, `lens-plus`, `lifebelt`, `light-bulb`, `light-bulb-off`, `light-bulb-on`, `line-space`, `linear`, `link`, `link-slash`, `link-xmark`, `linkedin`, `linux`, `list`, `list-select`, `litecoin-circle`, `litecoin-rotate-out`, `lock`, `lock-slash`, `lock-square`, `loft-3d`, `log-in`, `log-no-access`, `log-out`, `long-arrow-down-left`, `long-arrow-down-right`, `long-arrow-left-down`, `long-arrow-left-up`, `long-arrow-right-down`, `long-arrow-right-up`, `long-arrow-up-left`, `long-arrow-up-right`, `lot-of-cash`, `lullaby`, `mac-control-key`, `mac-dock`, `mac-option-key`, `mac-os-window`, `magic-wand`, `magnet`, `magnet-energy`, `mail`, `mail-in`, `mail-open`, `mail-out`, `male`, `map`, `map-pin`, `map-pin-minus`, `map-pin-plus`, `map-pin-xmark`, `map-xmark`, `maps-arrow`, `maps-arrow-diagonal`, `maps-arrow-xmark`, `maps-go-straight`, `maps-turn-back`, `maps-turn-left`, `maps-turn-right`, `mask-square`, `mastercard-card`, `mastodon`, `math-book`, `maximize`, `medal`, `medal-1st`, `media-image`, `media-image-folder`, `media-image-list`, `media-image-plus`, `media-image-xmark`, `media-video`, `media-video-folder`, `media-video-list`, `media-video-plus`, `media-video-xmark`, `medium`, `megaphone`, `menu`, `menu-scale`, `message`, `message-alert`, `message-text`, `meter-arrow-down-right`, `metro`, `microphone`, `microphone-check`, `microphone-minus`, `microphone-mute`, `microphone-plus`, `microphone-speaking`, `microphone-warning`, `microscope`, `minus`, `minus-circle`, `minus-hexagon`, `minus-square`, `minus-square-dashed`, `mirror`, `mobile-dev-mode`, `mobile-fingerprint`, `mobile-voice`, `modern-tv`, `modern-tv-4k`, `money-square`, `moon-sat`, `more-horiz`, `more-horiz-circle`, `more-vert`, `more-vert-circle`, `motorcycle`, `mouse-button-left`, `mouse-button-right`, `mouse-scroll-wheel`, `movie`, `mpeg-format`, `multi-bubble`, `multi-mac-os-window`, `multi-window`, `multiple-pages`, `multiple-pages-empty`, `multiple-pages-minus`, `multiple-pages-plus`, `multiple-pages-xmark`, `music-double-note`, `music-double-note-plus`, `music-note`, `music-note-plus`, `n-square`, `nav-arrow-down`, `nav-arrow-left`, `nav-arrow-right`, `nav-arrow-up`, `navigator`, `navigator-alt`, `neighbourhood`, `network`, `network-left`, `network-reverse`, `network-right`, `new-tab`, `nintendo-switch`, `no-smoking-circle`, `non-binary`, `notes`, `npm`, `npm-square`, `number-0-square`, `number-1-square`, `number-2-square`, `number-3-square`, `number-4-square`, `number-5-square`, `number-6-square`, `number-7-square`, `number-8-square`, `number-9-square`, `numbered-list-left`, `numbered-list-right`, `o-square`, `octagon`, `off-tag`, `oil-industry`, `okrs`, `on-tag`, `one-finger-select-hand-gesture`, `one-point-circle`, `open-book`, `open-in-browser`, `open-in-window`, `open-new-window`, `open-select-hand-gesture`, `open-vpn`, `orange-half`, `orange-slice`, `orange-slice-alt`, `organic-food`, `organic-food-square`, `orthogonal-view`, `package`, `package-lock`, `packages`, `pacman`, `page`, `page-down`, `page-edit`, `page-flip`, `page-left`, `page-minus`, `page-minus-in`, `page-plus`, `page-plus-in`, `page-right`, `page-search`, `page-star`, `page-up`, `palette`, `panorama-enlarge`, `panorama-reduce`, `pants`, `pants-pockets`, `parking`, `password-check`, `password-cursor`, `password-xmark`, `paste-clipboard`, `path-arrow`, `pause`, `pause-window`, `paypal`, `pc-check`, `pc-firewall`, `pc-mouse`, `pc-no-entry`, `pc-warning`, `peace-hand`, `peerlist`, `pen-connect-bluetooth`, `pen-connect-wifi`, `pen-tablet`, `pen-tablet-connect-usb`, `pen-tablet-connect-wifi`, `pentagon`, `people-tag`, `percent-rotate-out`, `percentage`, `percentage-circle`, `percentage-square`, `perspective-view`, `pharmacy-cross-circle`, `pharmacy-cross-tag`, `phone`, `phone-disabled`, `phone-income`, `phone-minus`, `phone-outcome`, `phone-paused`, `phone-plus`, `phone-xmark`, `piggy-bank`, `pillow`, `pin`, `pin-slash`, `pine-tree`, `pinterest`, `pipe-3d`, `pizza-slice`, `planet`, `planet-alt`, `planet-sat`, `planimetry`, `play`, `playlist`, `playlist-play`, `playlist-plus`, `playstation-gamepad`, `plug-type-a`, `plug-type-c`, `plug-type-g`, `plug-type-l`, `plus`, `plus-circle`, `plus-square`, `plus-square-dashed`, `png-format`, `pocket`, `podcast`, `pokeball`, `polar-sh`, `position`, `position-align`, `post`, `potion`, `pound`, `precision-tool`, `presentation`, `printer`, `printing-page`, `priority-down`, `priority-high`, `priority-medium`, `priority-up`, `privacy-policy`, `private-wifi`, `profile-circle`, `prohibition`, `project-curve-3d`, `puzzle`, `qr-code`, `question-mark`, `quote`, `quote-message`, `radiation`, `radius`, `rain`, `raw-format`, `receive-dollars`, `receive-euros`, `receive-pounds`, `receive-yens`, `redo`, `redo-action`, `redo-circle`, `reduce`, `refresh`, `refresh-circle`, `refresh-double`, `reload-window`, `reminder-hand-gesture`, `repeat`, `repeat-once`, `reply`, `reply-to-message`, `report-columns`, `reports`, `repository`, `restart`, `rewind`, `rhombus`, `rhombus-arrow-right`, `rings`, `rocket`, `rook`, `rotate-camera-left`, `rotate-camera-right`, `round-flask`, `rounded-mirror`, `rss-feed`, `rss-feed-tag`, `rubik-cube`, `ruler`, `ruler-arrows`, `ruler-combine`, `ruler-minus`, `ruler-plus`, `running`, `safari`, `safe`, `safe-arrow-left`, `safe-arrow-right`, `safe-open`, `sandals`, `scale-frame-enlarge`, `scale-frame-reduce`, `scan-barcode`, `scan-qr-code`, `scanning`, `scarf`, `scissor`, `scissor-alt`, `screenshot`, `sea-and-sun`, `sea-waves`, `search`, `search-engine`, `search-window`, `secure-window`, `security-pass`, `select-edge-3d`, `select-face-3d`, `select-point-3d`, `select-window`, `selective-tool`, `send`, `send-diagonal`, `send-dollars`, `send-euros`, `send-mail`, `send-pounds`, `send-yens`, `server`, `server-connection`, `settings`, `settings-profiles`, `share-android`, `share-ios`, `shield`, `shield-alert`, `shield-alt`, `shield-broken`, `shield-check`, `shield-download`, `shield-eye`, `shield-loading`, `shield-minus`, `shield-plus-in`, `shield-question`, `shield-search`, `shield-upload`, `shield-xmark`, `shirt`, `shirt-tank-top`, `shop`, `shop-four-tiles`, `shop-four-tiles-window`, `shop-window`, `shopping-bag`, `shopping-bag-arrow-down`, `shopping-bag-arrow-up`, `shopping-bag-check`, `shopping-bag-minus`, `shopping-bag-plus`, `shopping-bag-pocket`, `shopping-bag-warning`, `shopping-code`, `shopping-code-check`, `shopping-code-xmark`, `short-pants`, `short-pants-pockets`, `shortcut-square`, `shuffle`, `sidebar-collapse`, `sidebar-expand`, `sigma-function`, `simple-cart`, `sine-wave`, `single-tap-gesture`, `skateboard`, `skateboarding`, `skip-next`, `skip-prev`, `slash`, `slash-square`, `sleeper-chair`, `slips`, `small-lamp`, `small-lamp-alt`, `smartphone-device`, `smoking`, `snapchat`, `snow`, `snow-flake`, `soap`, `soccer-ball`, `sofa`, `soil`, `soil-alt`, `sort`, `sort-down`, `sort-up`, `sound-high`, `sound-low`, `sound-min`, `sound-off`, `spades`, `spark`, `sparks`, `sphere`, `spiral`, `split-area`, `split-square-dashed`, `spock-hand-gesture`, `spotify`, `square`, `square-3d-corner-to-corner`, `square-3d-from-center`, `square-3d-three-points`, `square-cursor`, `square-dashed`, `square-wave`, `stackoverflow`, `star`, `star-dashed`, `star-half-dashed`, `stat-down`, `stat-up`, `stats-down-square`, `stats-report`, `stats-up-square`, `strategy`, `stretching`, `strikethrough`, `stroller`, `style-border`, `submit-document`, `substract`, `suggestion`, `suitcase`, `sun-light`, `svg-format`, `sweep-3d`, `swimming`, `swipe-down-gesture`, `swipe-left-gesture`, `swipe-right-gesture`, `swipe-two-fingers-down-gesture`, `swipe-two-fingers-left-gesture`, `swipe-two-fingers-right-gesture`, `swipe-two-fingers-up-gesture`, `swipe-up-gesture`, `switch-off`, `switch-on`, `system-restart`, `system-shut`, `table`, `table-2-columns`, `table-rows`, `task-list`, `telegram`, `telegram-circle`, `temperature-down`, `temperature-high`, `temperature-low`, `temperature-up`, `tennis-ball`, `tennis-ball-alt`, `terminal`, `terminal-tag`, `test-tube`, `text`, `text-arrows-up-down`, `text-box`, `text-magnifying-glass`, `text-size`, `text-square`, `threads`, `three-points-circle`, `three-stars`, `thumbs-down`, `thumbs-up`, `thunderstorm`, `tif-format`, `tiff-format`, `tiktok`, `time-zone`, `timer`, `timer-off`, `tools`, `tournament`, `tower`, `tower-check`, `tower-no-access`, `tower-warning`, `trademark`, `train`, `tram`, `transition-down`, `transition-left`, `transition-right`, `transition-up`, `translate`, `trash`, `treadmill`, `tree`, `trekking`, `trello`, `triangle`, `triangle-flag`, `triangle-flag-circle`, `triangle-flag-two-stripes`, `trophy`, `truck`, `truck-green`, `truck-length`, `tunnel`, `tv`, `tv-fix`, `tv-warning`, `twitter`, `two-points-circle`, `two-seater-sofa`, `type`, `u-turn-arrow-left`, `u-turn-arrow-right`, `umbrella`, `underline`, `underline-square`, `undo`, `undo-action`, `undo-circle`, `union`, `union-alt`, `union-horiz-alt`, `unity`, `unity-5`, `unjoin-3d`, `upload`, `upload-data-window`, `upload-square`, `usb`, `user`, `user-badge-check`, `user-bag`, `user-cart`, `user-circle`, `user-crown`, `user-love`, `user-plus`, `user-scan`, `user-square`, `user-star`, `user-xmark`, `vegan`, `vegan-circle`, `vegan-square`, `vehicle-green`, `vertical-merge`, `vertical-split`, `vials`, `video-camera`, `video-camera-off`, `video-projector`, `view-360`, `view-columns-2`, `view-columns-3`, `view-grid`, `view-structure-down`, `view-structure-up`, `voice`, `voice-check`, `voice-circle`, `voice-lock-circle`, `voice-scan`, `voice-square`, `voice-xmark`, `vr-tag`, `vue-js`, `waist`, `walking`, `wallet`, `warning-circle`, `warning-hexagon`, `warning-square`, `warning-triangle`, `warning-window`, `wash`, `washing-machine`, `watering-soil`, `web-window`, `web-window-energy-consumption`, `web-window-xmark`, `webp-format`, `weight`, `weight-alt`, `whatsapp`, `white-flag`, `wifi`, `wifi-off`, `wifi-signal-none`, `wifi-tag`, `wifi-warning`, `wifi-xmark`, `wind`, `window-check`, `window-lock`, `window-no-access`, `window-tabs`, `window-xmark`, `windows`, `wolf`, `wrap-text`, `wrench`, `wristwatch`, `www`, `x`, `x-square`, `xbox-a`, `xbox-b`, `xbox-x`, `xbox-y`, `xmark`, `xmark-circle`, `xmark-square`, `xray-view`, `y-square`, `yelp`, `yen`, `yen-square`, `yoga`, `youtube`, `z-square`, `zoom-in`, `zoom-out`
+
+For the complete visual reference, visit [iconoir.com](https://iconoir.com/).

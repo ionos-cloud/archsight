@@ -1,0 +1,55 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- annotations = instance.annotations
+- total = annotations['repository/artifacts/total']&.to_i
+- active = annotations['repository/artifacts/active']&.to_i || 0
+- abandoned = annotations['repository/artifacts/abandoned']&.to_i || 0
+- archived = annotations['repository/artifacts/archived']&.to_i || 0
+- high_bus_factor = annotations['repository/artifacts/highBusFactor']&.to_i || 0
+- if total && total > 0
+  - active_healthy = active - high_bus_factor
+  - active_healthy_pct = (active_healthy.to_f / total * 100).round(1)
+  - high_bus_factor_pct = (high_bus_factor.to_f / total * 100).round(1)
+  - archived_pct = (archived.to_f / total * 100).round(1)
+  - abandoned_pct = (abandoned.to_f / total * 100).round(1)
+  - other = total - active - abandoned - archived
+  - other_pct = (other.to_f / total * 100).round(1)
+  %tr
+    %th{scope: 'row'} Repositories
+    %td
+      .repository-distribution
+        .repository-total
+          %span.repository-count= total
+          %span.repository-label repositories
+        .repository-bar
+          - if active_healthy > 0
+            .repository-bar-segment.status-active{style: "width: #{active_healthy_pct}%", title: "Active (healthy): #{active_healthy} (#{active_healthy_pct}%)"}
+          - if high_bus_factor > 0
+            .repository-bar-segment.status-high-bus-factor{style: "width: #{high_bus_factor_pct}%", title: "Active (high bus factor): #{high_bus_factor} (#{high_bus_factor_pct}%)"}
+          - if archived > 0
+            .repository-bar-segment.status-archived{style: "width: #{archived_pct}%", title: "Archived: #{archived} (#{archived_pct}%)"}
+          - if other > 0
+            .repository-bar-segment.status-other{style: "width: #{other_pct}%", title: "Other: #{other} (#{other_pct}%)"}
+          - if abandoned > 0
+            .repository-bar-segment.status-abandoned{style: "width: #{abandoned_pct}%", title: "Abandoned: #{abandoned} (#{abandoned_pct}%)"}
+        .repository-legend
+          - if active_healthy > 0
+            .repository-legend-item
+              .repository-legend-dot.status-active
+              %span= "#{active_healthy} active"
+          - if high_bus_factor > 0
+            .repository-legend-item
+              .repository-legend-dot.status-high-bus-factor
+              %span= "#{high_bus_factor} high bus factor"
+          - if archived > 0
+            .repository-legend-item
+              .repository-legend-dot.status-archived
+              %span= "#{archived} archived"
+          - if other.positive?
+            .repository-legend-item
+              .repository-legend-dot.status-other
+              %span= "#{other} other"
+          - if abandoned.positive?
+            .repository-legend-item
+              .repository-legend-dot.status-abandoned
+              %span= "#{abandoned} abandoned"

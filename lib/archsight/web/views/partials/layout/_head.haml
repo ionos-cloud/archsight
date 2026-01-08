@@ -1,0 +1,24 @@
+%head
+  %meta{content: 'text/html; charset=UTF-8', 'http-equiv' => 'Content-Type'}/
+  %meta{charset: 'UTF-8'}/
+  %meta{content: 'width=device-width, initial-scale=1', name: 'viewport'}/
+  %title IONOS Architecture
+  %link{href: asset_path('/css/pico.min.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/base.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/layout.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/instance.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/artifact.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/iconoir.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/highlight.min.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/mermaid-layers.css'), rel: 'stylesheet'}/
+  %link{href: asset_path('/css/graph.css'), rel: 'stylesheet'}/
+  %script{src: asset_path('/js/htmx.min.js')}
+  %script{src: asset_path('/js/mermaid.min.js')}
+  %script{src: asset_path('/js/svg-pan-zoom.min.js')}
+  %script{src: asset_path('/js/svg-zoom-controls.js')}
+  %script{src: asset_path('/js/graph-zoom.js')}
+  %script{src: asset_path("/js/mermaid-init.js")}
+  %script{ src: asset_path("/js/highlight.min.js") }
+  %script{ src: asset_path("/js/sparkline.js") }
+  :javascript
+    hljs.highlightAll();

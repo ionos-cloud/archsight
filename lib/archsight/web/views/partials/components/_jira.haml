@@ -1,0 +1,18 @@
+-# Jira component - compact for tables
+- annotations = instance.annotations
+- jira_key = annotations['team/jira']
+- jira_url = annotations['jira/projectUrl']
+- jira_created = annotations['jira/issues/created']
+- jira_resolved = annotations['jira/issues/resolved']
+- if jira_key
+  .component-jira
+    %a.badge.badge-sm{href: jira_url, target: '_blank'}= jira_key
+    - if jira_created && jira_resolved
+      - created_avg = jira_created.split(',').map(&:to_i).sum / 6.0
+      - resolved_avg = jira_resolved.split(',').map(&:to_i).sum / 6.0
+      - backlog_change = (created_avg - resolved_avg).round(1)
+      - trend_class = backlog_change < -1 ? 'positive' : (backlog_change > 1 ? 'negative' : 'neutral')
+      .component-trend{class: "trend-#{trend_class}", title: "#{created_avg.round(1)} created/mo, #{resolved_avg.round(1)} resolved/mo"}
+        = "#{"+" if backlog_change.positive?}#{backlog_change}"
+- else
+  %span.empty-value —

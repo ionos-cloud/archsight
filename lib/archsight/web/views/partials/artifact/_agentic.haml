@@ -1,0 +1,25 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- tools = (instance.annotations['agentic/tools'] || 'none').split(',').map(&:strip)
+
+- if tools != ['none']
+  %tr
+    %th{scope: 'row', colspan: 2}
+      %i.iconoir-cpu
+      AI Coding Assistants
+  %tr
+    %td.info-section-cell{colspan: 2}
+      .agentic-tools
+        - all_tools = ['claude', 'cursor', 'aider', 'github-copilot', 'agents']
+        - tool_config = { 'claude' => { icon: 'iconoir-brain', name: 'Claude', description: 'Anthropic Claude API' }, 'cursor' => { icon: 'iconoir-edit-pencil', name: 'Cursor', description: 'AI code editor' }, 'aider' => { icon: 'iconoir-terminal', name: 'Aider', description: 'CLI pair programmer' }, 'github-copilot' => { icon: 'iconoir-github', name: 'GitHub Copilot', description: 'GitHub AI assistant' }, 'agents' => { icon: 'iconoir-cpu-warning', name: 'Custom Agents', description: 'Custom AI agents' } }
+        
+        - all_tools.each do |tool|
+          - is_implemented = tools.include?(tool)
+          - config = tool_config[tool]
+          %a.tool-item{**filter_link_attrs('agentic/tools', tool), class: is_implemented ? '' : 'not-implemented'}
+            .tool-item-header
+              %input{type: "checkbox", checked: is_implemented, disabled: true}
+              %i{ class: [config[:icon], is_implemented ? "implemented" : "not-implemented"].join(" ") }
+              %strong= config[:name]
+            .tool-item-description
+              = config[:description]

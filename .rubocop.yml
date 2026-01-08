@@ -1,8 +1,184 @@
+plugins:
+  - rubocop-haml
+  - rubocop-minitest
+  - rubocop-rake
+
 AllCops:
   TargetRubyVersion: 3.2
+  NewCops: enable
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
+  Exclude:
+    - "**/*.haml"
 
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: double_quotes
+  Exclude:
+    - "**/*.haml"
+
+# Documentation not required for internal classes
+Style/Documentation:
+  Enabled: false
+
+# Allow compact class style for resources/annotations/mcp/query/web (single-line class definition)
+Style/ClassAndModuleChildren:
+  Exclude:
+    - "lib/archsight/resources.rb"
+    - "lib/archsight/resources/*.rb"
+    - "lib/archsight/annotations/*.rb"
+    - "lib/archsight/mcp/*.rb"
+    - "lib/archsight/query.rb"
+    - "lib/archsight/query/*.rb"
+    - "lib/archsight/web/*.rb"
+
+# Allow optional boolean parameters (common pattern)
+Style/OptionalBooleanParameter:
+  Enabled: false
+
+# Allow has_* predicate naming (common Ruby convention)
+Naming/PredicatePrefix:
+  Enabled: false
+
+Naming/PredicateMethod:
+  Enabled: false
+
+# Format string tokens style is a matter of preference
+Style/FormatStringToken:
+  Enabled: false
+
+# Metrics - adjusted limits for this project (parser/evaluator complexity)
+Metrics/MethodLength:
+  Max: 50
+  Exclude:
+    - "test/**/*"
+
+Metrics/AbcSize:
+  Max: 55
+  Exclude:
+    - "test/**/*"
+
+Metrics/CyclomaticComplexity:
+  Max: 20
+  Exclude:
+    - "test/**/*"
+
+Metrics/PerceivedComplexity:
+  Max: 20
+  Exclude:
+    - "test/**/*"
+
+Metrics/ClassLength:
+  Max: 550
+  Exclude:
+    - "test/**/*"
+
+Metrics/ModuleLength:
+  Max: 200
+
+Metrics/BlockLength:
+  Max: 70
+  Exclude:
+    - "test/**/*"
+    - "*.gemspec"
+
+Metrics/ParameterLists:
+  Max: 10
+  Exclude:
+    - "test/**/*"
+
+# Allow longer lines for long string literals
+Layout/LineLength:
+  Max: 220
+
+# Minitest configuration
+Minitest/MultipleAssertions:
+  Max: 20
+
+Minitest/SkipWithoutReason:
+  Enabled: false
+
+# Gemspec - development dependencies in gemspec is fine for gems
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+# Some classes intentionally don't call super
+Lint/MissingSuper:
+  Enabled: false
+
+# Allow debugger for development (should be caught in CI)
+Lint/Debugger:
+  Enabled: false
+
+# Duplicate branches can be intentional for clarity
+Lint/DuplicateBranch:
+  Enabled: false
+
+# Float comparison is sometimes intentional
+Lint/FloatComparison:
+  Enabled: false
+
+# Empty class can be a placeholder
+Lint/EmptyClass:
+  Enabled: false
+
+# Underscore prefix warning - sometimes needed for block params
+Lint/UnderscorePrefixedVariableName:
+  Enabled: false
+
+# Hash like case is sometimes clearer
+Style/HashLikeCase:
+  Enabled: false
+
+# Comparable clamp - allow existing code
+Style/ComparableClamp:
+  Enabled: false
+
+# HAML files - use more lenient rules (compact syntax is common in HAML)
+Layout/SpaceInsideHashLiteralBraces:
+  Exclude:
+    - "**/*.haml"
+
+Style/QuotedSymbols:
+  Exclude:
+    - "**/*.haml"
+
+Style/DoubleNegation:
+  Exclude:
+    - "**/*.haml"
+
+Layout/SpaceAfterColon:
+  Exclude:
+    - "**/*.haml"
+
+Style/WordArray:
+  Exclude:
+    - "**/*.haml"
+
+Style/RegexpLiteral:
+  Exclude:
+    - "**/*.haml"
+
+Style/NumericPredicate:
+  Exclude:
+    - "**/*.haml"
+
+Style/ClassEqualityComparison:
+  Exclude:
+    - "**/*.haml"
+
+Style/SlicingWithRange:
+  Exclude:
+    - "**/*.haml"
+
+Style/SelfAssignment:
+  Exclude:
+    - "**/*.haml"
+
+Lint/RedundantSafeNavigation:
+  Exclude:
+    - "**/*.haml"
+
+Style/EmptyStringInsideInterpolation:
+  Exclude:
+    - "**/*.haml"

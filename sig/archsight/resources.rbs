@@ -1,0 +1,65 @@
+module Archsight
+  module Resources
+    @resource_classes: Hash[String, singleton(Base)]
+
+    def self.register: (untyped) -> void
+    def self.resource_classes: () -> Hash[String, singleton(Base)]
+    def self.[]: (String | Symbol) -> singleton(Base)?
+    def self.each: () { (String) -> void } -> void
+    def self.const_get: (String | Symbol) -> singleton(Base)
+
+    class Base
+      attr_accessor raw: Hash[String, untyped]
+      attr_accessor path_ref: LineReference
+      attr_accessor references: Array[Hash[Symbol, untyped]]
+
+      @computed_values: untyped
+
+      def self.inherited: (Class) -> void
+      def self.relation: (Symbol, Symbol, String) -> void
+      def self.relations: () -> Array[[Symbol, Symbol, String]]
+      def self.annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?list: bool) -> void
+      def self.annotations: () -> Array[Annotations::Annotation]
+      def self.computed_annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?list: bool) { () -> untyped } -> void
+      def self.computed_annotations: () -> Array[Annotations::Computed]
+      def self.annotation_matching: (String) -> Annotations::Annotation?
+      def self.matches_annotation_pattern?: (String) -> bool
+      def self.filterable_annotations: () -> Array[Annotations::Annotation]
+      def self.list_annotations: () -> Array[Annotations::Annotation]
+      def self.annotation_title: (String) -> String
+      def self.annotation_format: (String) -> Symbol?
+      def self.annotation_enum: (String) -> Array[String]?
+      def self.icon: (?String?) -> String
+      def self.layer: (?String?) -> String
+      def self.description: (?String?) -> String?
+      def self.include_annotations: (*Symbol) -> void
+      def self.discovered_annotations: () -> untyped
+
+      def initialize: (Hash[String, untyped], LineReference) -> void
+      def klass: () -> String
+      def kind: () -> String?
+      def name: () -> String?
+      def annotations: () -> Hash[String, untyped]
+      def set_computed_annotation: (String, untyped) -> void
+      def computed_annotation_value: (String) -> untyped
+      def metadata: () -> Hash[String, untyped]
+      def spec: () -> Hash[String, untyped]
+      def to_s: () -> String
+      def abandoned?: () -> bool
+      def has_relations?: () -> bool
+      def verb_allowed?: (Symbol | String) -> bool
+      def verb_kind_allowed?: (Symbol | String, Symbol | String) -> bool
+      def relations: (Symbol | String, Symbol | String) -> Array[String | Base]
+      def set_relations: (Symbol | String, Symbol | String, Array[Base]) -> void
+      def referenced_by: (Base, ?(Symbol | String | nil)) -> void
+      def references_grouped: () -> Hash[String, Hash[untyped, Array[Base]]]
+      def relations_grouped: () -> Hash[String, Hash[String, Array[Base]]]
+      def verify!: () -> void
+      def merge!: (Base) -> Hash[String, untyped]
+
+      private
+
+      def raise: (String) -> bot
+    end
+  end
+end

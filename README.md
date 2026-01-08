@@ -1,43 +1,170 @@
 # Archsight
 
-TODO: Delete this and the text below, and describe your gem
+[![CI](https://github.com/ionos-cloud/archsight/actions/workflows/ci.yml/badge.svg)](https://github.com/ionos-cloud/archsight/actions/workflows/ci.yml)
+[![Gem Version](https://badge.fury.io/rb/archsight.svg)](https://badge.fury.io/rb/archsight)
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/archsight`. To experiment with that code, run `bin/console` for an interactive prompt.
+*Bringing enterprise architecture into focus.*
+
+Ruby gem for visualizing and managing enterprise architecture documentation using YAML resources with GraphViz visualization. Inspired by ArchiMate 3.2.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+Add to your Gemfile:
 
-Install the gem and add to the application's Gemfile by executing:
-
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+```ruby
+gem 'archsight'
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+Or install directly:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+gem install archsight
 ```
 
-## Usage
+## Quick Start
 
-TODO: Write usage instructions here
+### Option 1: CLI
 
-## Development
+```bash
+# Start web server (looks for resources in current directory)
+archsight web
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+# Start with custom resources path
+archsight web --resources /path/to/resources
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+# Or use environment variable
+ARCHSIGHT_RESOURCES_DIR=/path/to/resources archsight web
+```
+
+Access at: <http://localhost:4567>
+
+### Option 2: Docker
+
+```bash
+docker build -t archsight .
+docker run -p 4567:4567 -v "/path/to/resources:/resources" archsight
+```
+
+Access at: <http://localhost:4567>
+
+**Notes:**
+
+- The volume mount `-v "/path/to/resources:/resources"` mounts your resources directory
+- Resources are accessible at `/resources` inside the container
+- Live YAML updates are reflected without rebuilding
+- Health check verifies the service is running
+
+## CLI Commands
+
+```bash
+archsight web [--resources PATH] [--port PORT]  # Start web server
+archsight lint [--resources PATH]               # Validate YAML and relations
+archsight template KIND                         # Generate YAML template for a resource type
+archsight console [--resources PATH]            # Interactive Ruby console
+archsight version                               # Show version
+```
+
+## Features
+
+### MCP Server
+
+The tool includes an MCP (Model Context Protocol) server that enables AI assistants to query and analyze the architecture data programmatically.
+
+**Start the server:**
+
+```bash
+archsight web
+```
+
+**Add to Claude Code:**
+
+```bash
+claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
+```
+
+**Available tools:**
+
+- `query` - Search and filter resources using the query language
+- `analyze_resource` - Get detailed resource information and impact analysis
+- `resource_doc` - Get documentation for resource kinds
+
+### Web Interface
+
+**Browse & Search:**
+
+- Browse resources by type (Products, Services, Components, Requirements, etc.)
+- Search by name or tag using the [query language](lib/archsight/web/doc/search.md)
+- Filter by annotations (quality attributes, status, frameworks)
+
+**Visualization:**
+
+- Interactive GraphViz diagrams showing relationships
+- Zoom/pan controls for large diagrams
+- Dark mode support
+- Layer-based color scheme (Business, Application, Technology, Data)
+
+### Validation
+
+Validate YAML syntax and verify all relationship references:
+
+```bash
+archsight lint
+```
+
+**Checks:**
+
+- YAML syntax correctness
+- Resource kind definitions exist
+- All relation references point to existing resources
+- Prevents broken links between resources
+
+## Documentation
+
+Detailed documentation is available in the web interface under the Help menu:
+
+| Guide | Description |
+|-------|-------------|
+| [Modeling Guide](lib/archsight/web/doc/modeling.md) | How to model architecture using resource types and relations |
+| [Query Language](lib/archsight/web/doc/search.md) | Full query syntax reference for searching resources |
+| [Computed Annotations](lib/archsight/web/doc/computed_annotations.md) | Aggregating values across relations |
+| [ArchiMate Reference](lib/archsight/web/doc/archimate.md) | ArchiMate concepts and mapping |
+| [TOGAF Reference](lib/archsight/web/doc/togaf.md) | TOGAF alignment and concepts |
+
+## Architecture
+
+### Technology Stack
+
+- **Web Framework**: Sinatra
+- **Templating**: Haml
+- **Styling**: Pico CSS v2.x
+- **Interactivity**: HTMX
+- **Icons**: Iconoir (1,671+ icons)
+- **Visualization**: GraphViz (@hpcc-js/wasm for client-side SVG)
+
+### Directory Structure
+
+```text
+archsight/
+├── exe/archsight              # CLI executable
+├── lib/
+│   ├── archsight.rb           # Entry point
+│   └── archsight/
+│       ├── cli.rb             # Thor CLI
+│       ├── configuration.rb   # Resources path config
+│       ├── database.rb        # YAML loader and validator
+│       ├── query/             # Query language (lexer, parser, evaluator)
+│       ├── resources/         # Resource types (20+)
+│       ├── annotations/       # Annotation modules
+│       ├── mcp/               # MCP server tools
+│       └── web/               # Sinatra app, views, assets
+│           └── doc/           # Documentation (markdown)
+└── test/                      # Test suite
+```
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/archsight. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/archsight/blob/main/CODE_OF_CONDUCT.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code style guidelines, and pull request process.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Archsight project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/archsight/blob/main/CODE_OF_CONDUCT.md).
+Apache 2.0 License. See LICENSE.txt for details.

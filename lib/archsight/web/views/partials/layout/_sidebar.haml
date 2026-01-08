@@ -1,0 +1,27 @@
+%aside.sidebar
+  .sidebar-section
+    %h4.sidebar-heading
+      %i.iconoir-folder
+      Kinds
+    %nav.kind-filter
+      %ul
+        - Archsight::Resources.each do |item|
+          %li
+            %a{href: "/kinds/#{item}", 'aria-current': (item.to_s == @kind ? "page" : nil)}
+              %span.kind-name= item
+              %span.kind-count= db.instances_by_kind(item).each_key.size
+  - if @kind
+    - filters = db.filters_for_kind(@kind)
+    - if filters.any?
+      .sidebar-section
+        %h4.sidebar-heading
+          %i.iconoir-filter
+          Filters
+        %nav.annotation-filter
+          - filters.each do |annotation, values|
+            .filter-group
+              .filter-label{title: annotation.description}= annotation.title
+              .filter-chips
+                - values.each do |value|
+                  %a.filter-chip{ **filter_link_attrs(annotation.key, value, "==", @kind) }
+                    = value

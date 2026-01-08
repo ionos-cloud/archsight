@@ -1,0 +1,40 @@
+.content
+  - if @doc_content
+    %article
+      != @doc_content
+  - elsif @instances
+    != haml :search
+  - elsif @kind && @instance
+    - if !Archsight::Resources[@kind]
+      %article
+        %header
+          %h2 Kind Not Found
+        %p
+          Kind
+          %strong= @kind
+          does not exist.
+    - elsif @kind == "View"
+      != haml :'partials/instance/_view_detail'
+    - else
+      != haml :'partials/instance/_detail'
+  - elsif @kind && !@instance
+    - if !Archsight::Resources[@kind]
+      %article
+        %header
+          %h2 Kind Not Found
+        %p
+          Kind
+          %strong= @kind
+          does not exist.
+    - else
+      - kind_snake = @kind.gsub(/([a-z])([A-Z])/, '\1_\2').downcase
+      %article
+        %header
+          %h2
+            %i{class: "iconoir-#{Archsight::Resources[@kind].icon} icon-#{Archsight::Resources[@kind].layer}"}
+            = @kind
+          %a.kind-help{href: "/doc/resources/#{kind_snake}", title: "Documentation for #{@kind}"}
+            %i.iconoir-help-circle
+        != haml :"partials/instance/_list", locals: { instances: db.instances_by_kind(@kind).values.sort_by(&:name), omit_kind: true }
+  - elsif !@kind
+    != haml :"partials/instance/_graph"

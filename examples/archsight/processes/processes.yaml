@@ -1,0 +1,19 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessProcess
+metadata:
+  name: Process:ArchitectureReview
+  annotations:
+    architecture/description: |
+      Process for reviewing and validating architecture documentation
+      using the archsight linting and query capabilities.
+    architecture/tags: review,validation,process
+spec:
+  servedBy:
+    applicationServices:
+      - Archsight:CLI
+  performedBy:
+    businessActors:
+      - Archsight:Maintainers
+  realizes:
+    businessRequirements:
+      - Requirement:QueryLanguage

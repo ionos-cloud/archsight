@@ -1,0 +1,33 @@
+apiVersion: architecture/v1alpha1
+kind: MotivationGoal
+metadata:
+  name: Goal:SimplifyArchitecture
+  annotations:
+    architecture/description: |
+      Make enterprise architecture documentation simple and accessible,
+      reducing the barrier to maintaining up-to-date architecture records.
+    architecture/tags: simplicity,documentation
+spec:
+  realizes:
+    outcomes:
+      - Outcome:DeveloperProductivity
+      - Outcome:ArchitectureVisibility
+    businessRequirements:
+      - Requirement:QueryLanguage
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationGoal
+metadata:
+  name: Goal:EnableAIIntegration
+  annotations:
+    architecture/description: |
+      Enable AI assistants to query and understand architecture through
+      the MCP protocol, making architecture knowledge accessible to AI tools.
+    architecture/tags: ai,mcp,integration
+spec:
+  realizes:
+    outcomes:
+      - Outcome:DeveloperProductivity
+  refinedBy:
+    goals:
+      - Goal:SimplifyArchitecture

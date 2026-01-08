@@ -1,0 +1,37 @@
+-# Activity component - commits sparkline + trend (last 12 months)
+- annotations = instance.annotations
+- commits = annotations['activity/commits']
+- status = annotations['activity/status']
+- bus_factor = annotations['activity/busFactor']
+- contributors_6m = annotations['activity/contributors/6m']
+- if commits || status
+  - commit_values = commits ? commits.split(',').map(&:to_i).last(12) : []
+  - total_commits = commit_values.sum
+  -# Calculate trend: compare last 3 months vs previous 3 months
+  - recent_3m = commit_values.last(3).sum
+  - previous_3m = commit_values[-6, 3]&.sum || 0
+  - if previous_3m > 0
+    - trend_pct = ((recent_3m - previous_3m).to_f / previous_3m * 100).round
+  - else
+    - trend_pct = recent_3m > 0 ? 100 : 0
+  - trend_class = trend_pct > 10 ? 'positive' : (trend_pct < -10 ? 'negative' : 'neutral')
+  - tooltip_parts = []
+  - tooltip_parts << "#{total_commits} commits (12m)" if total_commits > 0
+  - tooltip_parts << "trend: #{recent_3m} vs #{previous_3m} (3m)"
+  - tooltip_parts << "#{contributors_6m} contributors" if contributors_6m
+  - tooltip_parts << "status: #{status}" if status
+  - tooltip_parts << "bus factor: #{bus_factor}" if bus_factor
+  - tooltip = tooltip_parts.join(', ')
+  .component-activity{title: tooltip}
+    - if commits && !commits.empty?
+      .activity-sparkline.sparkline-sm{'data-values' => commit_values.join(',')}
+      .component-trend{class: "trend-#{trend_class}"}
+        - if trend_pct.positive?
+          %i.iconoir-arrow-up
+        - elsif trend_pct.negative?
+          %i.iconoir-arrow-down
+        - else
+          %i.iconoir-minus
+        %span= "#{trend_pct.abs}%"
+- else
+  %span.empty-value —

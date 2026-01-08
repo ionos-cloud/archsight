@@ -1,0 +1,51 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessRequirement
+metadata:
+  name: Requirement:OpenSource
+  annotations:
+    architecture/description: |
+      The software must be released under an OSI-approved open source license
+      to enable community contribution and transparency.
+    requirement/type: legal
+    requirement/priority: must
+    architecture/tags: licensing,opensource
+spec:
+  realizes:
+    outcomes:
+      - Outcome:CommunityAdoption
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessRequirement
+metadata:
+  name: Requirement:RubyCompatibility
+  annotations:
+    architecture/description: |
+      The software must support Ruby 3.2 and later versions to ensure
+      compatibility with modern Ruby features and security updates.
+    requirement/type: functional
+    requirement/priority: must
+    architecture/tags: ruby,compatibility
+spec:
+  realizes:
+    outcomes:
+      - Outcome:DeveloperProductivity
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessRequirement
+metadata:
+  name: Requirement:QueryLanguage
+  annotations:
+    architecture/description: |
+      The software must provide a powerful query language that supports:
+      - Annotation filtering with comparison operators
+      - Relation traversal (direct and transitive)
+      - Boolean logic (AND, OR, NOT)
+      - Kind filtering
+      - Subqueries
+    requirement/type: functional
+    requirement/priority: must
+    architecture/tags: query,filtering
+spec:
+  realizes:
+    outcomes:
+      - Outcome:ArchitectureVisibility

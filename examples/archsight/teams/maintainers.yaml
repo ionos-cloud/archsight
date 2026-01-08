@@ -1,0 +1,12 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessActor
+metadata:
+  name: Archsight:Maintainers
+  annotations:
+    architecture/description: |
+      Core maintainers of the archsight project responsible for
+      development, maintenance, and community engagement.
+    architecture/tags: team,opensource
+    team/lead: Project Lead <lead@example.com>
+    team/jira: ARCHSIGHT
+spec: {}

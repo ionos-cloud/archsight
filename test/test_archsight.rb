@@ -7,7 +7,10 @@ class TestArchsight < Minitest::Test
     refute_nil ::Archsight::VERSION
   end
 
-  def test_it_does_something_useful
-    assert false
+  def test_resources_are_registered
+    # Verify core resource types are registered
+    assert Archsight::Resources["TechnologyArtifact"]
+    assert Archsight::Resources["ApplicationComponent"]
+    assert Archsight::Resources["ApplicationInterface"]
   end
 end

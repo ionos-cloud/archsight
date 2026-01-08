@@ -1,0 +1,29 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- types = (instance.annotations['repository/artifacts'] || 'none').split(',').map(&:strip)
+
+- if types != ['none']
+  %tr
+    %th{scope: 'row'} Deployment Artifacts
+    %td
+      .deployment-types
+        - if types.include?('container')
+          %a.deployment-item{**filter_link_attrs('repository/artifacts', 'container')}
+            %i.iconoir-box
+            %strong Container Image
+        - if types.include?('chart')
+          %a.deployment-item{**filter_link_attrs('repository/artifacts', 'chart')}
+            %i.iconoir-packages
+            %strong Helm Chart
+        - if types.include?('binary')
+          %a.deployment-item{**filter_link_attrs('repository/artifacts', 'binary')}
+            %i.iconoir-terminal
+            %strong Binary
+        - if types.include?('debian')
+          %a.deployment-item{**filter_link_attrs("repository/artifacts", "debian")}
+            %i.iconoir-package
+            %strong Debian Package
+        - if types.include?("rpm")
+          %a.deployment-item{ **filter_link_attrs("repository/artifacts", "rpm") }
+            %i.iconoir-package
+            %strong RPM Package

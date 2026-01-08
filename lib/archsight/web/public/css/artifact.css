@@ -1,0 +1,985 @@
+/* Artifact Styles - Activity, Git, Deployment, Workflow, etc. */
+
+/* Language Distribution Bar */
+.language-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  padding: 8px 12px;
+  background-color: var(--card-background-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.language-total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.language-total .language-count {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--color);
+}
+
+.language-total .language-label {
+  color: var(--muted-color);
+  font-size: 0.9em;
+}
+
+.language-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--muted-border-color);
+}
+
+.language-bar-segment {
+  height: 100%;
+  min-width: 2px;
+}
+
+/* Language colors - inspired by GitHub language colors */
+.language-bar-segment.lang-0,
+.language-legend-dot.lang-0 { background-color: #3178c6; } /* Blue - primary */
+.language-bar-segment.lang-1,
+.language-legend-dot.lang-1 { background-color: #00add8; } /* Cyan */
+.language-bar-segment.lang-2,
+.language-legend-dot.lang-2 { background-color: #f1e05a; } /* Yellow */
+.language-bar-segment.lang-3,
+.language-legend-dot.lang-3 { background-color: #e34c26; } /* Orange-red */
+.language-bar-segment.lang-4,
+.language-legend-dot.lang-4 { background-color: #563d7c; } /* Purple */
+.language-bar-segment.lang-5,
+.language-legend-dot.lang-5 { background-color: #89e051; } /* Green */
+.language-bar-segment.lang-6,
+.language-legend-dot.lang-6 { background-color: #f34b7d; } /* Pink */
+.language-bar-segment.lang-7,
+.language-legend-dot.lang-7 { background-color: #b07219; } /* Brown */
+.language-bar-segment.lang-8,
+.language-legend-dot.lang-8 { background-color: #4f5d95; } /* Slate blue */
+.language-bar-segment.lang-9,
+.language-legend-dot.lang-9 { background-color: #6b7280; } /* Gray */
+.language-bar-segment.lang-other,
+.language-legend-dot.lang-other { background-color: #9ca3af; } /* Light gray for Other */
+
+.language-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85em;
+}
+
+.language-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.language-legend-item a {
+  color: var(--muted-color);
+  text-decoration: none;
+}
+
+.language-legend-item a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.language-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Project estimate */
+.project-estimate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.estimate-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--card-background-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.estimate-item i {
+  font-size: 1.2em;
+  color: var(--primary);
+}
+
+.estimate-label {
+  color: var(--muted-color);
+  font-size: 0.9em;
+}
+
+.estimate-value {
+  font-weight: 600;
+  color: var(--color);
+}
+
+/* Activity summary */
+.activity-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--card-background-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.activity-item i {
+  font-size: 1.2em;
+  color: var(--primary);
+}
+
+.activity-label {
+  color: var(--muted-color);
+  font-size: 0.9em;
+}
+
+.activity-value {
+  font-weight: 600;
+  color: var(--color);
+}
+
+.activity-value.status-abandoned {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.activity-value.status-bot-only {
+  color: #f59e0b;
+  font-style: italic;
+}
+
+.activity-value.status-archived {
+  color: #6b7280;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.activity-value.bus-factor-high {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.activity-value.bus-factor-medium {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Activity Sparkline */
+.activity-sparkline {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 20px;
+  padding: 2px 4px;
+  background-color: var(--card-background-color);
+  border-radius: 4px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.activity-sparkline-bar {
+  width: 2px;
+  min-height: 2px;
+  background-color: #3178c6;
+  border-radius: 1px;
+  transition: background-color 0.2s ease;
+}
+
+.activity-sparkline-bar.empty {
+  min-height: 0;
+  background-color: transparent;
+}
+
+.activity-sparkline-bar:hover {
+  background-color: #2563eb;
+}
+
+.activity-sparkline-bar.empty:hover {
+  background-color: transparent;
+}
+
+/* Contributors sparkline - green color */
+.contributors-sparkline .activity-sparkline-bar {
+  background-color: #10b981;
+}
+
+.contributors-sparkline .activity-sparkline-bar:hover {
+  background-color: #059669;
+}
+
+.sparkline-total {
+  margin-left: 6px;
+  font-size: 0.85em;
+  color: var(--muted-color);
+}
+
+.contributors-total {
+  margin-left: 4px;
+  font-size: 0.8em;
+  font-weight: 400;
+  color: var(--muted-color);
+  opacity: 0.8;
+}
+
+/* Repository Distribution Bar */
+.repository-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  padding: 8px 12px;
+  background-color: var(--card-background-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.repository-total {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.repository-total .repository-count {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--color);
+}
+
+.repository-total .repository-label {
+  color: var(--muted-color);
+  font-size: 0.9em;
+}
+
+.repository-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background-color: var(--muted-border-color);
+}
+
+.repository-bar-segment {
+  height: 100%;
+  min-width: 2px;
+}
+
+.repository-bar-segment.status-active {
+  background-color: #10b981;
+}
+
+.repository-bar-segment.status-high-bus-factor {
+  background-color: #f59e0b;
+}
+
+.repository-bar-segment.status-abandoned {
+  background-color: #dc2626;
+}
+
+.repository-bar-segment.status-other {
+  background-color: #6b7280;
+}
+
+.repository-bar-segment.status-archived {
+  background-color: #9ca3af;
+}
+
+.repository-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85em;
+}
+
+.repository-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted-color);
+}
+
+.repository-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.repository-legend-dot.status-active {
+  background-color: #10b981;
+}
+
+.repository-legend-dot.status-high-bus-factor {
+  background-color: #f59e0b;
+}
+
+.repository-legend-dot.status-abandoned {
+  background-color: #dc2626;
+}
+
+.repository-legend-dot.status-other {
+  background-color: #6b7280;
+}
+
+.repository-legend-dot.status-archived {
+  background-color: #9ca3af;
+}
+
+@media (prefers-color-scheme: dark) {
+  .repository-bar-segment.status-active,
+  .repository-legend-dot.status-active {
+    background-color: #34d399;
+  }
+
+  .repository-bar-segment.status-high-bus-factor,
+  .repository-legend-dot.status-high-bus-factor {
+    background-color: #fbbf24;
+  }
+
+  .repository-bar-segment.status-abandoned,
+  .repository-legend-dot.status-abandoned {
+    background-color: #f87171;
+  }
+
+  .repository-bar-segment.status-other,
+  .repository-legend-dot.status-other {
+    background-color: #9ca3af;
+  }
+
+  .repository-bar-segment.status-archived,
+  .repository-legend-dot.status-archived {
+    background-color: #d1d5db;
+  }
+}
+
+/* Team */
+.team-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 8px 12px;
+  background-color: var(--card-background-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.team-stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.team-stat-value {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--color);
+}
+
+.team-stat-label {
+  color: var(--muted-color);
+  font-size: 0.9em;
+}
+
+.team-value {
+  color: var(--color);
+}
+
+a.team-value {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a.team-value:hover {
+  text-decoration: underline;
+}
+
+.team-members {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.team-member {
+  color: var(--color);
+}
+
+a.team-member {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a.team-member:hover {
+  text-decoration: underline;
+}
+
+/* Jira info - inline layout with wrap */
+.jira-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.jira-metric {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jira-metric-label {
+  font-size: 0.85em;
+  color: var(--muted-color);
+}
+
+.jira-metric-total {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--color);
+}
+
+/* Jira sparkline colors - created = orange, resolved = green */
+.jira-created-sparkline .activity-sparkline-bar {
+  background-color: #f59e0b;
+}
+
+.jira-created-sparkline .activity-sparkline-bar:hover {
+  background-color: #d97706;
+}
+
+.jira-resolved-sparkline .activity-sparkline-bar {
+  background-color: #10b981;
+}
+
+.jira-resolved-sparkline .activity-sparkline-bar:hover {
+  background-color: #059669;
+}
+
+/* Jira trend indicator - compact */
+.jira-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+  cursor: help;
+}
+
+.jira-trend i {
+  font-size: 1em;
+}
+
+.jira-trend-text {
+  font-weight: 600;
+}
+
+/* Trend states */
+.jira-trend-positive i,
+.jira-trend-positive .jira-trend-text {
+  color: #10b981;
+}
+
+.jira-trend-negative i,
+.jira-trend-negative .jira-trend-text {
+  color: #ef4444;
+}
+
+.jira-trend-neutral i,
+.jira-trend-neutral .jira-trend-text {
+  color: var(--muted-color);
+}
+
+@media (prefers-color-scheme: dark) {
+  .jira-created-sparkline .activity-sparkline-bar {
+    background-color: #fbbf24;
+  }
+
+  .jira-resolved-sparkline .activity-sparkline-bar {
+    background-color: #34d399;
+  }
+
+  .jira-trend-positive i,
+  .jira-trend-positive .jira-trend-text {
+    color: #34d399;
+  }
+
+  .jira-trend-negative i,
+  .jira-trend-negative .jira-trend-text {
+    color: #f87171;
+  }
+}
+
+/* View components - table cell styles */
+.component-jira,
+.component-activity,
+.component-language,
+.component-repos,
+.component-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.badge-sm {
+  font-size: 0.9em;
+  padding: 4px 10px;
+}
+
+.component-trend {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.9em;
+  font-weight: 600;
+  margin-left: auto;
+}
+
+.component-trend.trend-positive {
+  color: #10b981;
+}
+
+.component-trend.trend-negative {
+  color: #ef4444;
+}
+
+.component-trend.trend-neutral {
+  color: var(--muted-color);
+}
+
+.component-total,
+.component-count {
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+.component-lang {
+  font-weight: 600;
+  font-size: 1em;
+}
+
+.component-loc {
+  color: var(--muted-color);
+  font-size: 0.95em;
+}
+
+.component-lang-bar {
+  display: flex;
+  width: 160px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--muted-border-color);
+}
+
+.component-lang-bar .lang-bar-segment {
+  height: 100%;
+}
+
+.lang-bar-segment.lang-0 { background-color: #3178c6; }
+.lang-bar-segment.lang-1 { background-color: #00add8; }
+.lang-bar-segment.lang-2 { background-color: #f1e05a; }
+.lang-bar-segment.lang-3 { background-color: #e34c26; }
+.lang-bar-segment.lang-4 { background-color: #563d7c; }
+.lang-bar-segment.lang-other { background-color: #9ca3af; }
+
+.component-badge {
+  font-size: 0.85em;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background-color: var(--muted-border-color);
+}
+
+.component-badge.status-active {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.component-badge.status-abandoned {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.component-badge.status-archived {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #6b7280;
+}
+
+.component-badge.bus-factor-high {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.component-badge.bus-factor-medium {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.sparkline-sm {
+  height: 28px;
+  gap: 2px;
+}
+
+.sparkline-sm .activity-sparkline-bar {
+  width: 4px;
+  border-radius: 1px;
+}
+
+.component-bar-mini {
+  display: flex;
+  width: 120px;
+  height: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--muted-border-color);
+}
+
+.component-bar-mini .bar-segment {
+  height: 100%;
+}
+
+.component-bar-mini .bar-segment.status-active {
+  background-color: #10b981;
+}
+
+.component-bar-mini .bar-segment.status-high-bus-factor {
+  background-color: #f59e0b;
+}
+
+.component-bar-mini .bar-segment.status-archived {
+  background-color: #9ca3af;
+}
+
+.component-bar-mini .bar-segment.status-other {
+  background-color: #6b7280;
+}
+
+.component-bar-mini .bar-segment.status-abandoned {
+  background-color: #ef4444;
+}
+
+.component-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 1em;
+}
+
+.component-link:hover {
+  text-decoration: underline;
+}
+
+.component-link i {
+  font-size: 1.3em;
+}
+
+@media (prefers-color-scheme: dark) {
+  .component-trend.trend-positive {
+    color: #34d399;
+  }
+
+  .component-trend.trend-negative {
+    color: #f87171;
+  }
+
+  .component-badge.status-active {
+    background-color: rgba(52, 211, 153, 0.2);
+    color: #34d399;
+  }
+
+  .component-badge.status-abandoned {
+    background-color: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+  }
+
+  .component-badge.bus-factor-high {
+    background-color: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+  }
+
+  .component-badge.bus-factor-medium {
+    background-color: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+  }
+
+  .component-bar-mini .bar-segment.status-active {
+    background-color: #34d399;
+  }
+
+  .component-bar-mini .bar-segment.status-high-bus-factor {
+    background-color: #fbbf24;
+  }
+
+  .component-bar-mini .bar-segment.status-archived {
+    background-color: #d1d5db;
+  }
+
+  .component-bar-mini .bar-segment.status-other {
+    background-color: #9ca3af;
+  }
+
+  .component-bar-mini .bar-segment.status-abandoned {
+    background-color: #f87171;
+  }
+}
+
+/* Git info */
+.git-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+.git-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--card-background-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.git-item i {
+  font-size: 1.2em;
+  color: var(--primary);
+}
+
+.git-link {
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.git-link:hover {
+  text-decoration: underline;
+}
+
+.git-clone-command {
+  color: var(--muted-color);
+  font-size: 0.9em;
+  font-family: monospace;
+  background-color: var(--code-background-color);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.copy-button {
+  padding: 6px;
+  background-color: transparent;
+  color: var(--primary);
+  border: 1px solid var(--muted-border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.copy-button:hover {
+  background-color: var(--card-background-color);
+  border-color: var(--primary);
+  transform: scale(1.1);
+}
+
+.copy-button.copied {
+  background-color: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+.copy-button i {
+  font-size: 1.1em;
+}
+
+/* Deployment info styles */
+.deployment-types {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.deployment-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--color);
+  transition: border-color 0.2s ease;
+}
+
+.deployment-item:hover {
+  border-color: var(--primary);
+}
+
+.deployment-item i {
+  color: var(--primary);
+  font-size: 1.2em;
+  flex-shrink: 0;
+}
+
+/* Workflow info styles */
+.workflow-platforms {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.workflow-platform-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--color);
+  transition: border-color 0.2s ease;
+}
+
+.workflow-platform-item:hover {
+  border-color: var(--primary);
+}
+
+.workflow-platform-item input[type="checkbox"] {
+  margin: 0;
+  pointer-events: none;
+}
+
+.workflow-types ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.25rem 0 0 0;
+}
+
+.workflow-types li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.workflow-types li input[type="checkbox"] {
+  margin: 0;
+  pointer-events: none;
+}
+
+.workflow-types li a {
+  text-decoration: none;
+  color: var(--color);
+  transition: color 0.2s ease;
+}
+
+.workflow-types li a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.workflow-types li.grayed-out {
+  opacity: 0.4;
+}
+
+.workflow-types {
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+}
+
+.workflow-types>div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.workflow-category strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* Agentic tools styles */
+.agentic-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.tool-item {
+  padding: 0.75rem;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  border-radius: 6px;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  color: var(--color);
+  display: block;
+}
+
+.tool-item:hover {
+  border-color: var(--primary);
+}
+
+.tool-item.not-implemented {
+  opacity: 0.4;
+}
+
+.tool-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tool-item-header input[type="checkbox"] {
+  margin: 0;
+  pointer-events: none;
+}
+
+.tool-item-header i {
+  font-size: 1.2em;
+}
+
+.tool-item-header i.implemented {
+  color: var(--primary);
+}
+
+.tool-item-header i.not-implemented {
+  color: var(--muted-color);
+}
+
+.tool-item-description {
+  font-size: 0.85em;
+  color: var(--muted-color);
+}
+
+/* Common info section cell padding */
+.info-section-cell {
+  padding: 0.5rem 1rem;
+}

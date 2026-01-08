@@ -1,0 +1,15 @@
+-# Owner component - team/owner link
+- annotations = instance.annotations
+- owner = annotations['team/owner']
+- if owner
+  - owner_instance = @database.find("BusinessActor", owner)
+  .component-owner{title: owner}
+    - if owner_instance
+      %a.component-link{ href: "/artifact/BusinessActor/#{owner}" }
+        %i.iconoir-community
+        = owner
+    - else
+      %i.iconoir-community
+      = owner
+- else
+  %span.empty-value —

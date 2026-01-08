@@ -1,0 +1,41 @@
+- return unless instance
+- realized = instance.relations(:realizes, :businessRequirements).map { |r| [r, 'implemented'] }
+- partial = instance.relations(:partiallyRealizes, :businessRequirements).map { |r| [r, 'partial'] }
+- planned = instance.relations(:plans, :businessRequirements).map { |r| [r, 'planned'] }
+- all_requirements = realized + partial + planned
+- if all_requirements.any?
+  %article.requirements-section
+    %header
+      %h2 Business Requirements
+    %table.requirements-table
+      %thead
+        %tr
+          %th
+          %th Name
+          %th Priority
+          %th Story
+      %tbody
+        - all_requirements.each do |req, status|
+          - status_icon = case status
+          - when 'implemented' then 'check-circle'
+          - when 'partial' then 'half-moon'
+          - when 'planned' then 'calendar'
+          - else 'circle'
+          - status_title = status.capitalize
+          %tr
+            %td.requirement-status
+              %i.requirement-status-icon{class: "iconoir-#{status_icon} status-#{status}", title: status_title}
+            %td
+              %a{href: "/kinds/BusinessRequirement/instances/#{req.name}"}= req.name
+            %td
+              - priority = req.annotations["requirement/priority"]
+              - if priority
+                %a.badge.badge-info{**search_link_attrs("BusinessRequirement: <- \"#{instance.name}\" & requirement/priority == \"#{priority}\"")}= priority
+              - else
+                %span.view-empty-value -
+            %td.requirement-story
+              - story = req.annotations["requirement/story"]
+              - if story
+                != markdown(story)
+              - else
+                %span.view-empty-value -

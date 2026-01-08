@@ -1,0 +1,26 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- annotations = instance.annotations
+- cost = annotations['scc/estimatedCost']
+- schedule = annotations['scc/estimatedScheduleMonths']
+- people = annotations["scc/estimatedPeople"]
+- if cost || schedule || people
+  %tr
+    %th{ scope: "row" } Project Estimate
+    %td
+      .project-estimate
+        - if cost
+          .estimate-item
+            %i.iconoir-dollar-circle
+            %span.estimate-label Cost:
+            %span.estimate-value= to_dollar(cost.to_f)
+        - if schedule
+          .estimate-item
+            %i.iconoir-calendar
+            %span.estimate-label Schedule:
+            %span.estimate-value= "#{schedule} months"
+        - if people
+          .estimate-item
+            %i.iconoir-group
+            %span.estimate-label Team:
+            %span.estimate-value= "#{people} people"

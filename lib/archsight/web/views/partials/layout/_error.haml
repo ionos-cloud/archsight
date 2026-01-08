@@ -1,0 +1,22 @@
+%header.container
+  %article.error-header
+    %h3
+      %i.iconoir-warning-triangle
+      Error
+    %p.error-message= @error.message
+    %p.error-location
+      %i.iconoir-page
+      = relative_error_path(@error.ref.path)
+      %span.error-line-badge Line #{@error.ref.line_no}
+  %a.reload-btn{href: "/reload?redirect=#{params["redirect"]}"}
+    %i.iconoir-refresh
+    Reload
+
+%main.container
+  .error-code-block
+    %pre
+      %code
+        - error_context_lines(@error.ref.path, @error.ref.line_no).each do |line|
+          - line_class = line[:selected] ? "error-line" : "code-line"
+          - escaped_content = ERB::Util.html_escape(line[:content])
+          != "<span class='#{line_class}'><span class='line-number'>#{line[:line_no].to_s.rjust(4)}</span>#{escaped_content}</span>\n"

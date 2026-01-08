@@ -1,8 +1,35 @@
+# Bundler
 /.bundle/
-/.yardoc
+/vendor/bundle/
+
+# Generated files
 /_yardoc/
+/.yardoc
 /coverage/
 /doc/
 /pkg/
 /spec/reports/
 /tmp/
+
+# Built gems
+*.gem
+
+# Environment and secrets
+.env
+.env.*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Testing
+/coverage/
+
+# Byebug history
+.byebug_history

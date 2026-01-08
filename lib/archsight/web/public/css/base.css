@@ -1,0 +1,201 @@
+/* Base/Shared Styles */
+
+.content {
+  zoom: 70%;
+}
+
+/* Reduce vertical spacing on articles to minimize scrolling */
+.content article {
+  margin-bottom: 1rem;
+}
+
+.content article > header {
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.content article > header h2 {
+  margin-bottom: 0;
+}
+
+.content svg a {
+  text-decoration: none;
+}
+
+details.dropdown>summary+ul {
+  width: auto;
+}
+
+.content .documentation tbody ul {
+  margin-bottom: 0;
+}
+
+/* Reduce table cell padding in documentation tables */
+.content .documentation td,
+.content .documentation th {
+  padding: 0.5rem 0.75rem;
+}
+
+article>header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+article>header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Kind help button (small, in header) */
+.kind-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--card-background-color);
+  border: 1px solid var(--muted-border-color);
+  transition: all 0.2s ease;
+  color: var(--muted-color);
+  font-size: 0.9em;
+}
+
+.kind-help:hover {
+  background-color: var(--primary);
+  color: var(--primary-inverse);
+  border-color: var(--primary);
+}
+
+/* Badge styles */
+.badge {
+  font-size: 0.75em;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-secondary {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+/* Dark mode badge adjustments */
+@media (prefers-color-scheme: dark) {
+  .badge-warning {
+    background-color: #78350f;
+    color: #fef3c7;
+  }
+
+  .badge-info {
+    background-color: #1e3a5f;
+    color: #93c5fd;
+  }
+
+  .badge-danger {
+    background-color: #7f1d1d;
+    color: #fecaca;
+  }
+
+  .badge-secondary {
+    background-color: #374151;
+    color: #d1d5db;
+  }
+}
+
+/* Generated resource badge - prominent display in header */
+.generated-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.75em;
+  padding: 6px 12px;
+  background-color: var(--code-background-color);
+  color: var(--muted-color);
+  border-radius: 6px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.generated-badge .generated-script {
+  font-weight: 500;
+}
+
+.generated-badge .generated-time {
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+
+/* Mermaid diagrams - base styles overridden by mermaid-layers.css */
+
+/* Wiki-style broken links */
+.broken-link {
+  color: #dc2626;
+  text-decoration: underline wavy;
+  cursor: help;
+}
+
+/* ===== Layer-based Icon Colors ===== */
+
+/* Strategy Layer - Orange */
+.icon-strategy {
+  color: #D4824A;
+}
+
+/* Business Layer - Yellow */
+.icon-business {
+  color: #D4B83C;
+}
+
+/* Application Layer - Blue */
+.icon-application {
+  color: #4A9ECD;
+}
+
+/* Technology Layer - Green */
+.icon-technology {
+  color: #7AB316;
+}
+
+/* Motivation Layer - Purple */
+.icon-motivation {
+  color: #AB47BC;
+}
+
+/* Other - Gray */
+.icon-other {
+  color: #999999;
+}
+
+/* Responsive content */
+@media all and (min-width: 800px) {
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    zoom: 100%;
+    min-width: 0;
+  }
+}
+
+main .canvas a {
+  text-decoration: none;
+}

@@ -1,0 +1,37 @@
+-# Repositories component - count + mini bar with all statuses
+- annotations = instance.annotations
+- total = annotations['repository/artifacts/total']&.to_i
+- active = annotations['repository/artifacts/active']&.to_i || 0
+- abandoned = annotations['repository/artifacts/abandoned']&.to_i || 0
+- archived = annotations['repository/artifacts/archived']&.to_i || 0
+- high_bus_factor = annotations['repository/artifacts/highBusFactor']&.to_i || 0
+- if total && total > 0
+  - active_healthy = active - high_bus_factor
+  - other = total - active - abandoned - archived
+  - tooltip_parts = []
+  - tooltip_parts << "#{active_healthy} active" if active_healthy > 0
+  - tooltip_parts << "#{high_bus_factor} high bus factor" if high_bus_factor > 0
+  - tooltip_parts << "#{archived} archived" if archived > 0
+  - tooltip_parts << "#{other} other" if other > 0
+  - tooltip_parts << "#{abandoned} abandoned" if abandoned > 0
+  - tooltip = "#{total} repos: #{tooltip_parts.join(', ')}"
+  .component-repos{title: tooltip}
+    %span.component-count= total
+    .component-bar-mini
+      - if active_healthy > 0
+        - pct = (active_healthy.to_f / total * 100).round
+        .bar-segment.status-active{style: "width: #{pct}%"}
+      - if high_bus_factor > 0
+        - pct = (high_bus_factor.to_f / total * 100).round
+        .bar-segment.status-high-bus-factor{style: "width: #{pct}%"}
+      - if archived > 0
+        - pct = (archived.to_f / total * 100).round
+        .bar-segment.status-archived{style: "width: #{pct}%"}
+      - if other > 0
+        - pct = (other.to_f / total * 100).round
+        .bar-segment.status-other{style: "width: #{pct}%"}
+      - if abandoned.positive?
+        - pct = (abandoned.to_f / total * 100).round
+        .bar-segment.status-abandoned{ style: "width: #{pct}%" }
+- else
+  %span.empty-value —

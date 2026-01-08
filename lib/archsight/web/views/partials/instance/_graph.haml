@@ -1,0 +1,6 @@
+%article
+  %header
+    %h2 Architecture Overview
+  .graph-container.graph-expand
+    #graphviz.fullcanvas
+      != graphviz_svg(create_graph_all(db), "graphviz")

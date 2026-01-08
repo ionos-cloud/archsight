@@ -1,0 +1,65 @@
+apiVersion: architecture/v1alpha1
+kind: ApplicationService
+metadata:
+  name: Archsight:CLI
+  annotations:
+    architecture/abbr: CLI
+    architecture/description: |
+      Command-line interface for archsight providing commands for
+      linting resources, generating templates, starting the web server,
+      and opening an interactive console.
+    architecture/tags: cli,thor
+    architecture/plane: control
+spec:
+  realizedThrough:
+    applicationComponents:
+      - Archsight:Core:Database
+      - Archsight:Util:Linter
+      - Archsight:Util:Template
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationService
+metadata:
+  name: Archsight:WebUI
+  annotations:
+    architecture/abbr: Web
+    architecture/description: |
+      Web-based user interface for browsing and searching architecture
+      resources with visualization support via GraphViz.
+    architecture/tags: web,sinatra,htmx
+    architecture/plane: control
+spec:
+  realizedThrough:
+    applicationComponents:
+      - Archsight:Core:Database
+      - Archsight:Render:GraphViz
+      - Archsight:Query:Engine
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationService
+metadata:
+  name: Archsight:MCPServer
+  annotations:
+    architecture/abbr: MCP
+    architecture/description: |
+      Model Context Protocol server exposing architecture query and
+      analysis tools for AI assistants like Claude.
+    architecture/tags: mcp,ai,claude
+    architecture/plane: control
+spec:
+  realizedThrough:
+    applicationComponents:
+      - Archsight:Core:Database
+      - Archsight:Query:Engine
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+  realizes:
+    businessRequirements:
+      - Requirement:QueryLanguage

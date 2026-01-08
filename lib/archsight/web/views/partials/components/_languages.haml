@@ -1,0 +1,29 @@
+-# Languages component - bar visualization with tooltip details
+- annotations = instance.annotations
+- languages = annotations['scc/languages']
+- if languages && !languages.empty?
+  - lang_data = []
+  - languages.split(',').each do |lang|
+    - loc_value = annotations["scc/language/#{lang.strip}/loc"]
+    - lang_data << { name: lang.strip, loc: loc_value ? loc_value.to_i : 0 }
+  - lang_data = lang_data.sort_by { |l| -l[:loc] }
+  - total_loc = lang_data.sum { |l| l[:loc] }
+  - if total_loc > 0
+    -# Build tooltip with language breakdown
+    - tooltip_parts = ["#{number_with_delimiter(total_loc)} loc"]
+    - lang_data.first(5).each { |l| tooltip_parts << "#{l[:name]}: #{number_with_delimiter(l[:loc])} (#{(l[:loc].to_f / total_loc * 100).round(1)}%)" }
+    - tooltip_parts << "..." if lang_data.size > 5
+    - tooltip = tooltip_parts.join(", ")
+    .component-language{title: tooltip}
+      .component-lang-bar
+        - lang_data.first(5).each_with_index do |lang, idx|
+          - pct = (lang[:loc].to_f / total_loc * 100).round(1)
+          - if pct > 0
+            .lang-bar-segment{class: "lang-#{idx}", style: "width: #{pct}%"}
+        - other_pct = 100 - lang_data.first(5).sum { |l| (l[:loc].to_f / total_loc * 100).round(1) }
+        - if other_pct.positive?
+          .lang-bar-segment.lang-other{ style: "width: #{other_pct}%" }
+  - else
+    %span.empty-value —
+- else
+  %span.empty-value —

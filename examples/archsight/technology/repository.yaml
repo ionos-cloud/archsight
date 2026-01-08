@@ -1,0 +1,22 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Repo:ionos-cloud:archsight
+  annotations:
+    architecture/description: |
+      Main source code repository for the archsight Ruby gem.
+    artifact/type: repo
+    repository/git: git@github.com:ionos-cloud/archsight.git
+    repository/visibility: open-source
+    scc/language/Ruby/loc: 5000
+    scc/languages: Ruby
+    activity/status: active
+    activity/busFactor: medium
+    agentic/tools: claude
+    workflow/platforms: github-actions
+    workflow/types: test,lint
+    architecture/tags: ruby,gem,opensource
+spec:
+  maintainedBy:
+    businessActors:
+      - Archsight:Maintainers

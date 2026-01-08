@@ -1,0 +1,32 @@
+apiVersion: architecture/v1alpha1
+kind: MotivationStakeholder
+metadata:
+  name: Stakeholder:EnterpriseArchitect
+  annotations:
+    architecture/description: |
+      Enterprise architects who need to document, visualize, and analyze
+      complex system architectures across the organization.
+    architecture/tags: architect,enterprise
+spec:
+  hasConcern:
+    strategyCapabilities:
+      - Architecture:Documentation
+      - Architecture:DependencyAnalysis
+    businessRequirements:
+      - Requirement:QueryLanguage
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationStakeholder
+metadata:
+  name: Stakeholder:PlatformEngineer
+  annotations:
+    architecture/description: |
+      Platform engineers who maintain infrastructure and need to understand
+      service dependencies and ownership.
+    architecture/tags: platform,engineering
+spec:
+  hasConcern:
+    businessRequirements:
+      - Requirement:RubyCompatibility
+    goals:
+      - Goal:SimplifyArchitecture

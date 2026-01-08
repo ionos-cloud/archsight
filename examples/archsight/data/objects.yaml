@@ -1,0 +1,23 @@
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Data:ResourceSchema
+  annotations:
+    architecture/description: |
+      YAML resource schema following the architecture/v1alpha1 API version
+      with kind, metadata (name, annotations), and spec sections.
+    architecture/tags: yaml,schema,resource
+    data/visibility: public
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Data:QueryLanguage
+  annotations:
+    architecture/description: |
+      Query language grammar supporting annotation conditions, relation
+      traversal, boolean logic, kind filters, and subqueries.
+    architecture/tags: query,grammar,dsl
+    data/visibility: public
+spec: {}

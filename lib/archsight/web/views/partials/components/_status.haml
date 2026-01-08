@@ -1,0 +1,23 @@
+-# Status component - status + bus factor
+- annotations = instance.annotations
+- status = annotations['activity/status']
+- bus_factor = annotations['activity/busFactor']
+- contributors_6m = annotations['activity/contributors/6m']
+- if status || bus_factor
+  - bus_factor_desc = case bus_factor
+  - when 'high' then 'High risk: >75% commits from one contributor'
+  - when 'medium' then 'Medium risk: 50-75% commits from one contributor'
+  - when 'low' then 'Low risk: No single contributor dominates'
+  - else nil
+  - tooltip_parts = []
+  - tooltip_parts << "Status: #{status}" if status
+  - tooltip_parts << bus_factor_desc if bus_factor_desc
+  - tooltip_parts << "#{contributors_6m} contributors (6m)" if contributors_6m
+  - tooltip = tooltip_parts.join(' | ')
+  .component-status{title: tooltip}
+    - if status
+      %span.component-badge{class: "status-#{status}"}= status
+    - if bus_factor && bus_factor != "low"
+      %span.component-badge{ class: "bus-factor-#{bus_factor}" }= "bus:#{bus_factor}"
+- else
+  %span.empty-value —
