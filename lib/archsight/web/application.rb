@@ -56,7 +56,9 @@ class Archsight::Web::Application < Sinatra::Base
     mcp_server.register_tool(Archsight::MCP::AnalyzeResourceTool)
     mcp_server.register_tool(Archsight::MCP::ResourceDocTool)
 
-    use FastMcp::Transports::RackTransport, mcp_server, path_prefix: "/mcp"
+    use FastMcp::Transports::RackTransport, mcp_server,
+        path_prefix: "/mcp",
+        localhost_only: false
   end
 
   helpers Archsight::GraphvisHelper, Archsight::GraphvisRenderer, Archsight::Helpers
