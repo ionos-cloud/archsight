@@ -2,7 +2,6 @@ name: Build Container
 
 on:
   push:
-    branches: [main]
     paths:
       - "Dockerfile"
       - "lib/**"
@@ -30,7 +29,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run'
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: read
 
