@@ -1,6 +1,13 @@
 # frozen_string_literal: true
 
 require "bundler/gem_tasks"
+
+# Override release tasks to skip git operations in CI
+if ENV["CI"]
+  Rake::Task["release:guard_clean"].clear
+  Rake::Task["release:source_control_push"].clear
+end
+
 require "minitest/test_task"
 
 Minitest::TestTask.create
