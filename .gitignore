@@ -13,6 +13,7 @@
 
 # Built gems
 *.gem
+/checksums/
 
 # Environment and secrets
 .env
