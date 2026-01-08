@@ -118,15 +118,14 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version-file: ".ruby-version"
-          bundler-cache: true
+
+      - name: Install dependencies
+        run: bundle install
 
       - name: Update version from git tag
         run: bundle exec rake version
 
-      - name: Build gem
-        run: gem build archsight.gemspec
-
-      - name: Publish gem
+      - name: Build and publish gem
         uses: rubygems/release-gem@v1
 
   release-container:
