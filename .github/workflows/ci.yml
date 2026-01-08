@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -12,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby-version: ["3.2", "4.0"]
+        ruby-version: ["3.2", "3.3", "4.0"]
 
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +46,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version-file: ".ruby-version"
           bundler-cache: true
 
       - name: Run RuboCop
@@ -60,7 +61,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version-file: ".ruby-version"
           bundler-cache: true
 
       - name: Run Steep type checker
@@ -75,7 +76,7 @@ jobs:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version-file: ".ruby-version"
           bundler-cache: true
 
       - name: Run bundler-audit
