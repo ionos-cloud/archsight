@@ -12,7 +12,9 @@ Gem::Specification.new do |spec|
   spec.description = "Bringing enterprise architecture into focus. A Ruby gem for modeling, querying, and visualizing enterprise architecture using ArchiMate-inspired YAML resources with GraphViz visualization."
   spec.homepage = "https://github.com/ionos-cloud/archsight"
   spec.license = "Apache-2.0"
-  spec.required_ruby_version = ">= 3.2.0"
+  # Read minimum Ruby version from .ruby-version (major.minor only)
+  ruby_version = File.read(File.join(__dir__, ".ruby-version")).strip.split(".")[0, 2].join(".")
+  spec.required_ruby_version = ">= #{ruby_version}"
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = spec.homepage

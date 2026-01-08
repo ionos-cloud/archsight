@@ -11,6 +11,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. Run command '...'
 2. Navigate to '...'
 3. See error
@@ -19,8 +20,9 @@ Steps to reproduce the behavior:
 A clear and concise description of what you expected to happen.
 
 **Environment:**
+
 - OS: [e.g., macOS, Linux]
-- Ruby version: [e.g., 3.2.0]
+- Ruby version: [e.g., 3.4.0]
 - Archsight version: [e.g., 0.1.0]
 
 **Additional context**

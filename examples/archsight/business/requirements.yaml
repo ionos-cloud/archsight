@@ -20,7 +20,7 @@ metadata:
   name: Requirement:RubyCompatibility
   annotations:
     architecture/description: |
-      The software must support Ruby 3.2 and later versions to ensure
+      The software must support Ruby 3.4 and later versions to ensure
       compatibility with modern Ruby features and security updates.
     requirement/type: functional
     requirement/priority: must
