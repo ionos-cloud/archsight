@@ -126,11 +126,8 @@ jobs:
       - name: Build gem
         run: gem build archsight.gemspec
 
-      - name: Configure RubyGems credentials
-        uses: rubygems/configure-rubygems-credentials@v1
-
-      - name: Push gem
-        run: gem push archsight-*.gem
+      - name: Publish gem
+        uses: rubygems/release-gem@v1
 
   release-container:
     needs: [test, lint, typecheck, security, build-container]
