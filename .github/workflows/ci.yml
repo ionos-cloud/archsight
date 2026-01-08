@@ -121,20 +121,16 @@ jobs:
           bundler-cache: true
 
       - name: Update version from git tag
-        run: bundle exec rake version:update
+        run: bundle exec rake version
 
       - name: Build gem
         run: gem build archsight.gemspec
-
-      - name: Get version
-        id: version
-        run: echo "VERSION=$(bundle exec rake version:show)" >> $GITHUB_OUTPUT
 
       - name: Configure RubyGems credentials
         uses: rubygems/configure-rubygems-credentials@v1
 
       - name: Push gem
-        run: gem push archsight-${{ steps.version.outputs.VERSION }}.gem
+        run: gem push archsight-*.gem
 
   release-container:
     needs: [test, lint, typecheck, security, build-container]
