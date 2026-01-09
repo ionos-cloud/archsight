@@ -111,6 +111,68 @@ class CLITest < Minitest::Test
     end
   end
 
+  # Boundary condition tests for show_file_context
+
+  def test_show_file_context_at_start_of_file
+    Tempfile.create(["test", ".yaml"]) do |f|
+      10.times { |i| f.puts "line #{i + 1}" }
+      f.flush
+
+      # Line 1 should not try to show negative line numbers
+      output = capture_stdout do
+        @cli.send(:show_file_context, f.path, 1)
+      end
+
+      assert_includes output, "line 1"
+      assert_includes output, ">>" # Should mark line 1
+      refute_includes output, "line -" # No negative lines
+    end
+  end
+
+  def test_show_file_context_at_end_of_file
+    Tempfile.create(["test", ".yaml"]) do |f|
+      5.times { |i| f.puts "line #{i + 1}" }
+      f.flush
+
+      # Line 5 is the last line, context should not exceed file length
+      output = capture_stdout do
+        @cli.send(:show_file_context, f.path, 5)
+      end
+
+      assert_includes output, "line 5"
+      assert_includes output, ">>" # Should mark line 5
+      refute_includes output, "line 6" # No line beyond file length
+    end
+  end
+
+  def test_show_file_context_single_line_file
+    Tempfile.create(["test", ".yaml"]) do |f|
+      f.puts "only line"
+      f.flush
+
+      output = capture_stdout do
+        @cli.send(:show_file_context, f.path, 1)
+      end
+
+      assert_includes output, "only line"
+      assert_includes output, ">>"
+    end
+  end
+
+  def test_show_file_context_line_number_formatting
+    Tempfile.create(["test", ".yaml"]) do |f|
+      15.times { |i| f.puts "line #{i + 1}" }
+      f.flush
+
+      output = capture_stdout do
+        @cli.send(:show_file_context, f.path, 10)
+      end
+
+      # Should format line numbers with proper width
+      assert_match(/\s+\d+\s+\|/, output)
+    end
+  end
+
   private
 
   def capture_stdout
