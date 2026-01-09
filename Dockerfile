@@ -8,7 +8,7 @@ COPY . .
 
 # Build and install the gem
 RUN gem build archsight.gemspec && \
-    gem install archsight-*.gem
+    gem install --no-document archsight-*.gem
 
 # Runtime stage
 FROM ruby:4.0-alpine3.23
@@ -16,7 +16,8 @@ FROM ruby:4.0-alpine3.23
 RUN apk add --no-cache graphviz
 
 # Copy installed gems from builder
-COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --from=builder /usr/local/lib/ruby/gems /usr/local/lib/ruby/gems
+COPY --from=builder /usr/local/bin/archsight /usr/local/bin/archsight
 
 RUN mkdir -p /resources
 
