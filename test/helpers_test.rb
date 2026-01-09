@@ -275,9 +275,88 @@ class HelpersTest < Minitest::Test
     assert attrs.key?("href")
   end
 
+  def test_filter_link_attrs_with_kind
+    attrs = filter_link_attrs("status", "active", "==", "TechnologyArtifact")
+
+    assert attrs.key?("href")
+    assert_includes attrs["href"], "TechnologyArtifact"
+  end
+
+  def test_filter_link_attrs_with_custom_method
+    attrs = filter_link_attrs("count", "10", ">")
+
+    assert attrs.key?("href")
+    assert_includes attrs["href"], "%3E" # URL encoded >
+  end
+
+  # More sort_instances tests
+
+  def test_sort_instances_by_kind
+    instances = [mock_instance("A", {}, "Zebra"), mock_instance("B", {}, "Apple")]
+    result = sort_instances(instances, ["kind"])
+
+    assert_equal %w[B A], result.map(&:name)
+  end
+
+  def test_sort_instances_by_annotation
+    instances = [
+      mock_instance("A", { "priority" => "low" }),
+      mock_instance("B", { "priority" => "high" })
+    ]
+    result = sort_instances(instances, ["priority"])
+
+    assert_equal %w[B A], result.map(&:name)
+  end
+
+  def test_sort_instances_by_numeric_annotation
+    instances = [
+      mock_instance("A", { "count" => "10" }),
+      mock_instance("B", { "count" => "2" })
+    ]
+    result = sort_instances(instances, ["count"])
+
+    assert_equal %w[B A], result.map(&:name)
+  end
+
+  # More error_context_lines tests
+
+  def test_error_context_lines_with_yaml_document
+    content = "---\nname: test\nvalue: 1\n---\nname: other\n"
+
+    Tempfile.create(["test", ".yaml"]) do |f|
+      f.write(content)
+      f.flush
+
+      result = error_context_lines(f.path, 2, context_lines: 1)
+
+      assert_kind_of Array, result
+      selected = result.find { |line| line[:selected] }
+
+      assert_equal 2, selected[:line_no]
+    end
+  end
+
+  # category_for_url tests - additional cases
+
+  def test_category_for_google_docs
+    assert_equal "Documentation", category_for_url("https://docs.google.com/document/d/123")
+  end
+
+  def test_category_for_prometheus
+    assert_equal "Monitoring", category_for_url("https://prometheus.company.com")
+  end
+
+  def test_category_for_api
+    assert_equal "API", category_for_url("https://api.company.com/v1")
+  end
+
+  def test_category_for_docs
+    assert_equal "Documentation", category_for_url("https://docs.company.com/guide")
+  end
+
   private
 
-  def mock_instance(name, annotations = {})
-    Struct.new(:name, :klass, :annotations).new(name, "Test", annotations)
+  def mock_instance(name, annotations = {}, klass = "Test")
+    Struct.new(:name, :klass, :annotations).new(name, klass, annotations)
   end
 end

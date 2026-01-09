@@ -78,6 +78,39 @@ class CLITest < Minitest::Test
     Archsight.resources_dir = original_dir
   end
 
+  def test_lint_command_with_valid_resources
+    original_dir = Archsight.resources_dir
+    @cli.options = { resources: @resources_dir }
+
+    output = capture_stdout { @cli.lint }
+
+    assert_includes output, "passed"
+  ensure
+    Archsight.resources_dir = original_dir
+  end
+
+  def test_template_with_invalid_kind
+    # Template.generate raises RuntimeError for invalid kinds
+    assert_raises(RuntimeError) do
+      @cli.template("InvalidKindXYZ")
+    end
+  end
+
+  def test_display_error_with_file_context
+    Tempfile.create(["test", ".yaml"]) do |f|
+      5.times { |i| f.puts "line #{i + 1}" }
+      f.flush
+
+      error_string = "#{f.path}:3: Some error occurred"
+      output = capture_stdout do
+        @cli.send(:display_error_with_context, error_string)
+      end
+
+      assert_includes output, "line 3"
+      assert_includes output, ">>"
+    end
+  end
+
   private
 
   def capture_stdout

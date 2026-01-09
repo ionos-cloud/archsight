@@ -147,6 +147,50 @@ class ApplicationTest < Minitest::Test
     # Should handle error gracefully
   end
 
+  # Search with numeric operators
+  def test_search_with_numeric_operator_greater
+    get "/search", tag: "some/numeric", value: "10", method: ">"
+
+    assert_predicate last_response, :ok?
+  end
+
+  def test_search_with_numeric_operator_less
+    get "/search", tag: "some/numeric", value: "100", method: "<"
+
+    assert_predicate last_response, :ok?
+  end
+
+  # Search with kind filter
+  def test_search_with_kind_filter
+    get "/search", q: 'name =~ ".*"', kind: "TechnologyArtifact"
+
+    assert_predicate last_response, :ok?
+  end
+
+  # Test reload redirects to safe paths only
+  def test_reload_rejects_unsafe_redirect
+    get "/reload", redirect: "http://evil.com"
+
+    assert_predicate last_response, :redirect?
+    # Should redirect to root, not the external URL
+    assert last_response.location.end_with?("/")
+  end
+
+  # Test doc routes with HTMX
+  def test_doc_htmx_request
+    get "/doc/resources/application_component", {}, { "HTTP_HX_REQUEST" => "true" }
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "<article>"
+  end
+
+  # Test doc resources nonexistent
+  def test_doc_resources_nonexistent
+    get "/doc/resources/nonexistent_kind_xyz"
+
+    assert_equal 404, last_response.status
+  end
+
   # Class method tests
 
   def test_database_method_returns_database
