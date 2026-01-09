@@ -1,39 +1,35 @@
-FROM ruby:4.0-alpine3.23
+# Build stage
+FROM ruby:4.0-alpine3.23 AS builder
 
-# Install system dependencies required for building gems
-RUN apk add --no-cache \
-    build-base \
-    git \
-    libffi-dev \
-    yaml-dev \
-    graphviz
+RUN apk add --no-cache build-base git libffi-dev yaml-dev
 
-# Set working directory
 WORKDIR /app
-
-# Copy gemspec, Gemfile, and .ruby-version for dependency installation
 COPY archsight.gemspec Gemfile Gemfile.lock* .ruby-version ./
 COPY lib/archsight/version.rb lib/archsight/version.rb
+RUN bundle config set --local deployment true && \
+    bundle config set --local without 'development test' && \
+    bundle install --jobs 4
 
-# Install Ruby dependencies
-RUN bundle install --jobs 4
-
-# Copy application code
 COPY . .
 
-# Create volume mount point for resources
+# Runtime stage
+FROM ruby:4.0-alpine3.23
+
+RUN apk add --no-cache graphviz
+
+WORKDIR /app
+COPY --from=builder /app /app
+COPY --from=builder /usr/local/bundle /usr/local/bundle
+
 RUN mkdir -p /resources
 
-# Set resources directory environment variable
 ENV ARCHSIGHT_RESOURCES_DIR=/resources
 ENV APP_ENV=production
 
-# Expose port for web server
 EXPOSE 4567
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:4567/ || exit 1
 
-# Default command - use the archsight CLI
-CMD ["bundle", "exec", "exe/archsight", "web", "--port", "4567"]
+ENTRYPOINT ["bundle", "exec", "exe/archsight"]
+CMD ["web", "--port", "4567"]

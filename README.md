@@ -41,18 +41,23 @@ Access at: <http://localhost:4567>
 ### Option 2: Docker
 
 ```bash
-docker build -t archsight .
-docker run -p 4567:4567 -v "/path/to/resources:/resources" archsight
+# Run web server (default)
+docker run -p 4567:4567 -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight
+
+# Run lint
+docker run -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight lint -r /resources
+
+# Run any command
+docker run ghcr.io/ionos-cloud/archsight version
 ```
 
-Access at: <http://localhost:4567>
+Access web interface at: <http://localhost:4567>
 
 **Notes:**
 
-- The volume mount `-v "/path/to/resources:/resources"` mounts your resources directory
-- Resources are accessible at `/resources` inside the container
-- Live YAML updates are reflected without rebuilding
-- Health check verifies the service is running
+- Volume mount `-v "/path/to/resources:/resources"` mounts your resources directory
+- Default command starts the web server on port 4567
+- Pass subcommands directly (lint, version, console, template)
 
 ## CLI Commands
 

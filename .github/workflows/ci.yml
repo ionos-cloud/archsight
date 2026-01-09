@@ -95,10 +95,15 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
+          load: true
           tags: archsight:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run --rm archsight:latest version
+          docker run --rm -v "${{ github.workspace }}/examples:/resources" archsight:latest lint
 
   release-gem:
     needs: [test, lint, typecheck, security]
