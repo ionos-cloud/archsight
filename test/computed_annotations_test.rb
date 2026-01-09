@@ -718,6 +718,48 @@ class ComputedAnnotationsTest < Minitest::Test
     assert_nil result
   end
 
+  # === BusinessProduct and ApplicationService definition tests ===
+  # Note: Full integration tests for these computed annotations require complex
+  # relationship setup. Here we test that the definitions exist and have correct metadata.
+
+  def test_business_product_has_activity_computed_annotations
+    definitions = Archsight::Resources::BusinessProduct.computed_annotations.map(&:key)
+
+    assert_includes definitions, "activity/commits"
+    assert_includes definitions, "activity/createdAt"
+    assert_includes definitions, "activity/contributors"
+    assert_includes definitions, "activity/contributors/6m"
+  end
+
+  def test_application_service_has_activity_computed_annotations
+    definitions = Archsight::Resources::ApplicationService.computed_annotations.map(&:key)
+
+    assert_includes definitions, "activity/commits"
+    assert_includes definitions, "activity/createdAt"
+    assert_includes definitions, "activity/contributors"
+    assert_includes definitions, "activity/contributors/6m"
+  end
+
+  def test_business_product_computed_annotations_have_descriptions
+    definitions = Archsight::Resources::BusinessProduct.computed_annotations
+
+    definitions.each do |defn|
+      next unless defn.key.start_with?("activity/")
+
+      refute_nil defn.description, "#{defn.key} should have a description"
+    end
+  end
+
+  def test_application_service_computed_annotations_have_descriptions
+    definitions = Archsight::Resources::ApplicationService.computed_annotations
+
+    definitions.each do |defn|
+      next unless defn.key.start_with?("activity/")
+
+      refute_nil defn.description, "#{defn.key} should have a description"
+    end
+  end
+
   # Mock Database class for testing (based on evaluator_test.rb)
   class MockDatabase
     attr_accessor :instances

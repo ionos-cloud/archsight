@@ -29,7 +29,7 @@ class GraphvisTest < Minitest::Test
   # draw_dot() tests
 
   def test_draw_dot_basic
-    dot = @graph.draw_dot { |g| }
+    dot = @graph.draw_dot { |_g| nil }
 
     assert_includes dot, "digraph G {"
     assert_includes dot, "}"
@@ -112,7 +112,7 @@ class GraphvisTest < Minitest::Test
 
   def test_graph_with_custom_attrs
     graph = Archsight::Graphvis.new("custom", :dot, rankdir: :TB, splines: :ortho)
-    dot = graph.draw_dot { |g| }
+    dot = graph.draw_dot { |_g| nil }
 
     assert_includes dot, '"rankdir" = "TB"'
     assert_includes dot, '"splines" = "ortho"'
