@@ -22,8 +22,9 @@ FROM ruby:4.0-alpine3.23
 
 RUN apk add --no-cache graphviz
 
-# Copy installed gems from builder
+# Copy installed gems from builder (including default gems that were updated)
 COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --from=builder /usr/local/lib/ruby/gems /usr/local/lib/ruby/gems
 
 # Ensure Ruby finds gems in /usr/local/bundle
 ENV GEM_HOME=/usr/local/bundle
