@@ -17,15 +17,13 @@ FROM ruby:4.0-alpine3.23
 
 RUN apk add --no-cache graphviz
 
-# Copy installed gems (includes gems and executables)
-COPY --from=builder /usr/local/lib/ruby/gems /usr/local/lib/ruby/gems
+# Copy installed gems from builder (installed to /usr/local/bundle)
+COPY --from=builder /usr/local/bundle /usr/local/bundle
 
 RUN mkdir -p /resources
 
 ENV ARCHSIGHT_RESOURCES_DIR=/resources
 ENV APP_ENV=production
-ENV GEM_HOME=/usr/local/lib/ruby/gems/4.0.0
-ENV PATH="/usr/local/lib/ruby/gems/4.0.0/bin:${PATH}"
 
 EXPOSE 4567
 
