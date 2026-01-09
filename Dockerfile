@@ -8,7 +8,12 @@ COPY . .
 
 # Build and install the gem
 RUN gem build archsight.gemspec && \
+    echo "=== Files in gem ===" && \
+    gem spec archsight-*.gem files | head -30 && \
+    echo "=== Installing gem ===" && \
     gem install --no-document archsight-*.gem && \
+    echo "=== Installed gem directory ===" && \
+    ls -la /usr/local/bundle/gems/archsight-*/  && \
     echo "=== Builder: test archsight ===" && \
     archsight version
 
