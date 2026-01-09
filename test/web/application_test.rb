@@ -119,23 +119,65 @@ class ApplicationTest < Minitest::Test
     assert_includes last_response.body, "digraph"
   end
 
+  # Doc routes - plain markdown file
+  def test_get_doc_markdown
+    get "/doc/search"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "html"
+  end
+
+  def test_get_doc_markdown_htmx
+    get "/doc/search", {}, { "HTTP_HX_REQUEST" => "true" }
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "<article>"
+    refute_includes last_response.body, "<!DOCTYPE"
+  end
+
+  # Doc routes - ERB template file
+  def test_get_doc_erb
+    get "/doc/index"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "html"
+  end
+
+  def test_get_doc_erb_htmx
+    get "/doc/index", {}, { "HTTP_HX_REQUEST" => "true" }
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "<article>"
+    refute_includes last_response.body, "<!DOCTYPE"
+  end
+
+  # Doc routes - resource documentation
+  def test_get_doc_resources
+    get "/doc/resources/technology_artifact"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "html"
+  end
+
+  def test_get_doc_resources_htmx
+    get "/doc/resources/technology_artifact", {}, { "HTTP_HX_REQUEST" => "true" }
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "<article>"
+    refute_includes last_response.body, "<!DOCTYPE"
+  end
+
+  # Doc routes - nonexistent
   def test_get_doc_nonexistent
     get "/doc/nonexistent_file_xyz"
 
     assert_equal 404, last_response.status
   end
 
-  def test_get_doc_resources
-    get "/doc/resources/technology_artifact"
+  def test_get_doc_resources_nonexistent
+    get "/doc/resources/nonexistent_kind_xyz"
 
-    assert_predicate last_response, :ok?
-  end
-
-  def test_htmx_request_returns_partial
-    get "/doc/resources/technology_artifact", {}, { "HTTP_HX_REQUEST" => "true" }
-
-    assert_predicate last_response, :ok?
-    assert_includes last_response.body, "<article>"
+    assert_equal 404, last_response.status
   end
 
   # Search with invalid query
@@ -300,40 +342,70 @@ class ApplicationHelpersTest < Minitest::Test
     assert_includes result, "github.com/owner/repo"
   end
 
-  # time_ago logic tests
+  # time_ago helper tests - test the actual implementation logic
+
+  def time_ago(timestamp)
+    return nil unless timestamp
+
+    time = timestamp.is_a?(Time) ? timestamp : Time.parse(timestamp.to_s)
+    seconds = (Time.now - time).to_i
+
+    units = [
+      [60, "second"],
+      [60, "minute"],
+      [24, "hour"],
+      [7, "day"],
+      [4, "week"],
+      [12, "month"],
+      [Float::INFINITY, "year"]
+    ]
+
+    value = seconds
+    units.each do |divisor, unit|
+      return "just now" if unit == "second" && value < 10
+      return "#{value} #{unit}#{"s" if value != 1} ago" if value < divisor
+
+      value /= divisor
+    end
+  end
+
+  def test_time_ago_nil
+    assert_nil time_ago(nil)
+  end
 
   def test_time_ago_just_now
-    seconds = 5
-
-    assert_operator seconds, :<, 10
+    assert_equal "just now", time_ago(Time.now - 5)
   end
 
   def test_time_ago_seconds
-    seconds = 30
+    assert_equal "30 seconds ago", time_ago(Time.now - 30)
+  end
 
-    assert_operator seconds, :>=, 10
-    assert_operator seconds, :<, 60
+  def test_time_ago_seconds_singular_edge
+    # 10 seconds is the boundary - it shows "10 seconds ago" not "just now"
+    assert_equal "10 seconds ago", time_ago(Time.now - 10)
   end
 
   def test_time_ago_minutes
-    seconds = 120
-    minutes = seconds / 60
+    assert_equal "2 minutes ago", time_ago(Time.now - 120)
+  end
 
-    assert_equal 2, minutes
+  def test_time_ago_one_minute
+    assert_equal "1 minute ago", time_ago(Time.now - 60)
   end
 
   def test_time_ago_hours
-    seconds = 7200
-    hours = seconds / 60 / 60
-
-    assert_equal 2, hours
+    assert_equal "2 hours ago", time_ago(Time.now - 7200)
   end
 
   def test_time_ago_days
-    seconds = 86_400 * 3
-    days = seconds / 60 / 60 / 24
+    assert_equal "3 days ago", time_ago(Time.now - (86_400 * 3))
+  end
 
-    assert_equal 3, days
+  def test_time_ago_string_timestamp
+    timestamp = (Time.now - 3600).iso8601
+
+    assert_equal "1 hour ago", time_ago(timestamp)
   end
 
   # asset_path tests
