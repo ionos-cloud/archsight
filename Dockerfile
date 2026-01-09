@@ -6,23 +6,26 @@ RUN apk add --no-cache build-base git libffi-dev yaml-dev
 WORKDIR /app
 COPY . .
 
-# Build and install the gem
+# Build and install the gem to default locations
 RUN gem build archsight.gemspec && \
-    gem install --no-document archsight-*.gem
+    gem install --no-document archsight-*.gem && \
+    which archsight && \
+    gem env
 
 # Runtime stage
 FROM ruby:4.0-alpine3.23
 
 RUN apk add --no-cache graphviz
 
-# Copy installed gems from builder
+# Copy installed gems (includes gems and executables)
 COPY --from=builder /usr/local/lib/ruby/gems /usr/local/lib/ruby/gems
-COPY --from=builder /usr/local/bin/archsight /usr/local/bin/archsight
 
 RUN mkdir -p /resources
 
 ENV ARCHSIGHT_RESOURCES_DIR=/resources
 ENV APP_ENV=production
+ENV GEM_HOME=/usr/local/lib/ruby/gems/4.0.0
+ENV PATH="/usr/local/lib/ruby/gems/4.0.0/bin:${PATH}"
 
 EXPOSE 4567
 
