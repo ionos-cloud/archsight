@@ -1,9 +1,20 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Support running from source (development) and as installed gem
-lib_path = File.expand_path("../lib", __dir__)
-$LOAD_PATH.unshift(lib_path) if File.directory?(lib_path)
+# Debug output
+warn "=== DEBUG: __dir__ = #{__dir__.inspect}"
+warn "=== DEBUG: __dir__ includes /gems/? #{__dir__&.include?('/gems/')}"
+warn "=== DEBUG: $LOAD_PATH = #{$LOAD_PATH.inspect}"
+warn "=== DEBUG: Gem.loaded_specs.keys = #{Gem.loaded_specs.keys.inspect}"
+
+# Support running from source (development) - skip if installed as gem
+unless __dir__&.include?("/gems/")
+  lib_path = File.expand_path("../lib", __dir__)
+  warn "=== DEBUG: Adding lib_path = #{lib_path}"
+  $LOAD_PATH.unshift(lib_path) if File.directory?(lib_path)
+end
+
+warn "=== DEBUG: $LOAD_PATH after = #{$LOAD_PATH.inspect}"
 
 require "archsight"
 require "archsight/cli"
