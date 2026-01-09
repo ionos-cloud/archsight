@@ -6,19 +6,36 @@ RUN apk add --no-cache build-base git libffi-dev yaml-dev
 WORKDIR /app
 COPY . .
 
-# Build and install the gem to default locations
+# Build and install the gem
 RUN gem build archsight.gemspec && \
     gem install --no-document archsight-*.gem && \
+    echo "=== Builder: which archsight ===" && \
     which archsight && \
-    gem env
+    echo "=== Builder: gem env ===" && \
+    gem env && \
+    echo "=== Builder: /usr/local/bundle contents ===" && \
+    ls -la /usr/local/bundle/ && \
+    echo "=== Builder: /usr/local/bundle/gems ===" && \
+    ls -la /usr/local/bundle/gems/
 
 # Runtime stage
 FROM ruby:4.0-alpine3.23
 
 RUN apk add --no-cache graphviz
 
-# Copy installed gems from builder (installed to /usr/local/bundle)
+# Copy installed gems from builder
 COPY --from=builder /usr/local/bundle /usr/local/bundle
+
+RUN echo "=== Runtime: gem env ===" && \
+    gem env && \
+    echo "=== Runtime: /usr/local/bundle contents ===" && \
+    ls -la /usr/local/bundle/ && \
+    echo "=== Runtime: /usr/local/bundle/gems ===" && \
+    ls -la /usr/local/bundle/gems/ && \
+    echo "=== Runtime: which archsight ===" && \
+    which archsight && \
+    echo "=== Runtime: archsight version test ===" && \
+    archsight version
 
 RUN mkdir -p /resources
 
