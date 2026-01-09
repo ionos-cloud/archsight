@@ -9,14 +9,8 @@ COPY . .
 # Build and install the gem
 RUN gem build archsight.gemspec && \
     gem install --no-document archsight-*.gem && \
-    echo "=== Builder: which archsight ===" && \
-    which archsight && \
-    echo "=== Builder: gem env ===" && \
-    gem env && \
-    echo "=== Builder: /usr/local/bundle contents ===" && \
-    ls -la /usr/local/bundle/ && \
-    echo "=== Builder: /usr/local/bundle/gems ===" && \
-    ls -la /usr/local/bundle/gems/
+    echo "=== Builder: test archsight ===" && \
+    archsight version
 
 # Runtime stage
 FROM ruby:4.0-alpine3.23
@@ -26,15 +20,14 @@ RUN apk add --no-cache graphviz
 # Copy installed gems from builder
 COPY --from=builder /usr/local/bundle /usr/local/bundle
 
+# Ensure Ruby finds gems in /usr/local/bundle
+ENV GEM_HOME=/usr/local/bundle
+ENV GEM_PATH=/usr/local/bundle
+ENV PATH="/usr/local/bundle/bin:${PATH}"
+
 RUN echo "=== Runtime: gem env ===" && \
     gem env && \
-    echo "=== Runtime: /usr/local/bundle contents ===" && \
-    ls -la /usr/local/bundle/ && \
-    echo "=== Runtime: /usr/local/bundle/gems ===" && \
-    ls -la /usr/local/bundle/gems/ && \
-    echo "=== Runtime: which archsight ===" && \
-    which archsight && \
-    echo "=== Runtime: archsight version test ===" && \
+    echo "=== Runtime: test archsight ===" && \
     archsight version
 
 RUN mkdir -p /resources
