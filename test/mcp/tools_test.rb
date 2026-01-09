@@ -247,6 +247,57 @@ class McpToolsTest < Minitest::Test
     assert_includes impacted_names, "MyService"
   end
 
+  # Additional edge case tests for better coverage
+
+  def test_query_tool_with_complete_output
+    result = call_tool(Archsight::MCP::QueryTool, query: "repo-active", output: "complete")
+
+    resource = result["resources"].first
+
+    assert_equal "repo-active", resource["name"]
+    # Complete output includes more fields than brief
+    assert_equal "TechnologyArtifact", resource["kind"]
+  end
+
+  def test_query_tool_with_offset
+    result = call_tool(Archsight::MCP::QueryTool, query: 'activity/status == "active"', limit: 1, offset: 0)
+
+    assert_equal 3, result["total"]
+    assert_equal 1, result["count"]
+    assert_equal 0, result["offset"]
+  end
+
+  def test_analyze_resource_tool_with_group_by_kind
+    result = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationComponent", name: "MyService",
+                                                            depth: 1, group_by: "kind")
+
+    assert_equal "ApplicationComponent", result["kind"]
+    assert result.key?("outgoing") || result.key?("incoming")
+  end
+
+  def test_analyze_resource_tool_with_group_by_verb
+    result = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationComponent", name: "MyService",
+                                                            depth: 1, group_by: "verb")
+
+    assert_equal "ApplicationComponent", result["kind"]
+    assert result.key?("outgoing") || result.key?("incoming")
+  end
+
+  def test_query_tool_sub_query
+    result = call_tool(Archsight::MCP::QueryTool, query: "-> $(ApplicationInterface:)")
+
+    # Should return resources that have relations to ApplicationInterface
+    assert result.key?("total")
+    assert result.key?("resources")
+  end
+
+  def test_resource_doc_tool_unknown_kind
+    result = call_tool(Archsight::MCP::ResourceDocTool, kind: "UnknownKind")
+
+    assert result.key?("error")
+    assert_match(/Unknown resource kind/, result["message"])
+  end
+
   # Mock Database class
   class MockDatabase
     attr_accessor :instances

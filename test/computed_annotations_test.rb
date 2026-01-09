@@ -537,6 +537,229 @@ class ComputedAnnotationsTest < Minitest::Test
     assert_equal 3, instance.annotations["computed/meaningful_test"]
   end
 
+  # === ApplicationComponent Open-Source Filtering Tests ===
+
+  def test_activity_commits_skips_open_source_repos
+    # Set up component with mixed repos (some open-source)
+    @db.add_instance("TechnologyArtifact", "oss-repo", {
+                       "artifact/type" => "repo",
+                       "repository/visibility" => "open-source",
+                       "activity/commits" => "10,20,30"
+                     })
+    @db.add_instance("TechnologyArtifact", "private-repo", {
+                       "artifact/type" => "repo",
+                       "activity/commits" => "5,10,15"
+                     })
+
+    component = @db.add_instance("ApplicationComponent", "MixedComponent", {})
+    @db.link("ApplicationComponent", "MixedComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "oss-repo")
+    @db.link("ApplicationComponent", "MixedComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "private-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+
+    # Find the activity/commits computed annotation definition for ApplicationComponent
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find { |d| d.key == "activity/commits" }
+    skip("activity/commits computed annotation not found") unless definition
+
+    result = manager.compute_for(component, definition)
+
+    # Should only include private-repo's commits, not oss-repo
+    assert_equal "5,10,15", result
+  end
+
+  def test_activity_commits_with_empty_commits_annotation
+    component = @db.add_instance("ApplicationComponent", "EmptyCommitsComponent", {})
+    @db.add_instance("TechnologyArtifact", "empty-commits-repo", {
+                       "artifact/type" => "repo",
+                       "activity/commits" => ""
+                     })
+    @db.link("ApplicationComponent", "EmptyCommitsComponent", :realizedThrough, :technologyArtifacts,
+             "TechnologyArtifact", "empty-commits-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find { |d| d.key == "activity/commits" }
+    skip("activity/commits computed annotation not found") unless definition
+
+    result = manager.compute_for(component, definition)
+
+    assert_nil result
+  end
+
+  def test_activity_commits_with_different_array_lengths
+    # Create artifacts with different length commit arrays (simulating repos started at different times)
+    @db.add_instance("TechnologyArtifact", "old-repo", {
+                       "artifact/type" => "repo",
+                       "activity/commits" => "1,2,3,4,5"
+                     })
+    @db.add_instance("TechnologyArtifact", "new-repo", {
+                       "artifact/type" => "repo",
+                       "activity/commits" => "10,20"
+                     })
+
+    component = @db.add_instance("ApplicationComponent", "MultiRepoComponent", {})
+    @db.link("ApplicationComponent", "MultiRepoComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "old-repo")
+    @db.link("ApplicationComponent", "MultiRepoComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "new-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find { |d| d.key == "activity/commits" }
+    skip("activity/commits computed annotation not found") unless definition
+
+    result = manager.compute_for(component, definition)
+
+    # new-repo should be padded with zeros at the front: [0,0,0,10,20]
+    # Then summed with old-repo: [1,2,3,4,5] + [0,0,0,10,20] = [1,2,3,14,25]
+    assert_equal "1,2,3,14,25", result
+  end
+
+  def test_activity_created_at_skips_open_source_and_parses_dates
+    @db.add_instance("TechnologyArtifact", "oss-date-repo", {
+                       "artifact/type" => "repo",
+                       "repository/visibility" => "open-source",
+                       "activity/createdAt" => "2020-01-01T00:00:00Z"
+                     })
+    @db.add_instance("TechnologyArtifact", "private-date-repo", {
+                       "artifact/type" => "repo",
+                       "activity/createdAt" => "2022-06-15T12:00:00Z"
+                     })
+
+    component = @db.add_instance("ApplicationComponent", "DateComponent", {})
+    @db.link("ApplicationComponent", "DateComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "oss-date-repo")
+    @db.link("ApplicationComponent", "DateComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "private-date-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find do |d|
+      d.key == "activity/createdAt"
+    end
+    skip("activity/createdAt computed annotation not found") unless definition
+
+    result = manager.compute_for(component, definition)
+
+    # Should only consider private-date-repo, not oss-date-repo
+    assert_kind_of Time, result
+    assert_equal 2022, result.year
+  end
+
+  def test_activity_created_at_handles_invalid_dates
+    @db.add_instance("TechnologyArtifact", "invalid-date-repo", {
+                       "artifact/type" => "repo",
+                       "activity/createdAt" => "not-a-valid-date"
+                     })
+
+    component = @db.add_instance("ApplicationComponent", "InvalidDateComponent", {})
+    @db.link("ApplicationComponent", "InvalidDateComponent", :realizedThrough, :technologyArtifacts,
+             "TechnologyArtifact", "invalid-date-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find do |d|
+      d.key == "activity/createdAt"
+    end
+    skip("activity/createdAt computed annotation not found") unless definition
+
+    # Should handle invalid date gracefully and return nil
+    result = manager.compute_for(component, definition)
+
+    assert_nil result
+  end
+
+  def test_activity_contributors_6m_skips_open_source
+    @db.add_instance("TechnologyArtifact", "oss-contrib-repo", {
+                       "artifact/type" => "repo",
+                       "repository/visibility" => "open-source",
+                       "activity/contributors/6m" => "100"
+                     })
+    @db.add_instance("TechnologyArtifact", "private-contrib-repo", {
+                       "artifact/type" => "repo",
+                       "activity/contributors/6m" => "5"
+                     })
+
+    component = @db.add_instance("ApplicationComponent", "ContribComponent", {})
+    @db.link("ApplicationComponent", "ContribComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "oss-contrib-repo")
+    @db.link("ApplicationComponent", "ContribComponent", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
+             "private-contrib-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find do |d|
+      d.key == "activity/contributors/6m"
+    end
+    skip("activity/contributors/6m computed annotation not found") unless definition
+
+    result = manager.compute_for(component, definition)
+
+    # Should only sum private-contrib-repo's contributors (5), not oss-contrib-repo (100)
+    assert_equal 5, result
+  end
+
+  def test_activity_contributors_returns_nil_for_zero_total
+    @db.add_instance("TechnologyArtifact", "zero-contrib-repo", {
+                       "artifact/type" => "repo",
+                       "activity/contributors/6m" => "0"
+                     })
+
+    component = @db.add_instance("ApplicationComponent", "ZeroContribComponent", {})
+    @db.link("ApplicationComponent", "ZeroContribComponent", :realizedThrough, :technologyArtifacts,
+             "TechnologyArtifact", "zero-contrib-repo")
+
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    definition = Archsight::Resources::ApplicationComponent.computed_annotations.find do |d|
+      d.key == "activity/contributors/6m"
+    end
+    skip("activity/contributors/6m computed annotation not found") unless definition
+
+    result = manager.compute_for(component, definition)
+
+    # Zero total should return nil
+    assert_nil result
+  end
+
+  # === BusinessProduct and ApplicationService definition tests ===
+  # Note: Full integration tests for these computed annotations require complex
+  # relationship setup. Here we test that the definitions exist and have correct metadata.
+
+  def test_business_product_has_activity_computed_annotations
+    definitions = Archsight::Resources::BusinessProduct.computed_annotations.map(&:key)
+
+    assert_includes definitions, "activity/commits"
+    assert_includes definitions, "activity/createdAt"
+    assert_includes definitions, "activity/contributors"
+    assert_includes definitions, "activity/contributors/6m"
+  end
+
+  def test_application_service_has_activity_computed_annotations
+    definitions = Archsight::Resources::ApplicationService.computed_annotations.map(&:key)
+
+    assert_includes definitions, "activity/commits"
+    assert_includes definitions, "activity/createdAt"
+    assert_includes definitions, "activity/contributors"
+    assert_includes definitions, "activity/contributors/6m"
+  end
+
+  def test_business_product_computed_annotations_have_descriptions
+    definitions = Archsight::Resources::BusinessProduct.computed_annotations
+
+    definitions.each do |defn|
+      next unless defn.key.start_with?("activity/")
+
+      refute_nil defn.description, "#{defn.key} should have a description"
+    end
+  end
+
+  def test_application_service_computed_annotations_have_descriptions
+    definitions = Archsight::Resources::ApplicationService.computed_annotations
+
+    definitions.each do |defn|
+      next unless defn.key.start_with?("activity/")
+
+      refute_nil defn.description, "#{defn.key} should have a description"
+    end
+  end
+
   # Mock Database class for testing (based on evaluator_test.rb)
   class MockDatabase
     attr_accessor :instances

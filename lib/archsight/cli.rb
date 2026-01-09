@@ -15,6 +15,7 @@ module Archsight
     def web
       configure_resources
       require "archsight/web/application"
+      Archsight::Web::Application.setup_mcp!
       Archsight::Web::Application.run!(port: options[:port], bind: options[:host])
     end
 
