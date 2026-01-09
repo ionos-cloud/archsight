@@ -26,9 +26,9 @@ RUN apk add --no-cache graphviz
 COPY --from=builder /usr/local/bundle /usr/local/bundle
 COPY --from=builder /usr/local/lib/ruby/gems /usr/local/lib/ruby/gems
 
-# Ensure Ruby finds gems in /usr/local/bundle
+# Ensure Ruby finds gems in both /usr/local/bundle and default gems location
 ENV GEM_HOME=/usr/local/bundle
-ENV GEM_PATH=/usr/local/bundle
+ENV GEM_PATH=/usr/local/bundle:/usr/local/lib/ruby/gems/4.0.0
 ENV PATH="/usr/local/bundle/bin:${PATH}"
 
 RUN echo "=== Runtime: gem env ===" && \
