@@ -10,7 +10,19 @@ end
 
 require "minitest/test_task"
 
-Minitest::TestTask.create
+Minitest::TestTask.create do |t|
+  # Ensure test_helper is loaded first for proper SimpleCov initialization
+  t.test_prelude = 'require "test_helper"'
+end
+
+# Clean coverage folder before running tests to ensure accurate results
+desc "Clean coverage folder"
+task :clean_coverage do
+  require "fileutils"
+  FileUtils.rm_rf("coverage")
+end
+
+Rake::Task["test"].enhance([:clean_coverage])
 
 require "rubocop/rake_task"
 
