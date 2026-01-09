@@ -1,7 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+# Support running from source (development) and as installed gem
+lib_path = File.expand_path("../lib", __dir__)
+$LOAD_PATH.unshift(lib_path) if File.directory?(lib_path)
 
 require "archsight"
 require "archsight/cli"
