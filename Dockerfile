@@ -8,14 +8,7 @@ COPY . .
 
 # Build and install the gem
 RUN gem build archsight.gemspec && \
-    echo "=== Files in gem ===" && \
-    gem spec archsight-*.gem files | head -30 && \
-    echo "=== Installing gem ===" && \
-    gem install --no-document archsight-*.gem && \
-    echo "=== Installed gem directory ===" && \
-    ls -la /usr/local/bundle/gems/archsight-*/  && \
-    echo "=== Builder: test archsight ===" && \
-    archsight version
+    gem install --no-document archsight-*.gem
 
 # Runtime stage
 FROM ruby:4.0-alpine3.23
@@ -30,11 +23,6 @@ COPY --from=builder /usr/local/lib/ruby/gems /usr/local/lib/ruby/gems
 ENV GEM_HOME=/usr/local/bundle
 ENV GEM_PATH=/usr/local/bundle:/usr/local/lib/ruby/gems/4.0.0
 ENV PATH="/usr/local/bundle/bin:${PATH}"
-
-RUN echo "=== Runtime: gem env ===" && \
-    gem env && \
-    echo "=== Runtime: test archsight ===" && \
-    archsight version
 
 RUN mkdir -p /resources
 

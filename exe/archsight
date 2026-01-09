@@ -1,25 +1,9 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Debug output
-warn "=== DEBUG: __dir__ = #{__dir__.inspect}"
-warn "=== DEBUG: Checking gem lib directory..."
-gem_lib = "/usr/local/bundle/gems/archsight-0.1.0/lib"
-if File.directory?(gem_lib)
-  warn "=== DEBUG: #{gem_lib} exists"
-  warn "=== DEBUG: Contents: #{Dir.entries(gem_lib).inspect}"
-  archsight_rb = File.join(gem_lib, "archsight.rb")
-  warn "=== DEBUG: #{archsight_rb} exists? #{File.exist?(archsight_rb)}"
-else
-  warn "=== DEBUG: #{gem_lib} DOES NOT EXIST!"
-end
-
-# Support running from source (development) - skip if installed as gem
-unless __dir__&.include?("/gems/")
-  lib_path = File.expand_path("../lib", __dir__)
-  warn "=== DEBUG: Adding lib_path = #{lib_path}"
-  $LOAD_PATH.unshift(lib_path) if File.directory?(lib_path)
-end
+# Support running from source (development)
+lib_path = File.expand_path("../lib", __dir__)
+$LOAD_PATH.unshift(lib_path) if File.directory?(File.join(lib_path, "archsight"))
 
 require "archsight"
 require "archsight/cli"
