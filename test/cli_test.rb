@@ -18,6 +18,10 @@ class CLITest < Minitest::Test
     assert_includes output, Archsight::VERSION
   end
 
+  def test_exit_on_failure_returns_true
+    assert_predicate Archsight::CLI, :exit_on_failure?
+  end
+
   def test_template_without_kind_lists_kinds
     output = capture_stdout { @cli.template }
 
