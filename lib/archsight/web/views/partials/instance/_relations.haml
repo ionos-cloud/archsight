@@ -14,8 +14,8 @@
             .relation-group
               .relation-kind
                 %i{class: "iconoir-#{kind_class&.icon || 'cube'} icon-#{kind_class&.layer || 'technology'}"}
-                %span= kind
-              .relation-verb= verb
+                %span= "#{kind} (#{instances.size})"
+              .relation-verb= "#{verb} (#{instances.size})"
               .instance-badges
                 - instances.sort_by(&:name).each do |item|
                   %a.badge.badge-info{href: "/kinds/#{item.klass}/instances/#{item.name}"}
@@ -33,8 +33,8 @@
             .relation-group
               .relation-kind
                 %i{class: "iconoir-#{kind_class&.icon || 'cube'} icon-#{kind_class&.layer || 'technology'}"}
-                %span= kind
-              .relation-verb= verb || "references"
+                %span= "#{kind} (#{instances.size})"
+              .relation-verb= "#{verb || 'references'} (#{instances.size})"
               .instance-badges
                 - instances.sort_by(&:name).each do |item|
                   %a.badge.badge-info{ href: "/kinds/#{item.klass}/instances/#{item.name}" }
