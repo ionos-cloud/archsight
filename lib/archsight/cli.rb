@@ -4,6 +4,10 @@ require "thor"
 
 module Archsight
   class CLI < Thor
+    def self.exit_on_failure?
+      true
+    end
+
     class_option :resources,
                  aliases: "-r",
                  type: :string,
