@@ -14,7 +14,7 @@ spec:
   servedBy:
     applicationServices:
       - Archsight:CLI
-      - Archsight:WebUI
+      - Archsight:Web
 ---
 apiVersion: architecture/v1alpha1
 kind: StrategyCapability
@@ -31,5 +31,4 @@ spec:
       - Requirement:QueryLanguage
   servedBy:
     applicationServices:
-      - Archsight:MCPServer
-      - Archsight:WebUI
+      - Archsight:Web

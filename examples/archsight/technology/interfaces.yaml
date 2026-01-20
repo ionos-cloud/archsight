@@ -14,15 +14,50 @@ spec:
 apiVersion: architecture/v1alpha1
 kind: TechnologyInterface
 metadata:
+  name: HTTPS:REST
+  annotations:
+    architecture/description: |
+      HTTPS REST interface for secure web API endpoints.
+    architecture/tags: https,rest,api,secure
+spec:
+  suppliedBy:
+    technologyComponents:
+      - Tech:RubyGems:Sinatra
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyInterface
+metadata:
   name: Tech:MCP:SSE
   annotations:
     architecture/description: |
-      Server-Sent Events transport for the MCP protocol.
-    architecture/tags: mcp,sse,streaming
+      HTTP with Server-Sent Events (SSE) transport for the Model Context
+      Protocol (MCP). Enables network-accessible MCP servers with:
+
+      - `GET /sse` - SSE endpoint for server-to-client streaming
+      - `POST /message` - HTTP endpoint for client-to-server messages
+
+      This transport allows MCP servers to be accessed over HTTP, making
+      them suitable for web-based integrations and remote access.
+    architecture/tags: mcp,sse,http,streaming
+    architecture/documentation: https://modelcontextprotocol.io/docs/concepts/transports
 spec:
   suppliedBy:
     technologyComponents:
       - Tech:RubyGems:FastMCP
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyInterface
+metadata:
+  name: Tech:CLI:Thor
+  annotations:
+    architecture/description: |
+      Command-line interface built with Thor, a toolkit for building
+      powerful command-line interfaces in Ruby.
+    architecture/tags: cli,thor,ruby
+spec:
+  suppliedBy:
+    technologyComponents:
+      - Tech:RubyGems:Thor
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyInterface

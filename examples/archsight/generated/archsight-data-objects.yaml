@@ -1,0 +1,46 @@
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Kind
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `kind` | string | Yes | Instance kind name |
+      | `description` | string | No | Human-readable description of the kind |
+      | `layer` | string | No | Architecture layer (application, technology, business, etc.) |
+      | `icon` | string | No | Icon identifier for UI display |
+      | `instance_count` | integer | Yes | Number of instances of this kind |
+    generated/variants: Kind, KindList
+    generated/script: Import:API:archsight
+    generated/at: '2026-01-20T09:16:22Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Instance
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `kind` | string | No | Instance kind (omitted when filtering by kind) |
+      | `name` | string | Yes | Instance name |
+      | `metadata.annotations` | object | No | Instance annotations |
+      | `spec` | object | No | Instance specification |
+      | `relations` | object | No | Outgoing relations grouped by verb and kind (detail view only) |
+      | `references` | object | No | Incoming references grouped by kind and verb (detail view only) |
+    generated/variants: Instance, InstanceList
+    generated/script: Import:API:archsight
+    generated/at: '2026-01-20T09:16:22Z'
+spec: {}

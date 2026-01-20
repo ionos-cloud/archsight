@@ -1,0 +1,501 @@
+openapi: 3.1.0
+info:
+  title: Archsight API
+  description: |
+    REST API for Archsight enterprise architecture visualization and modeling tool.
+
+    ## Query Language
+
+    The search endpoint supports a powerful query language:
+
+    ### Name Search
+    - `kubernetes` - shortcut for `name =~ "kubernetes"`
+    - `name == "ExactName"` - exact name match
+    - `name =~ "pattern"` - regex pattern match
+
+    ### Kind Filter Prefix
+    - `TechnologyArtifact: ...` - restricts search to that resource type
+
+    ### Annotation Filters
+    - `activity/status == "active"` - equals
+    - `scc/language/Go/loc > 5000` - numeric comparison
+    - Operators: `==`, `!=`, `=~`, `>`, `<`, `>=`, `<=`
+
+    ### Relation Queries
+    - `-> Kind` - has outgoing relation to kind
+    - `-> "Name"` - has outgoing relation to specific instance
+    - `<- Kind` - has incoming relation from kind
+    - `~> Kind` - transitively reaches kind
+    - `<~ Kind` - transitively reached by kind
+    - `-> none` - no outgoing relations
+    - `<- none` - no incoming relations (orphan detection)
+
+    ### Sub-query Targets
+    - `-> $(expression)` - relates to any resource matching expression
+    - `~> $(expr)` - transitively reaches any matching resource
+    - `<- $(expr)` - incoming from any matching resource
+
+    ### Logical Operators
+    - `AND`, `and`, `&` - logical AND
+    - `OR`, `or`, `|` - logical OR
+    - `NOT`, `not`, `!` - logical NOT
+    - Parentheses for grouping
+
+    ### Examples
+    - `kubernetes` - resources with "kubernetes" in name
+    - `TechnologyArtifact: activity/status == "active"` - active TechnologyArtifacts
+    - `-> ApplicationInterface & repository/artifacts == "container"` - containerized services exposing APIs
+    - `<- none` - resources not referenced by anything (potential orphans)
+    - `-> none & <- none` - true orphans with no relations at all
+  version: 1.0.0
+  contact:
+    name: Archsight
+servers:
+  - url: /
+    description: Current server
+
+paths:
+  /api/v1/kinds:
+    get:
+      summary: List all resource kinds
+      description: Returns all available resource kinds with their instance counts and metadata.
+      operationId: listKinds
+      tags:
+        - Kinds
+      responses:
+        '200':
+          description: List of resource kinds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KindList'
+
+  /api/v1/kinds/{kind}:
+    get:
+      summary: List instances of a kind
+      description: |
+        Returns paginated list of instances for a specific resource kind.
+
+        Response includes: kind, name, metadata, spec (no relations/references).
+      operationId: listInstances
+      tags:
+        - Kinds
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/output'
+      responses:
+        '200':
+          description: Paginated list of instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceList'
+        '404':
+          description: Kind not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/kinds/{kind}/instances/{name}:
+    get:
+      summary: Get instance details
+      description: |
+        Returns detailed information about a specific instance.
+
+        Response includes: kind, name, metadata, spec, relations, references.
+      operationId: getInstance
+      tags:
+        - Instances
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/name'
+      responses:
+        '200':
+          description: Instance details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+        '404':
+          description: Kind or instance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/search:
+    get:
+      summary: Search instances
+      description: |
+        Search and filter architecture instances using the query language.
+        See the API description for full query language documentation.
+
+        Response includes: kind, name, metadata, spec (no relations/references).
+        Additional fields: query, query_time_ms, by_kind (count mode).
+      operationId: search
+      tags:
+        - Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Query string using the query language syntax
+          schema:
+            type: string
+          examples:
+            simple:
+              value: kubernetes
+              summary: Simple name search
+            kind_filter:
+              value: 'TechnologyArtifact: activity/status == "active"'
+              summary: Kind filter with annotation
+            relation:
+              value: '-> ApplicationInterface'
+              summary: Has relation to kind
+            orphan:
+              value: '<- none'
+              summary: Find orphan resources
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/output'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceList'
+        '400':
+          description: Invalid query or missing parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryError'
+
+  /mcp:
+    get:
+      summary: MCP Server endpoint
+      description: |
+        Model Context Protocol (MCP) endpoint for AI assistant integration.
+        Uses Server-Sent Events (SSE) for bidirectional communication.
+
+        Available tools:
+        - `query` - Search and filter architecture resources using the query language
+        - `analyze_resource` - Get detailed analysis of a specific resource
+        - `resource_doc` - Get documentation for a resource type
+      operationId: mcpEndpoint
+      tags:
+        - MCP
+      responses:
+        '200':
+          description: SSE stream for MCP communication
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /kinds.json:
+    get:
+      summary: List all resource kinds (simple)
+      description: Simple URL for listing all resource kinds
+      operationId: listKindsSimple
+      tags:
+        - Kinds
+      responses:
+        '200':
+          description: List of resource kinds
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KindList'
+
+  /kinds/{kind}.json:
+    get:
+      summary: List instances of a kind (simple)
+      description: |
+        Simple URL for listing instances of a kind.
+
+        Response includes: kind, name, metadata, spec (no relations/references).
+      operationId: listInstancesSimple
+      tags:
+        - Kinds
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/output'
+      responses:
+        '200':
+          description: Paginated list of instances
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceList'
+        '404':
+          description: Kind not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /kinds/{kind}/instances/{name}.json:
+    get:
+      summary: Get instance details (simple)
+      description: |
+        Simple URL for getting instance details.
+
+        Response includes: kind, name, metadata, spec, relations, references.
+      operationId: getInstanceSimple
+      tags:
+        - Instances
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/name'
+      responses:
+        '200':
+          description: Instance details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+        '404':
+          description: Kind or instance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  parameters:
+    kind:
+      name: kind
+      in: path
+      required: true
+      description: Instance kind name (e.g., TechnologyArtifact, ApplicationComponent)
+      schema:
+        type: string
+      example: TechnologyArtifact
+
+    name:
+      name: name
+      in: path
+      required: true
+      description: Instance name
+      schema:
+        type: string
+      example: my-service
+
+    limit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of results to return (1-500, default 50)
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 500
+        default: 50
+
+    offset:
+      name: offset
+      in: query
+      required: false
+      description: Number of results to skip for pagination
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    output:
+      name: output
+      in: query
+      required: false
+      description: |
+        Output format:
+        - `complete` (default): Full resource details including annotations and spec
+        - `brief`: Minimal output with just kind and name
+        - `count`: Only totals grouped by kind (search only)
+      schema:
+        type: string
+        enum:
+          - complete
+          - brief
+          - count
+        default: complete
+
+  schemas:
+    Kind:
+      type: object
+      required:
+        - kind
+        - instance_count
+      properties:
+        kind:
+          type: string
+          description: Instance kind name
+        description:
+          type: string
+          nullable: true
+          description: Human-readable description of the kind
+        layer:
+          type: string
+          description: Architecture layer (application, technology, business, etc.)
+        icon:
+          type: string
+          description: Icon identifier for UI display
+        instance_count:
+          type: integer
+          description: Number of instances of this kind
+
+    KindList:
+      type: object
+      required:
+        - total
+        - total_instances
+        - kinds
+      properties:
+        total:
+          type: integer
+          description: Total number of kinds
+        total_instances:
+          type: integer
+          description: Total number of instances across all kinds
+        query_time_ms:
+          type: number
+          format: float
+          description: Query execution time in milliseconds
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kind'
+
+    Instance:
+      type: object
+      required:
+        - name
+      properties:
+        kind:
+          type: string
+          description: Instance kind (omitted when filtering by kind)
+        name:
+          type: string
+          description: Instance name
+        metadata:
+          type: object
+          properties:
+            annotations:
+              type: object
+              additionalProperties: true
+              description: Instance annotations
+        spec:
+          type: object
+          additionalProperties: true
+          description: Instance specification
+        relations:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
+          description: Outgoing relations grouped by verb and kind (detail view only)
+          example:
+            exposes:
+              ApplicationInterface:
+                - api-v1
+                - api-v2
+        references:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: string
+          description: Incoming references grouped by kind and verb (detail view only)
+          example:
+            TechnologyArtifact:
+              dependsOn:
+                - other-service
+
+    InstanceList:
+      type: object
+      required:
+        - total
+        - instances
+      properties:
+        kind:
+          type: string
+          description: Instance kind name (when listing by kind)
+        query:
+          type: string
+          description: The executed query string (search only)
+        total:
+          type: integer
+          description: Total number of instances
+        limit:
+          type: integer
+          description: Maximum results per page
+        offset:
+          type: integer
+          description: Number of results skipped
+        count:
+          type: integer
+          description: Number of results in this response
+        query_time_ms:
+          type: number
+          format: float
+          description: Query execution time in milliseconds
+        by_kind:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Result counts by kind (count mode only)
+        instances:
+          type: array
+          items:
+            $ref: '#/components/schemas/Instance'
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Error message
+
+    QueryError:
+      type: object
+      required:
+        - error
+        - message
+        - query
+      properties:
+        error:
+          type: string
+          description: Error type (QueryError)
+        message:
+          type: string
+          description: Error message describing the query problem
+        query:
+          type: string
+          description: The invalid query string
+
+tags:
+  - name: Kinds
+    description: Instance kind operations
+  - name: Instances
+    description: Instance operations
+  - name: Search
+    description: Search and query operations
+  - name: MCP
+    description: Model Context Protocol for AI assistant integration

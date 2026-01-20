@@ -10,7 +10,7 @@ metadata:
 spec:
   servedBy:
     businessActors:
-      - Archsight:Maintainers
+      - OpenSource:Community
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyService
@@ -24,7 +24,7 @@ metadata:
 spec:
   servedBy:
     businessActors:
-      - Archsight:Maintainers
+      - OpenSource:Community
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyService
@@ -38,4 +38,4 @@ metadata:
 spec:
   servedBy:
     businessActors:
-      - Archsight:Maintainers
+      - OpenSource:Community

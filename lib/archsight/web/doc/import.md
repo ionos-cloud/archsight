@@ -159,6 +159,98 @@ The repository handler creates minimal artifacts for repositories that can't be 
 
 These artifacts include `activity/status` and `activity/reason` annotations documenting why full analysis wasn't possible.
 
+### rest-api-index
+
+Fetches an API index JSON and generates child Import resources for each API.
+
+**Configuration:**
+- `indexUrl` - URL to fetch API index JSON (required)
+- `baseUrl` - Base URL for spec files (optional, derived from indexUrl)
+- `interfaceOutputPath` - Shared output path for ApplicationInterface resources
+- `dataObjectOutputPath` - Shared output path for DataObject resources
+- `skipVisibility` - Comma-separated visibilities to skip (e.g., "public-preview,beta")
+
+**Expected Index Format:**
+```json
+[
+  {
+    "name": "compute",
+    "version": "6.0",
+    "visibility": "private",
+    "specPath": "/rest-api/compute/openapi.yaml",
+    "redocPath": "/rest-api/compute/redoc.html",
+    "gate": "GA"
+  }
+]
+```
+
+**Output:** Generates `Import:RestApi:*` resources for each API in the index.
+
+### rest-api
+
+Downloads an OpenAPI spec and generates ApplicationInterface and DataObject resources.
+
+**Configuration:**
+- `name` - API name (required)
+- `version` - API version (default: "1.0")
+- `visibility` - API visibility (default: "private")
+- `specUrl` - Full URL to OpenAPI spec - http, https, or file:// (required)
+- `htmlUrl` - Full URL to HTML documentation (optional)
+- `gate` - Release gate: "GA", "BETA", etc. (default: "GA")
+- `interfaceOutputPath` - Output path for ApplicationInterface resources
+- `dataObjectOutputPath` - Output path for DataObject resources
+
+**Output:**
+- ApplicationInterface resource with detected auth methods (JWT, Basic, API Key, OAuth2, OIDC)
+- DataObject resources extracted from OpenAPI schema definitions
+
+**Interface Naming:** `{Visibility}:{ApiName}:v{MajorVersion}:RestAPI`
+- Example: `Private:Compute:v6:RestAPI`
+
+### Example: REST API Multi-Stage Import
+
+```yaml
+# imports/rest-api.yaml
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:RestApi:Index
+  annotations:
+    import/handler: rest-api-index
+    import/priority: "1"
+    import/cacheTime: "24h"
+    import/config/indexUrl: https://api.example.com/index.json
+    import/config/interfaceOutputPath: generated/rest-api-interfaces.yaml
+    import/config/dataObjectOutputPath: generated/rest-api-data-objects.yaml
+    import/config/skipVisibility: public-preview
+spec: {}
+```
+
+After running, this generates child imports like:
+
+```yaml
+# generated/Import_RestApi_Index.yaml
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:RestApi:compute
+  annotations:
+    import/handler: rest-api
+    import/config/name: compute
+    import/config/version: "6.0"
+    import/config/visibility: private
+    import/config/specUrl: https://api.example.com/rest-api/compute/openapi.yaml
+    import/config/htmlUrl: https://api.example.com/rest-api/compute/redoc.html
+    import/config/gate: GA
+    import/config/interfaceOutputPath: generated/rest-api-interfaces.yaml
+    import/config/dataObjectOutputPath: generated/rest-api-data-objects.yaml
+spec:
+  dependsOn:
+    imports:
+      - Import:RestApi:Index
+```
+
 ## Multi-Stage Import Pattern
 
 Imports can generate other Import resources, enabling multi-stage workflows:

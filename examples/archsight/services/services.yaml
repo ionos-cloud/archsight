@@ -16,6 +16,7 @@ spec:
       - Archsight:Core:Database
       - Archsight:Util:Linter
       - Archsight:Util:Template
+      - Archsight:CLI:Commands
   servedBy:
     businessActors:
       - Archsight:Maintainers
@@ -23,7 +24,7 @@ spec:
 apiVersion: architecture/v1alpha1
 kind: ApplicationService
 metadata:
-  name: Archsight:WebUI
+  name: Archsight:Web
   annotations:
     architecture/abbr: Web
     architecture/description: |
@@ -37,29 +38,8 @@ spec:
       - Archsight:Core:Database
       - Archsight:Render:GraphViz
       - Archsight:Query:Engine
+      - Archsight:Query:MCP
+      - Archsight:Web:API
   servedBy:
     businessActors:
       - Archsight:Maintainers
----
-apiVersion: architecture/v1alpha1
-kind: ApplicationService
-metadata:
-  name: Archsight:MCPServer
-  annotations:
-    architecture/abbr: MCP
-    architecture/description: |
-      Model Context Protocol server exposing architecture query and
-      analysis tools for AI assistants like Claude.
-    architecture/tags: mcp,ai,claude
-    architecture/plane: control
-spec:
-  realizedThrough:
-    applicationComponents:
-      - Archsight:Core:Database
-      - Archsight:Query:Engine
-  servedBy:
-    businessActors:
-      - Archsight:Maintainers
-  realizes:
-    businessRequirements:
-      - Requirement:QueryLanguage

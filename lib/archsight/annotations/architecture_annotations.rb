@@ -46,9 +46,9 @@ module Archsight::Annotations::Architecture
                  filter: :word,
                  title: "Status"
       annotation "architecture/visibility",
-                 description: "API visibility (public, private)",
+                 description: "API visibility (public, private, internal)",
                  filter: :word,
-                 enum: %w[public private],
+                 enum: %w[public private internal],
                  title: "Visibility"
       annotation "architecture/applicationSets",
                  description: "Related ArgoCD ApplicationSets",

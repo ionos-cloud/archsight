@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "tmpdir"
+require "stringio"
 require "archsight/import/executor"
 require "archsight/import/registry"
 require "archsight/import/handler"
@@ -29,7 +30,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:Test", handler: "test")
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
     executor.run!
 
     assert_includes TestExecutionHandler.execution_log, "Import:Test"
@@ -42,7 +43,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:Third", handler: "test", priority: "3", depends_on: ["Import:Second"])
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
     executor.run!
 
     log = TestExecutionHandler.execution_log
@@ -63,7 +64,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:Disabled", handler: "test", enabled: "false")
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
     executor.run!
 
     log = TestExecutionHandler.execution_log
@@ -78,7 +79,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:Medium", handler: "test", priority: "50")
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
     executor.run!
 
     log = TestExecutionHandler.execution_log
@@ -97,7 +98,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:C", handler: "test", depends_on: ["Import:B"])
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
 
     assert_raises(Archsight::Import::DeadlockError) do
       executor.run!
@@ -109,7 +110,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:Failing", handler: "failing")
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
 
     assert_raises(Archsight::Import::ImportError) do
       executor.run!
@@ -121,7 +122,7 @@ class ExecutorTest < Minitest::Test
     create_import("Import:Second", handler: "test", priority: "2", depends_on: ["Import:First"])
 
     db = create_database
-    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false)
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
 
     plan = executor.execution_plan
 

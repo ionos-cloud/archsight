@@ -9,31 +9,31 @@ metadata:
     repository/visibility: open-source
     scc/languages: BASH,CSS,Docker ignore,Dockerfile,Gemfile,HAML,JavaScript,Markdown,Plain
       Text,Rakefile,Ruby,Ruby HTML,YAML
-    scc/estimatedCost: '689940.61'
-    scc/estimatedScheduleMonths: '11.94'
-    scc/estimatedPeople: '5.13'
+    scc/estimatedCost: '789259.63'
+    scc/estimatedScheduleMonths: '12.57'
+    scc/estimatedPeople: '5.58'
     scc/language/BASH/loc: '4'
     scc/language/CSS/loc: '1790'
     scc/language/Docker ignore/loc: '5'
     scc/language/Dockerfile/loc: '21'
-    scc/language/Gemfile/loc: '14'
+    scc/language/Gemfile/loc: '15'
     scc/language/HAML/loc: '1101'
     scc/language/JavaScript/loc: '6738'
-    scc/language/Markdown/loc: '1506'
+    scc/language/Markdown/loc: '1767'
     scc/language/Plain Text/loc: '169'
     scc/language/Rakefile/loc: '39'
-    scc/language/Ruby/loc: '9414'
+    scc/language/Ruby/loc: '12071'
     scc/language/Ruby HTML/loc: '48'
-    scc/language/YAML/loc: '1039'
+    scc/language/YAML/loc: '1111'
     activity/status: active
-    activity/commits: '24'
+    activity/commits: '25'
     activity/contributors: '2'
     activity/contributors/6m: '1'
     activity/contributors/total: '2'
     activity/busFactor: high
     agentic/tools: none
     activity/createdAt: '2026-01-07T15:34:50+01:00'
-    activity/lastHumanCommit: '2026-01-12T11:21:04+01:00'
+    activity/lastHumanCommit: '2026-01-20T07:57:10+01:00'
     repository/recentTags: v0.1.2,v0.1.1,v0.1.0
     repository/artifacts: container
     workflow/platforms: github-actions
@@ -46,7 +46,7 @@ metadata:
     link/localhost:4567: http://localhost:4567
     link/localhost:4567-2: http://localhost:4567/mcp/sse
     generated/script: Import:Repo:archsight
-    generated/at: '2026-01-19T15:00:58Z'
+    generated/at: '2026-01-20T08:28:25Z'
 spec:
   suppliedBy:
     technologyComponents:
@@ -60,5 +60,5 @@ kind: Import
 metadata:
   name: Import:Repo:archsight
   annotations:
-    generated/at: '2026-01-19T15:00:58Z'
+    generated/at: '2026-01-20T08:28:25Z'
 spec: {}

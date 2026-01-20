@@ -33,11 +33,13 @@ class Archsight::Import::Executor
   # @param resources_dir [String] Root resources directory
   # @param verbose [Boolean] Whether to print verbose debug output
   # @param max_concurrent [Integer] Maximum concurrent imports (default: 20)
-  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT)
+  # @param output [IO] Output stream for progress (default: $stdout)
+  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout)
     @database = database
     @resources_dir = resources_dir
     @verbose = verbose
     @max_concurrent = max_concurrent
+    @output = output
     @executed_this_run = Set.new
     @iteration = 0
     @mutex = Mutex.new
@@ -52,7 +54,7 @@ class Archsight::Import::Executor
     @failed_imports = {}
     @first_error = nil
     @interrupted = false
-    @concurrent_progress = Archsight::Import::ConcurrentProgress.new(max_slots: @max_concurrent)
+    @concurrent_progress = Archsight::Import::ConcurrentProgress.new(max_slots: @max_concurrent, output: @output)
     @shared_writer = Archsight::Import::SharedFileWriter.new
 
     # Calculate total imports for overall progress
@@ -138,7 +140,7 @@ class Archsight::Import::Executor
       deps = import_dependency_names(imp)
       deps_str = deps.empty? ? "(no dependencies)" : "depends on: #{deps.join(", ")}"
       enabled_str = enabled ? "" : " [DISABLED]"
-      puts "  #{idx + 1}. #{imp.name}#{enabled_str} #{deps_str}"
+      @output.puts "  #{idx + 1}. #{imp.name}#{enabled_str} #{deps_str}"
     end
 
     sorted
@@ -329,7 +331,7 @@ class Archsight::Import::Executor
     # Suppress verbose output in TTY mode as it would disrupt slot-based progress display
     return if @concurrent_progress&.tty?
 
-    puts msg if verbose
+    @output.puts msg if verbose
   end
 end
 
