@@ -75,6 +75,53 @@ module Archsight
       binding.irb
     end
 
+    desc "import", "Execute pending imports"
+    option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
+    option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "Show execution plan without running"
+    def import
+      configure_resources
+      require "archsight/database"
+      require "archsight/import/executor"
+
+      resources_dir = Archsight.resources_dir
+
+      # Load all handlers
+      require_import_handlers
+
+      # Create database that loads from resources directory (includes imports/ and generated/)
+      db = Archsight::Database.new(resources_dir, verbose: options[:verbose])
+
+      if options[:dry_run]
+        puts "Execution Plan:"
+        executor = Archsight::Import::Executor.new(
+          database: db,
+          resources_dir: resources_dir,
+          verbose: true
+        )
+        executor.execution_plan
+      else
+        executor = Archsight::Import::Executor.new(
+          database: db,
+          resources_dir: resources_dir,
+          verbose: options[:verbose]
+        )
+        executor.run!
+        puts "All imports completed successfully."
+      end
+    rescue Interrupt
+      puts "\nImport cancelled."
+      exit 130
+    rescue Archsight::Import::DeadlockError => e
+      puts "Error: #{e.message}"
+      exit 1
+    rescue Archsight::Import::ImportError => e
+      puts "Error: #{e.message}"
+      exit 1
+    rescue Archsight::ResourceError => e
+      display_error_with_context(e.to_s)
+      exit 1
+    end
+
     desc "version", "Show version"
     def version
       puts "archsight #{Archsight::VERSION}"
@@ -86,6 +133,13 @@ module Archsight
 
     def configure_resources
       Archsight.resources_dir = options[:resources] if options[:resources]
+    end
+
+    def require_import_handlers
+      handlers_dir = File.expand_path("import/handlers", __dir__)
+      Dir.glob(File.join(handlers_dir, "*.rb")).each do |handler_file|
+        require handler_file
+      end
     end
 
     def list_kinds

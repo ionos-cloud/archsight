@@ -1,0 +1,8 @@
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Git:Github
+  annotations:
+    architecture/description: GitHub source code hosting platform
+spec: {}

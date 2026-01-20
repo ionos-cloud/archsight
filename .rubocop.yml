@@ -21,7 +21,7 @@ Style/StringLiteralsInInterpolation:
 Style/Documentation:
   Enabled: false
 
-# Allow compact class style for resources/annotations/mcp/query/web (single-line class definition)
+# Allow compact class style for resources/annotations/mcp/query/web/import (single-line class definition)
 Style/ClassAndModuleChildren:
   Exclude:
     - "lib/archsight/resources.rb"
@@ -31,6 +31,8 @@ Style/ClassAndModuleChildren:
     - "lib/archsight/query.rb"
     - "lib/archsight/query/*.rb"
     - "lib/archsight/web/*.rb"
+    - "lib/archsight/import/*.rb"
+    - "lib/archsight/import/**/*.rb"
 
 # Allow optional boolean parameters (common pattern)
 Style/OptionalBooleanParameter:

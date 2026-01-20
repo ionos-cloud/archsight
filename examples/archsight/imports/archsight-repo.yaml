@@ -1,0 +1,24 @@
+---
+# Example Import: Analyze the archsight repository
+#
+# This import uses the repository handler to:
+# 1. Clone/update the archsight repository
+# 2. Analyze code metrics using scc
+# 3. Analyze git history for activity and contributors
+# 4. Generate a TechnologyArtifact resource
+#
+# Run with: archsight import -r examples/archsight
+#
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:Repo:archsight
+  annotations:
+    import/handler: repository
+    import/priority: "10"
+    import/cacheTime: 1h
+    import/outputPath: generated/repositories.yaml
+    import/config/path: ~/.cache/archsight/git/github/ionos-cloud/archsight
+    import/config/gitUrl: git@github.com:ionos-cloud/archsight.git
+    import/config/visibility: open-source
+spec: {}

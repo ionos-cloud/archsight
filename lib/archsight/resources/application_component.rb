@@ -182,9 +182,9 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   %w[scc/estimatedCost scc/estimatedScheduleMonths scc/estimatedPeople].each do |anno_key|
     computed_annotation anno_key,
                         title: "Total #{anno_key.split("/").last.split(/(?=[A-Z])/).map(&:capitalize).join(" ")}",
-                        description: "Total estimated #{anno_key.split("/").last} from related artifacts",
+                        description: "Total estimated #{anno_key.split("/").last} from related repositories",
                         type: Integer do
-      sum(outgoing_transitive(:TechnologyArtifact), anno_key)
+      sum(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'), anno_key)
     end
   end
 

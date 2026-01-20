@@ -72,8 +72,12 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   annotation "activity/status",
              description: "Repository activity status",
              title: "Activity Status",
-             enum: %w[active abandoned bot-only archived],
+             enum: %w[active abandoned bot-only archived inaccessible empty no-code],
              list: true
+  annotation "activity/reason",
+             description: "Reason for activity status (for non-standard statuses)",
+             title: "Status Reason",
+             sidebar: false
   annotation "activity/busFactor",
              description: "Bus factor assessment",
              title: "Bus Factor",
@@ -82,6 +86,10 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   annotation "activity/createdAt",
              description: "Date of first commit (repository creation)",
              title: "Created",
+             type: Time
+  annotation "activity/lastHumanCommit",
+             description: "Date of last human commit (last activity)",
+             title: "Last Human Commit",
              type: Time
   annotation "agentic/tools",
              description: "Agentic tools detected in repository",
@@ -122,6 +130,18 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              description: "Repository visibility classification",
              title: "Visibility",
              enum: %w[internal open-source public]
+  annotation "repository/recentTags",
+             description: "Recent git tags (releases)",
+             title: "Recent Tags",
+             sidebar: false
+  annotation "repository/accessible",
+             description: "Whether repository is accessible for cloning",
+             title: "Accessible",
+             enum: %w[true false]
+  annotation "repository/error",
+             description: "Error message if repository is not accessible",
+             title: "Access Error",
+             sidebar: false
   annotation "deployment/images",
              description: "OCI container image names published by this repository",
              title: "Container Images",

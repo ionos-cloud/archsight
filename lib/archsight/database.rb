@@ -46,21 +46,31 @@ module Archsight
     attr_accessor :instances, :verbose, :verify, :compute_annotations
 
     def initialize(path, verbose: false, verify: true, compute_annotations: true)
-      @path = path
+      # Support both single path and array of paths
+      @paths = Array(path)
       @verbose = verbose
       @verify = verify
       @compute_annotations = compute_annotations
       @instances = {}
     end
 
+    # For backwards compatibility
+    def path
+      @paths.first
+    end
+
     def reload!
       @instances = {}
 
-      # load all resources
-      Dir.glob(File.join(@path, "**/*.yaml")).each do |path|
-        @current_ref = LineReference.new(path, 0)
-        puts "parsing #{path}..." if @verbose
-        load_file(path)
+      # load all resources from all paths
+      @paths.each do |base_path|
+        next unless Dir.exist?(base_path)
+
+        Dir.glob(File.join(base_path, "**/*.yaml")).each do |path|
+          @current_ref = LineReference.new(path, 0)
+          puts "parsing #{path}..." if @verbose
+          load_file(path)
+        end
       end
 
       verify! if @verify
