@@ -122,11 +122,14 @@ class Archsight::Import::Handler
   # @param annotations [Hash] Additional annotations (added directly)
   # @param depends_on [Array<String>] Names of imports this depends on
   # @return [Hash] Import resource hash ready for YAML serialization
+  #
+  # NOTE: generated/at is NOT set here - it's only set by the self_marker when
+  # the child import actually executes. This ensures caching works correctly
+  # regardless of file loading order.
   def import_yaml(name:, handler:, config: {}, annotations: {}, depends_on: [])
     all_annotations = {
       "import/handler" => handler,
-      "generated/script" => import_resource.name,
-      "generated/at" => Time.now.utc.iso8601
+      "generated/script" => import_resource.name
     }
 
     # Add direct annotations (e.g., import/outputPath)
