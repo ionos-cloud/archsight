@@ -16,22 +16,25 @@ require_relative "../registry"
 #   import/config/interfaceOutputPath - Shared output for ApplicationInterface resources
 #   import/config/dataObjectOutputPath - Shared output for DataObject resources
 #   import/config/skipVisibility - Comma-separated visibilities to skip (e.g., "public-preview")
+#   import/config/childCacheTime - Cache time for generated child imports (e.g., "1h", "30m")
 #
 # Output:
 #   Generates Import:RestApi:* resources for each API in the index
 #
-# Expected index format:
-#   [
-#     {
-#       "name": "compute",
-#       "version": "6.0",
-#       "visibility": "private",
-#       "specPath": "/rest-api/compute/openapi.yaml",
-#       "redocPath": "/rest-api/compute/redoc.html",
-#       "gate": "GA"
-#     },
-#     ...
-#   ]
+# Expected index format (object with "pages" array):
+#   {
+#     "pages": [
+#       {
+#         "name": "compute",
+#         "version": "v1",
+#         "visibility": "public",
+#         "spec": "/rest-api/public-compute-v1.yaml",
+#         "redoc": "/rest-api/docs/compute/v1/",
+#         "gate": "General-Availability"
+#       },
+#       ...
+#     ]
+#   }
 class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
   def execute
     @index_url = config("indexUrl")
@@ -41,6 +44,7 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
     @interface_output_path = config("interfaceOutputPath")
     @data_object_output_path = config("dataObjectOutputPath")
     @skip_visibilities = (config("skipVisibility") || "").split(",").map(&:strip).reject(&:empty?)
+    @child_cache_time = config("childCacheTime")
 
     # Fetch API index
     progress.update("Fetching API index from #{@index_url}")
@@ -82,7 +86,9 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
 
     case response
     when Net::HTTPSuccess
-      JSON.parse(response.body)
+      data = JSON.parse(response.body)
+      # Handle both array format and object with "pages" key
+      data.is_a?(Array) ? data : (data["pages"] || [])
     when Net::HTTPRedirection
       # Follow redirect
       @index_url = response["location"]
@@ -110,11 +116,15 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
   def generate_api_imports(apis)
     yaml_documents = apis.map do |api|
       api_name = api["name"]
-      import_name = "Import:RestApi:#{api_name}"
+      api_version = api["version"] || "v1"
+      import_name = "Import:RestApi:#{api_name}:#{api_version}"
 
       # Build full URLs from base URL and paths
-      spec_url = build_full_url(api["specPath"])
-      html_url = api["redocPath"] ? build_full_url(api["redocPath"]) : nil
+      # Support both "spec"/"redoc" (new format) and "specPath"/"redocPath" (legacy)
+      spec_path = api["spec"] || api["specPath"]
+      redoc_path = api["redoc"] || api["redocPath"]
+      spec_url = build_full_url(spec_path)
+      html_url = redoc_path ? build_full_url(redoc_path) : nil
 
       # Build config for child import
       child_config = {
@@ -129,6 +139,7 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
       # Build annotations for child import
       child_annotations = {}
       child_annotations["import/outputPath"] = @interface_output_path if @interface_output_path
+      child_annotations["import/cacheTime"] = @child_cache_time if @child_cache_time
       child_annotations["import/config/interfaceOutputPath"] = @interface_output_path if @interface_output_path
       child_annotations["import/config/dataObjectOutputPath"] = @data_object_output_path if @data_object_output_path
 

@@ -67,8 +67,8 @@ class RestApiIndexHandlerTest < Minitest::Test
 
     assert_equal 3, imports.size
 
-    # Check compute import - should have full URLs now
-    compute_import = imports.find { |r| r["metadata"]["name"] == "Import:RestApi:compute" }
+    # Check compute import - name now includes version
+    compute_import = imports.find { |r| r["metadata"]["name"] == "Import:RestApi:compute:6.0" }
 
     refute_nil compute_import
     assert_equal "rest-api", compute_import["metadata"]["annotations"]["import/handler"]
@@ -83,7 +83,7 @@ class RestApiIndexHandlerTest < Minitest::Test
     assert_equal ["Import:RestApi:Index"], compute_import["spec"]["dependsOn"]["imports"]
 
     # Check storage import (no htmlUrl)
-    storage_import = imports.find { |r| r["metadata"]["name"] == "Import:RestApi:storage" }
+    storage_import = imports.find { |r| r["metadata"]["name"] == "Import:RestApi:storage:2.0" }
 
     refute_nil storage_import
     assert_nil storage_import["metadata"]["annotations"]["import/config/htmlUrl"]
@@ -92,7 +92,7 @@ class RestApiIndexHandlerTest < Minitest::Test
 
   def test_derives_base_url_from_index_url
     index_json = [
-      { "name" => "test", "specPath" => "/api.yaml" }
+      { "name" => "test", "version" => "v1", "specPath" => "/api.yaml" }
     ].to_json
 
     stub_request(:get, "https://api.example.com/v1/index.json")
@@ -109,7 +109,7 @@ class RestApiIndexHandlerTest < Minitest::Test
     content = File.read(output_path)
     resources = YAML.load_stream(content)
 
-    test_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:test" }
+    test_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:test:v1" }
 
     # Should build full URL from derived base URL
     assert_equal "https://api.example.com/api.yaml",
@@ -118,7 +118,7 @@ class RestApiIndexHandlerTest < Minitest::Test
 
   def test_uses_explicit_base_url
     index_json = [
-      { "name" => "test", "specPath" => "/api.yaml" }
+      { "name" => "test", "version" => "v1", "specPath" => "/api.yaml" }
     ].to_json
 
     stub_request(:get, "https://example.com/index.json")
@@ -135,7 +135,7 @@ class RestApiIndexHandlerTest < Minitest::Test
     content = File.read(output_path)
     resources = YAML.load_stream(content)
 
-    test_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:test" }
+    test_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:test:v1" }
 
     # Should build full URL from explicit base URL
     assert_equal "https://cdn.example.com/api.yaml",
@@ -144,9 +144,9 @@ class RestApiIndexHandlerTest < Minitest::Test
 
   def test_skips_apis_by_visibility
     index_json = [
-      { "name" => "stable", "visibility" => "private", "specPath" => "/stable.yaml" },
-      { "name" => "preview", "visibility" => "public-preview", "specPath" => "/preview.yaml" },
-      { "name" => "beta", "visibility" => "beta", "specPath" => "/beta.yaml" }
+      { "name" => "stable", "version" => "v1", "visibility" => "private", "specPath" => "/stable.yaml" },
+      { "name" => "preview", "version" => "v1", "visibility" => "public-preview", "specPath" => "/preview.yaml" },
+      { "name" => "beta", "version" => "v1", "visibility" => "beta", "specPath" => "/beta.yaml" }
     ].to_json
 
     stub_request(:get, "https://example.com/index.json")
@@ -165,9 +165,9 @@ class RestApiIndexHandlerTest < Minitest::Test
 
     import_names = resources.map { |r| r["metadata"]["name"] }
 
-    assert_includes import_names, "Import:RestApi:stable"
-    refute_includes import_names, "Import:RestApi:preview"
-    refute_includes import_names, "Import:RestApi:beta"
+    assert_includes import_names, "Import:RestApi:stable:v1"
+    refute_includes import_names, "Import:RestApi:preview:v1"
+    refute_includes import_names, "Import:RestApi:beta:v1"
   end
 
   def test_handles_empty_index
@@ -203,7 +203,7 @@ class RestApiIndexHandlerTest < Minitest::Test
   end
 
   def test_follows_redirects
-    index_json = [{ "name" => "test", "specPath" => "/api.yaml" }].to_json
+    index_json = [{ "name" => "test", "version" => "v1", "specPath" => "/api.yaml" }].to_json
 
     stub_request(:get, "https://example.com/index.json")
       .to_return(status: 302, headers: { "Location" => "https://example.com/v2/index.json" })
@@ -219,7 +219,7 @@ class RestApiIndexHandlerTest < Minitest::Test
 
   def test_propagates_output_paths_to_child_imports
     index_json = [
-      { "name" => "test", "specPath" => "/api.yaml" }
+      { "name" => "test", "version" => "v1", "specPath" => "/api.yaml" }
     ].to_json
 
     stub_request(:get, "https://example.com/index.json")
@@ -237,7 +237,7 @@ class RestApiIndexHandlerTest < Minitest::Test
     content = File.read(output_path)
     resources = YAML.load_stream(content)
 
-    test_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:test" }
+    test_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:test:v1" }
 
     # Check that paths are propagated to child imports
     assert_equal "generated/rest-api-interfaces.yaml",
@@ -247,7 +247,7 @@ class RestApiIndexHandlerTest < Minitest::Test
   end
 
   def test_includes_self_marker
-    index_json = [{ "name" => "test", "specPath" => "/api.yaml" }].to_json
+    index_json = [{ "name" => "test", "version" => "v1", "specPath" => "/api.yaml" }].to_json
 
     stub_request(:get, "https://example.com/index.json")
       .to_return(status: 200, body: index_json)
@@ -266,10 +266,45 @@ class RestApiIndexHandlerTest < Minitest::Test
     assert self_marker["metadata"]["annotations"]["generated/at"]
   end
 
+  def test_handles_pages_object_format
+    # Test the new format where index is an object with "pages" array
+    index_json = {
+      "pages" => [
+        {
+          "name" => "vpn",
+          "version" => "v1",
+          "visibility" => "public",
+          "spec" => "/rest-api/vpn.yaml",
+          "redoc" => "/rest-api/docs/vpn/",
+          "gate" => "General-Availability"
+        }
+      ]
+    }.to_json
+
+    stub_request(:get, "https://example.com/index.json")
+      .to_return(status: 200, body: index_json)
+
+    handler = create_handler(index_url: "https://example.com/index.json")
+    handler.execute
+
+    output_path = File.join(@resources_dir, "generated", "Import_RestApi_Index.yaml")
+    content = File.read(output_path)
+    resources = YAML.load_stream(content)
+
+    vpn_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:vpn:v1" }
+
+    refute_nil vpn_import
+    assert_equal "https://example.com/rest-api/vpn.yaml",
+                 vpn_import["metadata"]["annotations"]["import/config/specUrl"]
+    assert_equal "https://example.com/rest-api/docs/vpn/",
+                 vpn_import["metadata"]["annotations"]["import/config/htmlUrl"]
+  end
+
   def test_preserves_full_urls_in_index
     index_json = [
       {
         "name" => "external",
+        "version" => "v1",
         "specPath" => "https://other.example.com/api.yaml",
         "redocPath" => "https://docs.example.com/external/"
       }
@@ -285,7 +320,7 @@ class RestApiIndexHandlerTest < Minitest::Test
     content = File.read(output_path)
     resources = YAML.load_stream(content)
 
-    external_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:external" }
+    external_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:external:v1" }
 
     # Full URLs should be preserved as-is
     assert_equal "https://other.example.com/api.yaml",

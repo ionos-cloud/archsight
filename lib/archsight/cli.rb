@@ -108,8 +108,8 @@ module Archsight
         executor.run!
         puts "All imports completed successfully."
       end
-    rescue Interrupt
-      puts "\nImport cancelled."
+    rescue Archsight::Import::InterruptedError
+      # Graceful shutdown already handled by executor
       exit 130
     rescue Archsight::Import::DeadlockError => e
       puts "Error: #{e.message}"

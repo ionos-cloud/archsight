@@ -338,7 +338,6 @@ components:
           description: Instance kind name
         description:
           type: string
-          nullable: true
           description: Human-readable description of the kind
         layer:
           type: string

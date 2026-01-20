@@ -18,6 +18,7 @@ require_relative "../registry"
 #   import/config/verifySSL - If "false", disable SSL verification (default: true)
 #   import/config/sslFingerprint - SSL certificate fingerprint for pinning (SHA256, colon-separated hex)
 #   import/config/repoOutputPath - Output path for repository handler results (e.g., "generated/repositories.yaml")
+#   import/config/childCacheTime - Cache time for generated child imports (e.g., "1h", "30m")
 #
 # Environment:
 #   GITLAB_TOKEN - GitLab personal access token (required)
@@ -34,6 +35,7 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
     raise "Missing required environment variable: GITLAB_TOKEN" unless @token
 
     @repo_output_path = config("repoOutputPath")
+    @child_cache_time = config("childCacheTime")
 
     @target_dir = File.join(Dir.home, ".cache", "archsight", "git", "gitlab")
     @explore_groups = config("exploreGroups") == "true"
@@ -171,6 +173,7 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
       # Build annotations for child import
       child_annotations = {}
       child_annotations["import/outputPath"] = @repo_output_path if @repo_output_path
+      child_annotations["import/cacheTime"] = @child_cache_time if @child_cache_time
 
       import_yaml(
         name: "Import:Repo:gitlab:#{dir_name}",

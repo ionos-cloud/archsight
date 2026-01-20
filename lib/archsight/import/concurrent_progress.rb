@@ -183,6 +183,24 @@ class Archsight::Import::ConcurrentProgress
     end
   end
 
+  # Show interrupt message without clearing progress (called on first Ctrl-C)
+  def interrupt(message)
+    @mutex.synchronize do
+      if @tty
+        # Move to the line below progress and print message
+        @output.print "\n"
+        @output.print "\e[2K"
+        @output.print "#{COLORS[:yellow]}#{message}#{COLORS[:reset]}"
+        @output.print "\n"
+        @output.flush
+        # Increase lines printed to account for the interrupt message
+        @lines_printed += 2
+      else
+        @output.puts message
+      end
+    end
+  end
+
   private
 
   def build_overall_line
