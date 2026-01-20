@@ -39,45 +39,45 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
   # Computed Annotations
   computed_annotation "repository/artifacts/total",
                       title: "Total Git Repositories",
-                      description: "Number of related git repositories across all related application components",
+                      description: "Number of related git repositories",
                       type: Integer do
-    sum(outgoing_transitive(:ApplicationComponent), "repository/artifacts/total")
+    count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'))
   end
 
   computed_annotation "repository/artifacts/active",
                       title: "Active Git Repositories",
-                      description: "Number of related git repositories across all related application components",
+                      description: "Number of active git repositories",
                       type: Integer do
-    sum(outgoing_transitive(:ApplicationComponent), "repository/artifacts/active")
+    count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo" & activity/status == "active"'))
   end
 
   computed_annotation "repository/artifacts/abandoned",
                       title: "Abandoned Git Repositories",
-                      description: "Number of related git repositories across all related application components",
+                      description: "Number of abandoned git repositories",
                       type: Integer do
-    sum(outgoing_transitive(:ApplicationComponent), "repository/artifacts/abandoned")
+    count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo" & activity/status == "abandoned"'))
   end
 
   computed_annotation "repository/artifacts/highBusFactor",
                       title: "High Bus Factor Repositories",
-                      description: "Number of active git repositories with high bus factor across all related application components",
+                      description: "Number of active git repositories with high bus factor",
                       type: Integer do
-    sum(outgoing_transitive(:ApplicationComponent), "repository/artifacts/highBusFactor")
+    count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo" & activity/busFactor == "high"'))
   end
 
   computed_annotation "repository/artifacts/archived",
                       title: "Archived Repositories",
-                      description: "Number of archived git repositories across all related application components",
+                      description: "Number of archived git repositories",
                       type: Integer do
-    sum(outgoing_transitive(:ApplicationComponent), "repository/artifacts/archived")
+    count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo" & activity/status == "archived"'))
   end
 
   %w[scc/estimatedCost scc/estimatedScheduleMonths scc/estimatedPeople].each do |anno_key|
     computed_annotation anno_key,
                         title: "Total #{anno_key.split("/").last.split(/(?=[A-Z])/).map(&:capitalize).join(" ")}",
-                        description: "Total estimated #{anno_key.split("/").last} from related artifacts across all related application components",
+                        description: "Total estimated #{anno_key.split("/").last} from related repositories",
                         type: Integer do
-      sum(outgoing_transitive(:ApplicationComponent), anno_key)
+      sum(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'), anno_key)
     end
   end
 

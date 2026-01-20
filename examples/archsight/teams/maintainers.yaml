@@ -7,6 +7,6 @@ metadata:
       Core maintainers of the archsight project responsible for
       development, maintenance, and community engagement.
     architecture/tags: team,opensource
-    team/lead: Project Lead <lead@example.com>
+    team/lead: Vincent Landgraf <vincent.landgraf@ionos.com>
     team/jira: ARCHSIGHT
 spec: {}
