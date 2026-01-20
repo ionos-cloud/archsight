@@ -57,6 +57,9 @@ class Archsight::Import::Executor
     @concurrent_progress = Archsight::Import::ConcurrentProgress.new(max_slots: @max_concurrent, output: @output)
     @shared_writer = Archsight::Import::SharedFileWriter.new
 
+    # Set up graceful shutdown on Ctrl-C
+    setup_signal_handlers
+
     # Calculate total imports for overall progress
     reload_database_quietly!
     total = count_all_enabled_imports
@@ -115,6 +118,11 @@ class Archsight::Import::Executor
     @shared_writer.close_all
     finish_message = build_finish_message
     @concurrent_progress.finish(finish_message) if @total_executed.positive? || @total_cached.positive?
+
+    # Raise InterruptedError if we were interrupted, so CLI can handle it
+    raise Archsight::Import::InterruptedError, "Import interrupted by user" if @interrupted
+  ensure
+    restore_signal_handlers
   end
 
   def build_finish_message
@@ -147,6 +155,27 @@ class Archsight::Import::Executor
   end
 
   private
+
+  # Set up signal handlers for graceful shutdown
+  def setup_signal_handlers
+    @original_int_handler = Signal.trap("INT") do
+      if @interrupted
+        # Second Ctrl-C: force exit
+        @concurrent_progress&.finish("Force quit")
+        @shared_writer&.close_all
+        exit(130)
+      else
+        # First Ctrl-C: graceful shutdown
+        @interrupted = true
+        @concurrent_progress&.interrupt("Shutting down gracefully (Ctrl-C again to force quit)...")
+      end
+    end
+  end
+
+  # Restore original signal handlers
+  def restore_signal_handlers
+    Signal.trap("INT", @original_int_handler || "DEFAULT")
+  end
 
   # Count all enabled imports (for overall progress display)
   def count_all_enabled_imports
@@ -229,15 +258,8 @@ class Archsight::Import::Executor
       end
     end
 
-    # Wait for all threads to complete, handling interrupts gracefully
+    # Wait for all threads to complete
     threads.each(&:join)
-  rescue Interrupt
-    @interrupted = true
-    @concurrent_progress.finish("Interrupted")
-    @shared_writer.close_all
-    # Wait briefly for threads to finish current work
-    threads.each { |t| t.join(0.5) }
-    raise
   end
 
   # Execute a single import (called from thread)
@@ -340,3 +362,6 @@ class Archsight::Import::DeadlockError < StandardError; end
 
 # Error raised when an import fails
 class Archsight::Import::ImportError < StandardError; end
+
+# Error raised when import is interrupted by user (Ctrl-C)
+class Archsight::Import::InterruptedError < StandardError; end
