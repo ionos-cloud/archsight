@@ -1,6 +1,46 @@
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
 metadata:
+  name: Archsight:Query:MCP
+  annotations:
+    architecture/abbr: MCP
+    architecture/description: |
+      Model Context Protocol server exposing architecture query and
+      analysis tools for AI assistants like Claude.
+    architecture/tags: mcp,ai,claude
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  exposes:
+    applicationInterfaces:
+      - Public:Archsight:v1:MCP
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Web:API
+  annotations:
+    architecture/abbr: API
+    architecture/description: |
+      REST API component providing JSON endpoints for kinds, instances,
+      and search functionality with OpenAPI documentation.
+    architecture/tags: rest,api,json
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  exposes:
+    applicationInterfaces:
+      - Public:Archsight:v1:RestAPI
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
   name: Archsight:Query:Engine
   annotations:
     architecture/abbr: QE
@@ -14,9 +54,6 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:ionos-cloud:archsight
-  dependsOn:
-    applicationInterfaces:
-      - Archsight:Core:ResourceAPI
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -34,9 +71,6 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:ionos-cloud:archsight
-  exposes:
-    applicationInterfaces:
-      - Archsight:Core:ResourceAPI
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -91,9 +125,6 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:ionos-cloud:archsight
-  dependsOn:
-    applicationInterfaces:
-      - Archsight:Core:ResourceAPI
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -128,6 +159,23 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:ionos-cloud:archsight
-  dependsOn:
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:CLI:Commands
+  annotations:
+    architecture/abbr: CMD
+    architecture/description: |
+      CLI commands component implementing Thor-based command handlers
+      for serve, lint, template, console, mcp, and import operations.
+    architecture/tags: cli,thor,commands
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  exposes:
     applicationInterfaces:
-      - Archsight:Core:ResourceAPI
+      - Public:Archsight:v1:CLI

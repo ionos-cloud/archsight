@@ -10,3 +10,15 @@ metadata:
     team/lead: Vincent Landgraf <vincent.landgraf@ionos.com>
     team/jira: ARCHSIGHT
 spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessActor
+metadata:
+  name: OpenSource:Community
+  annotations:
+    architecture/description: |
+      Open source community maintaining shared libraries and frameworks
+      used across projects. Represents external dependencies maintained
+      by the broader open source ecosystem.
+    architecture/tags: opensource,community,external
+spec: {}

@@ -8,10 +8,7 @@ metadata:
       SVG diagrams from DOT graph descriptions.
     architecture/tags: graphviz,visualization,external
     architecture/documentation: https://graphviz.org
-spec:
-  exposes:
-    applicationInterfaces:
-      - Archsight:Core:ResourceAPI
+spec: {}
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologySystemSoftware

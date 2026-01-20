@@ -2,8 +2,10 @@
 
 require "test_helper"
 require "tmpdir"
+require "stringio"
 require "webmock/minitest"
 require "archsight/import/handlers/github"
+require "archsight/import/progress"
 
 class GithubHandlerTest < Minitest::Test
   def setup
@@ -139,7 +141,9 @@ class GithubHandlerTest < Minitest::Test
     }
 
     import_resource = MockGithubImport.new(import_raw)
-    Archsight::Import::Handlers::Github.new(import_resource, database: nil, resources_dir: @resources_dir)
+    progress = Archsight::Import::Progress.new(output: StringIO.new)
+    Archsight::Import::Handlers::Github.new(import_resource, database: nil, resources_dir: @resources_dir,
+                                                             progress: progress)
   end
 
   # Mock import resource for testing

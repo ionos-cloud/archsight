@@ -2,6 +2,7 @@ PATH
   remote: .
   specs:
     archsight (0.1.0)
+      dry-inflector (~> 1.0)
       fast-mcp (~> 1.0)
       haml (~> 6.0)
       kramdown (~> 2.0)
@@ -11,6 +12,7 @@ PATH
       rexml (~> 3.0)
       rouge (~> 4.7.0)
       sinatra (~> 4.0)
+      sinatra-contrib (~> 4.0)
       thor (~> 1.0)
 
 GEM
@@ -117,6 +119,7 @@ GEM
     mime-types-data (3.2025.0924)
     minitest (6.0.1)
       prism (~> 1.5)
+    multi_json (1.19.1)
     mustermann (3.0.4)
       ruby2_keywords (~> 0.0.1)
     mutex_m (0.3.0)
@@ -204,6 +207,12 @@ GEM
       rack (>= 3.0.0, < 4)
       rack-protection (= 4.2.1)
       rack-session (>= 2.0.0, < 3)
+      tilt (~> 2.0)
+    sinatra-contrib (4.2.1)
+      multi_json (>= 0.0.2)
+      mustermann (~> 3.0)
+      rack-protection (= 4.2.1)
+      sinatra (= 4.2.1)
       tilt (~> 2.0)
     steep (1.10.0)
       activesupport (>= 5.1)
@@ -305,6 +314,7 @@ CHECKSUMS
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2025.0924) sha256=f276bca15e59f35767cbcf2bc10e023e9200b30bd6a572c1daf7f4cc24994728
   minitest (6.0.1) sha256=7854c74f48e2e975969062833adc4013f249a4b212f5e7b9d5c040bf838d54bb
+  multi_json (1.19.1) sha256=7aefeff8f2c854bf739931a238e4aea64592845e0c0395c8a7d2eea7fdd631b7
   mustermann (3.0.4) sha256=85fadcb6b3c6493a8b511b42426f904b7f27b282835502233dd154daab13aa22
   mutex_m (0.3.0) sha256=cfcb04ac16b69c4813777022fdceda24e9f798e48092a2b817eb4c0a782b0751
   nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
@@ -344,6 +354,7 @@ CHECKSUMS
   simplecov-html (0.13.2) sha256=bd0b8e54e7c2d7685927e8d6286466359b6f16b18cb0df47b508e8d73c777246
   simplecov_json_formatter (0.1.4) sha256=529418fbe8de1713ac2b2d612aa3daa56d316975d307244399fa4838c601b428
   sinatra (4.2.1) sha256=b7aeb9b11d046b552972ade834f1f9be98b185fa8444480688e3627625377080
+  sinatra-contrib (4.2.1) sha256=10d091c944d268aa910c618ea40a3c3ebe0533e6e32990d84af92235a3d26b4a
   steep (1.10.0) sha256=1b295b55f9aaff1b8d3ee42453ee55bc2a1078fda0268f288edb2dc014f4d7d1
   stringio (3.2.0) sha256=c37cb2e58b4ffbd33fe5cd948c05934af997b36e0b6ca6fdf43afa234cf222e1
   strscan (3.1.7) sha256=5f76462b94a3ea50b44973225b7d75b2cb96d4e1bee9ef1319b99ca117b72c8c

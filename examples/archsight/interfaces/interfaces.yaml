@@ -1,81 +1,89 @@
 apiVersion: architecture/v1alpha1
 kind: ApplicationInterface
 metadata:
-  name: Archsight:MCP:QueryTool
+  name: Public:Archsight:v1:CLI
   annotations:
+    architecture/title: Archsight CLI
     architecture/description: |
-      MCP tool for querying architecture resources using the
-      archsight query language.
-    architecture/tags: mcp,query,tool
-    api/authenticationMethod: none
+      Command-line interface for archsight built with Thor.
+
+      ## Commands
+
+      | Command | Description |
+      |---------|-------------|
+      | `serve` | Start the web server for browsing resources |
+      | `lint` | Validate YAML resources against schema definitions |
+      | `template` | Generate YAML templates for resource types |
+      | `console` | Open an interactive Ruby console with database loaded |
+      | `mcp` | Start the MCP server for AI assistant integration |
+      | `import` | Run import handlers to generate resources |
+      | `version` | Display the archsight version |
+    architecture/version: '1.0'
+    architecture/status: GA
+    architecture/visibility: public
+    architecture/tags: cli,thor,terminal
+    architecture/documentation: https://github.com/ionos-cloud/archsight
+spec:
+  servedBy:
+    technologyComponents:
+      - Tech:CLI:Thor
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Public:Archsight:v1:MCP
+  annotations:
+    architecture/title: Archsight MCP Server
+    architecture/description: |
+      Model Context Protocol (MCP) server exposing architecture query and
+      analysis tools for AI assistants like Claude via HTTP with Server-Sent
+      Events (SSE) for streaming responses.
+
+      ## Transport
+
+      The MCP server uses HTTP/SSE transport, making it accessible over the
+      network. The server exposes:
+
+      - `GET /sse` - SSE endpoint for receiving server messages
+      - `POST /message` - Endpoint for sending client messages
+
+      ## Tools
+
+      | Tool | Description |
+      |------|-------------|
+      | `search` | Query resources using the archsight query language |
+      | `get` | Get detailed information about a specific resource |
+      | `kinds` | List available resource kinds with instance counts |
+      | `analyze` | Analyze dependencies, relationships, and impact |
+      | `doc` | Get documentation for resource types and query syntax |
+
+      ## Resources
+
+      The server exposes architecture resources that can be read directly:
+
+      - `archsight://kinds` - List of all resource kinds
+      - `archsight://kinds/{kind}` - Instances of a specific kind
+      - `archsight://instance/{kind}/{name}` - Specific instance details
+
+      ## Usage
+
+      Start the MCP server:
+
+      ```bash
+      archsight mcp -r /path/to/resources
+      ```
+
+      Connect via HTTP/SSE from MCP clients:
+
+      ```
+      http://localhost:6789/sse
+      ```
+    architecture/version: '1.0'
+    architecture/status: GA
+    architecture/visibility: public
+    architecture/tags: mcp,ai,claude,sse,http
+    architecture/documentation: https://modelcontextprotocol.io
 spec:
   servedBy:
     technologyComponents:
       - Tech:MCP:SSE
----
-apiVersion: architecture/v1alpha1
-kind: ApplicationInterface
-metadata:
-  name: Archsight:MCP:AnalyzeTool
-  annotations:
-    architecture/description: |
-      MCP tool for analyzing resource dependencies and impacts
-      with depth-limited traversal.
-    architecture/tags: mcp,analysis,tool
-    api/authenticationMethod: none
-spec:
-  servedBy:
-    technologyComponents:
-      - Tech:MCP:SSE
----
-apiVersion: architecture/v1alpha1
-kind: ApplicationInterface
-metadata:
-  name: Archsight:MCP:DocTool
-  annotations:
-    architecture/description: |
-      MCP tool for generating documentation about resource kinds
-      including annotations and relations.
-    architecture/tags: mcp,documentation,tool
-    api/authenticationMethod: none
-spec:
-  servedBy:
-    technologyComponents:
-      - Tech:MCP:SSE
----
-apiVersion: architecture/v1alpha1
-kind: ApplicationInterface
-metadata:
-  name: Archsight:CLI:Commands
-  annotations:
-    architecture/description: |
-      CLI commands: lint (validate resources), web (start server),
-      template (generate YAML), console (interactive REPL).
-    architecture/tags: cli,commands
-spec: {}
----
-apiVersion: architecture/v1alpha1
-kind: ApplicationInterface
-metadata:
-  name: Archsight:Web:Routes
-  annotations:
-    architecture/description: |
-      HTTP routes for the web UI including search, resource browsing,
-      and SVG graph generation endpoints.
-    architecture/tags: http,routes,web
-    api/authenticationMethod: none
-spec:
-  servedBy:
-    technologyComponents:
-      - Tech:HTTP:REST
----
-apiVersion: architecture/v1alpha1
-kind: ApplicationInterface
-metadata:
-  name: Archsight:Core:ResourceAPI
-  annotations:
-    architecture/description: |
-      Internal API for accessing resource instances, executing queries,
-      and traversing relations.
-    architecture/tags: internal,api
-spec: {}

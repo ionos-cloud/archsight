@@ -37,6 +37,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Runtime dependencies
+  spec.add_dependency "dry-inflector", "~> 1.0"
   spec.add_dependency "fast-mcp", "~> 1.0"
   spec.add_dependency "haml", "~> 6.0"
   spec.add_dependency "kramdown", "~> 2.0"
@@ -46,5 +47,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rexml", "~> 3.0"
   spec.add_dependency "rouge", "~> 4.7.0"
   spec.add_dependency "sinatra", "~> 4.0"
+  spec.add_dependency "sinatra-contrib", "~> 4.0"
   spec.add_dependency "thor", "~> 1.0"
 end

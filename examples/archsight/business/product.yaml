@@ -26,12 +26,16 @@ spec:
       - Archsight:Maintainers
     applicationServices:
       - Archsight:CLI
-      - Archsight:WebUI
-      - Archsight:MCPServer
+      - Archsight:Web
   realizes:
     strategyCapabilities:
       - Architecture:Documentation
       - Architecture:DependencyAnalysis
+  exposes:
+    applicationInterfaces:
+      - Public:Archsight:v1:CLI
+      - Public:Archsight:v1:RestAPI
+      - Public:Archsight:v1:MCP
   provides:
     complianceEvidences:
       - Archsight:TestCoverage

@@ -1,0 +1,26 @@
+---
+# Import: Archsight REST API
+#
+# This import uses the rest_api handler to:
+# 1. Read the OpenAPI spec from the local file
+# 2. Generate an ApplicationInterface resource
+# 3. Extract DataObject resources from schemas
+#
+# Run with: archsight import -r examples/archsight
+#
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:API:archsight
+  annotations:
+    import/handler: rest-api
+    import/priority: "20"
+    import/cacheTime: 1h
+    import/outputPath: generated/api.yaml
+    import/config/name: archsight
+    import/config/version: "1.0"
+    import/config/visibility: public
+    import/config/specUrl: file://lib/archsight/web/api/openapi/spec.yaml
+    import/config/htmlUrl: http://localhost:4567/api/docs
+    import/config/gate: GA
+spec: {}

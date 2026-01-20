@@ -1,0 +1,174 @@
+# frozen_string_literal: true
+
+require "fileutils"
+require "net/http"
+require "json"
+require "uri"
+require "openssl"
+require_relative "../handler"
+require_relative "../registry"
+
+# REST API Index handler - fetches API index and generates child Import resources
+#
+# Configuration:
+#   import/config/indexUrl - URL to fetch API index JSON (required)
+#   import/config/baseUrl - Base URL for spec files (optional, derived from indexUrl)
+#   import/config/interfaceOutputPath - Shared output for ApplicationInterface resources
+#   import/config/dataObjectOutputPath - Shared output for DataObject resources
+#   import/config/skipVisibility - Comma-separated visibilities to skip (e.g., "public-preview")
+#
+# Output:
+#   Generates Import:RestApi:* resources for each API in the index
+#
+# Expected index format:
+#   [
+#     {
+#       "name": "compute",
+#       "version": "6.0",
+#       "visibility": "private",
+#       "specPath": "/rest-api/compute/openapi.yaml",
+#       "redocPath": "/rest-api/compute/redoc.html",
+#       "gate": "GA"
+#     },
+#     ...
+#   ]
+class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
+  def execute
+    @index_url = config("indexUrl")
+    raise "Missing required config: indexUrl" unless @index_url
+
+    @base_url = config("baseUrl") || derive_base_url(@index_url)
+    @interface_output_path = config("interfaceOutputPath")
+    @data_object_output_path = config("dataObjectOutputPath")
+    @skip_visibilities = (config("skipVisibility") || "").split(",").map(&:strip).reject(&:empty?)
+
+    # Fetch API index
+    progress.update("Fetching API index from #{@index_url}")
+    apis = fetch_index
+
+    if apis.empty?
+      progress.warn("No APIs found in index")
+      return
+    end
+
+    # Filter APIs by visibility
+    original_count = apis.size
+    apis = filter_apis(apis)
+    progress.update("Filtered to #{apis.size} APIs (skipped #{original_count - apis.size} by visibility)") if apis.size < original_count
+
+    # Generate child imports
+    progress.update("Generating #{apis.size} import resources")
+    generate_api_imports(apis)
+  end
+
+  private
+
+  def derive_base_url(url)
+    uri = URI(url)
+    "#{uri.scheme}://#{uri.host}"
+  end
+
+  def fetch_index
+    uri = URI(@index_url)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == "https"
+    http.open_timeout = 30
+    http.read_timeout = 60
+
+    request = Net::HTTP::Get.new(uri)
+    request["Accept"] = "application/json"
+
+    response = http.request(request)
+
+    case response
+    when Net::HTTPSuccess
+      JSON.parse(response.body)
+    when Net::HTTPRedirection
+      # Follow redirect
+      @index_url = response["location"]
+      fetch_index
+    when Net::HTTPUnauthorized
+      raise "API index error: 401 Unauthorized - Check credentials"
+    when Net::HTTPForbidden
+      raise "API index error: 403 Forbidden - Access denied"
+    when Net::HTTPNotFound
+      raise "API index error: 404 Not Found - Index not found at #{@index_url}"
+    else
+      raise "API index error: #{response.code} #{response.message}"
+    end
+  end
+
+  def filter_apis(apis)
+    return apis if @skip_visibilities.empty?
+
+    apis.reject do |api|
+      visibility = api["visibility"]&.downcase
+      @skip_visibilities.any? { |skip| visibility == skip.downcase }
+    end
+  end
+
+  def generate_api_imports(apis)
+    yaml_documents = apis.map do |api|
+      api_name = api["name"]
+      import_name = "Import:RestApi:#{api_name}"
+
+      # Build full URLs from base URL and paths
+      spec_url = build_full_url(api["specPath"])
+      html_url = api["redocPath"] ? build_full_url(api["redocPath"]) : nil
+
+      # Build config for child import
+      child_config = {
+        "name" => api_name,
+        "version" => api["version"] || "1.0",
+        "visibility" => api["visibility"] || "private",
+        "specUrl" => spec_url,
+        "gate" => api["gate"] || "GA"
+      }
+      child_config["htmlUrl"] = html_url if html_url
+
+      # Build annotations for child import
+      child_annotations = {}
+      child_annotations["import/outputPath"] = @interface_output_path if @interface_output_path
+      child_annotations["import/config/interfaceOutputPath"] = @interface_output_path if @interface_output_path
+      child_annotations["import/config/dataObjectOutputPath"] = @data_object_output_path if @data_object_output_path
+
+      import_yaml(
+        name: import_name,
+        handler: "rest-api",
+        config: child_config,
+        annotations: child_annotations,
+        depends_on: [import_resource.name]
+      )
+    end
+
+    # Add self-marker with generated/at for caching
+    yaml_documents << self_marker
+
+    # Write all imports to a single file
+    yaml_content = yaml_documents.map { |doc| YAML.dump(doc) }.join("\n")
+    write_yaml(yaml_content)
+  end
+
+  def build_full_url(path)
+    return path if path.start_with?("http://", "https://", "file://")
+
+    "#{@base_url}#{path}"
+  end
+
+  # Generate a marker Import for this handler with generated/at timestamp
+  def self_marker
+    {
+      "apiVersion" => "architecture/v1alpha1",
+      "kind" => "Import",
+      "metadata" => {
+        "name" => import_resource.name,
+        "annotations" => {
+          "generated/at" => Time.now.utc.iso8601
+        }
+      },
+      "spec" => {}
+    }
+  end
+end
+
+Archsight::Import::Registry.register("rest-api-index", Archsight::Import::Handlers::RestApiIndex)

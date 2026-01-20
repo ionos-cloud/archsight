@@ -1,0 +1,70 @@
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: Public:Archsight:v1:RestAPI
+  annotations:
+    architecture/title: Archsight API
+    architecture/description: |-
+      REST API for Archsight enterprise architecture visualization and modeling tool.
+
+      ## Query Language
+
+      The search endpoint supports a powerful query language:
+
+      ### Name Search
+      - `kubernetes` - shortcut for `name =~ "kubernetes"`
+      - `name == "ExactName"` - exact name match
+      - `name =~ "pattern"` - regex pattern match
+
+      ### Kind Filter Prefix
+      - `TechnologyArtifact: ...` - restricts search to that resource type
+
+      ### Annotation Filters
+      - `activity/status == "active"` - equals
+      - `scc/language/Go/loc > 5000` - numeric comparison
+      - Operators: `==`, `!=`, `=~`, `>`, `<`, `>=`, `<=`
+
+      ### Relation Queries
+      - `-> Kind` - has outgoing relation to kind
+      - `-> "Name"` - has outgoing relation to specific instance
+      - `<- Kind` - has incoming relation from kind
+      - `~> Kind` - transitively reaches kind
+      - `<~ Kind` - transitively reached by kind
+      - `-> none` - no outgoing relations
+      - `<- none` - no incoming relations (orphan detection)
+
+      ### Sub-query Targets
+      - `-> $(expression)` - relates to any resource matching expression
+      - `~> $(expr)` - transitively reaches any matching resource
+      - `<- $(expr)` - incoming from any matching resource
+
+      ### Logical Operators
+      - `AND`, `and`, `&` - logical AND
+      - `OR`, `or`, `|` - logical OR
+      - `NOT`, `not`, `!` - logical NOT
+      - Parentheses for grouping
+
+      ### Examples
+      - `kubernetes` - resources with "kubernetes" in name
+      - `TechnologyArtifact: activity/status == "active"` - active TechnologyArtifacts
+      - `-> ApplicationInterface & repository/artifacts == "container"` - containerized services exposing APIs
+      - `<- none` - resources not referenced by anything (potential orphans)
+      - `-> none & <- none` - true orphans with no relations at all
+    architecture/openapi: 3.1.0
+    architecture/version: '1.0'
+    architecture/status: GA
+    architecture/visibility: public
+    architecture/tags: https,rest
+    architecture/encoding: json
+    architecture/documentation: http://localhost:4567/api/docs
+    generated/script: Import:API:archsight
+    generated/at: '2026-01-20T09:16:22Z'
+spec:
+  servedBy:
+    technologyComponents:
+    - HTTPS:REST
+  serves:
+    dataObjects:
+    - Archsight:Kind
+    - Archsight:Instance
