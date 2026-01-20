@@ -16,6 +16,7 @@ require_relative "../registry"
 #   import/config/interfaceOutputPath - Shared output for ApplicationInterface resources
 #   import/config/dataObjectOutputPath - Shared output for DataObject resources
 #   import/config/skipVisibility - Comma-separated visibilities to skip (e.g., "public-preview")
+#   import/config/childCacheTime - Cache time for generated child imports (e.g., "1h", "30m")
 #
 # Output:
 #   Generates Import:RestApi:* resources for each API in the index
@@ -41,6 +42,7 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
     @interface_output_path = config("interfaceOutputPath")
     @data_object_output_path = config("dataObjectOutputPath")
     @skip_visibilities = (config("skipVisibility") || "").split(",").map(&:strip).reject(&:empty?)
+    @child_cache_time = config("childCacheTime")
 
     # Fetch API index
     progress.update("Fetching API index from #{@index_url}")
@@ -129,6 +131,7 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
       # Build annotations for child import
       child_annotations = {}
       child_annotations["import/outputPath"] = @interface_output_path if @interface_output_path
+      child_annotations["import/cacheTime"] = @child_cache_time if @child_cache_time
       child_annotations["import/config/interfaceOutputPath"] = @interface_output_path if @interface_output_path
       child_annotations["import/config/dataObjectOutputPath"] = @data_object_output_path if @data_object_output_path
 
