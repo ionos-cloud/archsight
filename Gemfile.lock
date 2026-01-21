@@ -14,6 +14,7 @@ PATH
       sinatra (~> 4.0)
       sinatra-contrib (~> 4.0)
       thor (~> 1.0)
+      tty-markdown (~> 0.7)
 
 GEM
   remote: https://rubygems.org/
@@ -128,6 +129,8 @@ GEM
     parser (3.3.10.0)
       ast (~> 2.4.1)
       racc
+    pastel (0.8.0)
+      tty-color (~> 0.5)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)
@@ -232,6 +235,11 @@ GEM
       terminal-table (>= 2, < 5)
       uri (>= 0.12.0)
     stringio (3.2.0)
+    strings (0.2.1)
+      strings-ansi (~> 0.2)
+      unicode-display_width (>= 1.5, < 3.0)
+      unicode_utils (~> 1.4)
+    strings-ansi (0.2.0)
     strscan (3.1.7)
     temple (0.10.4)
     terminal-table (4.0.0)
@@ -239,11 +247,19 @@ GEM
     thor (1.5.0)
     tilt (2.6.1)
     tsort (0.2.0)
+    tty-color (0.6.0)
+    tty-markdown (0.7.2)
+      kramdown (>= 1.16.2, < 3.0)
+      pastel (~> 0.8)
+      rouge (>= 3.14, < 5.0)
+      strings (~> 0.2.0)
+      tty-color (~> 0.5)
+      tty-screen (~> 0.8)
+    tty-screen (0.8.2)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
-    unicode-display_width (3.2.0)
-      unicode-emoji (~> 4.1)
-    unicode-emoji (4.2.0)
+    unicode-display_width (2.6.0)
+    unicode_utils (1.4.0)
     uri (1.1.1)
     webmock (3.26.1)
       addressable (>= 2.8.0)
@@ -320,6 +336,7 @@ CHECKSUMS
   nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
   parallel (1.27.0) sha256=4ac151e1806b755fb4e2dc2332cbf0e54f2e24ba821ff2d3dcf86bf6dc4ae130
   parser (3.3.10.0) sha256=ce3587fa5cc55a88c4ba5b2b37621b3329aadf5728f9eafa36bbd121462aabd6
+  pastel (0.8.0) sha256=481da9fb7d2f6e6b1a08faf11fa10363172dc40fd47848f096ae21209f805a75
   pp (0.6.3) sha256=2951d514450b93ccfeb1df7d021cae0da16e0a7f95ee1e2273719669d0ab9df6
   prettyprint (0.2.0) sha256=2bc9e15581a94742064a3cc8b0fb9d45aae3d03a1baa6ef80922627a0766f193
   prism (1.7.0) sha256=10062f734bf7985c8424c44fac382ac04a58124ea3d220ec3ba9fe4f2da65103
@@ -357,15 +374,20 @@ CHECKSUMS
   sinatra-contrib (4.2.1) sha256=10d091c944d268aa910c618ea40a3c3ebe0533e6e32990d84af92235a3d26b4a
   steep (1.10.0) sha256=1b295b55f9aaff1b8d3ee42453ee55bc2a1078fda0268f288edb2dc014f4d7d1
   stringio (3.2.0) sha256=c37cb2e58b4ffbd33fe5cd948c05934af997b36e0b6ca6fdf43afa234cf222e1
+  strings (0.2.1) sha256=933293b3c95cf85b81eb44b3cf673e3087661ba739bbadfeadf442083158d6fb
+  strings-ansi (0.2.0) sha256=90262d760ea4a94cc2ae8d58205277a343409c288cbe7c29416b1826bd511c88
   strscan (3.1.7) sha256=5f76462b94a3ea50b44973225b7d75b2cb96d4e1bee9ef1319b99ca117b72c8c
   temple (0.10.4) sha256=b7a1e94b6f09038ab0b6e4fe0126996055da2c38bec53a8a336f075748fff72c
   terminal-table (4.0.0) sha256=f504793203f8251b2ea7c7068333053f0beeea26093ec9962e62ea79f94301d2
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   tilt (2.6.1) sha256=35a99bba2adf7c1e362f5b48f9b581cce4edfba98117e34696dde6d308d84770
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
+  tty-color (0.6.0) sha256=6f9c37ca3a4e2367fb2e6d09722762647d6f455c111f05b59f35730eeb24332a
+  tty-markdown (0.7.2) sha256=1ed81db97028d006ba81e2cfd9fe0a04b0eb28650ad0d4086ed6e5627f4ac511
+  tty-screen (0.8.2) sha256=c090652115beae764336c28802d633f204fb84da93c6a968aa5d8e319e819b50
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
-  unicode-display_width (3.2.0) sha256=0cdd96b5681a5949cdbc2c55e7b420facae74c4aaf9a9815eee1087cb1853c42
-  unicode-emoji (4.2.0) sha256=519e69150f75652e40bf736106cfbc8f0f73aa3fb6a65afe62fefa7f80b0f80f
+  unicode-display_width (2.6.0) sha256=12279874bba6d5e4d2728cef814b19197dbb10d7a7837a869bab65da943b7f5a
+  unicode_utils (1.4.0) sha256=b922d0cf2313b6b7136ada6645ce7154ffc86418ca07d53b058efe9eb72f2a40
   uri (1.1.1) sha256=379fa58d27ffb1387eaada68c749d1426738bd0f654d812fcc07e7568f5c57c6
   webmock (3.26.1) sha256=4f696fb57c90a827c20aadb2d4f9058bbff10f7f043bd0d4c3f58791143b1cd7
   zeitwerk (2.7.4) sha256=2bef90f356bdafe9a6c2bd32bcd804f83a4f9b8bc27f3600fff051eb3edcec8b

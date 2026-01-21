@@ -1,0 +1,67 @@
+apiVersion: architecture/v1alpha1
+kind: Analysis
+metadata:
+  name: Analysis:Service:Count
+  annotations:
+    analysis/handler: ruby
+    analysis/description: Counts all ApplicationService instances and checks for missing descriptions
+    analysis/timeout: 30s
+    analysis/script: |
+      services = instances(:ApplicationService)
+
+      heading("Service Overview")
+      text("Found **#{services.count}** ApplicationService instances in the architecture.")
+
+      missing_desc = []
+      services.each do |service|
+        desc = annotation(service, "architecture/description")
+        if desc.nil? || desc.empty?
+          missing_desc << name(service)
+        end
+      end
+
+      if missing_desc.any?
+        heading("Services Missing Description", level: 3)
+        warning("#{missing_desc.count} services are missing descriptions")
+        list(missing_desc)
+      else
+        info("All services have descriptions")
+      end
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Analysis
+metadata:
+  name: Analysis:Component:Relations
+  annotations:
+    analysis/handler: ruby
+    analysis/description: Validates that ApplicationComponents have incoming relations
+    analysis/timeout: 30s
+    analysis/script: |
+      orphans = []
+
+      each_instance(:ApplicationComponent) do |component|
+        incoming_refs = incoming(component)
+        if incoming_refs.empty?
+          orphans << {
+            name: name(component),
+            kind: kind(component)
+          }
+        end
+      end
+
+      heading("Component Relation Analysis")
+
+      if orphans.any?
+        warning("Found #{orphans.count} orphaned components (no incoming references)")
+
+        heading("Orphaned Components", level: 3)
+        table(
+          headers: ["Name", "Kind"],
+          rows: orphans.map { |o| [o[:name], o[:kind]] }
+        )
+      else
+        info("All components have incoming references")
+        text("The component dependency graph is well connected.")
+      end
+spec: {}
