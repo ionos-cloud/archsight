@@ -131,6 +131,99 @@ class ExecutorTest < Minitest::Test
     assert_equal "Import:Second", plan[1].name
   end
 
+  def test_filter_runs_only_matching_imports
+    create_import("Import:RestApi:dns", handler: "test")
+    create_import("Import:RestApi:compute", handler: "test")
+    create_import("Import:GitHub:repo", handler: "test")
+
+    db = create_database
+    executor = Archsight::Import::Executor.new(
+      database: db,
+      resources_dir: @tmp_dir,
+      verbose: false,
+      output: StringIO.new,
+      filter: "RestApi"
+    )
+    executor.run!
+
+    log = TestExecutionHandler.execution_log
+
+    assert_includes log, "Import:RestApi:dns"
+    assert_includes log, "Import:RestApi:compute"
+    refute_includes log, "Import:GitHub:repo"
+  end
+
+  def test_filter_with_regex_pattern
+    create_import("Import:RestApi:public:dns:v1", handler: "test")
+    create_import("Import:RestApi:private:dns:v1", handler: "test")
+    create_import("Import:RestApi:public:compute:v1", handler: "test")
+
+    db = create_database
+    executor = Archsight::Import::Executor.new(
+      database: db,
+      resources_dir: @tmp_dir,
+      verbose: false,
+      output: StringIO.new,
+      filter: "public.*dns"
+    )
+    executor.run!
+
+    log = TestExecutionHandler.execution_log
+
+    assert_includes log, "Import:RestApi:public:dns:v1"
+    refute_includes log, "Import:RestApi:private:dns:v1"
+    refute_includes log, "Import:RestApi:public:compute:v1"
+  end
+
+  def test_execution_plan_respects_filter
+    create_import("Import:RestApi:dns", handler: "test")
+    create_import("Import:GitHub:repo", handler: "test")
+
+    db = create_database
+    output = StringIO.new
+    executor = Archsight::Import::Executor.new(
+      database: db,
+      resources_dir: @tmp_dir,
+      verbose: false,
+      output: output,
+      filter: "RestApi"
+    )
+
+    plan = executor.execution_plan
+
+    assert_equal 1, plan.size
+    assert_equal "Import:RestApi:dns", plan[0].name
+  end
+
+  def test_filter_includes_dependencies_of_matching_imports
+    # Index doesn't match filter but is a dependency
+    create_import("Import:GitHub:Index", handler: "test", priority: "1")
+    # These match the filter and depend on Index
+    create_import("Import:Repo:rest-api-one", handler: "test", priority: "2", depends_on: ["Import:GitHub:Index"])
+    create_import("Import:Repo:rest-api-two", handler: "test", priority: "2", depends_on: ["Import:GitHub:Index"])
+    # This doesn't match and isn't a dependency
+    create_import("Import:Other:unrelated", handler: "test")
+
+    db = create_database
+    executor = Archsight::Import::Executor.new(
+      database: db,
+      resources_dir: @tmp_dir,
+      verbose: false,
+      output: StringIO.new,
+      filter: "rest-api"
+    )
+    executor.run!
+
+    log = TestExecutionHandler.execution_log
+
+    # Should include the dependency even though it doesn't match the filter
+    assert_includes log, "Import:GitHub:Index"
+    assert_includes log, "Import:Repo:rest-api-one"
+    assert_includes log, "Import:Repo:rest-api-two"
+    # Should not include unrelated import
+    refute_includes log, "Import:Other:unrelated"
+  end
+
   private
 
   def create_import(name, handler:, priority: nil, depends_on: [], enabled: nil)

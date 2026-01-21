@@ -129,7 +129,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   annotation "repository/visibility",
              description: "Repository visibility classification",
              title: "Visibility",
-             enum: %w[internal open-source public]
+             enum: %w[private internal open-source public]
   annotation "repository/recentTags",
              description: "Recent git tags (releases)",
              title: "Recent Tags",

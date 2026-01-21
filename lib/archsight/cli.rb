@@ -78,6 +78,7 @@ module Archsight
     desc "import", "Execute pending imports"
     option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
     option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "Show execution plan without running"
+    option :filter, aliases: "-f", type: :string, desc: "Filter imports by name (regex pattern)"
     def import
       configure_resources
       require "archsight/database"
@@ -88,22 +89,25 @@ module Archsight
       # Load all handlers
       require_import_handlers
 
-      # Create database that loads from resources directory (includes imports/ and generated/)
-      db = Archsight::Database.new(resources_dir, verbose: options[:verbose])
+      # Create database that loads from resources directory
+      # Only load Import resources to avoid validation errors on incomplete resources
+      db = Archsight::Database.new(resources_dir, verbose: options[:verbose], only_kinds: ["Import"])
 
       if options[:dry_run]
         puts "Execution Plan:"
         executor = Archsight::Import::Executor.new(
           database: db,
           resources_dir: resources_dir,
-          verbose: true
+          verbose: true,
+          filter: options[:filter]
         )
         executor.execution_plan
       else
         executor = Archsight::Import::Executor.new(
           database: db,
           resources_dir: resources_dir,
-          verbose: options[:verbose]
+          verbose: options[:verbose],
+          filter: options[:filter]
         )
         executor.run!
         puts "All imports completed successfully."

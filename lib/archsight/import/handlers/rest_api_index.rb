@@ -117,7 +117,6 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
     yaml_documents = apis.map do |api|
       api_name = api["name"]
       api_version = api["version"] || "v1"
-      import_name = "Import:RestApi:#{api_name}:#{api_version}"
 
       # Build full URLs from base URL and paths
       # Support both "spec"/"redoc" (new format) and "specPath"/"redocPath" (legacy)
@@ -126,11 +125,15 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
       spec_url = build_full_url(spec_path)
       html_url = redoc_path ? build_full_url(redoc_path) : nil
 
-      # Build config for child import
+      # Derive visibility from spec path if not explicitly provided
+      visibility = api["visibility"] || derive_visibility_from_path(spec_path)
+
+      # Include visibility in import name to distinguish public/private versions of same API
+      import_name = "Import:RestApi:#{visibility}:#{api_name}:#{api_version}"
       child_config = {
         "name" => api_name,
         "version" => api["version"] || "1.0",
-        "visibility" => api["visibility"] || "private",
+        "visibility" => visibility,
         "specUrl" => spec_url,
         "gate" => api["gate"] || "GA"
       }
@@ -164,6 +167,15 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
     return path if path.start_with?("http://", "https://", "file://")
 
     "#{@base_url}#{path}"
+  end
+
+  # Derive visibility from spec path patterns like "/rest-api/public-compute-v1.yaml"
+  # or "/docs/public/compute/v1/"
+  def derive_visibility_from_path(path)
+    return "public" if path&.match?(/\bpublic\b/i)
+    return "private" if path&.match?(/\bprivate\b/i)
+
+    "public" # Default to public for APIs without explicit visibility marker
   end
 
   # Generate a marker Import for this handler with generated/at timestamp

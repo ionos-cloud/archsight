@@ -274,6 +274,34 @@ class RestApiHandlerTest < Minitest::Test
     assert_equal "PublicPreview:CloudCompute:v2:RestAPI", resource["metadata"]["name"]
   end
 
+  def test_handles_version_with_v_prefix
+    openapi_yaml = {
+      "openapi" => "3.0.0",
+      "info" => { "title" => "Test API" },
+      "paths" => {},
+      "components" => { "schemas" => {} }
+    }.to_yaml
+
+    stub_request(:get, "https://example.com/api.yaml")
+      .to_return(status: 200, body: openapi_yaml)
+
+    handler = create_handler(
+      name: "access-check",
+      version: "v1",
+      visibility: "private",
+      spec_url: "https://example.com/api.yaml"
+    )
+
+    handler.execute
+
+    output_path = File.join(@resources_dir, "generated", "access-check-interface.yaml")
+    content = File.read(output_path)
+    resource = YAML.safe_load(content)
+
+    # Should be "v1", not "vv1"
+    assert_equal "Private:AccessCheck:v1:RestAPI", resource["metadata"]["name"]
+  end
+
   def test_reads_from_file_url
     # Create a temp file with OpenAPI spec
     openapi_yaml = {

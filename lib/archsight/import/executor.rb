@@ -27,19 +27,22 @@ class Archsight::Import::Executor
     /^(\d+)d$/ => 86_400
   }.freeze
 
-  attr_reader :database, :resources_dir, :verbose
+  attr_reader :database, :resources_dir, :verbose, :filter
 
   # @param database [Archsight::Database] Database instance
   # @param resources_dir [String] Root resources directory
   # @param verbose [Boolean] Whether to print verbose debug output
   # @param max_concurrent [Integer] Maximum concurrent imports (default: 20)
   # @param output [IO] Output stream for progress (default: $stdout)
-  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout)
+  # @param filter [String, nil] Regex pattern to match import names
+  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil)
     @database = database
     @resources_dir = resources_dir
     @verbose = verbose
     @max_concurrent = max_concurrent
     @output = output
+    @filter = filter
+    @filter_regex = Regexp.new(filter, Regexp::IGNORECASE) if filter
     @executed_this_run = Set.new
     @iteration = 0
     @mutex = Mutex.new
@@ -140,11 +143,16 @@ class Archsight::Import::Executor
     # Collect all imports
     all_imports = database.instances_by_kind("Import")&.values || []
 
+    # Apply filter if specified
+    filtered_imports = all_imports.select { |imp| import_matches_filter?(imp) }
+
     # Topological sort
-    sorted = topological_sort(all_imports)
+    sorted = topological_sort(filtered_imports)
+
+    @output.puts "Filter: #{@filter}" if @filter
 
     sorted.each_with_index do |imp, idx|
-      enabled = imp.annotations["import/enabled"] != "false"
+      enabled = import_enabled?(imp)
       deps = import_dependency_names(imp)
       deps_str = deps.empty? ? "(no dependencies)" : "depends on: #{deps.join(", ")}"
       enabled_str = enabled ? "" : " [DISABLED]"
@@ -180,34 +188,74 @@ class Archsight::Import::Executor
   # Count all enabled imports (for overall progress display)
   def count_all_enabled_imports
     imports = database.instances_by_kind("Import")&.values || []
-    imports.count { |imp| imp.annotations["import/enabled"] != "false" }
+    imports.count { |imp| import_enabled?(imp) && import_matches_filter?(imp) }
   end
 
-  # Get all pending imports (enabled=true, not yet executed this run)
+  # Get all pending imports (enabled=true, not yet executed this run, matches filter)
   def pending_imports
     imports = database.instances_by_kind("Import")&.values || []
 
     @mutex.synchronize do
       imports.select do |imp|
-        enabled = imp.annotations["import/enabled"] != "false"
-        enabled && !@executed_this_run.include?(imp.name)
+        import_enabled?(imp) && import_matches_filter?(imp) && !@executed_this_run.include?(imp.name)
       end
     end
+  end
+
+  # Check if import is enabled and has a handler
+  def import_enabled?(import)
+    import.annotations["import/enabled"] != "false" && import.annotations["import/handler"]
+  end
+
+  # Check if import matches the filter pattern (or is a dependency of a matching import)
+  def import_matches_filter?(import)
+    return true unless @filter_regex
+
+    # Build the set of imports to run on first call (includes filtered + their dependencies)
+    @imports_to_run ||= compute_imports_to_run
+    @imports_to_run.include?(import.name)
+  end
+
+  # Compute the full set of imports to run: filtered imports + all their dependencies
+  def compute_imports_to_run
+    all_imports = database.instances_by_kind("Import")&.values || []
+    imports_by_name = all_imports.to_h { |imp| [imp.name, imp] }
+
+    # Start with imports matching the filter
+    matching = all_imports.select { |imp| @filter_regex.match?(imp.name) }.map(&:name)
+    to_run = Set.new(matching)
+
+    # Recursively add dependencies
+    queue = matching.dup
+    while (name = queue.shift)
+      import = imports_by_name[name]
+      next unless import
+
+      dep_names = import_dependency_names(import)
+      dep_names.each do |dep_name|
+        unless to_run.include?(dep_name)
+          to_run.add(dep_name)
+          queue << dep_name
+        end
+      end
+    end
+
+    to_run
   end
 
   # Check if all dependencies of an import are satisfied (executed successfully this run)
   def dependencies_satisfied?(import)
-    deps = import.relations(:dependsOn, :imports)
-    return true if deps.nil? || deps.empty?
+    dep_names = import_dependency_names(import)
+    return true if dep_names.empty?
 
     @mutex.synchronize do
-      deps.all? do |dep|
-        @executed_this_run.include?(dep.name) && !@failed_imports.key?(dep.name)
+      dep_names.all? do |dep_name|
+        @executed_this_run.include?(dep_name) && !@failed_imports.key?(dep_name)
       end
     end
   end
 
-  # Get dependency names for an import (for display)
+  # Get dependency names for an import (for display and dependency checking)
   def import_dependency_names(import)
     deps = import.relations(:dependsOn, :imports)
     return [] if deps.nil? || deps.empty?
@@ -220,6 +268,8 @@ class Archsight::Import::Executor
     original_verbose = database.verbose
     database.verbose = false
     database.reload!
+    # Reset filter cache since new imports may have been discovered
+    @imports_to_run = nil if @filter_regex
   ensure
     database.verbose = original_verbose
   end

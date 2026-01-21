@@ -38,8 +38,11 @@ class Archsight::Resources::Import < Archsight::Resources::Base
   # Handler selection
   annotation "import/handler",
              description: "Handler class name to execute this import",
-             title: "Handler",
-             enum: %w[gitlab github repository argocd rest-api rest-api-index rest-api-spec technology-artifacts clusters]
+             title: "Handler", enum: %w[
+               gitlab github repository
+               rest-api rest-api-index
+               jira-discover jira-metrics
+             ]
 
   # Output configuration
   annotation "import/outputPath",
