@@ -5,22 +5,28 @@
 - schedule = annotations['scc/estimatedScheduleMonths']
 - people = annotations["scc/estimatedPeople"]
 - if cost || schedule || people
+  - ai_cost = ai_adjusted_estimate(:cost, cost)
+  - ai_schedule = ai_adjusted_estimate(:schedule, schedule)
+  - ai_people = ai_adjusted_estimate(:team, people)
   %tr
-    %th{ scope: "row" } Project Estimate
+    %th{ scope: "row" }
+      Project Estimate
+      %span.estimate-note{ title: "Estimates adjusted for \u20AC80k salary and AI-assisted development (3x productivity)" }
+        %i.iconoir-info-circle
     %td
       .project-estimate
-        - if cost
+        - if ai_cost
           .estimate-item
-            %i.iconoir-dollar-circle
+            %i.iconoir-euro
             %span.estimate-label Cost:
-            %span.estimate-value= to_dollar(cost.to_f)
-        - if schedule
+            %span.estimate-value= to_euro(ai_cost)
+        - if ai_schedule
           .estimate-item
             %i.iconoir-calendar
             %span.estimate-label Schedule:
-            %span.estimate-value= "#{schedule} months"
-        - if people
+            %span.estimate-value= "#{format('%.1f', ai_schedule)} months"
+        - if ai_people
           .estimate-item
             %i.iconoir-group
             %span.estimate-label Team:
-            %span.estimate-value= "#{people} people"
+            %span.estimate-value= "#{ai_people} people"

@@ -11,12 +11,46 @@ module Archsight
         val.to_s.split("-").map(&:capitalize).join
       end
 
-      # Format number as dollar currency
-      def to_dollar(num)
+      # Format number as euro currency
+      def to_euro(num)
         rounded = (num * 100).round / 100.0
         parts = format("%.2f", rounded).split(".")
         parts[0] = parts[0].reverse.scan(/\d{1,3}/).join(",").reverse
-        "$#{parts.join(".")}"
+        "€#{parts.join(".")}"
+      end
+
+      # AI-adjusted project estimate configuration
+      # Source values stored separately for easy adjustment
+      AI_ESTIMATE_CONFIG = {
+        cocomo_salary: 150_000,      # COCOMO assumes US salary in USD
+        target_salary: 80_000,       # Target salary in EUR
+        ai_cost_multiplier: 3.0,     # AI productivity boost for cost
+        ai_schedule_multiplier: 2.5, # AI productivity boost for schedule
+        ai_team_multiplier: 3.0      # AI productivity boost for team size
+      }.freeze
+
+      # Apply AI adjustment factors to project estimates
+      # @param type [Symbol] :cost, :schedule, or :team
+      # @param value [Numeric, nil] Raw estimate value
+      # @return [Numeric, nil] Adjusted value
+      def ai_adjusted_estimate(type, value)
+        return nil if value.nil?
+
+        cfg = AI_ESTIMATE_CONFIG
+        salary_ratio = cfg[:target_salary].to_f / cfg[:cocomo_salary]
+
+        adjusted = case type
+                   when :cost
+                     value.to_f * salary_ratio / cfg[:ai_cost_multiplier]
+                   when :schedule
+                     value.to_f / cfg[:ai_schedule_multiplier]
+                   when :team
+                     (value.to_f / cfg[:ai_team_multiplier]).ceil
+                   else
+                     raise ArgumentError, "Unknown estimate type: #{type}"
+                   end
+
+        type == :team ? adjusted.to_i : adjusted
       end
 
       # Convert git URL to HTTPS URL

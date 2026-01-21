@@ -212,7 +212,8 @@ module Archsight
 
     # Delegate formatting methods
     def classify(val) = Formatting.classify(val)
-    def to_dollar(num) = Formatting.to_dollar(num)
+    def to_euro(num) = Formatting.to_euro(num)
+    def ai_adjusted_estimate(type, value) = Formatting.ai_adjusted_estimate(type, value)
     def http_git(repo_url) = Formatting.http_git(repo_url)
     def number_with_delimiter(num) = Formatting.number_with_delimiter(num)
     def time_ago(timestamp) = Formatting.time_ago(timestamp)
