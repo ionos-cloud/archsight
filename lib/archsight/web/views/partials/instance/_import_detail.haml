@@ -1,0 +1,76 @@
+- import = db.instance_by_kind(@kind, @instance)
+- return unless import
+- handler = import.annotations['import/handler']
+- enabled = import.annotations['import/enabled'] != 'false'
+- cache_time = import.annotations['import/cacheTime']
+- priority = import.annotations['import/priority']
+- output_path = import.annotations['import/outputPath']
+- description = import.annotations['architecture/description']
+- config = import.annotations.select { |k, _| k.start_with?('import/config/') }
+
+%article.import-header
+  %header
+    %h2
+      %i{class: "iconoir-#{import.class.icon} icon-#{import.class.layer}"}
+      .instance-title-text
+        %span.instance-name= @instance
+        %span.instance-kind-subtitle= @kind
+    - if handler
+      %span.badge.badge-primary= handler
+    - unless enabled
+      %span.badge.badge-warning Disabled
+
+  - if description
+    .import-description
+      != markdown(description)
+
+%article.import-configuration
+  %header
+    %h3
+      %i.iconoir-settings
+      Configuration
+  .import-metadata
+    - if handler
+      %span.import-meta-item
+        %i.iconoir-code
+        = handler
+    - if cache_time
+      %span.import-meta-item
+        %i.iconoir-timer
+        = cache_time
+    - if priority
+      %span.import-meta-item
+        %i.iconoir-sort-down
+        Priority: #{priority}
+    - if enabled
+      %span.import-meta-item.status-enabled
+        %i.iconoir-check-circle
+        Enabled
+    - else
+      %span.import-meta-item.status-disabled
+        %i.iconoir-xmark-circle
+        Disabled
+
+  - if output_path
+    .import-output-path
+      %strong Output:
+      %code= output_path
+
+  - unless config.empty?
+    %details.import-config-section{open: true}
+      %summary
+        %i.iconoir-list
+        Handler Settings
+      %table.import-config-table
+        %tbody
+          - config.each do |k, v|
+            - key_name = k.sub('import/config/', '')
+            %tr
+              %th{scope: 'row'}= key_name
+              %td
+                - if v.is_a?(String) && v.start_with?('http', 'git@', 'file://')
+                  %code= v
+                - else
+                  = v
+
+!= haml :"partials/instance/_relations", locals: { instance: import }
