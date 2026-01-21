@@ -43,13 +43,14 @@ module Archsight
   # of the structure. The loading and parsing of files will raise errors
   # if invalid data is passed.
   class Database
-    attr_accessor :instances, :verbose, :verify, :compute_annotations
+    attr_accessor :instances, :verbose, :verify, :compute_annotations, :only_kinds
 
-    def initialize(path, verbose: false, verify: true, compute_annotations: true)
+    def initialize(path, verbose: false, verify: true, compute_annotations: true, only_kinds: nil)
       @path = path
       @verbose = verbose
       @verify = verify
       @compute_annotations = compute_annotations
+      @only_kinds = only_kinds
       @instances = {}
     end
 
@@ -126,6 +127,9 @@ module Archsight
           @current_ref = @current_ref.at_line(node.children.first.start_line)
           obj = node.to_ruby
           next unless obj # skip empty / unknown documents
+
+          # Skip resources that don't match only_kinds filter
+          next if @only_kinds && !@only_kinds.include?(obj["kind"])
 
           self << create_valid_instance(obj)
         end

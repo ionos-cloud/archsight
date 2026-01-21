@@ -186,7 +186,10 @@ class Archsight::Import::Handlers::RestApi < Archsight::Import::Handler
   def build_interface_name
     visibility_prefix = @visibility.split("-").map(&:capitalize).join
     api_name = @name.split(/[-_]/).map(&:capitalize).join
-    "#{visibility_prefix}:#{api_name}:v#{@version.split(".").first}:RestAPI"
+    # Handle version that may already have "v" prefix (e.g., "v1" or "1.0")
+    version_str = @version.split(".").first
+    version_str = version_str.sub(/^v/i, "") # Remove leading v if present
+    "#{visibility_prefix}:#{api_name}:v#{version_str}:RestAPI"
   end
 
   def detect_technologies(openapi_doc)
