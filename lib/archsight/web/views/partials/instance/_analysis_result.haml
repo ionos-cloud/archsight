@@ -1,0 +1,64 @@
+- accordion_name = "analysis-#{result.name.gsub(/[^a-zA-Z0-9]/, '-')}"
+
+.analysis-result-container{class: result.success? ? 'success' : 'failed'}
+  .analysis-result-header
+    %span.status-indicator
+      - if result.success?
+        - if result.has_findings?
+          %i.iconoir-warning-triangle.status-findings
+          Completed with findings
+        - else
+          %i.iconoir-check-circle.status-success
+          Completed successfully
+      - else
+        %i.iconoir-xmark-circle.status-error
+        Failed
+    - if result.duration
+      %span.duration
+        %i.iconoir-timer
+        = format("%.2fs", result.duration)
+
+  - if result.failed?
+    .analysis-error-details
+      %strong Error:
+      = result.error
+      - if result.error_backtrace&.any?
+        %details
+          %summary Show backtrace
+          %pre.code= result.error_backtrace.join("\n")
+
+  - if result.sections.any?
+    .analysis-output
+      -# Group sections by top-level headings (level 0)
+      - groups = []
+      - current_group = { title: nil, sections: [] }
+      - result.sections.each do |section|
+        - if section[:type] == :heading && section[:level] == 0
+          - groups << current_group if current_group[:title] || current_group[:sections].any?
+          - current_group = { title: section[:text], sections: [] }
+        - else
+          - current_group[:sections] << section
+      - groups << current_group if current_group[:title] || current_group[:sections].any?
+
+      - if groups.size <= 1 && groups.first && groups.first[:title].nil?
+        -# No top-level headings, render sections directly without accordions
+        - groups.first[:sections].each do |section|
+          != render_analysis_section(section)
+      - else
+        -# Render as accordions (Pico CSS style)
+        - titled_groups = groups.select { |g| g[:title] }
+        - untitled_group = groups.find { |g| g[:title].nil? }
+
+        -# Render any sections before first heading without accordion
+        - if untitled_group && untitled_group[:sections].any?
+          - untitled_group[:sections].each do |section|
+            != render_analysis_section(section)
+
+        -# Render titled groups as accordions with hr separators
+        - titled_groups.each_with_index do |group, idx|
+          - if idx > 0
+            %hr
+          %details{name: accordion_name, open: (true if idx == 0)}
+            %summary= group[:title]
+            - group[:sections].each do |section|
+              != render_analysis_section(section)

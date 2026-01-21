@@ -126,6 +126,26 @@ module Archsight
       exit 1
     end
 
+    desc "analyze", "Execute analysis scripts"
+    option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
+    option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "List analyses without running"
+    option :filter, aliases: "-f", type: :string, desc: "Filter analyses by name (regex pattern)"
+    def analyze
+      configure_resources
+      require "archsight/database"
+      require "archsight/analysis"
+
+      db = load_database_for_analysis
+      analyses = filter_analyses(db)
+
+      return puts("No analyses found#{" matching '#{options[:filter]}'" if options[:filter]}.") if analyses.empty?
+      return print_analysis_dry_run(analyses) if options[:dry_run]
+
+      results = execute_analyses(db, analyses)
+      print_analysis_results(results)
+      exit 1 if results.any?(&:failed?)
+    end
+
     desc "version", "Show version"
     def version
       puts "archsight #{Archsight::VERSION}"
@@ -144,6 +164,74 @@ module Archsight
       Dir.glob(File.join(handlers_dir, "*.rb")).each do |handler_file|
         require handler_file
       end
+    end
+
+    def load_database_for_analysis
+      db = Archsight::Database.new(Archsight.resources_dir, verbose: options[:verbose])
+      db.reload!
+      db
+    rescue Archsight::ResourceError => e
+      display_error_with_context(e.to_s)
+      exit 1
+    end
+
+    def filter_analyses(db)
+      analyses = db.instances_by_kind("Analysis").values
+      analyses = analyses.select { |a| Regexp.new(options[:filter], Regexp::IGNORECASE).match?(a.name) } if options[:filter]
+      analyses.reject { |a| a.annotations["analysis/enabled"] == "false" }
+    end
+
+    def print_analysis_dry_run(analyses)
+      puts "Analyses to run#{" (filter: #{options[:filter]})" if options[:filter]}:"
+      analyses.sort_by(&:name).each_with_index do |analysis, idx|
+        timeout = analysis.annotations["analysis/timeout"] || "30s"
+        desc = analysis.annotations["analysis/description"] || "(no description)"
+        puts "  #{idx + 1}. #{analysis.name} [#{timeout}]"
+        puts "     #{desc}"
+      end
+    end
+
+    def execute_analyses(db, analyses)
+      executor = Archsight::Analysis::Executor.new(db)
+      analyses.map { |analysis| executor.execute(analysis) }
+    end
+
+    def print_analysis_results(results)
+      require "tty-markdown"
+
+      results.each do |result|
+        print_single_result(result)
+        puts ""
+      end
+
+      summary_md = build_analysis_summary_markdown(results)
+      puts TTY::Markdown.parse(summary_md)
+    end
+
+    def print_single_result(result)
+      # Print status header
+      header = "# #{result.status_emoji} #{result.name}"
+      header += " (#{result.duration_str})" unless result.duration_str.empty?
+      puts TTY::Markdown.parse(header)
+
+      # Print error if failed
+      puts TTY::Markdown.parse(result.error_markdown(verbose: options[:verbose])) if result.failed?
+
+      # Print script output
+      output = result.to_s(verbose: options[:verbose])
+      puts output unless output.empty?
+    end
+
+    def build_analysis_summary_markdown(results)
+      passed = results.count(&:success?)
+      failed = results.count(&:failed?)
+      with_findings = results.count(&:has_findings?)
+
+      lines = ["---", "", "# Summary", ""]
+      lines << "- ✅ **#{passed}** passed"
+      lines << "- ❌ **#{failed}** failed" if failed.positive?
+      lines << "- ⚠️ **#{with_findings}** with findings" if with_findings.positive?
+      lines.join("\n")
     end
 
     def list_kinds

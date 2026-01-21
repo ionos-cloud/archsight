@@ -1,8 +1,15 @@
 # frozen_string_literal: true
 
+require_relative "helpers/formatting"
+require_relative "helpers/analysis_renderer"
+
 module Archsight
   # Helpers provides utility functions for the architecture tool
   module Helpers
+    # Include sub-modules for direct access
+    extend Formatting
+    extend AnalysisRenderer
+
     module_function
 
     # Make path relative to resources directory
@@ -43,10 +50,6 @@ module Archsight
           selected: (i + 1) == error_line_no
         }
       end
-    end
-
-    def classify(val)
-      val.to_s.split("-").map(&:capitalize).join
     end
 
     def deep_merge(hash1, hash2)
@@ -206,5 +209,17 @@ module Archsight
         (val_a || "").to_s.downcase <=> (val_b || "").to_s.downcase
       end
     end
+
+    # Delegate formatting methods
+    def classify(val) = Formatting.classify(val)
+    def to_dollar(num) = Formatting.to_dollar(num)
+    def http_git(repo_url) = Formatting.http_git(repo_url)
+    def number_with_delimiter(num) = Formatting.number_with_delimiter(num)
+    def time_ago(timestamp) = Formatting.time_ago(timestamp)
+
+    # Delegate analysis renderer methods
+    def escape_html(text) = AnalysisRenderer.escape_html(text)
+    def render_analysis_section(section, **) = AnalysisRenderer.render_analysis_section(section, **)
+    def render_analysis_table(section) = AnalysisRenderer.render_analysis_table(section)
   end
 end

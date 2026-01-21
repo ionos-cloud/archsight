@@ -104,25 +104,6 @@ class Archsight::Web::Application < Sinatra::Base
       end
     end
 
-    def to_dollar(num)
-      # Round to 2 decimals first (important for floating‑point edge cases)
-      rounded = (num * 100).round / 100.0
-      # Insert commas every three digits left of the decimal point
-      parts = format("%.2f", rounded).split(".")
-      parts[0] = parts[0].reverse.scan(/\d{1,3}/).join(",").reverse
-      "$#{parts.join(".")}"
-    end
-
-    def http_git(repo_url)
-      repo_url.gsub(/.git$/, "")
-              .gsub(":", "/")
-              .gsub("git@", "https://")
-    end
-
-    def number_with_delimiter(num)
-      num.to_s.reverse.scan(/\d{1,3}/).join(",").reverse
-    end
-
     # Generate asset path with cache-busting query string based on file mtime
     def asset_path(path)
       file_path = File.join(settings.public_folder, path)
@@ -134,30 +115,9 @@ class Archsight::Web::Application < Sinatra::Base
       end
     end
 
-    # Convert timestamp to human-readable relative time
-    def time_ago(timestamp)
-      return nil unless timestamp
-
-      time = timestamp.is_a?(Time) ? timestamp : Time.parse(timestamp.to_s)
-      seconds = (Time.now - time).to_i
-
-      units = [
-        [60, "second"],
-        [60, "minute"],
-        [24, "hour"],
-        [7, "day"],
-        [4, "week"],
-        [12, "month"],
-        [Float::INFINITY, "year"]
-      ]
-
-      value = seconds
-      units.each do |divisor, unit|
-        return "just now" if unit == "second" && value < 10
-        return "#{value} #{unit}#{"s" if value != 1} ago" if value < divisor
-
-        value /= divisor
-      end
+    # Wrapper for render_analysis_section that provides markdown renderer
+    def render_analysis_section(section)
+      Archsight::Helpers.render_analysis_section(section, markdown_renderer: method(:markdown))
     end
   end
 
@@ -294,5 +254,31 @@ class Archsight::Web::Application < Sinatra::Base
     @instance = params["instance"]
     content_type "text/plain"
     create_graph_one(db, @kind, @instance, :draw_dot)
+  end
+
+  # Execute an Analysis and return HTML results
+  post "/kinds/Analysis/instances/:instance/execute" do
+    require "archsight/analysis"
+
+    @instance = params["instance"]
+    analysis = db.instance_by_kind("Analysis", @instance)
+
+    unless analysis
+      return haml_inline('.analysis-error
+  %i.iconoir-warning-triangle
+  Analysis not found: #{@instance}')
+    end
+
+    executor = Archsight::Analysis::Executor.new(db)
+    result = executor.execute(analysis)
+
+    haml :"partials/instance/_analysis_result", locals: { result: result }
+  end
+
+  private
+
+  # Helper for inline HAML rendering
+  def haml_inline(template)
+    haml template
   end
 end

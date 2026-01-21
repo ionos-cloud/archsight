@@ -1,0 +1,74 @@
+- analysis = db.instance_by_kind(@kind, @instance)
+- return unless analysis
+- script = analysis.annotations['analysis/script']
+- description = analysis.annotations['analysis/description']
+- handler = analysis.annotations['analysis/handler'] || 'ruby'
+- timeout = analysis.annotations['analysis/timeout'] || '30s'
+- enabled = analysis.annotations['analysis/enabled'] != 'false'
+
+%article.analysis-header
+  %header
+    %h2
+      %i{class: "iconoir-#{analysis.class.icon} icon-#{analysis.class.layer}"}
+      .instance-title-text
+        %span.instance-name= @instance
+        %span.instance-kind-subtitle= @kind
+    - unless enabled
+      %span.badge.badge-warning Disabled
+  - if description
+    .analysis-description
+      != markdown(description)
+
+- if script
+  %article.analysis-execution
+    %header
+      %h3
+        %i.iconoir-play
+        Results
+      .analysis-execute-controls
+        %button#execute-analysis-btn.secondary.outline{"hx-post": "/kinds/Analysis/instances/#{@instance}/execute", "hx-target": "#analysis-results", "hx-swap": "innerHTML", "hx-indicator": "#execute-spinner"}
+          %i.iconoir-refresh
+          Re-run
+        %span#execute-spinner.htmx-indicator
+          %i.iconoir-refresh.spinning
+          Running...
+    #analysis-results.analysis-results{"hx-post": "/kinds/Analysis/instances/#{@instance}/execute", "hx-trigger": "load", "hx-swap": "innerHTML"}
+      .analysis-loading
+        %i.iconoir-refresh.spinning
+        Running analysis...
+
+  %details.analysis-details-section
+    %summary
+      %i.iconoir-code-brackets-square
+      Script Details
+    .analysis-details-content
+      .analysis-metadata
+        %span.analysis-meta-item
+          %i.iconoir-code
+          = handler
+        %span.analysis-meta-item
+          %i.iconoir-timer
+          = timeout
+        - if enabled
+          %span.analysis-meta-item.status-enabled
+            %i.iconoir-check-circle
+            Enabled
+        - else
+          %span.analysis-meta-item.status-disabled
+            %i.iconoir-xmark-circle
+            Disabled
+      .analysis-script
+        .analysis-script-header
+          %strong Script
+          %button.copy-button{onclick: "navigator.clipboard.writeText(document.getElementById('analysis-script-content').textContent)", title: "Copy script to clipboard"}
+            %i.iconoir-copy
+        %pre.code
+          %code#analysis-script-content.language-ruby= script
+
+- else
+  %article
+    %p.analysis-empty-state
+      %i.iconoir-warning-triangle
+      No script defined for this analysis.
+
+!= haml :"partials/instance/_relations", locals: { instance: analysis }
