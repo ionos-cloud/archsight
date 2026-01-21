@@ -688,3 +688,131 @@
   padding: 0.25rem 0.5rem;
   font-size: 0.85em;
 }
+
+/* Import detail styles */
+.import-header {
+  margin-bottom: 0.75rem;
+}
+
+.import-header header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.import-header header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: auto;
+}
+
+.import-description {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: var(--card-background-color);
+  border-radius: 8px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.import-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.import-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9em;
+  color: var(--muted-color);
+  padding: 0.25rem 0.5rem;
+  background-color: var(--code-background-color);
+  border-radius: 4px;
+}
+
+.import-meta-item i {
+  font-size: 1.1em;
+}
+
+.import-meta-item.status-enabled {
+  color: #10b981;
+}
+
+.import-meta-item.status-disabled {
+  color: #ef4444;
+}
+
+.import-output-path {
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--code-background-color);
+  border-radius: 4px;
+}
+
+.import-output-path code {
+  margin-left: 0.5rem;
+}
+
+.import-config-section {
+  margin-top: 1rem;
+  border: 1px solid var(--muted-border-color);
+  border-radius: 8px;
+  background-color: var(--card-background-color);
+}
+
+.import-config-section summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted-color);
+  user-select: none;
+}
+
+.import-config-section summary:hover {
+  color: var(--color);
+}
+
+.import-config-section summary::marker,
+.import-config-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.import-config-section summary::before {
+  content: '\25B6';
+  font-size: 0.7em;
+  transition: transform 0.2s ease;
+}
+
+.import-config-section[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.import-config-table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+
+.import-config-table th,
+.import-config-table td {
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--muted-border-color);
+}
+
+.import-config-table th {
+  width: 30%;
+  text-align: left;
+  font-weight: 500;
+  color: var(--muted-color);
+}
+
+.import-config-table code {
+  word-break: break-all;
+}

@@ -129,6 +129,16 @@
   color: var(--color);
 }
 
+.estimate-note {
+  margin-left: 0.5rem;
+  color: var(--muted-color);
+  cursor: help;
+}
+
+.estimate-note i {
+  font-size: 0.875rem;
+}
+
 /* Activity summary */
 .activity-summary {
   display: flex;

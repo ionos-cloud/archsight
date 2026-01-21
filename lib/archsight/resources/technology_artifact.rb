@@ -133,6 +133,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   annotation "repository/recentTags",
              description: "Recent git tags (releases)",
              title: "Recent Tags",
+             format: :tag_list,
              sidebar: false
   annotation "repository/accessible",
              description: "Whether repository is accessible for cloning",

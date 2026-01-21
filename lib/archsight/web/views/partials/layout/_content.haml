@@ -17,6 +17,8 @@
       != haml :'partials/instance/_view_detail'
     - elsif @kind == "Analysis"
       != haml :'partials/instance/_analysis_detail'
+    - elsif @kind == "Import"
+      != haml :'partials/instance/_import_detail'
     - else
       != haml :'partials/instance/_detail'
   - elsif @kind && !@instance
