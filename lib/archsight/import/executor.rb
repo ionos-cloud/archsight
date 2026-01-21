@@ -202,9 +202,9 @@ class Archsight::Import::Executor
     end
   end
 
-  # Check if import is enabled
+  # Check if import is enabled and has a handler
   def import_enabled?(import)
-    import.annotations["import/enabled"] != "false"
+    import.annotations["import/enabled"] != "false" && import.annotations["import/handler"]
   end
 
   # Check if import matches the filter pattern (or is a dependency of a matching import)
