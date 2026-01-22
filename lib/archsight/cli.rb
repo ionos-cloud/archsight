@@ -16,9 +16,11 @@ module Archsight
     desc "web", "Start the web server"
     option :port, aliases: "-p", type: :numeric, default: 4567, desc: "Port to listen on"
     option :host, aliases: "-H", type: :string, default: "localhost", desc: "Host to bind to"
+    option :disable_reload, type: :boolean, default: false, desc: "Disable the reload button in the UI"
     def web
       configure_resources
       require "archsight/web/application"
+      Archsight::Web::Application.set :reload_enabled, !options[:disable_reload]
       Archsight::Web::Application.setup_mcp!
       Archsight::Web::Application.run!(port: options[:port], bind: options[:host])
     rescue Archsight::ResourceError => e

@@ -42,6 +42,7 @@ class Archsight::Web::Application < Sinatra::Base
     set :public_folder, File.join(__dir__, "public")
     set :haml, format: :html5
     set :server, :puma
+    set :reload_enabled, true
   end
 
   # MCP Server setup
@@ -72,6 +73,10 @@ class Archsight::Web::Application < Sinatra::Base
   helpers do
     def db
       Archsight::Web::Application.database
+    end
+
+    def reload_enabled?
+      settings.reload_enabled
     end
 
     # Render markdown to HTML with optional URL resolution for repository content
@@ -126,6 +131,8 @@ class Archsight::Web::Application < Sinatra::Base
   end
 
   get "/reload" do
+    halt 404, "Reload is disabled" unless settings.reload_enabled
+
     Archsight::Web::Application.reload!
     if params["redirect"]&.start_with?("/")
       redirect params["redirect"]
