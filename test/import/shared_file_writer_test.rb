@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "archsight/import"
 require "archsight/import/shared_file_writer"
 require "tmpdir"
 require "fileutils"

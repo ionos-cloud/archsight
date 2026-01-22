@@ -5,10 +5,11 @@
         %a{href: "/"}
           %i.iconoir-home
           Archsight
-    %li
-      %a{href: "/reload?redirect=#{request.path_info}"}
-        %i.iconoir-reload-window
-        Reload
+    - if reload_enabled?
+      %li
+        %a{href: "/reload?redirect=#{request.path_info}"}
+          %i.iconoir-reload-window
+          Reload
   %ul
     %li.search-container
       %a.search-help{ href: "/doc/index", "hx-get": "/doc/index", "hx-target": ".content", "hx-swap": "innerHTML", "hx-push-url": "true", title: "Help" }

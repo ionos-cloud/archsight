@@ -35,6 +35,22 @@ class Archsight::Web::Application < Sinatra::Base
       dur = (Time.new - start) * 1000
       puts format("== done %0.2f ms", dur) if database.verbose
     end
+
+    # Configure application for the given environment
+    # @param env [Symbol] :development or :production
+    # @param logging [Boolean, nil] Override default logging setting
+    def configure_environment!(env, logging: nil)
+      set :environment, env
+
+      if env == :production
+        set :quiet, true
+        set :server_settings, { Silent: true }
+      end
+
+      # Determine logging: CLI override > env default (prod=true, dev=false)
+      enable_logging = logging.nil? ? (env == :production) : logging
+      use Rack::CommonLogger, $stdout if enable_logging
+    end
   end
 
   configure do
@@ -42,6 +58,7 @@ class Archsight::Web::Application < Sinatra::Base
     set :public_folder, File.join(__dir__, "public")
     set :haml, format: :html5
     set :server, :puma
+    set :reload_enabled, true
   end
 
   # MCP Server setup
@@ -72,6 +89,18 @@ class Archsight::Web::Application < Sinatra::Base
   helpers do
     def db
       Archsight::Web::Application.database
+    end
+
+    def reload_enabled?
+      settings.reload_enabled
+    end
+
+    def production?
+      settings.environment == :production
+    end
+
+    def development?
+      settings.environment == :development
     end
 
     # Render markdown to HTML with optional URL resolution for repository content
@@ -126,6 +155,8 @@ class Archsight::Web::Application < Sinatra::Base
   end
 
   get "/reload" do
+    halt 404, "Reload is disabled" unless settings.reload_enabled
+
     Archsight::Web::Application.reload!
     if params["redirect"]&.start_with?("/")
       redirect params["redirect"]
