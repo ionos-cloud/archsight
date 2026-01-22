@@ -12,6 +12,10 @@ module Archsight::Annotations::Generated
                  description: "Timestamp when this resource was generated (ISO8601)",
                  title: "Generated At",
                  sidebar: false
+      annotation "generated/configHash",
+                 description: "Hash of configuration used to generate this resource (for change detection)",
+                 title: "Config Hash",
+                 sidebar: false
     end
   end
 end
