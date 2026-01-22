@@ -44,6 +44,9 @@ Access at: <http://localhost:4567>
 # Run web server (default)
 docker run -p 4567:4567 -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight
 
+# Run in production mode with logging
+docker run -p 4567:4567 -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight web --production
+
 # Run lint
 docker run -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight lint -r /resources
 
@@ -62,12 +65,30 @@ Access web interface at: <http://localhost:4567>
 ## CLI Commands
 
 ```bash
-archsight web [--resources PATH] [--port PORT]  # Start web server
-archsight lint [--resources PATH]               # Validate YAML and relations
-archsight template KIND                         # Generate YAML template for a resource type
-archsight console [--resources PATH]            # Interactive Ruby console
-archsight version                               # Show version
+archsight web [OPTIONS]      # Start web server
+archsight lint               # Validate YAML and relations
+archsight import             # Execute pending imports
+archsight analyze            # Execute analysis scripts
+archsight template KIND      # Generate YAML template for a resource type
+archsight console            # Interactive Ruby console
+archsight version            # Show version
 ```
+
+### Web Server Options
+
+```bash
+archsight web [--resources PATH] [--port PORT] [--host HOST]
+              [--production] [--disable-reload] [--enable-logging]
+```
+
+| Option | Description |
+|--------|-------------|
+| `-r, --resources PATH` | Path to resources directory |
+| `-p, --port PORT` | Port to listen on (default: 4567) |
+| `-H, --host HOST` | Host to bind to (default: localhost) |
+| `--production` | Run in production mode (quiet startup) |
+| `--disable-reload` | Disable the reload button in the UI |
+| `--enable-logging` | Enable request logging (default: false in dev, true in prod) |
 
 ## Features
 
