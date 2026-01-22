@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "digest"
+require "json"
 require "archsight/import"
 require_relative "registry"
 require_relative "handler"
@@ -27,7 +29,7 @@ class Archsight::Import::Executor
     /^(\d+)d$/ => 86_400
   }.freeze
 
-  attr_reader :database, :resources_dir, :verbose, :filter
+  attr_reader :database, :resources_dir, :verbose, :filter, :force
 
   # @param database [Archsight::Database] Database instance
   # @param resources_dir [String] Root resources directory
@@ -35,7 +37,8 @@ class Archsight::Import::Executor
   # @param max_concurrent [Integer] Maximum concurrent imports (default: 20)
   # @param output [IO] Output stream for progress (default: $stdout)
   # @param filter [String, nil] Regex pattern to match import names
-  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil)
+  # @param force [Boolean] Whether to bypass cache and re-run all imports
+  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil, force: false)
     @database = database
     @resources_dir = resources_dir
     @verbose = verbose
@@ -43,6 +46,7 @@ class Archsight::Import::Executor
     @output = output
     @filter = filter
     @filter_regex = Regexp.new(filter, Regexp::IGNORECASE) if filter
+    @force = force
     @executed_this_run = Set.new
     @iteration = 0
     @mutex = Mutex.new
@@ -78,7 +82,7 @@ class Archsight::Import::Executor
       log "=== Iteration #{@iteration} ==="
 
       # Only reload if previous batch executed imports (might have generated new Import resources)
-      reload_database_quietly! if need_reload
+      reload_and_update_total! if need_reload
 
       # Get all pending imports
       pending = pending_imports
@@ -169,13 +173,15 @@ class Archsight::Import::Executor
     @original_int_handler = Signal.trap("INT") do
       if @interrupted
         # Second Ctrl-C: force exit
-        @concurrent_progress&.finish("Force quit")
+        # Use trap-safe method (no mutex) since we're in signal context
+        @concurrent_progress&.finish_from_trap("Force quit")
         @shared_writer&.close_all
         exit(130)
       else
         # First Ctrl-C: graceful shutdown
         @interrupted = true
-        @concurrent_progress&.interrupt("Shutting down gracefully (Ctrl-C again to force quit)...")
+        # Use trap-safe method (no mutex) since we're in signal context
+        @concurrent_progress&.interrupt_from_trap("Shutting down gracefully (Ctrl-C again to force quit)...")
       end
     end
   end
@@ -255,12 +261,17 @@ class Archsight::Import::Executor
     end
   end
 
-  # Get dependency names for an import (for display and dependency checking)
+  # Get dependency names for an import by finding parents that generate this import
+  # Dependencies are derived from the inverse of `generates` - if Import A generates Import B,
+  # then B depends on A
   def import_dependency_names(import)
-    deps = import.relations(:dependsOn, :imports)
-    return [] if deps.nil? || deps.empty?
-
-    deps.map(&:name)
+    # Find all imports that have this import in their generates.imports
+    all_imports = database.instances_by_kind("Import")&.values || []
+    parent_imports = all_imports.select do |parent|
+      generated = parent.relations(:generates, :imports)
+      generated&.any? { |gen| (gen.is_a?(String) ? gen : gen.name) == import.name }
+    end
+    parent_imports.map(&:name)
   end
 
   # Reload database without verbose output
@@ -272,6 +283,13 @@ class Archsight::Import::Executor
     @imports_to_run = nil if @filter_regex
   ensure
     database.verbose = original_verbose
+  end
+
+  # Reload database and update progress total for newly discovered imports
+  def reload_and_update_total!
+    reload_database_quietly!
+    new_total = count_all_enabled_imports
+    @concurrent_progress.update_total(new_total) if new_total.positive?
   end
 
   # Execute a batch of imports concurrently
@@ -336,9 +354,20 @@ class Archsight::Import::Executor
 
   # Check if import is still fresh (cached)
   # Uses generated/at annotation and import/cacheTime to determine freshness
+  # Also validates that output file exists (if specified) and source file hasn't changed
   def import_fresh?(import)
+    # Honor force flag - always re-run when forced
+    return false if @force
+
     cache_time = import.annotations["import/cacheTime"]
     return false if cache_time.nil? || cache_time.empty? || cache_time == "never"
+
+    # Check if output file exists - if not, cache is invalid
+    output_path = import.annotations["import/outputPath"]
+    if output_path && !output_path.empty?
+      full_path = File.join(resources_dir, output_path)
+      return false unless File.exist?(full_path)
+    end
 
     generated_at = import.annotations["generated/at"]
     return false if generated_at.nil? || generated_at.empty?
@@ -347,6 +376,15 @@ class Archsight::Import::Executor
     return false unless ttl_seconds
 
     last_run = Time.parse(generated_at)
+
+    # Check if import configuration has changed since last generation
+    # Compare stored config hash against current config hash
+    stored_hash = import.annotations["generated/configHash"]
+    if stored_hash
+      current_hash = compute_config_hash(import)
+      return false if current_hash != stored_hash
+    end
+
     Time.now < (last_run + ttl_seconds)
   rescue ArgumentError
     # Invalid time format
@@ -362,6 +400,16 @@ class Archsight::Import::Executor
     end
 
     nil
+  end
+
+  # Compute a hash of the import's configuration for cache invalidation
+  # Includes handler and all import/config/* annotations
+  def compute_config_hash(import)
+    config_data = {
+      handler: import.annotations["import/handler"],
+      config: import.annotations.select { |k, _| k.start_with?("import/config/") }.sort.to_h
+    }
+    Digest::SHA256.hexdigest(config_data.to_json)[0, 16]
   end
 
   # Check if an import failed during this run
@@ -384,10 +432,11 @@ class Archsight::Import::Executor
 
       temp_visited.add(import.name)
 
-      # Visit dependencies first
-      deps = import.relations(:dependsOn, :imports)
-      deps&.each do |dep|
-        visit.call(dep) if imports_by_name[dep.name]
+      # Visit dependencies first (derived from generates relation)
+      dep_names = import_dependency_names(import)
+      dep_names.each do |dep_name|
+        dep = imports_by_name[dep_name]
+        visit.call(dep) if dep
       end
 
       temp_visited.delete(import.name)

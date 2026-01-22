@@ -21,7 +21,7 @@ require_relative "../registry"
 #     Required scopes: repo (private repos) or public_repo (public only)
 #
 # Output:
-#   Generates Import:Repo:* resources for each repository, with dependsOn to this import
+#   Generates Import:Repo:* resources for each repository
 #   The repository handler will clone/sync the actual git repositories
 class Archsight::Import::Handlers::Github < Archsight::Import::Handler
   PER_PAGE = 100
@@ -49,6 +49,8 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
     # Generate Import resources for each repository
     progress.update("Generating #{repos.size} import resources")
     generate_repository_imports(repos)
+
+    write_generates_meta
   end
 
   private
@@ -143,8 +145,7 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
           "archived" => repo["isArchived"].to_s,
           "visibility" => visibility == "public" ? "open-source" : "internal"
         },
-        annotations: child_annotations,
-        depends_on: [import_resource.name]
+        annotations: child_annotations
       )
     end
 
@@ -154,22 +155,6 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
     # Write all imports to a single file with --- separators
     yaml_content = yaml_documents.map { |doc| YAML.dump(doc) }.join("\n")
     write_yaml(yaml_content)
-  end
-
-  # Generate a marker Import for this handler with generated/at timestamp
-  # This is merged with the original Import to enable cache checking
-  def self_marker
-    {
-      "apiVersion" => "architecture/v1alpha1",
-      "kind" => "Import",
-      "metadata" => {
-        "name" => import_resource.name,
-        "annotations" => {
-          "generated/at" => Time.now.utc.iso8601
-        }
-      },
-      "spec" => {}
-    }
   end
 end
 

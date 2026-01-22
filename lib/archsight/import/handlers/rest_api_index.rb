@@ -63,6 +63,8 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
     # Generate child imports
     progress.update("Generating #{apis.size} import resources")
     generate_api_imports(apis)
+
+    write_generates_meta
   end
 
   private
@@ -150,8 +152,7 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
         name: import_name,
         handler: "rest-api",
         config: child_config,
-        annotations: child_annotations,
-        depends_on: [import_resource.name]
+        annotations: child_annotations
       )
     end
 
@@ -176,21 +177,6 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
     return "private" if path&.match?(/\bprivate\b/i)
 
     "public" # Default to public for APIs without explicit visibility marker
-  end
-
-  # Generate a marker Import for this handler with generated/at timestamp
-  def self_marker
-    {
-      "apiVersion" => "architecture/v1alpha1",
-      "kind" => "Import",
-      "metadata" => {
-        "name" => import_resource.name,
-        "annotations" => {
-          "generated/at" => Time.now.utc.iso8601
-        }
-      },
-      "spec" => {}
-    }
   end
 end
 

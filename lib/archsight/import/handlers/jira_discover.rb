@@ -26,6 +26,8 @@ class Archsight::Import::Handlers::JiraDiscover < Archsight::Import::Handler
     load_configuration
     verify_jira_credentials
     discover_projects
+
+    write_generates_meta
   end
 
   private
@@ -153,22 +155,6 @@ class Archsight::Import::Handlers::JiraDiscover < Archsight::Import::Handler
 
     category_id = project_info.dig("projectCategory", "id")&.to_s
     @excluded_project_categories.include?(category_id)
-  end
-
-  # Generate a marker Import for this handler with generated/at timestamp
-  # This is merged with the original Import to enable cache checking
-  def self_marker
-    {
-      "apiVersion" => "architecture/v1alpha1",
-      "kind" => "Import",
-      "metadata" => {
-        "name" => import_resource.name,
-        "annotations" => {
-          "generated/at" => Time.now.utc.iso8601
-        }
-      },
-      "spec" => {}
-    }
   end
 end
 

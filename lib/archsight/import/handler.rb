@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require "digest"
 require "fileutils"
+require "json"
 require "yaml"
 require "archsight/import"
 require_relative "progress"
@@ -23,6 +25,7 @@ class Archsight::Import::Handler
     @resources_dir = resources_dir
     @progress = progress || Archsight::Import::Progress.new
     @shared_writer = shared_writer
+    @tracked_resources = []
   end
 
   # Execute the import. Must be implemented by subclasses.
@@ -48,6 +51,34 @@ class Archsight::Import::Handler
       config_key = key.sub("import/config/", "")
       hash[config_key] = value
     end
+  end
+
+  # Compute a hash of the import's configuration for cache invalidation
+  # @return [String] 16-character hex hash
+  def compute_config_hash
+    config_data = {
+      handler: import_resource.annotations["import/handler"],
+      config: import_resource.annotations.select { |k, _| k.start_with?("import/config/") }.sort.to_h
+    }
+    Digest::SHA256.hexdigest(config_data.to_json)[0, 16]
+  end
+
+  # Generate a marker Import for this handler with generated/at timestamp and config hash
+  # Used for caching - call at end of execute() to persist the execution timestamp
+  # @return [Hash] Import resource hash ready for YAML serialization
+  def self_marker
+    {
+      "apiVersion" => "architecture/v1alpha1",
+      "kind" => "Import",
+      "metadata" => {
+        "name" => import_resource.name,
+        "annotations" => {
+          "generated/at" => Time.now.utc.iso8601,
+          "generated/configHash" => compute_config_hash
+        }
+      },
+      "spec" => {}
+    }
   end
 
   # Write YAML content to the output path
@@ -101,6 +132,7 @@ class Archsight::Import::Handler
   # @param spec [Hash] Resource spec (relations)
   # @return [Hash] Resource hash ready for YAML serialization
   def resource_yaml(kind:, name:, annotations: {}, spec: {})
+    @tracked_resources << { kind: kind, name: name }
     {
       "apiVersion" => "architecture/v1alpha1",
       "kind" => kind,
@@ -120,13 +152,16 @@ class Archsight::Import::Handler
   # @param handler [String] Handler name
   # @param config [Hash] Configuration annotations (added as import/config/*)
   # @param annotations [Hash] Additional annotations (added directly)
-  # @param depends_on [Array<String>] Names of imports this depends on
   # @return [Hash] Import resource hash ready for YAML serialization
   #
   # NOTE: generated/at is NOT set here - it's only set by the self_marker when
   # the child import actually executes. This ensures caching works correctly
   # regardless of file loading order.
-  def import_yaml(name:, handler:, config: {}, annotations: {}, depends_on: [])
+  #
+  # Dependencies are not specified here - they are derived from the `generates`
+  # relation on the parent import (tracked via write_generates_meta).
+  def import_yaml(name:, handler:, config: {}, annotations: {})
+    @tracked_resources << { kind: "Import", name: name }
     all_annotations = {
       "import/handler" => handler,
       "generated/script" => import_resource.name
@@ -140,9 +175,6 @@ class Archsight::Import::Handler
       all_annotations["import/config/#{key}"] = value.to_s
     end
 
-    spec = {}
-    spec["dependsOn"] = { "imports" => depends_on } unless depends_on.empty?
-
     {
       "apiVersion" => "architecture/v1alpha1",
       "kind" => "Import",
@@ -150,7 +182,7 @@ class Archsight::Import::Handler
         "name" => name,
         "annotations" => all_annotations
       },
-      "spec" => spec
+      "spec" => {}
     }
   end
 
@@ -161,7 +193,66 @@ class Archsight::Import::Handler
     resources.map { |r| YAML.dump(r) }.join
   end
 
+  # Write generates meta record for this Import
+  # Call at end of execute() to persist tracking of generated resources
+  # Appends to the output file rather than overwriting
+  def write_generates_meta
+    return if @tracked_resources.empty?
+
+    meta = generates_meta_record(@tracked_resources)
+    output_path = import_resource.annotations["import/outputPath"]
+
+    full_path = if output_path
+                  File.join(resources_dir, output_path)
+                else
+                  File.join(resources_dir, "generated", "#{safe_filename(import_resource.name)}.yaml")
+                end
+
+    if @shared_writer
+      @shared_writer.append_yaml(full_path, YAML.dump(meta), sort_key: "#{import_resource.name}:generates")
+    else
+      # Append to existing file
+      File.open(full_path, "a") { |f| f.write(YAML.dump(meta)) }
+    end
+  end
+
   private
+
+  # Create meta record for Import with generates relations
+  # @param resources [Array<Hash>] Array of tracked resources with :kind and :name
+  # @return [Hash] Import resource hash with generates spec
+  def generates_meta_record(resources)
+    grouped = resources.group_by { |r| r[:kind] }
+
+    generates_spec = {}
+    grouped.each do |kind, items|
+      kind_key = kind_to_relation_key(kind)
+      generates_spec[kind_key] = items.map { |r| r[:name] }
+    end
+
+    {
+      "apiVersion" => "architecture/v1alpha1",
+      "kind" => "Import",
+      "metadata" => { "name" => import_resource.name },
+      "spec" => { "generates" => generates_spec }
+    }
+  end
+
+  # Convert resource kind to relation key
+  # @param kind [String] Resource kind (e.g., "TechnologyArtifact")
+  # @return [String] Relation key (e.g., "technologyArtifacts")
+  def kind_to_relation_key(kind)
+    case kind
+    when "TechnologyArtifact" then "technologyArtifacts"
+    when "ApplicationInterface" then "applicationInterfaces"
+    when "DataObject" then "dataObjects"
+    when "Import" then "imports"
+    when "BusinessActor" then "businessActors"
+    else
+      # Fallback: convert CamelCase to camelCase plural
+      "#{kind[0].downcase}#{kind[1..]}s"
+    end
+  end
 
   # Convert a name to a safe filename
   # @param name [String] Resource name

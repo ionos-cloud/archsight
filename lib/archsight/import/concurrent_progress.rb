@@ -64,6 +64,14 @@ class Archsight::Import::ConcurrentProgress
     end
   end
 
+  # Update total without resetting completed count (for multi-stage imports)
+  def update_total(total)
+    @mutex.synchronize do
+      @total_imports = total
+      update_overall_line if @tty && @has_overall_line
+    end
+  end
+
   # Increment completed count and update overall progress
   def increment_completed
     @mutex.synchronize do
@@ -170,38 +178,58 @@ class Archsight::Import::ConcurrentProgress
   end
 
   # Print a final summary (restores cursor and shows it)
+  # Note: Use finish_from_trap when called from a signal handler
   def finish(message)
     @mutex.synchronize do
-      if @tty
-        # Restore cursor position and show cursor
-        @output.print CURSOR_RESTORE
-        # Clear from cursor to end of screen to remove progress lines
-        @output.print "\e[J"
-        @output.print CURSOR_SHOW
-      end
-      @output.puts message if message
+      finish_unsafe(message)
     end
+  end
+
+  # Trap-safe version of finish (no mutex, safe to call from signal handlers)
+  def finish_from_trap(message)
+    finish_unsafe(message)
   end
 
   # Show interrupt message without clearing progress (called on first Ctrl-C)
+  # Note: Use interrupt_from_trap when called from a signal handler
   def interrupt(message)
     @mutex.synchronize do
-      if @tty
-        # Move to the line below progress and print message
-        @output.print "\n"
-        @output.print "\e[2K"
-        @output.print "#{COLORS[:yellow]}#{message}#{COLORS[:reset]}"
-        @output.print "\n"
-        @output.flush
-        # Increase lines printed to account for the interrupt message
-        @lines_printed += 2
-      else
-        @output.puts message
-      end
+      interrupt_unsafe(message)
     end
   end
 
+  # Trap-safe version of interrupt (no mutex, safe to call from signal handlers)
+  def interrupt_from_trap(message)
+    interrupt_unsafe(message)
+  end
+
   private
+
+  def finish_unsafe(message)
+    if @tty
+      # Restore cursor position and show cursor
+      @output.print CURSOR_RESTORE
+      # Clear from cursor to end of screen to remove progress lines
+      @output.print "\e[J"
+      @output.print CURSOR_SHOW
+    end
+    @output.puts message if message
+  end
+
+  def interrupt_unsafe(message)
+    if @tty
+      # Move to the line below progress and print message
+      @output.print "\n"
+      @output.print "\e[2K"
+      @output.print "#{COLORS[:yellow]}#{message}#{COLORS[:reset]}"
+      @output.print "\n"
+      @output.flush
+      # Increase lines printed to account for the interrupt message
+      @lines_printed += 2
+    else
+      @output.puts message
+    end
+  end
 
   def build_overall_line
     percentage = @total_imports.positive? ? ((@completed_imports.to_f / @total_imports) * 100).round : 0

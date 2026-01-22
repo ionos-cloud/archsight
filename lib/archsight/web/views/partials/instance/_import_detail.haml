@@ -24,6 +24,17 @@
     .import-description
       != markdown(description)
 
+  - if import.has_relations?
+    - relation_count = import.spec.values.flat_map { |kinds| kinds.is_a?(Hash) ? kinds.values.flatten : [] }.size
+    - if relation_count < 50
+      .graph-container
+        #graphviz.canvas
+        != graphviz_svg(create_graph_one(db, @kind, @instance), 'graphviz')
+    - else
+      %p.graph-too-large
+        %i.iconoir-warning-triangle
+        Graph too large to display (#{relation_count} relations)
+
 %article.import-configuration
   %header
     %h3
