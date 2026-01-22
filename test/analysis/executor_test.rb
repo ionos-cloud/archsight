@@ -433,4 +433,240 @@ class AnalysisExecutorTest < Minitest::Test
     assert_predicate result, :success?
     assert_operator result.duration, :>=, 0.1
   end
+
+  # Additional Result tests for coverage
+
+  def test_to_markdown_verbose_includes_all_rows
+    create_analysis(
+      name: "Test:VerboseTable",
+      script: <<~RUBY
+        rows = (1..15).map { |i| [i, "Item \#{i}"] }
+        heading("Large Table", level: 1)
+        table(headers: ["ID", "Name"], rows: rows)
+      RUBY
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:VerboseTable")
+    result = @executor.execute(analysis)
+
+    verbose_md = result.to_markdown(verbose: true)
+    # All 15 rows should be present
+    assert_includes verbose_md, "Item 15"
+    refute_includes verbose_md, "...and"
+  end
+
+  def test_to_markdown_non_verbose_truncates_table
+    create_analysis(
+      name: "Test:TruncatedTable",
+      script: <<~RUBY
+        rows = (1..15).map { |i| [i, "Item \#{i}"] }
+        heading("Large Table", level: 1)
+        table(headers: ["ID", "Name"], rows: rows)
+      RUBY
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:TruncatedTable")
+    result = @executor.execute(analysis)
+
+    non_verbose_md = result.to_markdown(verbose: false)
+    # Should be truncated at 10 rows
+    assert_includes non_verbose_md, "Item 10"
+    refute_includes non_verbose_md, "Item 11"
+    assert_includes non_verbose_md, "...and 5 more rows"
+  end
+
+  def test_to_markdown_non_verbose_truncates_list
+    create_analysis(
+      name: "Test:TruncatedList",
+      script: <<~RUBY
+        items = (1..15).map { |i| "Item \#{i}" }
+        report(items, title: "Large List")
+      RUBY
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:TruncatedList")
+    result = @executor.execute(analysis)
+
+    non_verbose_md = result.to_markdown(verbose: false)
+    # Should be truncated at 10 items
+    assert_includes non_verbose_md, "Item 10"
+    refute_includes non_verbose_md, "Item 11"
+    assert_includes non_verbose_md, "...and 5 more items"
+  end
+
+  def test_error_markdown_with_verbose_backtrace
+    create_analysis(
+      name: "Test:ErrorBacktrace",
+      script: 'raise "Test error with backtrace"'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:ErrorBacktrace")
+    result = @executor.execute(analysis)
+
+    error_md = result.error_markdown(verbose: true)
+
+    assert_includes error_md, "**Error:**"
+    # Verbose mode should include backtrace in code block
+    assert_includes error_md, "```"
+  end
+
+  def test_error_markdown_non_verbose_no_backtrace
+    create_analysis(
+      name: "Test:ErrorNoBacktrace",
+      script: 'raise "Test error"'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:ErrorNoBacktrace")
+    result = @executor.execute(analysis)
+
+    error_md = result.error_markdown(verbose: false)
+
+    assert_includes error_md, "**Error:**"
+    # Non-verbose should not include backtrace code block
+    refute_includes error_md, "```"
+  end
+
+  def test_error_markdown_returns_nil_for_success
+    create_analysis(
+      name: "Test:NoErrorMd",
+      script: 'info("Success!")'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:NoErrorMd")
+    result = @executor.execute(analysis)
+
+    assert_nil result.error_markdown
+  end
+
+  def test_format_message_with_unknown_level
+    create_analysis(
+      name: "Test:UnknownLevel",
+      script: 'info("Test info message")'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:UnknownLevel")
+    result = @executor.execute(analysis)
+
+    # Info messages should use blue emoji
+    assert_includes result.to_markdown, "🔵"
+  end
+
+  def test_format_heading_level
+    create_analysis(
+      name: "Test:HeadingLevel",
+      script: 'report("content", title: "My Title")'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:HeadingLevel")
+    result = @executor.execute(analysis)
+
+    md = result.to_markdown
+    # Title should be rendered as heading
+    assert_includes md, "## My Title"
+  end
+
+  def test_format_code_with_language
+    create_analysis(
+      name: "Test:CodeLang",
+      script: 'code("puts :hello", lang: "ruby")'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:CodeLang")
+    result = @executor.execute(analysis)
+
+    md = result.to_markdown
+
+    assert_includes md, "```ruby"
+    assert_includes md, "puts :hello"
+  end
+
+  def test_format_code_without_language
+    create_analysis(
+      name: "Test:CodeNoLang",
+      script: 'code("plain text")'
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:CodeNoLang")
+    result = @executor.execute(analysis)
+
+    md = result.to_markdown
+
+    assert_includes md, "```\n"
+    assert_includes md, "plain text"
+  end
+
+  def test_duration_str_with_duration
+    create_analysis(name: "Test:DurationStr", script: "sleep 0.05")
+
+    analysis = @db.instance_by_kind("Analysis", "Test:DurationStr")
+    result = @executor.execute(analysis)
+
+    duration = result.duration_str
+
+    assert_match(/\d+\.\d{2}s/, duration)
+  end
+
+  def test_duration_str_without_duration
+    # Create a stub analysis for testing Result directly
+    create_analysis(name: "Test:NilDuration", script: 'info("test")')
+    analysis = @db.instance_by_kind("Analysis", "Test:NilDuration")
+
+    result = Archsight::Analysis::Result.new(
+      analysis,
+      success: true,
+      sections: [],
+      duration: nil
+    )
+
+    assert_equal "", result.duration_str
+  end
+
+  def test_table_cell_escapes_pipes
+    create_analysis(
+      name: "Test:PipeEscape",
+      script: <<~RUBY
+        heading("Pipes", level: 1)
+        table(headers: ["Col1", "Col2"], rows: [["a|b", "c|d"]])
+      RUBY
+    )
+
+    analysis = @db.instance_by_kind("Analysis", "Test:PipeEscape")
+    result = @executor.execute(analysis)
+
+    md = result.to_markdown
+    # Pipes in cell content should be escaped
+    assert_includes md, 'a\|b'
+    assert_includes md, 'c\|d'
+  end
+
+  def test_result_render_returns_string
+    create_analysis(name: "Test:Render", script: 'info("Render test")')
+
+    analysis = @db.instance_by_kind("Analysis", "Test:Render")
+    result = @executor.execute(analysis)
+
+    rendered = result.render
+
+    assert_kind_of String, rendered
+  end
+
+  def test_result_to_s_delegates_to_render
+    create_analysis(name: "Test:ToS", script: 'info("ToString test")')
+
+    analysis = @db.instance_by_kind("Analysis", "Test:ToS")
+    result = @executor.execute(analysis)
+
+    # to_s should produce same output as render
+    assert_equal result.render, result.to_s
+  end
+
+  def test_failed_predicate
+    create_analysis(name: "Test:Failed", script: 'raise "fail"')
+
+    analysis = @db.instance_by_kind("Analysis", "Test:Failed")
+    result = @executor.execute(analysis)
+
+    assert_predicate result, :failed?
+    refute_predicate result, :success?
+  end
 end
