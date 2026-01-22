@@ -25,6 +25,8 @@ class Archsight::Import::Handlers::JiraMetrics < Archsight::Import::Handler
     load_configuration
     verify_jira_credentials
     export_metrics
+
+    write_generates_meta
   end
 
   private
@@ -171,22 +173,6 @@ class Archsight::Import::Handlers::JiraMetrics < Archsight::Import::Handler
       progress.warn("Error counting #{date_field} issues: #{e.message}")
       0
     end
-  end
-
-  # Generate a marker Import for this handler with generated/at timestamp
-  # This is merged with the original Import to enable cache checking
-  def self_marker
-    {
-      "apiVersion" => "architecture/v1alpha1",
-      "kind" => "Import",
-      "metadata" => {
-        "name" => import_resource.name,
-        "annotations" => {
-          "generated/at" => Time.now.utc.iso8601
-        }
-      },
-      "spec" => {}
-    }
   end
 end
 

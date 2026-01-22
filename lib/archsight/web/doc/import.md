@@ -8,8 +8,9 @@ Imports are defined as YAML resources with kind `Import`. Each import specifies:
 
 - A **handler** that knows how to fetch and process data
 - **Configuration** specific to that handler
-- **Dependencies** on other imports that must complete first
 - Optional **caching** to avoid re-running unchanged imports
+
+Dependencies between imports are automatically derived from the `generates` relation. When a parent import generates child imports, those children depend on the parent and will run after it completes.
 
 The import executor runs imports concurrently in dependency order, with a visual progress display showing completion percentage and ETA.
 
@@ -24,6 +25,9 @@ archsight import -v
 
 # Show execution plan without running
 archsight import --dry-run
+
+# Force re-run all imports (ignore cache)
+archsight import --force
 ```
 
 ### Progress Display
@@ -51,10 +55,7 @@ metadata:
     import/priority: "10"
     import/cacheTime: "24h"
     import/config/key: value
-spec:
-  dependsOn:
-    imports:
-      - Import:Dependency
+spec: {}
 ```
 
 ### Core Annotations
@@ -245,11 +246,20 @@ metadata:
     import/config/gate: GA
     import/config/interfaceOutputPath: generated/rest-api-interfaces.yaml
     import/config/dataObjectOutputPath: generated/rest-api-data-objects.yaml
+spec: {}
+---
+# Parent import tracks what it generates
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:RestApi:Index
 spec:
-  dependsOn:
+  generates:
     imports:
-      - Import:RestApi:Index
+      - Import:RestApi:compute
 ```
+
+The dependency of `Import:RestApi:compute` on `Import:RestApi:Index` is automatically derived from the `generates` relation above.
 
 ## Multi-Stage Import Pattern
 
@@ -296,11 +306,20 @@ metadata:
     import/config/archived: "false"
     import/config/visibility: internal
     import/outputPath: generated/repositories.yaml
+spec: {}
+---
+# Parent import tracks what it generates
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:GitLab
 spec:
-  dependsOn:
+  generates:
     imports:
-      - Import:GitLab
+      - Import:Repo:gitlab:company:my-service
 ```
+
+The child import depends on `Import:GitLab` because the parent's `generates` relation includes it.
 
 ## Generated Annotations
 
@@ -364,7 +383,12 @@ This allows the import to continue processing other repositories.
 If an import isn't re-running when expected:
 1. Check `import/cacheTime` annotation value
 2. Check `generated/at` annotation on the Import resource
-3. Use `import/cacheTime: never` to force re-run
+3. Use `archsight import --force` to bypass cache for all imports
+4. Alternatively, use `import/cacheTime: never` to always re-run a specific import
+
+**Note:** The cache is automatically invalidated when:
+- The output file (specified by `import/outputPath`) is deleted or missing
+- The import source YAML file has been modified since the last run
 
 ## Creating Custom Handlers
 

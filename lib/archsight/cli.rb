@@ -21,6 +21,9 @@ module Archsight
       require "archsight/web/application"
       Archsight::Web::Application.setup_mcp!
       Archsight::Web::Application.run!(port: options[:port], bind: options[:host])
+    rescue Archsight::ResourceError => e
+      display_error_with_context(e.to_s)
+      exit 1
     end
 
     desc "lint", "Validate architecture resources"
@@ -79,6 +82,7 @@ module Archsight
     option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
     option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "Show execution plan without running"
     option :filter, aliases: "-f", type: :string, desc: "Filter imports by name (regex pattern)"
+    option :force, aliases: "-F", type: :boolean, default: false, desc: "Ignore cache and re-run all imports"
     def import
       configure_resources
       require "archsight/database"
@@ -91,7 +95,7 @@ module Archsight
 
       # Create database that loads from resources directory
       # Only load Import resources to avoid validation errors on incomplete resources
-      db = Archsight::Database.new(resources_dir, verbose: options[:verbose], only_kinds: ["Import"])
+      db = Archsight::Database.new(resources_dir, verbose: options[:verbose], only_kinds: ["Import"], verify: false)
 
       if options[:dry_run]
         puts "Execution Plan:"
@@ -99,7 +103,8 @@ module Archsight
           database: db,
           resources_dir: resources_dir,
           verbose: true,
-          filter: options[:filter]
+          filter: options[:filter],
+          force: options[:force]
         )
         executor.execution_plan
       else
@@ -107,7 +112,8 @@ module Archsight
           database: db,
           resources_dir: resources_dir,
           verbose: options[:verbose],
-          filter: options[:filter]
+          filter: options[:filter],
+          force: options[:force]
         )
         executor.run!
         puts "All imports completed successfully."

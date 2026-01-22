@@ -37,10 +37,12 @@ class ExecutorTest < Minitest::Test
   end
 
   def test_runs_imports_in_dependency_order
-    # Create imports with dependencies
-    create_import("Import:First", handler: "test", priority: "1")
-    create_import("Import:Second", handler: "test", priority: "2", depends_on: ["Import:First"])
-    create_import("Import:Third", handler: "test", priority: "3", depends_on: ["Import:Second"])
+    # Create imports with dependencies via generates relation
+    # Import:First generates Import:Second, so Second depends on First
+    # Import:Second generates Import:Third, so Third depends on Second
+    create_import("Import:First", handler: "test", priority: "1", generates: ["Import:Second"])
+    create_import("Import:Second", handler: "test", priority: "2", generates: ["Import:Third"])
+    create_import("Import:Third", handler: "test", priority: "3")
 
     db = create_database
     executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
@@ -92,10 +94,11 @@ class ExecutorTest < Minitest::Test
   end
 
   def test_detects_circular_dependency
-    # Create circular dependency: A -> B -> C -> A
-    create_import("Import:A", handler: "test", depends_on: ["Import:C"])
-    create_import("Import:B", handler: "test", depends_on: ["Import:A"])
-    create_import("Import:C", handler: "test", depends_on: ["Import:B"])
+    # Create circular dependency via generates: C generates A, A generates B, B generates C
+    # This means: A depends on C, B depends on A, C depends on B (circular)
+    create_import("Import:A", handler: "test", generates: ["Import:B"])
+    create_import("Import:B", handler: "test", generates: ["Import:C"])
+    create_import("Import:C", handler: "test", generates: ["Import:A"])
 
     db = create_database
     executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
@@ -118,8 +121,9 @@ class ExecutorTest < Minitest::Test
   end
 
   def test_execution_plan_returns_sorted_imports
-    create_import("Import:First", handler: "test", priority: "1")
-    create_import("Import:Second", handler: "test", priority: "2", depends_on: ["Import:First"])
+    # Import:First generates Import:Second, so Second depends on First
+    create_import("Import:First", handler: "test", priority: "1", generates: ["Import:Second"])
+    create_import("Import:Second", handler: "test", priority: "2")
 
     db = create_database
     executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
@@ -196,11 +200,12 @@ class ExecutorTest < Minitest::Test
   end
 
   def test_filter_includes_dependencies_of_matching_imports
-    # Index doesn't match filter but is a dependency
-    create_import("Import:GitHub:Index", handler: "test", priority: "1")
-    # These match the filter and depend on Index
-    create_import("Import:Repo:rest-api-one", handler: "test", priority: "2", depends_on: ["Import:GitHub:Index"])
-    create_import("Import:Repo:rest-api-two", handler: "test", priority: "2", depends_on: ["Import:GitHub:Index"])
+    # Index doesn't match filter but generates the imports that do match (so it's a dependency)
+    create_import("Import:GitHub:Index", handler: "test", priority: "1",
+                                         generates: %w[Import:Repo:rest-api-one Import:Repo:rest-api-two])
+    # These match the filter and depend on Index (via generates)
+    create_import("Import:Repo:rest-api-one", handler: "test", priority: "2")
+    create_import("Import:Repo:rest-api-two", handler: "test", priority: "2")
     # This doesn't match and isn't a dependency
     create_import("Import:Other:unrelated", handler: "test")
 
@@ -224,15 +229,41 @@ class ExecutorTest < Minitest::Test
     refute_includes log, "Import:Other:unrelated"
   end
 
+  def test_rejects_import_with_depends_on_spec
+    # Create an Import with the old dependsOn spec (no longer supported)
+    yaml_content = YAML.dump({
+                               "apiVersion" => "architecture/v1alpha1",
+                               "kind" => "Import",
+                               "metadata" => {
+                                 "name" => "Import:WithDependsOn",
+                                 "annotations" => { "import/handler" => "test" }
+                               },
+                               "spec" => {
+                                 "dependsOn" => { "imports" => ["Import:Parent"] }
+                               }
+                             })
+    File.write(File.join(@imports_dir, "import_with_depends_on.yaml"), yaml_content)
+
+    db = create_database
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
+
+    # Database should reject this during reload (triggered by executor.run!)
+    error = assert_raises(Archsight::ResourceError) do
+      executor.run!
+    end
+
+    assert_includes error.message, "unknown verb dependsOn"
+  end
+
   private
 
-  def create_import(name, handler:, priority: nil, depends_on: [], enabled: nil)
+  def create_import(name, handler:, priority: nil, generates: [], enabled: nil)
     annotations = { "import/handler" => handler }
     annotations["import/priority"] = priority if priority
     annotations["import/enabled"] = enabled if enabled
 
     spec = {}
-    spec["dependsOn"] = { "imports" => depends_on } unless depends_on.empty?
+    spec["generates"] = { "imports" => generates } unless generates.empty?
 
     yaml_content = YAML.dump({
                                "apiVersion" => "architecture/v1alpha1",

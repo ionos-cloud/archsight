@@ -69,6 +69,11 @@ class Archsight::Resources::Import < Archsight::Resources::Base
              description: "Handler-specific configuration values",
              sidebar: false
 
-  # Dependency relation
-  relation :dependsOn, :imports, :Import
+  # Generated resources relations - auto-tracked by handlers
+  # Dependencies are derived from the inverse of generates - if A generates B, B depends on A
+  relation :generates, :technologyArtifacts, :TechnologyArtifact
+  relation :generates, :applicationInterfaces, :ApplicationInterface
+  relation :generates, :dataObjects, :DataObject
+  relation :generates, :imports, :Import
+  relation :generates, :businessActors, :BusinessActor
 end

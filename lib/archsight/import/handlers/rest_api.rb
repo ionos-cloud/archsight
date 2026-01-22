@@ -75,6 +75,8 @@ class Archsight::Import::Handlers::RestApi < Archsight::Import::Handler
     end
 
     progress.update("Generated #{data_objects.size} DataObjects for #{@name}")
+
+    write_generates_meta
   end
 
   private

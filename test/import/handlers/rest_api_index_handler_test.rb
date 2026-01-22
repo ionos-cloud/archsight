@@ -62,10 +62,10 @@ class RestApiIndexHandlerTest < Minitest::Test
     content = File.read(output_path)
     resources = YAML.load_stream(content)
 
-    # Should have 2 child imports + 1 self marker
+    # Should have 2 child imports + 1 self marker + 1 generates meta
     imports = resources.select { |r| r["kind"] == "Import" }
 
-    assert_equal 3, imports.size
+    assert_equal 4, imports.size
 
     # Check compute import - name now includes visibility and version
     compute_import = imports.find { |r| r["metadata"]["name"] == "Import:RestApi:private:compute:6.0" }
@@ -80,7 +80,7 @@ class RestApiIndexHandlerTest < Minitest::Test
     assert_equal "https://example.com/rest-api/compute/redoc.html",
                  compute_import["metadata"]["annotations"]["import/config/htmlUrl"]
     assert_equal "GA", compute_import["metadata"]["annotations"]["import/config/gate"]
-    assert_equal ["Import:RestApi:Index"], compute_import["spec"]["dependsOn"]["imports"]
+    assert_empty(compute_import["spec"])
 
     # Check storage import (no htmlUrl)
     storage_import = imports.find { |r| r["metadata"]["name"] == "Import:RestApi:private:storage:2.0" }

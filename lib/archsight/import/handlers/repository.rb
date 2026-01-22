@@ -28,7 +28,10 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     if @git_url
       begin
         sync_repository
-        return if @skip_analysis
+        if @skip_analysis
+          write_generates_meta
+          return
+        end
       rescue StandardError => e
         # Access denied or other git errors - create minimal artifact
         if access_denied_error?(e.message)
@@ -39,6 +42,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
             error: e.message,
             visibility: "private"
           )
+          write_generates_meta
           return
         end
         raise
@@ -58,6 +62,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
         status: "no-code",
         reason: "No analyzable source code found"
       )
+      write_generates_meta
       return
     end
 
@@ -76,22 +81,8 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     # Write output with self-marker for caching
     yaml_content = YAML.dump(resource) + YAML.dump(self_marker)
     write_yaml(yaml_content)
-  end
 
-  # Generate a marker Import for this handler with generated/at timestamp
-  # This is merged with the original Import to enable cache checking
-  def self_marker
-    {
-      "apiVersion" => "architecture/v1alpha1",
-      "kind" => "Import",
-      "metadata" => {
-        "name" => import_resource.name,
-        "annotations" => {
-          "generated/at" => Time.now.utc.iso8601
-        }
-      },
-      "spec" => {}
-    }
+    write_generates_meta
   end
 
   def sync_repository
