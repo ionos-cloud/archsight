@@ -13,8 +13,12 @@
       .instance-title-text
         %span.instance-name= @instance
         %span.instance-kind-subtitle= @kind
-    - unless enabled
-      %span.badge.badge-warning Disabled
+    .header-actions
+      - unless enabled
+        %span.badge.badge-warning Disabled
+      %a.btn-header{href: "/kinds/#{@kind}/instances/#{@instance}/edit", title: "Edit this resource"}
+        %i.iconoir-edit-pencil
+        Edit
   - if description
     .analysis-description
       != markdown(description)

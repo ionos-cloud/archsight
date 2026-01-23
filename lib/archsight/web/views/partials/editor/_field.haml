@@ -1,4 +1,4 @@
-.field-group{class: field.textarea? ? "field-full-width" : ""}
+.field-group{class: field.textarea? || field.code? ? "field-full-width" : ""}
   .label-row
     %label{for: field.key, title: field.description}
       = field.title
@@ -28,6 +28,17 @@
       %small.future-hint
         %i.iconoir-info-circle
         Supports Markdown formatting
+
+  - elsif field.code?
+    .code-field
+      %textarea{id: field.key,
+                name: "annotations[#{field.key}]",
+                "aria-invalid": error ? "true" : nil,
+                placeholder: "Enter #{field.code_language} code...",
+                spellcheck: "false"}= value
+      %small.future-hint
+        %i.iconoir-code
+        = "#{field.code_language.to_s.capitalize} code"
 
   - elsif field.number?
     %input{id: field.key,
@@ -60,7 +71,7 @@
            value: value,
            "aria-invalid": error ? "true" : nil}
 
-  - if field.description && !field.textarea?
+  - if field.description && !field.textarea? && !field.code?
     %small.field-description= field.description
 
   - if error

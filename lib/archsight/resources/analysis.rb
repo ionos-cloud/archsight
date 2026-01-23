@@ -51,6 +51,7 @@ class Archsight::Resources::Analysis < Archsight::Resources::Base
   annotation "analysis/script",
              description: "Ruby script to execute in sandboxed environment",
              title: "Script",
+             format: :ruby,
              sidebar: false
 
   # Description

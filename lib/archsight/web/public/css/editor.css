@@ -114,6 +114,17 @@
   resize: vertical;
 }
 
+/* Code field - monospace font, larger height */
+.code-field textarea {
+  font-family: var(--font-family-monospace);
+  min-height: 300px;
+  resize: vertical;
+  tab-size: 2;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
 .future-hint {
   display: flex;
   align-items: center;

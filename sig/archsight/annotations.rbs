@@ -25,13 +25,22 @@ module Archsight
       def validate: (untyped) -> Array[String]
       def valid?: (untyped) -> bool
       def markdown?: () -> bool
+      def code?: () -> bool
+      def code_language: () -> Symbol?
       def example_value: () -> untyped
 
       private
 
       def type_error_message: () -> String
+      def validate_enum: (untyped, Array[String]) -> void
+      def validate_type: (untyped, Array[String]) -> void
+      def valid_type_value?: (String) -> bool
+      def valid_uri?: (String) -> bool
+      def validate_code: (untyped, Array[String]) -> void
       def derive_format: () -> Symbol?
       def build_regex: () -> Regexp
+      def validate_code_syntax: (String) -> String?
+      def validate_ruby_syntax: (String) -> String?
     end
 
     class Computed

@@ -228,6 +228,7 @@ class EditorRoutesTest < Minitest::Test
 
     # Load edit page to get relation data
     get "/kinds/#{instance.kind}/instances/#{instance.name}/edit"
+
     assert_predicate last_response, :ok?
 
     # Extract relations from hidden inputs

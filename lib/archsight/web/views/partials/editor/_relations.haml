@@ -10,7 +10,7 @@
   - else
     / Existing relations list (read-only display with hidden inputs)
     #relations-list
-      - if relations && relations.any?
+      - if relations&.any?
         - sorted_relations = relations.sort_by { |r| [r[:verb].to_s, r[:kind].to_s, r[:name].to_s] }
         - sorted_relations.each do |rel|
           .relation-item

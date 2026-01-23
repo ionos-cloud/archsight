@@ -83,40 +83,9 @@ class Archsight::Annotations::Annotation
     errors = []
     return errors if value.nil?
 
-    # Check enum constraint
-    if @enum
-      values = list? ? value.to_s.split(",").map(&:strip) : [value.to_s]
-      invalid_values = values.reject { |v| @enum.include?(v) }
-      invalid_values.each do |v|
-        errors << "invalid value '#{v}'. Expected one of: #{@enum.join(", ")}"
-      end
-    end
-
-    # Check type constraint
-    if @type.is_a?(Class) && errors.empty?
-      values_to_check = list? ? value.to_s.split(/,|\n/).map(&:strip).reject(&:empty?) : [value.to_s]
-
-      values_to_check.each do |string_value|
-        valid = case @type.to_s
-                when "Integer"
-                  string_value.match?(/\A-?\d+\z/)
-                when "Float"
-                  string_value.match?(/\A-?\d+(\.\d+)?\z/)
-                when "URI"
-                  begin
-                    URI.parse(string_value)
-                    string_value.match?(%r{\Ahttps?://})
-                  rescue URI::InvalidURIError
-                    false
-                  end
-                when "Archsight::Annotations::EmailRecipient"
-                  Archsight::Annotations::EmailRecipient.valid?(string_value)
-                else
-                  true
-                end
-        errors << "invalid value '#{string_value}'. #{type_error_message}" unless valid
-      end
-    end
+    validate_enum(value, errors)
+    validate_type(value, errors) if errors.empty?
+    validate_code(value, errors) if errors.empty?
 
     errors
   end
@@ -128,6 +97,14 @@ class Archsight::Annotations::Annotation
 
   def markdown?
     @format == :markdown
+  end
+
+  def code?
+    @format == :ruby
+  end
+
+  def code_language
+    @format if code?
   end
 
   # Example value for templates
@@ -155,6 +132,49 @@ class Archsight::Annotations::Annotation
     end
   end
 
+  def validate_enum(value, errors)
+    return unless @enum
+
+    values = list? ? value.to_s.split(",").map(&:strip) : [value.to_s]
+    invalid_values = values.reject { |v| @enum.include?(v) }
+    invalid_values.each do |v|
+      errors << "invalid value '#{v}'. Expected one of: #{@enum.join(", ")}"
+    end
+  end
+
+  def validate_type(value, errors)
+    return unless @type.is_a?(Class)
+
+    values_to_check = list? ? value.to_s.split(/,|\n/).map(&:strip).reject(&:empty?) : [value.to_s]
+    values_to_check.each do |string_value|
+      errors << "invalid value '#{string_value}'. #{type_error_message}" unless valid_type_value?(string_value)
+    end
+  end
+
+  def valid_type_value?(string_value)
+    case @type.to_s
+    when "Integer" then string_value.match?(/\A-?\d+\z/)
+    when "Float" then string_value.match?(/\A-?\d+(\.\d+)?\z/)
+    when "URI" then valid_uri?(string_value)
+    when "Archsight::Annotations::EmailRecipient" then Archsight::Annotations::EmailRecipient.valid?(string_value)
+    else true
+    end
+  end
+
+  def valid_uri?(string_value)
+    URI.parse(string_value)
+    string_value.match?(%r{\Ahttps?://})
+  rescue URI::InvalidURIError
+    false
+  end
+
+  def validate_code(value, errors)
+    return unless code? && !value.to_s.strip.empty?
+
+    syntax_error = validate_code_syntax(value.to_s)
+    errors << syntax_error if syntax_error
+  end
+
   def derive_format
     case @filter
     when :word then :tag_word
@@ -164,5 +184,29 @@ class Archsight::Annotations::Annotation
 
   def build_regex
     Regexp.new("^#{Regexp.escape(key).gsub('\*', ".+")}$")
+  end
+
+  # Validate code syntax based on format
+  # @param code [String] The code to validate
+  # @return [String, nil] Error message or nil if valid
+  def validate_code_syntax(code)
+    case @format
+    when :ruby
+      validate_ruby_syntax(code)
+    end
+  end
+
+  # Validate Ruby syntax using RubyVM
+  # @param code [String] Ruby code to validate
+  # @return [String, nil] Error message or nil if valid
+  def validate_ruby_syntax(code)
+    # steep:ignore:start
+    RubyVM::InstructionSequence.compile(code)
+    # steep:ignore:end
+    nil
+  rescue SyntaxError => e
+    # Extract just the error message without the full backtrace
+    message = e.message.lines.first&.strip || "Syntax error"
+    "Ruby syntax error: #{message}"
   end
 end

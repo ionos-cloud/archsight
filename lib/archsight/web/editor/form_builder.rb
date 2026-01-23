@@ -8,13 +8,17 @@ module Archsight
       # FormBuilder generates form field metadata from annotation definitions
       class FormBuilder
         # Field represents a single form field configuration
-        Field = Struct.new(:key, :title, :description, :input_type, :options, :step, :required, keyword_init: true) do
+        Field = Struct.new(:key, :title, :description, :input_type, :options, :step, :required, :code_language, keyword_init: true) do
           def select?
             input_type == :select
           end
 
           def textarea?
             input_type == :textarea
+          end
+
+          def code?
+            input_type == :code
           end
 
           def number?
@@ -48,7 +52,8 @@ module Archsight
               input_type: determine_input_type(ann),
               options: ann.enum,
               step: determine_step(ann),
-              required: false
+              required: false,
+              code_language: ann.code_language
             )
           end
         end
@@ -66,6 +71,7 @@ module Archsight
             :url
           else
             return :textarea if annotation.markdown?
+            return :code if annotation.code?
             return :list if annotation.list?
 
             :text
