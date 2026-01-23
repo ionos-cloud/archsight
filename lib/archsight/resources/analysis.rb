@@ -64,23 +64,6 @@ class Archsight::Resources::Analysis < Archsight::Resources::Base
              description: "Maximum execution time (e.g., '30s', '5m')",
              title: "Timeout"
 
-  # Output configuration
-  annotation "analysis/output",
-             description: "Output mode for results",
-             title: "Output",
-             enum: %w[console file]
-
-  annotation "analysis/outputPath",
-             description: "File path for output (when output mode is 'file')",
-             title: "Output Path",
-             sidebar: false
-
-  # Enabled flag
-  annotation "analysis/enabled",
-             description: "Whether this analysis is enabled",
-             title: "Enabled",
-             enum: %w[true false]
-
   # Pattern annotation for custom configuration
   annotation "analysis/config/*",
              description: "Custom configuration values for the analysis script",

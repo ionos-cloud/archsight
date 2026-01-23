@@ -191,7 +191,7 @@ module Archsight
     def filter_analyses(db)
       analyses = db.instances_by_kind("Analysis").values
       analyses = analyses.select { |a| Regexp.new(options[:filter], Regexp::IGNORECASE).match?(a.name) } if options[:filter]
-      analyses.reject { |a| a.annotations["analysis/enabled"] == "false" }
+      analyses
     end
 
     def print_analysis_dry_run(analyses)

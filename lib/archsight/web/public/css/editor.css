@@ -116,8 +116,10 @@
 
 /* Code field - monospace font, larger height */
 .code-field textarea {
-  font-family: var(--font-family-monospace);
-  min-height: 300px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+  min-height: 600px;
   resize: vertical;
   tab-size: 2;
   white-space: pre;

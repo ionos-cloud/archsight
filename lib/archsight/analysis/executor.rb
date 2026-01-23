@@ -79,9 +79,6 @@ module Archsight
         # Filter by name pattern if provided
         analyses = analyses.select { |a| filter.match?(a.name) } if filter
 
-        # Filter to enabled analyses
-        analyses = analyses.select { |a| analysis_enabled?(a) }
-
         analyses.map { |analysis| execute(analysis) }
       end
 
@@ -99,13 +96,6 @@ module Archsight
         end
 
         DEFAULT_TIMEOUT
-      end
-
-      # Check if analysis is enabled
-      # @param analysis [Object] Analysis instance
-      # @return [Boolean] true if enabled
-      def analysis_enabled?(analysis)
-        analysis.annotations["analysis/enabled"] != "false"
       end
     end
   end
