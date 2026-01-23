@@ -39,10 +39,6 @@ class Archsight::Resources::ApplicationInterface < Archsight::Resources::Base
              description: "API authentication method",
              title: "API Authentication Method",
              enum: ["none", "hard coded", "token", "oidc"]
-  annotation "api/authenticationProvider",
-             description: "API authentication provider",
-             title: "API Authentication Provider",
-             enum: %w[eiam cloud custom]
   annotation "api/authorization",
              description: "API authorization mechanism",
              title: "API Authorization",
