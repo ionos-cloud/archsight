@@ -4,7 +4,7 @@ require "uri"
 
 # Architecture module adds common architecture annotations to resource classes
 module Archsight::Annotations::Architecture
-  def self.included(base)
+  def self.included(base) # rubocop:disable Metrics/MethodLength
     base.class_eval do
       annotation "architecture/abbr",
                  description: "Abbreviation or short name",
@@ -42,8 +42,9 @@ module Archsight::Annotations::Architecture
                  title: "Version",
                  sidebar: false
       annotation "architecture/status",
-                 description: "Lifecycle status (General-Availability, Early-Access, Development)",
+                 description: "Lifecycle status",
                  filter: :word,
+                 enum: %w[General-Availability Early-Access Development],
                  title: "Status"
       annotation "architecture/visibility",
                  description: "API visibility (public, private, internal)",
