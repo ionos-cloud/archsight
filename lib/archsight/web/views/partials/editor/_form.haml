@@ -70,3 +70,60 @@
         Generate YAML
       %a.secondary{role: "button", href: @mode == :edit ? "/kinds/#{@kind}/instances/#{@instance_name}" : "/kinds/#{@kind}"}
         Cancel
+
+/ Markdown Editor Overlay
+#markdown-editor-overlay.hidden
+  .markdown-editor-backdrop{onclick: "closeMarkdownEditor()"}
+  .markdown-editor-panel
+    .lexical-toolbar
+      %button.toolbar-btn{type: "button", onclick: "formatLexical('bold')", title: "Bold (Ctrl+B)"}
+        %i.iconoir-bold
+      %button.toolbar-btn{type: "button", onclick: "formatLexical('italic')", title: "Italic (Ctrl+I)"}
+        %i.iconoir-italic
+      %button.toolbar-btn{type: "button", onclick: "formatLexical('strikethrough')", title: "Strikethrough"}
+        %i.iconoir-strikethrough
+      %button.toolbar-btn{type: "button", onclick: "formatLexical('code')", title: "Inline Code"}
+        %i.iconoir-code
+      .toolbar-divider
+      %button.toolbar-btn{type: "button", onclick: "formatLexicalBlock('h1')", title: "Heading 1"}
+        H1
+      %button.toolbar-btn{type: "button", onclick: "formatLexicalBlock('h2')", title: "Heading 2"}
+        H2
+      %button.toolbar-btn{type: "button", onclick: "formatLexicalBlock('h3')", title: "Heading 3"}
+        H3
+      .toolbar-divider
+      %button.toolbar-btn{type: "button", onclick: "formatLexicalBlock('bullet')", title: "Bullet List"}
+        %i.iconoir-list
+      %button.toolbar-btn{type: "button", onclick: "formatLexicalBlock('number')", title: "Numbered List"}
+        %i.iconoir-numbered-list-left
+      %button.toolbar-btn{type: "button", onclick: "formatLexicalBlock('quote')", title: "Quote"}
+        %i.iconoir-quote
+      .toolbar-divider
+      %button.toolbar-btn{type: "button", onclick: "insertLink()", title: "Insert Link"}
+        %i.iconoir-link
+      .toolbar-divider
+      %button.toolbar-btn{type: "button", onclick: "insertCodeBlock()", title: "Code Block"}
+        %i.iconoir-code-brackets
+      %select#code-language-picker.toolbar-select.hidden{onchange: "applyCodeLanguage(this.value)", title: "Code Language"}
+        %option{value: ""} Language...
+        %option{value: "javascript"} JavaScript
+        %option{value: "typescript"} TypeScript
+        %option{value: "ruby"} Ruby
+        %option{value: "python"} Python
+        %option{value: "html"} HTML
+        %option{value: "css"} CSS
+        %option{value: "json"} JSON
+        %option{value: "yaml"} YAML
+        %option{value: "bash"} Bash
+        %option{value: "sql"} SQL
+        %option{value: "go"} Go
+        %option{value: "rust"} Rust
+        %option{value: "java"} Java
+        %option{value: "mermaid"} Mermaid
+        %option{value: "markdown"} Markdown
+        %option{value: "text"} Plain Text
+      .toolbar-spacer
+      %button.secondary.toolbar-action{type: "button", onclick: "closeMarkdownEditor()"} Cancel
+      %button.toolbar-action{type: "button", onclick: "saveMarkdownEditor()"} Save
+    .lexical-editor-container
+      #lexical-editor-root{contenteditable: "true"}

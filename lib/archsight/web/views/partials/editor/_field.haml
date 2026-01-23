@@ -1,8 +1,15 @@
 .field-group{class: field.textarea? ? "field-full-width" : ""}
-  %label{for: field.key, title: field.description}
-    = field.title
-    - if field.required
-      %span.required *
+  .label-row
+    %label{for: field.key, title: field.description}
+      = field.title
+      - if field.required
+        %span.required *
+    - if field.textarea?
+      %button.btn-edit-markdown{type: "button",
+                                 onclick: "openMarkdownEditor('#{field.key}')",
+                                 title: "Open rich text editor"}
+        %i.iconoir-edit-pencil
+        Edit
 
   - if field.select?
     %select{id: field.key,

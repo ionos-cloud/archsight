@@ -21,6 +21,6 @@
   %script{src: asset_path("/js/mermaid-init.js")}
   %script{ src: asset_path("/js/highlight.min.js") }
   %script{ src: asset_path("/js/sparkline.js") }
-  %script{ src: asset_path("/js/editor.js") }
+  %script{ src: asset_path("/js/editor.js"), type: "module" }
   :javascript
     hljs.highlightAll();
