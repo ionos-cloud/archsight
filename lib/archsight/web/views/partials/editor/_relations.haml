@@ -1,0 +1,39 @@
+- verbs = relation_verbs(kind)
+- all_relations = available_relations(kind)
+- verb_kind_options = all_relations.map { |v, _, k| ["#{v}:#{k}", v, k] }.sort_by(&:first).uniq
+- target_kinds = verb_kind_options.map { |_, _, k| k }.uniq
+- instances_by_kind = target_kinds.each_with_object({}) { |k, h| h[k] = db.instances_by_kind(k).keys.sort rescue [] }
+
+.relations-editor{"data-kind": kind, "data-instances": instances_by_kind.to_json}
+  - if verb_kind_options.empty?
+    %p.no-relations This resource type has no defined relations.
+  - else
+    / Existing relations list (read-only display with hidden inputs)
+    #relations-list
+      - if relations && relations.any?
+        - sorted_relations = relations.sort_by { |r| [r[:verb].to_s, r[:kind].to_s, r[:name].to_s] }
+        - sorted_relations.each do |rel|
+          .relation-item
+            %span.relation-text
+              %strong= rel[:verb]
+              \&rarr; #{rel[:kind]}:
+              %em= rel[:name]
+            %input{type: "hidden", name: "relations[][verb]", value: rel[:verb]}
+            %input{type: "hidden", name: "relations[][kind]", value: rel[:kind]}
+            %input{type: "hidden", name: "relations[][name]", value: rel[:name]}
+            %button.btn-remove{type: "button", onclick: "removeRelation(this)", title: "Remove"}
+              %i.iconoir-xmark
+
+    / Add relation form - inline with verb:kind and instance dropdowns
+    .add-relation-row
+      %select#new-relation-verb-kind{onchange: "updateInstanceOptions()"}
+        %option{value: ""} Select relation...
+        - verb_kind_options.each do |combo, verb, target_kind|
+          %option{value: combo, "data-verb": verb, "data-kind": target_kind}= "#{verb} \u2192 #{target_kind}"
+
+      %select#new-relation-instance
+        %option{value: ""} Select instance...
+
+      %button.secondary.btn-add{type: "button", onclick: "addRelation()"}
+        %i.iconoir-plus
+        Add

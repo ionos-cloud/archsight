@@ -129,6 +129,33 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 - Dark mode support
 - Layer-based color scheme (Business, Application, Technology, Data)
 
+### Resource Editor
+
+Create and edit resources through the web interface:
+
+**Edit existing resource:**
+
+- Navigate to any resource detail page
+- Click the "Edit" button (only available for non-generated resources)
+- Modify annotations and relations
+- Generate YAML and copy to clipboard
+
+**Create new resource:**
+
+- Go to any kind listing (e.g., /kinds/ApplicationComponent)
+- Click "New" button
+- Fill in required fields
+- Add relations using cascading dropdowns
+- Generate YAML and copy to clipboard
+
+The editor supports:
+
+- Type-aware form fields (dropdowns for enums, number inputs, URL validation)
+- Markdown textarea for descriptions
+- Relation management with cascading dropdowns
+- Validation before YAML generation
+- One-click copy to clipboard
+
 ### Validation
 
 Validate YAML syntax and verify all relationship references:

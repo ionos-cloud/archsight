@@ -1,0 +1,72 @@
+- action_url = @mode == :edit ? "/kinds/#{@kind}/instances/#{@instance_name}/generate" : "/kinds/#{@kind}/generate"
+- title = @mode == :edit ? "Edit #{@kind}" : "New #{@kind}"
+- back_url = @mode == :edit ? "/kinds/#{@kind}/instances/#{@instance_name}" : "/kinds/#{@kind}"
+
+- if @generated_yaml
+  %article.yaml-output
+    %header
+      %h3
+        %i{class: "iconoir-#{@klass.icon} icon-#{@klass.layer}"}
+        = title
+      %a.btn-back{href: back_url}
+        %i.iconoir-arrow-left
+        Back
+    != haml :'partials/editor/_yaml_output', locals: { yaml: @generated_yaml }
+- else
+  %form.editor-form{method: "post", action: action_url, "data-kind": @kind}
+    / Metadata
+    %article
+      %header
+        %h3
+          %i{class: "iconoir-#{@klass.icon} icon-#{@klass.layer}"}
+          = title
+        %a.btn-back{href: back_url}
+          %i.iconoir-arrow-left
+          Back
+      - if @mode == :edit
+        / Show name as disabled field in edit mode
+        .field-group
+          %input#name{type: "text",
+                      name: "name_display",
+                      placeholder: "Name",
+                      value: @name,
+                      disabled: true}
+          %input{type: "hidden", name: "name", value: @name}
+      - else
+        / Editable name field for new resources
+        .field-group
+          %label{for: "name"}
+            Name
+            %span.required *
+          %input#name{type: "text",
+                      name: "name",
+                      value: @name,
+                      required: true,
+                      placeholder: "Enter resource name (no spaces)",
+                      pattern: "\\S+",
+                      "aria-invalid": @errors["name"] ? "true" : nil}
+          - if @errors["name"]
+            .field-error
+              = @errors["name"].join(", ")
+
+    / Annotations
+    %article
+      %header
+        %h3 Annotations
+      .annotations-grid
+        - @fields.each do |field|
+          != haml :'partials/editor/_field', locals: { field: field, value: @annotations[field.key], error: @errors[field.key] }
+
+    / Relations
+    %article
+      %header
+        %h3 Relations
+      != haml :'partials/editor/_relations', locals: { relations: @relations, kind: @kind }
+
+    / Submit
+    .form-actions
+      %button{type: "submit"}
+        %i.iconoir-code
+        Generate YAML
+      %a.secondary{role: "button", href: @mode == :edit ? "/kinds/#{@kind}/instances/#{@instance_name}" : "/kinds/#{@kind}"}
+        Cancel

@@ -1,0 +1,61 @@
+.field-group{class: field.textarea? ? "field-full-width" : ""}
+  %label{for: field.key, title: field.description}
+    = field.title
+    - if field.required
+      %span.required *
+
+  - if field.select?
+    %select{id: field.key,
+            name: "annotations[#{field.key}]",
+            "aria-invalid": error ? "true" : nil}
+      %option{value: "", selected: value.nil? || value.empty?} Select...
+      - field.options.each do |opt|
+        %option{value: opt, selected: value == opt}= opt
+
+  - elsif field.textarea?
+    .markdown-field
+      %textarea{id: field.key,
+                name: "annotations[#{field.key}]",
+                "aria-invalid": error ? "true" : nil,
+                placeholder: "Enter markdown content..."}= value
+      %small.future-hint
+        %i.iconoir-info-circle
+        Supports Markdown formatting
+
+  - elsif field.number?
+    %input{id: field.key,
+           type: "number",
+           name: "annotations[#{field.key}]",
+           value: value,
+           step: field.step,
+           "aria-invalid": error ? "true" : nil}
+
+  - elsif field.url?
+    %input{id: field.key,
+           type: "url",
+           name: "annotations[#{field.key}]",
+           value: value,
+           placeholder: "https://...",
+           "aria-invalid": error ? "true" : nil}
+
+  - elsif field.list?
+    %input{id: field.key,
+           type: "text",
+           name: "annotations[#{field.key}]",
+           value: value,
+           placeholder: "Comma-separated values",
+           "aria-invalid": error ? "true" : nil}
+
+  - else
+    %input{id: field.key,
+           type: "text",
+           name: "annotations[#{field.key}]",
+           value: value,
+           "aria-invalid": error ? "true" : nil}
+
+  - if field.description && !field.textarea?
+    %small.field-description= field.description
+
+  - if error
+    .field-error
+      = error.join(", ")
