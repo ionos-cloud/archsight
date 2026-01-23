@@ -21,10 +21,6 @@ module Archsight::Annotations::Architecture
                  description: "Comma-separated tags",
                  filter: :list,
                  title: "Tags"
-      annotation "architecture/applicationSets",
-                 description: "Related ArgoCD ApplicationSets",
-                 title: "ApplicationSets",
-                 format: :markdown
     end
   end
 end
