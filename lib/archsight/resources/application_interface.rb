@@ -2,7 +2,7 @@
 
 # ApplicationInterface between ApplicationComponent
 class Archsight::Resources::ApplicationInterface < Archsight::Resources::Base
-  include_annotations :git, :architecture, :generated
+  include_annotations :git, :architecture, :interface, :generated
 
   description <<~MD
     Represents a point of access where application services are made available.

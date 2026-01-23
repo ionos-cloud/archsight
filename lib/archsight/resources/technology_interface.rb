@@ -2,7 +2,7 @@
 
 # TechnologyInterface is the backing of an applicationInterface
 class Archsight::Resources::TechnologyInterface < Archsight::Resources::Base
-  include_annotations :git, :architecture
+  include_annotations :git, :architecture, :interface
 
   description <<~MD
     Represents a point of access where technology services are made available.
