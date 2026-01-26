@@ -25,10 +25,10 @@ module Archsight
 
       # Define an annotation using the Annotation class
       def self.annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil, sidebar: true,
-                          type: nil, list: false)
+                          type: nil, list: false, editor: true)
         @annotations ||= []
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, list: list }
+                    sidebar: sidebar, type: type, list: list, editor: editor }
         @annotations << Archsight::Annotations::Annotation.new(key, options)
       end
 
@@ -51,7 +51,7 @@ module Archsight
       # @param list [Boolean] Whether values are lists (default false)
       # @yield Block that computes the annotation value, evaluated in Evaluator context
       def self.computed_annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil,
-                                   sidebar: false, type: nil, list: false, &)
+                                   sidebar: false, type: nil, list: false, editor: true, &)
         require_relative "../annotations/computed"
         @computed_annotations ||= []
         @computed_annotations << Archsight::Annotations::Computed.new(key, description: description, type: type, &)
@@ -59,7 +59,7 @@ module Archsight
         # Also register as a regular annotation so it passes validation and is recognized
         @annotations ||= []
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, list: list }
+                    sidebar: sidebar, type: type, list: list, editor: editor }
         @annotations << Archsight::Annotations::Annotation.new(key, options)
       end
 

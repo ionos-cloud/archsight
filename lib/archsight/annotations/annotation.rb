@@ -4,7 +4,7 @@ require_relative "email_recipient"
 
 # Annotation represents a single annotation definition with its schema and behavior
 class Archsight::Annotations::Annotation
-  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :list
+  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :list, :editor
 
   def initialize(key, options = {})
     @key = key
@@ -14,6 +14,7 @@ class Archsight::Annotations::Annotation
     @enum = options[:enum]
     @sidebar = options.fetch(:sidebar, true)
     @list = options.fetch(:list, false)
+    @editor = options.fetch(:editor, true)
     @type = options[:type]
 
     # Auto-add filter if enum present
