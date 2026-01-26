@@ -383,10 +383,16 @@
   margin: 0;
   white-space: pre;
   overflow-x: auto;
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
 }
 
 .analysis-script pre.code code {
   white-space: pre;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
 }
 
 .analysis-execution header {

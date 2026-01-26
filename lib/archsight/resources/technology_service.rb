@@ -30,6 +30,11 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
   icon "cloud"
   layer "technology"
 
+  annotation "architecture/applicationSets",
+             description: "Related ArgoCD ApplicationSets",
+             title: "ApplicationSets",
+             format: :markdown
+
   relation :suppliedBy, :technologyComponents, :TechnologySystemSoftware
   relation :servedBy, :businessActors, :BusinessActor
 end

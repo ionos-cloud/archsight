@@ -4,7 +4,6 @@
 - description = analysis.annotations['analysis/description']
 - handler = analysis.annotations['analysis/handler'] || 'ruby'
 - timeout = analysis.annotations['analysis/timeout'] || '30s'
-- enabled = analysis.annotations['analysis/enabled'] != 'false'
 
 %article.analysis-header
   %header
@@ -13,8 +12,10 @@
       .instance-title-text
         %span.instance-name= @instance
         %span.instance-kind-subtitle= @kind
-    - unless enabled
-      %span.badge.badge-warning Disabled
+    .header-actions
+      %a.btn-header{href: "/kinds/#{@kind}/instances/#{@instance}/edit", title: "Edit this resource"}
+        %i.iconoir-edit-pencil
+        Edit
   - if description
     .analysis-description
       != markdown(description)
@@ -49,14 +50,6 @@
         %span.analysis-meta-item
           %i.iconoir-timer
           = timeout
-        - if enabled
-          %span.analysis-meta-item.status-enabled
-            %i.iconoir-check-circle
-            Enabled
-        - else
-          %span.analysis-meta-item.status-disabled
-            %i.iconoir-xmark-circle
-            Disabled
       .analysis-script
         .analysis-script-header
           %strong Script

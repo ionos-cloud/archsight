@@ -16,6 +16,7 @@ require_relative "../resources"
 require_relative "../mcp"
 require_relative "api/routes"
 require_relative "api/docs"
+require_relative "editor/routes"
 
 # Define the Web namespace before the class definition
 module Archsight::Web; end
@@ -85,6 +86,7 @@ class Archsight::Web::Application < Sinatra::Base
   # Register API modules
   register Archsight::Web::API::Routes
   register Archsight::Web::API::Docs
+  register Archsight::Web::Editor::Routes
 
   helpers do
     def db

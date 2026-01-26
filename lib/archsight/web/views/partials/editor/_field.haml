@@ -1,0 +1,79 @@
+.field-group{class: field.textarea? || field.code? ? "field-full-width" : ""}
+  .label-row
+    %label{for: field.key, title: field.description}
+      = field.title
+      - if field.required
+        %span.required *
+    - if field.textarea?
+      %button.btn-edit-markdown{type: "button",
+                                 onclick: "openMarkdownEditor('#{field.key}')",
+                                 title: "Open rich text editor"}
+        %i.iconoir-edit-pencil
+        Edit
+
+  - if field.select?
+    %select{id: field.key,
+            name: "annotations[#{field.key}]",
+            "aria-invalid": error ? "true" : nil}
+      %option{value: "", selected: value.nil? || value.empty?} Select...
+      - field.options.each do |opt|
+        %option{value: opt, selected: value == opt}= opt
+
+  - elsif field.textarea?
+    .markdown-field
+      %textarea{id: field.key,
+                name: "annotations[#{field.key}]",
+                "aria-invalid": error ? "true" : nil,
+                placeholder: "Enter markdown content..."}= value
+      %small.future-hint
+        %i.iconoir-info-circle
+        Supports Markdown formatting
+
+  - elsif field.code?
+    .code-field
+      %textarea{id: field.key,
+                name: "annotations[#{field.key}]",
+                "aria-invalid": error ? "true" : nil,
+                placeholder: "Enter #{field.code_language} code...",
+                spellcheck: "false"}= value
+      %small.future-hint
+        %i.iconoir-code
+        = "#{field.code_language.to_s.capitalize} code"
+
+  - elsif field.number?
+    %input{id: field.key,
+           type: "number",
+           name: "annotations[#{field.key}]",
+           value: value,
+           step: field.step,
+           "aria-invalid": error ? "true" : nil}
+
+  - elsif field.url?
+    %input{id: field.key,
+           type: "url",
+           name: "annotations[#{field.key}]",
+           value: value,
+           placeholder: "https://...",
+           "aria-invalid": error ? "true" : nil}
+
+  - elsif field.list?
+    %input{id: field.key,
+           type: "text",
+           name: "annotations[#{field.key}]",
+           value: value,
+           placeholder: "Comma-separated values",
+           "aria-invalid": error ? "true" : nil}
+
+  - else
+    %input{id: field.key,
+           type: "text",
+           name: "annotations[#{field.key}]",
+           value: value,
+           "aria-invalid": error ? "true" : nil}
+
+  - if field.description && !field.textarea? && !field.code?
+    %small.field-description= field.description
+
+  - if error
+    .field-error
+      = error.join(", ")

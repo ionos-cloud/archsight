@@ -19,7 +19,7 @@ metadata:
       | `import` | Run import handlers to generate resources |
       | `version` | Display the archsight version |
     architecture/version: '1.0'
-    architecture/status: GA
+    architecture/status: General-Availability
     architecture/visibility: public
     architecture/tags: cli,thor,terminal
     architecture/documentation: https://github.com/ionos-cloud/archsight
@@ -79,7 +79,7 @@ metadata:
       http://localhost:6789/sse
       ```
     architecture/version: '1.0'
-    architecture/status: GA
+    architecture/status: General-Availability
     architecture/visibility: public
     architecture/tags: mcp,ai,claude,sse,http
     architecture/documentation: https://modelcontextprotocol.io

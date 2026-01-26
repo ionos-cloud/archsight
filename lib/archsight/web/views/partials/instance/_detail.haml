@@ -28,6 +28,10 @@
             %span.generated-time
               generated
               = time_ago(instance.annotations['generated/at'])
+      - else
+        %a.btn-header{href: "/kinds/#{@kind}/instances/#{@instance}/edit", title: "Edit this resource"}
+          %i.iconoir-edit-pencil
+          Edit
     - if instance.has_relations?
       .graph-container
         #graphviz.canvas

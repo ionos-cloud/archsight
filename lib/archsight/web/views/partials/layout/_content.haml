@@ -2,6 +2,8 @@
   - if @doc_content
     %article
       != @doc_content
+  - elsif @editor_mode
+    != haml :'partials/editor/_form'
   - elsif @instances
     != haml :search
   - elsif @kind && @instance
@@ -37,8 +39,12 @@
           %h2
             %i{class: "iconoir-#{Archsight::Resources[@kind].icon} icon-#{Archsight::Resources[@kind].layer}"}
             = @kind
-          %a.kind-help{href: "/doc/resources/#{kind_snake}", title: "Documentation for #{@kind}"}
-            %i.iconoir-help-circle
+          .header-actions
+            %a.kind-help{href: "/doc/resources/#{kind_snake}", title: "Documentation for #{@kind}"}
+              %i.iconoir-help-circle
+            %a.btn-header{href: "/kinds/#{@kind}/new", title: "Create new #{@kind}"}
+              %i.iconoir-plus
+              New
         != haml :"partials/instance/_list", locals: { instances: db.instances_by_kind(@kind).values.sort_by(&:name), omit_kind: true }
   - elsif !@kind
     != haml :"partials/instance/_graph"

@@ -53,7 +53,7 @@ metadata:
       - `-> none & <- none` - true orphans with no relations at all
     architecture/openapi: 3.1.0
     architecture/version: '1.0'
-    architecture/status: GA
+    architecture/status: General-Availability
     architecture/visibility: public
     architecture/tags: https,rest
     architecture/encoding: json

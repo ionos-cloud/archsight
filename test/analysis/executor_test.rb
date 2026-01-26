@@ -32,7 +32,7 @@ class AnalysisExecutorTest < Minitest::Test
     File.write(File.join(@resources_dir, "services.yaml"), yaml_content)
   end
 
-  def create_analysis(name:, script:, timeout: "30s", enabled: "true")
+  def create_analysis(name:, script:, timeout: "30s")
     yaml_content = <<~YAML
       ---
       apiVersion: architecture/v1alpha1
@@ -44,7 +44,6 @@ class AnalysisExecutorTest < Minitest::Test
           analysis/script: |
             #{script.gsub("\n", "\n            ")}
           analysis/timeout: #{timeout}
-          analysis/enabled: "#{enabled}"
       spec: {}
     YAML
     File.write(File.join(@resources_dir, "#{name.gsub(":", "_")}.yaml"), yaml_content)
@@ -296,16 +295,6 @@ class AnalysisExecutorTest < Minitest::Test
 
     assert_equal 1, results.count
     assert_equal "Test:FilterA", results.first.name
-  end
-
-  def test_execute_all_skips_disabled
-    create_analysis(name: "Test:Enabled", script: 'info("enabled")', enabled: "true")
-    create_analysis(name: "Test:Disabled", script: 'info("disabled")', enabled: "false")
-
-    results = @executor.execute_all
-
-    assert_equal 1, results.count
-    assert_equal "Test:Enabled", results.first.name
   end
 
   # Result tests

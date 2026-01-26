@@ -1,0 +1,23 @@
+%p.yaml-success
+  %i.iconoir-check-circle
+  Generated YAML
+
+%pre#yaml-content
+  %code.language-yaml= yaml
+
+%footer
+  %p.yaml-instructions
+    %i.iconoir-info-circle
+    %span
+      Copy this YAML and save it to a
+      %code .yaml
+      file in your resources directory,
+      %br
+      then reload the application.
+  .yaml-actions
+    %button#copy-yaml{type: "button", "data-clipboard-target": "#yaml-content"}
+      %i.iconoir-copy
+      Copy to Clipboard
+    %a.secondary{role: "button", href: "javascript:history.back()"}
+      %i.iconoir-edit-pencil
+      Edit Again
