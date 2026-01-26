@@ -2,6 +2,7 @@
 
 require "yaml"
 require_relative "resources"
+require_relative "editor/file_writer"
 
 module Archsight
   # Editor handles building and validating resources for the web editor

@@ -60,6 +60,7 @@ class Archsight::Web::Application < Sinatra::Base
     set :haml, format: :html5
     set :server, :puma
     set :reload_enabled, true
+    set :inline_edit_enabled, false
   end
 
   # MCP Server setup
@@ -95,6 +96,10 @@ class Archsight::Web::Application < Sinatra::Base
 
     def reload_enabled?
       settings.reload_enabled
+    end
+
+    def inline_edit_enabled?
+      settings.inline_edit_enabled
     end
 
     def production?

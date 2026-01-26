@@ -242,3 +242,206 @@ class EditorTest < Minitest::Test
     assert_empty kinds
   end
 end
+
+class FileWriterTest < Minitest::Test
+  def setup
+    @temp_dir = Dir.mktmpdir
+  end
+
+  def teardown
+    FileUtils.rm_rf(@temp_dir)
+  end
+
+  def test_replace_document_single_document_file
+    file_path = File.join(@temp_dir, "single.yaml")
+    File.write(file_path, <<~YAML)
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: old-name
+    YAML
+
+    new_yaml = <<~YAML
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: new-name
+    YAML
+
+    Archsight::Editor::FileWriter.replace_document(
+      path: file_path,
+      start_line: 1,
+      new_yaml: new_yaml
+    )
+
+    result = File.read(file_path)
+
+    assert_includes result, "new-name"
+    refute_includes result, "old-name"
+  end
+
+  def test_replace_document_multi_document_file
+    file_path = File.join(@temp_dir, "multi.yaml")
+    File.write(file_path, <<~YAML)
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: first-resource
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: second-resource
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: third-resource
+    YAML
+
+    new_yaml = <<~YAML
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: updated-second
+    YAML
+
+    Archsight::Editor::FileWriter.replace_document(
+      path: file_path,
+      start_line: 7,
+      new_yaml: new_yaml
+    )
+
+    result = File.read(file_path)
+
+    assert_includes result, "first-resource"
+    assert_includes result, "updated-second"
+    assert_includes result, "third-resource"
+    refute_includes result, "second-resource"
+  end
+
+  def test_replace_document_file_not_found
+    error = assert_raises(Archsight::Editor::FileWriter::WriteError) do
+      Archsight::Editor::FileWriter.replace_document(
+        path: "/nonexistent/path.yaml",
+        start_line: 1,
+        new_yaml: "---\ntest: value\n"
+      )
+    end
+
+    assert_includes error.message, "File not found"
+  end
+
+  def test_replace_document_file_not_writable
+    file_path = File.join(@temp_dir, "readonly.yaml")
+    File.write(file_path, "---\ntest: value\n")
+    File.chmod(0o444, file_path)
+
+    error = assert_raises(Archsight::Editor::FileWriter::WriteError) do
+      Archsight::Editor::FileWriter.replace_document(
+        path: file_path,
+        start_line: 1,
+        new_yaml: "---\nnew: value\n"
+      )
+    end
+
+    assert_includes error.message, "not writable"
+  ensure
+    File.chmod(0o644, file_path) if File.exist?(file_path)
+  end
+
+  def test_replace_document_line_beyond_eof
+    file_path = File.join(@temp_dir, "short.yaml")
+    File.write(file_path, "---\ntest: value\n")
+
+    error = assert_raises(Archsight::Editor::FileWriter::WriteError) do
+      Archsight::Editor::FileWriter.replace_document(
+        path: file_path,
+        start_line: 100,
+        new_yaml: "---\nnew: value\n"
+      )
+    end
+
+    assert_includes error.message, "beyond end of file"
+  end
+
+  def test_replace_document_adds_trailing_newline
+    file_path = File.join(@temp_dir, "newline.yaml")
+    File.write(file_path, "---\ntest: value\n")
+
+    Archsight::Editor::FileWriter.replace_document(
+      path: file_path,
+      start_line: 1,
+      new_yaml: "---\nnew: value" # No trailing newline
+    )
+
+    result = File.read(file_path)
+
+    assert result.end_with?("\n")
+  end
+
+  def test_find_document_end_with_separator
+    lines = [
+      "---\n",
+      "first: doc\n",
+      "---\n",
+      "second: doc\n"
+    ]
+
+    end_idx = Archsight::Editor::FileWriter.find_document_end(lines, 0)
+
+    assert_equal 2, end_idx
+  end
+
+  def test_find_document_end_at_eof
+    lines = [
+      "---\n",
+      "only: doc\n",
+      "more: content\n"
+    ]
+
+    end_idx = Archsight::Editor::FileWriter.find_document_end(lines, 0)
+
+    assert_equal 3, end_idx
+  end
+
+  def test_replace_document_last_document_in_file
+    file_path = File.join(@temp_dir, "last.yaml")
+    File.write(file_path, <<~YAML)
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: first
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: last
+    YAML
+
+    new_yaml = <<~YAML
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: updated-last
+    YAML
+
+    Archsight::Editor::FileWriter.replace_document(
+      path: file_path,
+      start_line: 7,
+      new_yaml: new_yaml
+    )
+
+    result = File.read(file_path)
+
+    assert_includes result, "first"
+    assert_includes result, "updated-last"
+    refute_includes result, "name: last"
+  end
+end
