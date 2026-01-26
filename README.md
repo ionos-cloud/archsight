@@ -21,6 +21,12 @@ Or install directly:
 gem install archsight
 ```
 
+### Option 2: Helm (Kubernetes)
+
+```bash
+helm install archsight oci://ghcr.io/ionos-cloud/archsight/charts/archsight
+```
+
 ## Quick Start
 
 ### Option 1: CLI

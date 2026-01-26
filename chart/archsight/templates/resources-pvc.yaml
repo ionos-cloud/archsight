@@ -1,0 +1,23 @@
+{{- if and (eq .Values.content.type "persistence") .Values.content.persistence.enabled (not .Values.content.persistence.existingClaim) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-resources" (include "archsight.fullname" .) }}
+  labels:
+    {{- include "archsight.labels" . | nindent 4 }}
+  {{- with .Values.content.persistence.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.content.persistence.accessModes }}
+    - {{ . | quote }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.content.persistence.size | quote }}
+  {{- if .Values.content.persistence.storageClass }}
+  storageClassName: {{ .Values.content.persistence.storageClass | quote }}
+  {{- end }}
+{{- end }}

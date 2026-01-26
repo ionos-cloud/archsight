@@ -1,0 +1,10 @@
+{{- if and (eq .Values.content.type "configMap") .Values.content.configMap.create }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ default (printf "%s-resources" (include "archsight.fullname" .)) .Values.content.configMap.name }}
+  labels:
+    {{- include "archsight.labels" . | nindent 4 }}
+data:
+  {{- toYaml .Values.content.configMap.data | nindent 2 }}
+{{- end }}
