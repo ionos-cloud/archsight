@@ -21,7 +21,7 @@
         %br
         then reload the application.
   .yaml-actions
-    - if defined?(path_ref) && path_ref && defined?(inline_edit_enabled) && inline_edit_enabled
+    - if defined?(path_ref) && path_ref && inline_edit_enabled?
       %button#save-yaml{type: "button", data: { kind: kind, name: name }}
         %i.iconoir-check-circle
         Save to File

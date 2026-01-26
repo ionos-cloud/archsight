@@ -147,7 +147,6 @@ module Archsight
           # Get original instance for path_ref (for inline save)
           original_instance = db.instance_by_kind(@kind, @instance_name)
           @path_ref = original_instance&.path_ref
-          @inline_edit_enabled = settings.inline_edit_enabled
 
           @editor_mode = true
           @mode = :edit
