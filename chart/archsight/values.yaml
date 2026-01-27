@@ -130,6 +130,30 @@ initContainers: []
   #     - name: resources
   #       mountPath: /resources
 
+sidecars: []
+  # Example: Periodically update resources from a private repository
+  # - name: git-sync-private
+  #   image: alpine/git
+  #   env:
+  #     - name: GIT_TOKEN
+  #       valueFrom:
+  #         secretKeyRef:
+  #           name: my-git-credentials
+  #           key: token
+  #   command: ["/bin/sh", "-c"]
+  #   args:
+  #     - |
+  #       cd /resources
+  #       # Ensure the remote uses the current token
+  #       git remote set-url origin "https://oauth2:${GIT_TOKEN}@github.com/my-org/my-private-repo.git"
+  #       while true; do
+  #         git pull
+  #         sleep 60
+  #       done
+  #   volumeMounts:
+  #     - name: resources
+  #       mountPath: /resources
+
 # Custom volumes and mounts if you need more control
 extraVolumes: []
 extraVolumeMounts: []

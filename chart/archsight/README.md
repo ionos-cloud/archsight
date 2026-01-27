@@ -120,6 +120,37 @@ initContainers:
 ```
 
 
+### Sidecars (Auto-Refresh)
+
+If you want your application to update dynamically when the git repository changes (without restarting the pod), you can add a sidecar container that periodically pulls changes.
+
+**Example (Private Repo with 60s Refresh Loop):**
+
+```yaml
+sidecars:
+  - name: git-refresher
+    image: alpine/git
+    env:
+      - name: GIT_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: git-credentials
+            key: token
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        cd /resources
+        # Set the remote URL with the token to ensure authentication
+        git remote set-url origin "https://oauth2:${GIT_TOKEN}@github.com/my-org/my-private-repo.git"
+        while true; do
+          git pull
+          sleep 60
+        done
+    volumeMounts:
+      - name: resources
+        mountPath: /resources
+```
+
 ## Uninstalling the Chart
 
 To uninstall/delete the `my-archsight` deployment:

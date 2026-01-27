@@ -79,6 +79,10 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
 
+        {{- with .Values.sidecars }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+
       volumes:
         {{- if eq .Values.content.type "emptyDir" }}
         - name: resources
