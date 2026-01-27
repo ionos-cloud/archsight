@@ -26,6 +26,7 @@ module Archsight
       def valid?: (untyped) -> bool
       def markdown?: () -> bool
       def code?: () -> bool
+      def multiline?: () -> bool
       def code_language: () -> Symbol?
       def example_value: () -> untyped
 
@@ -66,13 +67,17 @@ module Archsight
       def incoming: (?String?) -> Array[Resources::Base]
       def transitive_outgoing: (?String?, ?max_depth: Integer) -> Array[Resources::Base]
       def transitive_incoming: (?String?, ?max_depth: Integer) -> Array[Resources::Base]
-      def sum: (untyped, String) -> Numeric
+      def outgoing_transitive: (?untyped, ?max_depth: Integer) -> Array[Resources::Base]
+      def incoming_transitive: (?untyped, ?max_depth: Integer) -> Array[Resources::Base]
+      def sum: (untyped, String) -> Numeric?
       def avg: (untyped, String) -> Numeric?
       def min: (untyped, String) -> untyped
       def max: (untyped, String) -> untyped
-      def count: (untyped) -> Integer
+      def count: (untyped, ?String?) -> Integer
       def collect: (untyped, String) -> Array[untyped]
+      def first: (untyped, String) -> untyped
       def most_common: (untyped, String) -> untyped
+      def get: (untyped, String) -> untyped
       def all_match: (untyped, String, untyped) -> bool
 
       private
@@ -93,6 +98,51 @@ module Archsight
       def compute_for: (Resources::Base, Computed) -> untyped
       def coerce_value: (untyped, Class?) -> untyped
       def meaningful_value?: (untyped) -> bool
+    end
+
+    class ComputedRelationResolver
+      MAX_DEPTH: Integer
+
+      @instance: Resources::Base
+      @database: Database
+      @query_cache: Hash[String, untyped]
+
+      def initialize: (Resources::Base, Database) -> void
+      def outgoing: (?untyped) -> Array[Resources::Base]
+      def outgoing_transitive: (?untyped, ?max_depth: Integer) -> Array[Resources::Base]
+      def incoming: (?untyped) -> Array[Resources::Base]
+      def incoming_transitive: (?untyped, ?max_depth: Integer) -> Array[Resources::Base]
+
+      private
+
+      def matches_filter?: (untyped, untyped) -> bool
+      def parse_query: (String) -> untyped
+      def evaluator: () -> untyped
+      def collect_transitive_outgoing: (untyped, untyped, Set[String], Integer, Integer, Array[Resources::Base]) -> void
+      def collect_transitive_incoming: (untyped, untyped, Set[String], Integer, Integer, Array[Resources::Base]) -> void
+    end
+
+    module ComputedAggregators
+      def self.sum: (Array[untyped]) -> Float?
+      def self.count: (Array[untyped]) -> Integer
+      def self.avg: (Array[untyped]) -> Float?
+      def self.min: (Array[untyped]) -> Float?
+      def self.max: (Array[untyped]) -> Float?
+      def self.collect: (Array[untyped]) -> Array[untyped]
+      def self.first: (Array[untyped]) -> untyped
+      def self.most_common: (Array[untyped]) -> untyped
+
+      private
+
+      def self.to_numeric: (Array[untyped]) -> Array[Float]
+    end
+
+    class EmailRecipient
+      EMAIL_PATTERN: Regexp
+      RECIPIENT_PATTERN: Regexp
+
+      def self.valid?: (untyped) -> bool
+      def self.extract_email: (untyped) -> String?
     end
   end
 end

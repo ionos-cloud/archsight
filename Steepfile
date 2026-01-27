@@ -15,4 +15,5 @@ target :lib do
   check "lib/archsight/annotations/computed.rb"
 
   library "yaml"
+  library "uri"
 end

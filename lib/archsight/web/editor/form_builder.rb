@@ -14,7 +14,7 @@ module Archsight
           end
 
           def textarea?
-            input_type == :textarea || input_type == :markdown
+            %i[textarea markdown].include?(input_type)
           end
 
           def markdown?

@@ -101,7 +101,7 @@ class FormBuilderTest < Minitest::Test
     annotation = Archsight::Resources["TechnologyArtifact"].annotations.find { |a| a.key == "architecture/description" }
     input_type = Archsight::Web::Editor::FormBuilder.determine_input_type(annotation)
 
-    assert_equal :textarea, input_type
+    assert_equal :markdown, input_type
   end
 
   def test_determine_step_for_integer_annotation
