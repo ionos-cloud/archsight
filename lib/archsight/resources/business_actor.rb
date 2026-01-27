@@ -43,7 +43,7 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
              title: "Team Members",
              sidebar: false,
              filter: :list,
-             format: :tag_list,
+             format: :multiline,
              type: Archsight::Annotations::EmailRecipient
 
   annotation "team/jira",

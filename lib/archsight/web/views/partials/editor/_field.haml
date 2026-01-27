@@ -4,7 +4,7 @@
       = field.title
       - if field.required
         %span.required *
-    - if field.textarea?
+    - if field.markdown?
       %button.btn-edit-markdown{type: "button",
                                  onclick: "openMarkdownEditor('#{field.key}')",
                                  title: "Open rich text editor"}
@@ -24,10 +24,11 @@
       %textarea{id: field.key,
                 name: "annotations[#{field.key}]",
                 "aria-invalid": error ? "true" : nil,
-                placeholder: "Enter markdown content..."}= value
-      %small.future-hint
-        %i.iconoir-info-circle
-        Supports Markdown formatting
+                placeholder: field.markdown? ? "Enter markdown content..." : "One entry per line..."}= value
+      - if field.markdown?
+        %small.future-hint
+          %i.iconoir-info-circle
+          Supports Markdown formatting
 
   - elsif field.code?
     .code-field

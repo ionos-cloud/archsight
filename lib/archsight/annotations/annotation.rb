@@ -104,6 +104,10 @@ class Archsight::Annotations::Annotation
     @format == :ruby
   end
 
+  def multiline?
+    @format == :multiline
+  end
+
   def code_language
     @format if code?
   end
