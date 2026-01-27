@@ -3,10 +3,13 @@
 require "yaml"
 require_relative "resources"
 require_relative "editor/file_writer"
+require_relative "editor/content_hasher"
 
 module Archsight
   # Editor handles building and validating resources for the web editor
-  class Editor
+  module Editor
+    module_function
+
     # Build a resource hash from form params
     # @param kind [String] Resource kind (e.g., "TechnologyArtifact")
     # @param name [String] Resource name
@@ -14,7 +17,7 @@ module Archsight
     # @param relations [Array<Hash>] Array of {verb:, kind:, names:[]} hashes
     #   where kind is the target class name (e.g., "TechnologyArtifact")
     # @return [Hash] Resource hash ready for YAML conversion
-    def self.build_resource(kind:, name:, annotations: {}, relations: [])
+    def build_resource(kind:, name:, annotations: {}, relations: [])
       resource = {
         "apiVersion" => "architecture/v1alpha1",
         "kind" => kind,
@@ -39,7 +42,7 @@ module Archsight
     # @param name [String] Resource name
     # @param annotations [Hash] Annotation key-value pairs
     # @return [Hash] { valid: Boolean, errors: { field => [messages] } }
-    def self.validate(kind, name:, annotations: {})
+    def validate(kind, name:, annotations: {})
       klass = Archsight::Resources[kind]
       errors = {}
 
@@ -66,7 +69,7 @@ module Archsight
     # Uses custom YAML dump that formats multiline strings with literal block scalars
     # @param resource_hash [Hash] Resource hash
     # @return [String] YAML string
-    def self.to_yaml(resource_hash)
+    def to_yaml(resource_hash)
       visitor = Psych::Visitors::YAMLTree.create
       visitor << resource_hash
 
@@ -79,7 +82,7 @@ module Archsight
 
     # Recursively apply literal block style for multiline strings in YAML AST
     # @param node [Psych::Nodes::Node] YAML AST node
-    def self.apply_block_scalar_style(node)
+    def apply_block_scalar_style(node)
       case node
       when Psych::Nodes::Scalar
         if node.value.is_a?(String)
@@ -97,7 +100,7 @@ module Archsight
     # Excludes pattern annotations, computed annotations, and annotations with editor: false
     # @param kind [String] Resource kind
     # @return [Array<Archsight::Annotations::Annotation>]
-    def self.editable_annotations(kind)
+    def editable_annotations(kind)
       klass = Archsight::Resources[kind]
       return [] unless klass
 
@@ -115,7 +118,7 @@ module Archsight
     # Get available relations for a resource kind
     # @param kind [String] Resource kind
     # @return [Array<Array>] Array of [verb, target_kind, target_class_name]
-    def self.available_relations(kind)
+    def available_relations(kind)
       klass = Archsight::Resources[kind]
       return [] unless klass
 
@@ -125,7 +128,7 @@ module Archsight
     # Get unique verbs for a resource kind's relations
     # @param kind [String] Resource kind
     # @return [Array<String>]
-    def self.relation_verbs(kind)
+    def relation_verbs(kind)
       available_relations(kind).map { |v, _, _| v.to_s }.uniq.sort
     end
 
@@ -133,7 +136,7 @@ module Archsight
     # @param kind [String] Resource kind
     # @param verb [String] Relation verb
     # @return [Array<String>] Target class names (e.g., "TechnologyArtifact")
-    def self.target_kinds_for_verb(kind, verb)
+    def target_kinds_for_verb(kind, verb)
       # Relations structure is [verb, relation_name, target_class_name]
       available_relations(kind)
         .select { |v, _, _| v.to_s == verb.to_s }
@@ -147,7 +150,7 @@ module Archsight
     # @param verb [String] Relation verb
     # @param target_class [String] Target class name
     # @return [String, nil] Relation name (e.g., "technologyComponents")
-    def self.relation_name_for(kind, verb, target_class)
+    def relation_name_for(kind, verb, target_class)
       relation = available_relations(kind).find do |v, _, tc|
         v.to_s == verb.to_s && tc.to_s == target_class.to_s
       end
@@ -161,7 +164,7 @@ module Archsight
     # @param verb [String] Relation verb
     # @param relation_name [String] Relation name (e.g., "businessActors")
     # @return [String, nil] Target class name (e.g., "BusinessActor")
-    def self.target_class_for_relation(kind, verb, relation_name)
+    def target_class_for_relation(kind, verb, relation_name)
       relation = available_relations(kind).find do |v, rn, _|
         v.to_s == verb.to_s && rn.to_s == relation_name.to_s
       end
@@ -170,65 +173,65 @@ module Archsight
       relation[2].to_s
     end
 
-    class << self
-      private
+    # Filter out empty values from a hash and convert to plain Hash
+    # (avoids !ruby/hash:Sinatra::IndifferentHash in YAML output)
+    def filter_empty(hash)
+      return {} if hash.nil?
 
-      # Filter out empty values from a hash and convert to plain Hash
-      # (avoids !ruby/hash:Sinatra::IndifferentHash in YAML output)
-      def filter_empty(hash)
-        return {} if hash.nil?
-
-        result = hash.reject { |_, v| v.nil? || v.to_s.strip.empty? }
-        # Convert to plain Hash to avoid Ruby-specific YAML tags
-        result.to_h
-      end
-
-      # Build spec hash from relations array
-      # @param source_kind [String] The source resource kind
-      # @param relations [Array<Hash>] Array of {verb:, kind:, names:[]} hashes
-      #   where kind is the target class name (e.g., "TechnologyArtifact")
-      # @return [Hash] Spec hash with proper relation_name keys
-      def build_spec(source_kind, relations)
-        return {} if relations.nil? || relations.empty?
-
-        spec = {}
-        relations.each { |rel| add_relation_to_spec(spec, source_kind, rel) }
-        deduplicate_spec_values(spec)
-      end
-
-      def add_relation_to_spec(spec, source_kind, rel)
-        verb, target_class, names = extract_relation_parts(rel)
-        return if invalid_relation?(verb, target_class, names)
-
-        relation_name = Archsight::Editor.relation_name_for(source_kind, verb, target_class)
-        return unless relation_name
-
-        spec[verb.to_s] ||= {}
-        spec[verb.to_s][relation_name] ||= []
-        spec[verb.to_s][relation_name].concat(names)
-      end
-
-      def extract_relation_parts(rel)
-        verb = rel[:verb] || rel["verb"]
-        target_class = rel[:kind] || rel["kind"]
-        names = normalize_names(rel[:names] || rel["names"] || [])
-        [verb, target_class, names]
-      end
-
-      def normalize_names(names)
-        names = [names] unless names.is_a?(Array)
-        names.map(&:to_s).reject(&:empty?)
-      end
-
-      def invalid_relation?(verb, target_class, names)
-        verb.nil? || verb.to_s.strip.empty? ||
-          target_class.nil? || target_class.to_s.strip.empty? ||
-          names.empty?
-      end
-
-      def deduplicate_spec_values(spec)
-        spec.transform_values { |kinds| kinds.transform_values(&:uniq) }
-      end
+      result = hash.reject { |_, v| v.nil? || v.to_s.strip.empty? }
+      # Convert to plain Hash to avoid Ruby-specific YAML tags
+      result.to_h
     end
+
+    # Build spec hash from relations array
+    # @param source_kind [String] The source resource kind
+    # @param relations [Array<Hash>] Array of {verb:, kind:, names:[]} hashes
+    #   where kind is the target class name (e.g., "TechnologyArtifact")
+    # @return [Hash] Spec hash with proper relation_name keys
+    def build_spec(source_kind, relations)
+      return {} if relations.nil? || relations.empty?
+
+      spec = {}
+      relations.each { |rel| add_relation_to_spec(spec, source_kind, rel) }
+      deduplicate_spec_values(spec)
+    end
+
+    def add_relation_to_spec(spec, source_kind, rel)
+      verb, target_class, names = extract_relation_parts(rel)
+      return if invalid_relation?(verb, target_class, names)
+
+      rel_name = relation_name_for(source_kind, verb, target_class)
+      return unless rel_name
+
+      spec[verb.to_s] ||= {}
+      spec[verb.to_s][rel_name] ||= []
+      spec[verb.to_s][rel_name].concat(names)
+    end
+
+    def extract_relation_parts(rel)
+      verb = rel[:verb] || rel["verb"]
+      target_class = rel[:kind] || rel["kind"]
+      names = normalize_names(rel[:names] || rel["names"] || [])
+      [verb, target_class, names]
+    end
+
+    def normalize_names(names)
+      names = [names] unless names.is_a?(Array)
+      names.map(&:to_s).reject(&:empty?)
+    end
+
+    def invalid_relation?(verb, target_class, names)
+      verb.nil? || verb.to_s.strip.empty? ||
+        target_class.nil? || target_class.to_s.strip.empty? ||
+        names.empty?
+    end
+
+    def deduplicate_spec_values(spec)
+      spec.transform_values { |kinds| kinds.transform_values(&:uniq) }
+    end
+
+    private_class_method :filter_empty, :build_spec, :add_relation_to_spec,
+                         :extract_relation_parts, :normalize_names, :invalid_relation?,
+                         :deduplicate_spec_values
   end
 end

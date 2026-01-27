@@ -185,3 +185,7 @@ Lint/RedundantSafeNavigation:
 Style/EmptyStringInsideInterpolation:
   Exclude:
     - "**/*.haml"
+
+# Allow Steep RBS type annotations (#: Type)
+Layout/LeadingCommentSpace:
+  AllowRBSInlineAnnotation: true

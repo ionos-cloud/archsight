@@ -11,7 +11,7 @@
       %a.btn-back{href: back_url}
         %i.iconoir-arrow-left
         Back
-    != haml :'partials/editor/_yaml_output', locals: { yaml: @generated_yaml, path_ref: @path_ref, kind: @kind, name: @name }
+    != haml :'partials/editor/_yaml_output', locals: { yaml: @generated_yaml, path_ref: @path_ref, kind: @kind, name: @name, content_hash: @content_hash }
 - else
   %form.editor-form{method: "post", action: action_url, "data-kind": @kind}
     / Metadata
@@ -32,6 +32,8 @@
                       value: @name,
                       disabled: true}
           %input{type: "hidden", name: "name", value: @name}
+          - if @content_hash
+            %input{type: "hidden", name: "content_hash", value: @content_hash}
       - else
         / Editable name field for new resources
         .field-group

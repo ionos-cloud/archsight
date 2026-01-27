@@ -62,6 +62,15 @@ module Archsight
 
             relations
           end
+
+          # Validate content hash for optimistic locking
+          def validate_content_hash(instance, expected_hash)
+            Archsight::Editor::ContentHasher.validate(
+              path: instance.path_ref.path,
+              start_line: instance.path_ref.line_no,
+              expected_hash: expected_hash
+            )
+          end
         end
 
         # Create mode - empty form
@@ -134,6 +143,13 @@ module Archsight
           @fields = editor_fields(@kind)
           @errors = {}
 
+          # Compute content hash for optimistic locking
+          original_content = Archsight::Editor::FileWriter.read_document(
+            path: instance.path_ref.path,
+            start_line: instance.path_ref.line_no
+          )
+          @content_hash = Archsight::Editor::ContentHasher.hash(original_content)
+
           haml :index
         end
 
@@ -154,6 +170,7 @@ module Archsight
           @annotations = extract_annotations(params)
           @relations = parse_form_relations(params)
           @fields = editor_fields(@kind)
+          @content_hash = params["content_hash"]
 
           # Validate
           validation = Archsight::Editor.validate(@kind, name: @name, annotations: @annotations)
@@ -188,13 +205,21 @@ module Archsight
           name = params["name"]
 
           begin
-            yaml_content = JSON.parse(request.body.read)["yaml"]
+            body = JSON.parse(request.body.read)
+            yaml_content = body["yaml"]
+            expected_hash = body["content_hash"]
           rescue JSON::ParserError
             halt 400, JSON.generate({ success: false, error: "Invalid JSON" })
           end
 
           instance = db.instance_by_kind(kind, name)
           halt 404, JSON.generate({ success: false, error: "Instance not found" }) unless instance
+
+          # Optimistic locking: verify content hasn't changed since edit started
+          if (conflict = validate_content_hash(instance, expected_hash))
+            status 409
+            return JSON.generate({ success: false }.merge(conflict))
+          end
 
           begin
             Archsight::Editor::FileWriter.replace_document(

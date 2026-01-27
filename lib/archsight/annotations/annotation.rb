@@ -81,7 +81,7 @@ class Archsight::Annotations::Annotation
 
   # Validate a value and return array of error messages (empty if valid)
   def validate(value)
-    errors = []
+    errors = [] #: Array[String]
     return errors if value.nil?
 
     validate_enum(value, errors)
@@ -102,6 +102,10 @@ class Archsight::Annotations::Annotation
 
   def code?
     @format == :ruby
+  end
+
+  def multiline?
+    @format == :multiline
   end
 
   def code_language

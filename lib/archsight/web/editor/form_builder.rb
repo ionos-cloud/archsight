@@ -14,7 +14,11 @@ module Archsight
           end
 
           def textarea?
-            input_type == :textarea
+            %i[textarea markdown].include?(input_type)
+          end
+
+          def markdown?
+            input_type == :markdown
           end
 
           def code?
@@ -70,7 +74,8 @@ module Archsight
           when "URI"
             :url
           else
-            return :textarea if annotation.markdown?
+            return :markdown if annotation.markdown?
+            return :textarea if annotation.multiline?
             return :code if annotation.code?
             return :list if annotation.list?
 

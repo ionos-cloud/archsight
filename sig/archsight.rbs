@@ -9,4 +9,8 @@ module Archsight
   def self.resources_dir: () -> String
   def self.resources_dir=: (String) -> String
   def self.reset_configuration!: () -> Configuration
+
+  module Helpers
+    def self.deep_merge: (Hash[untyped, untyped], Hash[untyped, untyped]) -> Hash[untyped, untyped]
+  end
 end

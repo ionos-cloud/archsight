@@ -15,7 +15,7 @@ module Archsight
       end
 
       def self.relation(verb, kind, klass_name)
-        @relations ||= []
+        @relations ||= [] #: Array[[Symbol, Symbol, String]]
         @relations << [verb, kind, klass_name]
       end
 
@@ -26,7 +26,7 @@ module Archsight
       # Define an annotation using the Annotation class
       def self.annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil, sidebar: true,
                           type: nil, list: false, editor: true)
-        @annotations ||= []
+        @annotations ||= [] #: Array[Archsight::Annotations::Annotation]
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
                     sidebar: sidebar, type: type, list: list, editor: editor }
         @annotations << Archsight::Annotations::Annotation.new(key, options)
@@ -53,11 +53,11 @@ module Archsight
       def self.computed_annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil,
                                    sidebar: false, type: nil, list: false, editor: true, &)
         require_relative "../annotations/computed"
-        @computed_annotations ||= []
+        @computed_annotations ||= [] #: Array[Archsight::Annotations::Computed]
         @computed_annotations << Archsight::Annotations::Computed.new(key, description: description, type: type, &)
 
         # Also register as a regular annotation so it passes validation and is recognized
-        @annotations ||= []
+        @annotations ||= [] #: Array[Archsight::Annotations::Annotation]
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
                     sidebar: sidebar, type: type, list: list, editor: editor }
         @annotations << Archsight::Annotations::Annotation.new(key, options)
@@ -180,11 +180,11 @@ module Archsight
       # @param key [String] The annotation key
       # @param value [Object] The computed value
       def set_computed_annotation(key, value)
-        @computed_values ||= {}
+        @computed_values ||= {} #: Hash[String, untyped]
         @computed_values[key] = value
         # Write to annotations hash for query compatibility
         @raw["metadata"] ||= {}
-        @raw["metadata"]["annotations"] ||= {}
+        @raw["metadata"]["annotations"] = @raw["metadata"]["annotations"] || {} #: Hash[String, String]
         @raw["metadata"]["annotations"][key] = value
       end
 
@@ -241,13 +241,13 @@ module Archsight
       # Get references grouped by kind and verb for display (incoming)
       # Returns: { "Kind" => { "verb" => [instances...] } }
       def references_grouped
-        grouped = {}
+        grouped = {} #: Hash[String, Hash[untyped, Array[Base]]]
         @references.each do |ref|
           inst = ref[:instance]
           verb = ref[:verb]
           kind = inst.klass
           grouped[kind] ||= {}
-          grouped[kind][verb] ||= []
+          grouped[kind][verb] ||= [] #: Array[Base]
           grouped[kind][verb] << inst
         end
         # Sort by kind name, then by verb name
@@ -257,7 +257,7 @@ module Archsight
       # Get outgoing relations grouped by verb and kind for display
       # Returns: { "verb" => { "Kind" => [instances...] } }
       def relations_grouped
-        grouped = {}
+        grouped = {} #: Hash[String, Hash[String, Array[Base]]]
         spec.each do |verb, kinds|
           next unless kinds.is_a?(Hash)
 
@@ -267,7 +267,7 @@ module Archsight
             instances.each do |inst|
               kind = inst.klass
               grouped[verb] ||= {}
-              grouped[verb][kind] ||= []
+              grouped[verb][kind] ||= [] #: Array[Base]
               grouped[verb][kind] << inst
             end
           end
