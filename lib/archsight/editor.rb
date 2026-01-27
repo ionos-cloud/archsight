@@ -2,6 +2,7 @@
 
 require "yaml"
 require_relative "resources"
+require_relative "editor/file_writer"
 
 module Archsight
   # Editor handles building and validating resources for the web editor
@@ -92,19 +93,8 @@ module Archsight
       end
     end
 
-    # Annotation keys that should not be editable (system-managed fields)
-    EXCLUDED_ANNOTATION_PREFIXES = %w[
-      git/updatedAt
-      git/updatedBy
-      git/reviewedAt
-      git/reviewedBy
-      generated/script
-      generated/at
-      generated/configHash
-    ].freeze
-
     # Get editable annotations for a resource kind
-    # Excludes pattern annotations, computed annotations, and system-managed fields
+    # Excludes pattern annotations, computed annotations, and annotations with editor: false
     # @param kind [String] Resource kind
     # @return [Array<Archsight::Annotations::Annotation>]
     def self.editable_annotations(kind)
@@ -118,8 +108,8 @@ module Archsight
       computed_keys = klass.computed_annotations.map(&:key)
       annotations = annotations.reject { |a| computed_keys.include?(a.key) }
 
-      # Filter out system-managed annotations
-      annotations.reject { |a| EXCLUDED_ANNOTATION_PREFIXES.include?(a.key) }
+      # Filter out non-editable annotations
+      annotations.reject { |a| a.editor == false }
     end
 
     # Get available relations for a resource kind

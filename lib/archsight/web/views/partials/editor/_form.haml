@@ -11,7 +11,7 @@
       %a.btn-back{href: back_url}
         %i.iconoir-arrow-left
         Back
-    != haml :'partials/editor/_yaml_output', locals: { yaml: @generated_yaml }
+    != haml :'partials/editor/_yaml_output', locals: { yaml: @generated_yaml, path_ref: @path_ref, kind: @kind, name: @name }
 - else
   %form.editor-form{method: "post", action: action_url, "data-kind": @kind}
     / Metadata

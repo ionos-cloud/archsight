@@ -299,30 +299,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 calc(var(--block-spacing-horizontal) * -1);
-  padding: 1rem var(--block-spacing-horizontal);
   gap: 1rem;
 }
 
+.yaml-file-info,
 .yaml-instructions {
   display: flex;
-  align-items: flex-start;
   gap: 0.5rem;
   margin: 0;
   font-size: 0.9em;
   color: var(--muted-color);
   flex: 1;
+  min-width: 0;
   line-height: 1.5;
 }
 
+.yaml-file-info {
+  align-items: center;
+}
+
+.yaml-instructions {
+  align-items: flex-start;
+}
+
+.yaml-file-info > span,
+.yaml-instructions > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yaml-file-info > i,
 .yaml-instructions > i {
-  line-height: 1.5;
   flex-shrink: 0;
 }
 
 .yaml-actions {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .yaml-actions button,

@@ -144,6 +144,10 @@ module Archsight
           @klass = Archsight::Resources[@kind]
           halt 404, "Kind not found" unless @klass
 
+          # Get original instance for path_ref (for inline save)
+          original_instance = db.instance_by_kind(@kind, @instance_name)
+          @path_ref = original_instance&.path_ref
+
           @editor_mode = true
           @mode = :edit
           @name = (params["name_field"] || @instance_name).strip
@@ -171,6 +175,39 @@ module Archsight
           @errors = {}
 
           haml :index
+        end
+
+        # Save YAML to source file (inline edit)
+        post "/api/v1/editor/kinds/:kind/instances/:name/save" do
+          content_type :json
+
+          # Check if inline edit is enabled
+          halt 403, JSON.generate({ success: false, error: "Inline edit is disabled. Start server with --inline-edit flag." }) unless settings.inline_edit_enabled
+
+          kind = params["kind"]
+          name = params["name"]
+
+          begin
+            yaml_content = JSON.parse(request.body.read)["yaml"]
+          rescue JSON::ParserError
+            halt 400, JSON.generate({ success: false, error: "Invalid JSON" })
+          end
+
+          instance = db.instance_by_kind(kind, name)
+          halt 404, JSON.generate({ success: false, error: "Instance not found" }) unless instance
+
+          begin
+            Archsight::Editor::FileWriter.replace_document(
+              path: instance.path_ref.path,
+              start_line: instance.path_ref.line_no,
+              new_yaml: yaml_content
+            )
+            db.reload!
+            JSON.generate({ success: true, message: "Saved to #{instance.path_ref}" })
+          rescue Archsight::Editor::FileWriter::WriteError => e
+            status 400
+            JSON.generate({ success: false, error: e.message })
+          end
         end
 
         # HTMX API - Get instance names for a kind (for relation dropdown)

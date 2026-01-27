@@ -6,15 +6,25 @@
   %code.language-yaml= yaml
 
 %footer
-  %p.yaml-instructions
-    %i.iconoir-info-circle
-    %span
-      Copy this YAML and save it to a
-      %code .yaml
-      file in your resources directory,
-      %br
-      then reload the application.
+  - if defined?(path_ref) && path_ref
+    %p.yaml-file-info
+      %i.iconoir-folder
+      %span
+        Source: #{path_ref.path}:#{path_ref.line_no}
+  - else
+    %p.yaml-instructions
+      %i.iconoir-info-circle
+      %span
+        Copy this YAML and save it to a
+        %code .yaml
+        file in your resources directory,
+        %br
+        then reload the application.
   .yaml-actions
+    - if defined?(path_ref) && path_ref && inline_edit_enabled?
+      %button#save-yaml{type: "button", data: { kind: kind, name: name }}
+        %i.iconoir-check-circle
+        Save to File
     %button#copy-yaml{type: "button", "data-clipboard-target": "#yaml-content"}
       %i.iconoir-copy
       Copy to Clipboard

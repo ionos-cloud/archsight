@@ -19,6 +19,7 @@ module Archsight
     option :production, type: :boolean, default: false, desc: "Run in production mode"
     option :disable_reload, type: :boolean, default: false, desc: "Disable the reload button in the UI"
     option :enable_logging, type: :boolean, default: nil, desc: "Enable request logging (default: false in dev, true in prod)"
+    option :inline_edit, type: :boolean, default: false, desc: "Enable inline editing (save directly to source files)"
     def web
       configure_resources
       require "archsight/web/application"
@@ -26,6 +27,7 @@ module Archsight
       env = options[:production] ? :production : :development
       Archsight::Web::Application.configure_environment!(env, logging: options[:enable_logging])
       Archsight::Web::Application.set :reload_enabled, !options[:disable_reload]
+      Archsight::Web::Application.set :inline_edit_enabled, options[:inline_edit]
       Archsight::Web::Application.setup_mcp!
       Archsight::Web::Application.run!(port: options[:port], bind: options[:host])
     rescue Archsight::ResourceError => e
