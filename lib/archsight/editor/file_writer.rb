@@ -2,16 +2,38 @@
 
 module Archsight
   class Editor
-    # FileWriter handles writing YAML documents back to multi-document files
+    # FileWriter handles reading and writing YAML documents in multi-document files
     module FileWriter
       class WriteError < StandardError; end
+
+      module_function
+
+      # Read a YAML document from a file starting at a given line
+      # @param path [String] File path
+      # @param start_line [Integer] Line number where document starts (1-indexed)
+      # @return [String] Document content
+      # @raise [WriteError] if file not found or line out of bounds
+      def read_document(path:, start_line:)
+        raise WriteError, "File not found: #{path}" unless File.exist?(path)
+
+        lines = File.readlines(path)
+        start_idx = start_line - 1 # Convert to 0-indexed
+
+        raise WriteError, "Line #{start_line} is beyond end of file" if start_idx >= lines.length
+
+        # Find the end of this document (next --- or EOF)
+        end_idx = find_document_end(lines, start_idx)
+
+        # Extract and join the document lines
+        lines[start_idx...end_idx].join
+      end
 
       # Replace a YAML document in a file starting at a given line
       # @param path [String] File path
       # @param start_line [Integer] Line number where document starts (1-indexed)
       # @param new_yaml [String] New YAML content (without leading ---)
       # @raise [WriteError] if file cannot be written or document not found at expected line
-      def self.replace_document(path:, start_line:, new_yaml:)
+      def replace_document(path:, start_line:, new_yaml:)
         raise WriteError, "File not found: #{path}" unless File.exist?(path)
         raise WriteError, "File not writable: #{path}" unless File.writable?(path)
 
@@ -38,7 +60,7 @@ module Archsight
       # @param lines [Array<String>] File lines
       # @param start_idx [Integer] Starting line index (0-indexed)
       # @return [Integer] End index (exclusive - the line after the document ends)
-      def self.find_document_end(lines, start_idx)
+      def find_document_end(lines, start_idx)
         # Start searching from the line after start_idx
         idx = start_idx + 1
 

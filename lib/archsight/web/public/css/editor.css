@@ -346,6 +346,22 @@
   margin: 0;
 }
 
+/* Conflict error banner */
+.conflict-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--pico-mark-background-color);
+  color: var(--pico-del-color);
+  border-radius: var(--pico-border-radius);
+}
+
+.conflict-error i {
+  flex-shrink: 0;
+}
+
 /* Header action buttons - ghost style */
 .btn-header {
   display: inline-flex;

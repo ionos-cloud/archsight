@@ -22,7 +22,7 @@
         then reload the application.
   .yaml-actions
     - if defined?(path_ref) && path_ref && inline_edit_enabled?
-      %button#save-yaml{type: "button", data: { kind: kind, name: name }}
+      %button#save-yaml{type: "button", data: { kind: kind, name: name, "content-hash": content_hash }}
         %i.iconoir-check-circle
         Save to File
     %button#copy-yaml{type: "button", "data-clipboard-target": "#yaml-content"}
