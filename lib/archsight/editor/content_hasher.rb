@@ -3,7 +3,7 @@
 require "digest"
 
 module Archsight
-  class Editor
+  module Editor
     # ContentHasher generates SHA256 hashes for optimistic locking
     module ContentHasher
       module_function

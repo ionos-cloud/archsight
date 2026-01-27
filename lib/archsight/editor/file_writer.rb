@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Archsight
-  class Editor
+  module Editor
     # FileWriter handles reading and writing YAML documents in multi-document files
     module FileWriter
       class WriteError < StandardError; end
