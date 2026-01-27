@@ -212,7 +212,7 @@ class Archsight::Annotations::ComputedManager
     @computing.add(cache_key)
     begin
       evaluator = Archsight::Annotations::ComputedEvaluator.new(instance, @database, self)
-      value = evaluator.instance_eval(&definition.block)
+      value = evaluator.instance_eval(&definition.block) # steep:ignore BlockTypeMismatch
 
       # Apply type coercion if specified
       value = coerce_value(value, definition.type) if definition.type
