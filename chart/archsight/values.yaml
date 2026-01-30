@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: archsight
+  repository: ghcr.io/ionos-cloud/archsight
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
@@ -159,4 +159,4 @@ extraVolumes: []
 extraVolumeMounts: []
 
 # Command arguments (passed to ENTRYPOINT ["archsight"])
-args: ["web", "--port", "4567"]
+args: ["web", "--port", "4567", "-H", "0.0.0.0", "--production"]
