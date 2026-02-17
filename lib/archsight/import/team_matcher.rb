@@ -20,6 +20,7 @@ class Archsight::Import::TeamMatcher
     @teams = load_teams
     @email_to_team = build_email_index
     @name_to_team = build_name_index
+    @member_identities = build_member_identities
   end
 
   # Analyze top contributors and return team assignments
@@ -69,6 +70,12 @@ class Archsight::Import::TeamMatcher
     if name
       normalized_name = normalize_name(name)
       team = @name_to_team[normalized_name]
+      return team if team
+    end
+
+    # Try corporate username pattern match (e.g. akrieg-ionos -> Alexander Krieg)
+    if name
+      team = pattern_match_username(name)
       return team if team
     end
 
@@ -191,5 +198,83 @@ class Archsight::Import::TeamMatcher
         .downcase
         .gsub(/\s+/, " ")
         .strip
+  end
+
+  # Match git author name as corporate username pattern {first_initial}{lastname}[-ionos]
+  # e.g. "akrieg-ionos" -> initial "a", lastname "krieg" -> matches "Alexander Krieg"
+  def pattern_match_username(name)
+    username = name.downcase.strip
+    username = username.delete_suffix("-ionos")
+    return nil if username.length < 3
+
+    initial = username[0]
+    lastname = username[1..]
+    return nil if lastname.length < 3
+
+    candidates = @member_identities.select do |member|
+      lastname_match = (member[:lastname] == lastname || member[:email_lastname] == lastname)
+      initial_match = member[:firstname]&.start_with?(initial)
+      lastname_match && initial_match
+    end
+
+    teams = candidates.map { |c| c[:team] }.uniq
+    return teams.first if teams.size == 1
+
+    nil
+  end
+
+  # Build identity records for corporate username pattern matching
+  def build_member_identities
+    identities = []
+
+    @teams.each do |team|
+      team_name = team.name
+      all_entries = parse_name_email_pairs(team.annotations["team/members"]) +
+                    parse_name_email_pairs(team.annotations["team/lead"])
+
+      all_entries.each do |entry|
+        name_parts = entry[:name]&.downcase&.split(/\s+/)
+        next unless name_parts&.size&.>=(2)
+
+        firstname = name_parts.first
+        lastname = name_parts.last
+
+        email_parts = entry[:email]&.split("@")&.first&.split(/[.\-]/)
+        email_lastname = email_parts&.last&.downcase
+
+        identities << { team: team_name, firstname: firstname, lastname: lastname, email_lastname: email_lastname }
+      end
+    end
+
+    identities
+  end
+
+  # Parse name and email pairs from team annotation
+  # Returns array of { name:, email: } hashes from "Name <email>" format
+  def parse_name_email_pairs(value)
+    return [] if value.nil? || value.empty?
+
+    pairs = []
+
+    value.split(/[,\n]/).each do |entry|
+      entry = entry.strip
+      next if entry.empty?
+
+      name = nil
+      email = nil
+
+      if (match = entry.match(/^([^<]+)<([^>]+)>/))
+        name = match[1].strip
+        email = match[2].strip
+      elsif entry.include?("@")
+        email = entry.strip
+      else
+        name = entry.strip
+      end
+
+      pairs << { name: name, email: email } if name || email
+    end
+
+    pairs
   end
 end
