@@ -212,7 +212,7 @@ class Archsight::Import::TeamMatcher
     return nil if lastname.length < 3
 
     candidates = @member_identities.select do |member|
-      lastname_match = (member[:lastname] == lastname || member[:email_lastname] == lastname)
+      lastname_match = member[:lastname] == lastname || member[:email_lastname] == lastname
       initial_match = member[:firstname]&.start_with?(initial)
       lastname_match && initial_match
     end
@@ -239,7 +239,8 @@ class Archsight::Import::TeamMatcher
         firstname = name_parts.first
         lastname = name_parts.last
 
-        email_parts = entry[:email]&.split("@")&.first&.split(/[.\-]/)
+        email_prefix = entry[:email]&.split("@")&.first
+        email_parts = email_prefix&.split(/[.-]/)
         email_lastname = email_parts&.last&.downcase
 
         identities << { team: team_name, firstname: firstname, lastname: lastname, email_lastname: email_lastname }
