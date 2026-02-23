@@ -76,6 +76,7 @@ class Archsight::Web::Application < Sinatra::Base
     mcp_server.register_tool(Archsight::MCP::QueryTool)
     mcp_server.register_tool(Archsight::MCP::AnalyzeResourceTool)
     mcp_server.register_tool(Archsight::MCP::ResourceDocTool)
+    mcp_server.register_tool(Archsight::MCP::ExecuteAnalysisTool)
 
     use FastMcp::Transports::RackTransport, mcp_server,
         path_prefix: "/mcp",

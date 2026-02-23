@@ -2,6 +2,7 @@
 
 require_relative "../test_helper"
 require "archsight/mcp"
+require "archsight/analysis"
 require "json"
 
 class McpToolsTest < Minitest::Test
@@ -32,6 +33,22 @@ class McpToolsTest < Minitest::Test
              "Kubernetes:RestAPI")
     @db.link("ApplicationComponent", "MyService", :realizedThrough, :technologyArtifacts, "TechnologyArtifact",
              "repo-active")
+
+    # Create test Analysis resources
+    @db.add_instance("Analysis", "Analysis:Test:Simple", {
+                       "analysis/description" => "A simple test analysis",
+                       "analysis/handler" => "ruby",
+                       "analysis/timeout" => "10s",
+                       "analysis/script" => 'heading("Test Results"); info("Analysis completed")'
+                     })
+    @db.add_instance("Analysis", "Analysis:Test:NoScript", {
+                       "analysis/description" => "Analysis without a script"
+                     })
+    @db.add_instance("Analysis", "Analysis:Test:Failing", {
+                       "analysis/description" => "Analysis that raises an error",
+                       "analysis/handler" => "ruby",
+                       "analysis/script" => 'raise "Something went wrong"'
+                     })
 
     # Inject mock database
     Archsight::MCP.db = @db
@@ -296,6 +313,85 @@ class McpToolsTest < Minitest::Test
 
     assert result.key?("error")
     assert_match(/Unknown resource kind/, result["message"])
+  end
+
+  # ExecuteAnalysisTool tests
+
+  def test_execute_analysis_tool_list_mode
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool)
+
+    assert_equal 3, result["total"]
+    names = result["analyses"].map { |a| a["name"] }
+
+    assert_includes names, "Analysis:Test:Simple"
+    assert_includes names, "Analysis:Test:NoScript"
+    assert_includes names, "Analysis:Test:Failing"
+  end
+
+  def test_execute_analysis_tool_list_includes_metadata
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool)
+
+    simple = result["analyses"].find { |a| a["name"] == "Analysis:Test:Simple" }
+
+    assert_equal "A simple test analysis", simple["description"]
+    assert_equal "ruby", simple["handler"]
+    assert_equal "10s", simple["timeout"]
+  end
+
+  def test_execute_analysis_tool_runs_script
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:Simple")
+
+    assert_equal "Analysis:Test:Simple", result["name"]
+    assert result["success"]
+    assert_includes result["output"], "Test Results"
+    assert_includes result["output"], "Analysis completed"
+  end
+
+  def test_execute_analysis_tool_not_found
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Nonexistent")
+
+    assert result.key?("error")
+    assert_match(/not found/, result["message"])
+  end
+
+  def test_execute_analysis_tool_no_script_error
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:NoScript")
+
+    assert_equal "Analysis:Test:NoScript", result["name"]
+    refute result["success"]
+    assert_match(/No script/, result["error"])
+  end
+
+  def test_execute_analysis_tool_script_failure
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:Failing")
+
+    assert_equal "Analysis:Test:Failing", result["name"]
+    refute result["success"]
+    assert_match(/Something went wrong/, result["error"])
+  end
+
+  def test_execute_analysis_tool_includes_duration
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:Simple")
+
+    assert result.key?("duration")
+    assert_kind_of Float, result["duration"]
+  end
+
+  def test_execute_analysis_tool_verbose_mode
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:Simple", verbose: true)
+
+    assert result["success"]
+    assert_includes result["output"], "Test Results"
+  end
+
+  def test_execute_analysis_tool_success_metadata
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:Simple")
+
+    assert result.key?("has_findings")
+    assert result.key?("warning_count")
+    assert result.key?("error_count")
+    assert_equal 0, result["warning_count"]
+    assert_equal 0, result["error_count"]
   end
 
   # Mock Database class
