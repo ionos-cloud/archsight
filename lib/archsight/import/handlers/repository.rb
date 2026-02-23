@@ -18,6 +18,7 @@ require_relative "../team_matcher"
 #   import/config/sccPath - Optional path to scc binary (default: scc)
 #   import/config/fallbackTeam - Optional team name when no contributor match found
 #   import/config/botTeam - Optional team name for bot-only repositories
+#   import/config/corporateAffixes - Optional comma-separated corporate username affixes for team matching (e.g., "ionos,1and1")
 class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
   def execute
     @path = config("path")
@@ -256,7 +257,8 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
   def match_teams(top_contributors, activity_status)
     return nil unless database && top_contributors&.any?
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    affixes = config("corporateAffixes")&.split(",")&.map(&:strip) || []
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: affixes)
     result = matcher.analyze(top_contributors)
 
     # Apply fallbacks from config
