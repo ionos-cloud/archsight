@@ -121,14 +121,90 @@ class GithubHandlerTest < Minitest::Test
     assert_includes error.message, "nonexistent-org"
   end
 
+  def test_propagates_team_config_to_child_imports
+    stub_request(:get, "https://api.github.com/orgs/test-org/repos?page=1&per_page=100")
+      .with(headers: {
+              "Accept" => "application/vnd.github+json",
+              "Authorization" => "Bearer test-token",
+              "X-Github-Api-Version" => "2022-11-28"
+            })
+      .to_return(
+        status: 200,
+        body: [
+          {
+            "name" => "repo1",
+            "archived" => false,
+            "visibility" => "private",
+            "ssh_url" => "git@github.com:test-org/repo1.git",
+            "html_url" => "https://github.com/test-org/repo1"
+          }
+        ].to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    handler = create_handler(
+      org: "test-org",
+      repo_output_path: "generated/repos.yaml",
+      fallback_team: "Team:Platform",
+      bot_team: "Team:Bots",
+      corporate_affixes: "ionos,1and1"
+    )
+    handler.execute
+
+    output_path = File.join(@resources_dir, "generated", "Import_GitHub.yaml")
+
+    assert_path_exists output_path
+
+    content = File.read(output_path)
+
+    assert_includes content, "import/config/fallbackTeam: Team:Platform"
+    assert_includes content, "import/config/botTeam: Team:Bots"
+    assert_includes content, "import/config/corporateAffixes: ionos,1and1"
+  end
+
+  def test_omits_team_config_when_not_set
+    stub_request(:get, "https://api.github.com/orgs/test-org/repos?page=1&per_page=100")
+      .with(headers: {
+              "Accept" => "application/vnd.github+json",
+              "Authorization" => "Bearer test-token",
+              "X-Github-Api-Version" => "2022-11-28"
+            })
+      .to_return(
+        status: 200,
+        body: [
+          {
+            "name" => "repo1",
+            "archived" => false,
+            "visibility" => "private",
+            "ssh_url" => "git@github.com:test-org/repo1.git",
+            "html_url" => "https://github.com/test-org/repo1"
+          }
+        ].to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    handler = create_handler(org: "test-org", repo_output_path: "generated/repos.yaml")
+    handler.execute
+
+    output_path = File.join(@resources_dir, "generated", "Import_GitHub.yaml")
+    content = File.read(output_path)
+
+    refute_includes content, "fallbackTeam"
+    refute_includes content, "botTeam"
+    refute_includes content, "corporateAffixes"
+  end
+
   private
 
-  def create_handler(org:, repo_output_path: nil)
+  def create_handler(org:, repo_output_path: nil, fallback_team: nil, bot_team: nil, corporate_affixes: nil)
     annotations = {
       "import/handler" => "github"
     }
     annotations["import/config/org"] = org if org
     annotations["import/config/repoOutputPath"] = repo_output_path if repo_output_path
+    annotations["import/config/fallbackTeam"] = fallback_team if fallback_team
+    annotations["import/config/botTeam"] = bot_team if bot_team
+    annotations["import/config/corporateAffixes"] = corporate_affixes if corporate_affixes
 
     import_raw = {
       "apiVersion" => "architecture/v1alpha1",

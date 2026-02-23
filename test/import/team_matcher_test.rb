@@ -138,24 +138,24 @@ class TeamMatcherTest < Minitest::Test
 
   # --- Corporate username pattern matching tests ---
 
-  def test_pattern_match_akrieg_ionos
+  def test_pattern_match_suffix
     database = MockDatabase.new([
-                                  MockTeam.new("Team:Infra", members: "Alexander Krieg <alexander.krieg@ionos.com>")
+                                  MockTeam.new("Team:Infra", members: "Anna Knight <anna.knight@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
-    team = matcher.match_contributor("akrieg-ionos", "noreply@github.com")
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
+    team = matcher.match_contributor("aknight-ionos", "noreply@github.com")
 
     assert_equal "Team:Infra", team
   end
 
-  def test_pattern_match_mspoeri
+  def test_pattern_match_without_affix
     database = MockDatabase.new([
-                                  MockTeam.new("Team:Platform", members: "Markus Spöri <markus.spoeri@ionos.com>")
+                                  MockTeam.new("Team:Platform", members: "Martin Möller <martin.moeller@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
-    team = matcher.match_contributor("mspoeri", "noreply@github.com")
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
+    team = matcher.match_contributor("mmoeller", "noreply@github.com")
 
     assert_equal "Team:Platform", team
   end
@@ -165,11 +165,44 @@ class TeamMatcherTest < Minitest::Test
                                   MockTeam.new("Team:Dev", members: "John Smith <john.smith@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
 
     # Both with and without -ionos suffix should match
     assert_equal "Team:Dev", matcher.match_contributor("jsmith-ionos", "noreply@github.com")
     assert_equal "Team:Dev", matcher.match_contributor("jsmith", "noreply@github.com")
+  end
+
+  def test_pattern_match_prefix
+    database = MockDatabase.new([
+                                  MockTeam.new("Team:Infra", members: "Anna Knight <anna.knight@ionos.com>")
+                                ])
+
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
+    team = matcher.match_contributor("ionos-aknight", "noreply@github.com")
+
+    assert_equal "Team:Infra", team
+  end
+
+  def test_pattern_match_custom_affixes
+    database = MockDatabase.new([
+                                  MockTeam.new("Team:Dev", members: "John Smith <john.smith@example.com>")
+                                ])
+
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[acme])
+
+    assert_equal "Team:Dev", matcher.match_contributor("jsmith-acme", "noreply@github.com")
+    assert_equal "Team:Dev", matcher.match_contributor("acme-jsmith", "noreply@github.com")
+  end
+
+  def test_pattern_match_no_affixes_returns_nil
+    database = MockDatabase.new([
+                                  MockTeam.new("Team:Dev", members: "John Smith <john.smith@ionos.com>")
+                                ])
+
+    matcher = Archsight::Import::TeamMatcher.new(database)
+    team = matcher.match_contributor("jsmith-ionos", "noreply@github.com")
+
+    assert_nil team
   end
 
   def test_pattern_no_match_short_lastname
@@ -177,7 +210,7 @@ class TeamMatcherTest < Minitest::Test
                                   MockTeam.new("Team:Dev", members: "Alex Bo <alex.bo@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
     # "abo" -> initial "a", lastname "bo" (2 chars) -> too short, no match
     team = matcher.match_contributor("abo", "noreply@github.com")
 
@@ -190,7 +223,7 @@ class TeamMatcherTest < Minitest::Test
                                   MockTeam.new("Team:Beta", members: "Jane Smith <jane.smith@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
     # "jsmith" -> initial "j", lastname "smith" -> matches John AND Jane -> ambiguous
     team = matcher.match_contributor("jsmith", "noreply@github.com")
 
@@ -203,7 +236,7 @@ class TeamMatcherTest < Minitest::Test
                                   MockTeam.new("Team:ByPattern", members: "Sam Omeone <sam.omeone@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
     # Exact email match should take priority over pattern match
     team = matcher.match_contributor("someone", "someone@exact.com")
 
@@ -215,7 +248,7 @@ class TeamMatcherTest < Minitest::Test
                                   MockTeam.new("Team:Led", lead: "Peter Parker <peter.parker@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
     team = matcher.match_contributor("pparker-ionos", "noreply@github.com")
 
     assert_equal "Team:Led", team
@@ -226,7 +259,7 @@ class TeamMatcherTest < Minitest::Test
                                   MockTeam.new("Team:Dev", members: "Alice Wonder <alice.wonder@ionos.com>")
                                 ])
 
-    matcher = Archsight::Import::TeamMatcher.new(database)
+    matcher = Archsight::Import::TeamMatcher.new(database, corporate_affixes: %w[ionos])
     team = matcher.match_contributor("randomuser", "noreply@github.com")
 
     assert_nil team

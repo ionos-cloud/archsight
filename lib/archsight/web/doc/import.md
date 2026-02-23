@@ -104,8 +104,9 @@ Lists repositories from a GitLab instance and generates child Import resources.
 - `host` - GitLab host (required)
 - `exploreGroups` - If "true", explore all visible groups (default: false)
 - `repoOutputPath` - Output path for repository handler results
-- `fallbackTeam` - Default team when no contributor match found
-- `botTeam` - Team for bot-only repositories
+- `fallbackTeam` - Default team when no contributor match found (propagated to child imports)
+- `botTeam` - Team for bot-only repositories (propagated to child imports)
+- `corporateAffixes` - Comma-separated corporate username affixes for team matching, e.g., "ionos,1and1" (propagated to child imports)
 
 **Environment:**
 - `GITLAB_TOKEN` - Personal access token (required)
@@ -119,6 +120,9 @@ Lists repositories from a GitHub organization and generates child Import resourc
 **Configuration:**
 - `org` - GitHub organization (required)
 - `repoOutputPath` - Output path for repository handler results
+- `fallbackTeam` - Default team when no contributor match found (propagated to child imports)
+- `botTeam` - Team for bot-only repositories (propagated to child imports)
+- `corporateAffixes` - Comma-separated corporate username affixes for team matching, e.g., "ionos,1and1" (propagated to child imports)
 
 **Environment:**
 - `GITHUB_TOKEN` - GitHub Personal Access Token (required)
@@ -140,6 +144,7 @@ Analyzes a single git repository and generates a TechnologyArtifact resource.
 - `sccPath` - Path to scc binary (default: scc)
 - `fallbackTeam` - Default team when no contributor match found
 - `botTeam` - Team for bot-only repositories
+- `corporateAffixes` - Comma-separated corporate username affixes for team matching (e.g., "ionos,1and1"). Enables matching git usernames like `jsmith-ionos` or `ionos-jsmith` to team member "John Smith". Without this, corporate username pattern matching is inactive.
 
 **Output:** Generates one TechnologyArtifact resource with:
 - Code analysis metrics (languages, LOC, estimated cost)
@@ -287,6 +292,7 @@ metadata:
     import/config/host: gitlab.company.com
     import/config/repoOutputPath: generated/repositories.yaml
     import/config/fallbackTeam: "Team:Platform"
+    import/config/corporateAffixes: "ionos,1and1"
 spec: {}
 ```
 
@@ -305,6 +311,8 @@ metadata:
     import/config/gitUrl: git@gitlab.company.com:company/my-service.git
     import/config/archived: "false"
     import/config/visibility: internal
+    import/config/fallbackTeam: "Team:Platform"
+    import/config/corporateAffixes: "ionos,1and1"
     import/outputPath: generated/repositories.yaml
 spec: {}
 ---

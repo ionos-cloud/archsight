@@ -15,14 +15,12 @@ class Archsight::Import::TeamMatcher
   # Teams to ignore when matching (bots, unknown, etc.)
   IGNORED_TEAMS = %w[Bot:Team No:Team Team:Unknown Team:Bot].freeze
 
-  # Corporate username suffixes to strip before pattern matching
-  CORPORATE_USERNAME_SUFFIXES = %w[-ionos].freeze
-
   # Team annotation keys that contain member/lead information
   TEAM_ANNOTATION_KEYS = %w[team/members team/lead].freeze
 
-  def initialize(database)
+  def initialize(database, corporate_affixes: [])
     @database = database
+    @corporate_affixes = corporate_affixes
     @teams = load_teams
     @email_to_team = build_email_index
     @name_to_team = build_name_index
@@ -79,7 +77,7 @@ class Archsight::Import::TeamMatcher
       return team if team
     end
 
-    # Try corporate username pattern match (e.g. akrieg-ionos -> Alexander Krieg)
+    # Try corporate username pattern match (e.g. jsmith-ionos -> John Smith)
     if name
       team = pattern_match_username(name)
       return team if team
@@ -159,8 +157,8 @@ class Archsight::Import::TeamMatcher
         .strip
   end
 
-  # Match git author name as corporate username pattern {first_initial}{lastname}[-ionos]
-  # e.g. "akrieg-ionos" -> initial "a", lastname "krieg" -> matches "Alexander Krieg"
+  # Match git author name as corporate username pattern {first_initial}{lastname}[-affix] or [affix-]{first_initial}{lastname}
+  # e.g. "jsmith-ionos" or "ionos-jsmith" -> initial "j", lastname "smith" -> matches "John Smith"
   #
   # Limitations: Multi-part names (e.g. "Hans von Braun") only match by the last
   # name part ("braun"), so "hvonbraun" would not match. Hyphenated lastnames
@@ -168,8 +166,13 @@ class Archsight::Import::TeamMatcher
   def pattern_match_username(name)
     username = name.downcase.strip
     return nil unless username.match?(/\A[a-z0-9][-a-z0-9]*\z/)
+    return nil if @corporate_affixes.empty?
 
-    CORPORATE_USERNAME_SUFFIXES.each { |suffix| username = username.delete_suffix(suffix) }
+    @corporate_affixes.each do |affix|
+      clean = affix.delete_prefix("-").delete_suffix("-")
+      username = username.delete_suffix("-#{clean}")
+      username = username.delete_prefix("#{clean}-")
+    end
     return nil if username.length < 3
 
     initial = username[0]

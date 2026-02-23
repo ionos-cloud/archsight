@@ -19,6 +19,9 @@ require_relative "../registry"
 #   import/config/sslFingerprint - SSL certificate fingerprint for pinning (SHA256, colon-separated hex)
 #   import/config/repoOutputPath - Output path for repository handler results (e.g., "generated/repositories.yaml")
 #   import/config/childCacheTime - Cache time for generated child imports (e.g., "1h", "30m")
+#   import/config/fallbackTeam - Default team when no contributor match found (propagated to child imports)
+#   import/config/botTeam - Team for bot-only repositories (propagated to child imports)
+#   import/config/corporateAffixes - Comma-separated corporate username affixes for team matching (propagated to child imports)
 #
 # Environment:
 #   GITLAB_TOKEN - GitLab personal access token (required)
@@ -177,15 +180,20 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
       child_annotations["import/outputPath"] = @repo_output_path if @repo_output_path
       child_annotations["import/cacheTime"] = @child_cache_time if @child_cache_time
 
+      child_config = {
+        "path" => repo_path,
+        "gitUrl" => git_url,
+        "archived" => project["archived"].to_s,
+        "visibility" => project["visibility"] || "internal"
+      }
+      child_config["fallbackTeam"] = config("fallbackTeam") if config("fallbackTeam")
+      child_config["botTeam"] = config("botTeam") if config("botTeam")
+      child_config["corporateAffixes"] = config("corporateAffixes") if config("corporateAffixes")
+
       import_yaml(
         name: "Import:Repo:gitlab:#{dir_name}",
         handler: "repository",
-        config: {
-          "path" => repo_path,
-          "gitUrl" => git_url,
-          "archived" => project["archived"].to_s,
-          "visibility" => project["visibility"] || "internal"
-        },
+        config: child_config,
         annotations: child_annotations
       )
     end

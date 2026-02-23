@@ -21,4 +21,5 @@ metadata:
     import/config/path: ~/.cache/archsight/git/github/ionos-cloud/archsight
     import/config/gitUrl: git@github.com:ionos-cloud/archsight.git
     import/config/visibility: open-source
+    import/config/corporateAffixes: "ionos,1and1"
 spec: {}
