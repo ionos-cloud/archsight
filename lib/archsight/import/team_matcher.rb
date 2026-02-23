@@ -15,6 +15,12 @@ class Archsight::Import::TeamMatcher
   # Teams to ignore when matching (bots, unknown, etc.)
   IGNORED_TEAMS = %w[Bot:Team No:Team Team:Unknown Team:Bot].freeze
 
+  # Corporate username suffixes to strip before pattern matching
+  CORPORATE_USERNAME_SUFFIXES = %w[-ionos].freeze
+
+  # Team annotation keys that contain member/lead information
+  TEAM_ANNOTATION_KEYS = %w[team/members team/lead].freeze
+
   def initialize(database)
     @database = database
     @teams = load_teams
@@ -94,21 +100,22 @@ class Archsight::Import::TeamMatcher
     end
   end
 
+  # Yields (team_name, annotation_value) for each team/members and team/lead annotation
+  def each_team_annotation
+    @teams.each do |team|
+      team_name = team.name
+      TEAM_ANNOTATION_KEYS.each do |key|
+        value = team.annotations[key]
+        yield team_name, value if value && !value.empty?
+      end
+    end
+  end
+
   def build_email_index
     index = {}
 
-    @teams.each do |team|
-      team_name = team.name
-
-      # Extract emails from team/members annotation
-      members = team.annotations["team/members"]
-      parse_email_list(members).each do |email|
-        index[email.downcase] = team_name
-      end
-
-      # Extract email from team/lead annotation
-      lead = team.annotations["team/lead"]
-      parse_email_list(lead).each do |email|
+    each_team_annotation do |team_name, value|
+      parse_email_list(value).each do |email|
         index[email.downcase] = team_name
       end
     end
@@ -119,19 +126,8 @@ class Archsight::Import::TeamMatcher
   def build_name_index
     index = {}
 
-    @teams.each do |team|
-      team_name = team.name
-
-      # Extract names from team/members annotation
-      members = team.annotations["team/members"]
-      parse_name_list(members).each do |name|
-        normalized = normalize_name(name)
-        index[normalized] = team_name if normalized && !normalized.empty?
-      end
-
-      # Extract name from team/lead annotation
-      lead = team.annotations["team/lead"]
-      parse_name_list(lead).each do |name|
+    each_team_annotation do |team_name, value|
+      parse_name_list(value).each do |name|
         normalized = normalize_name(name)
         index[normalized] = team_name if normalized && !normalized.empty?
       end
@@ -143,50 +139,13 @@ class Archsight::Import::TeamMatcher
   # Parse email addresses from team annotation
   # Supports formats: "Name <email>", "email", or comma/newline separated lists
   def parse_email_list(value)
-    return [] if value.nil? || value.empty?
-
-    emails = []
-
-    # Split by comma or newline
-    value.split(/[,\n]/).each do |entry|
-      entry = entry.strip
-      next if entry.empty?
-
-      # Try to extract email from "Name <email>" format
-      if (match = entry.match(/<([^>]+)>/))
-        emails << match[1].strip
-      elsif entry.include?("@")
-        # Plain email address
-        emails << entry
-      end
-    end
-
-    emails
+    parse_name_email_pairs(value).filter_map { |pair| pair[:email] }
   end
 
   # Parse names from team annotation
   # Supports formats: "Name <email>", "First Last", or comma/newline separated lists
   def parse_name_list(value)
-    return [] if value.nil? || value.empty?
-
-    names = []
-
-    # Split by comma or newline
-    value.split(/[,\n]/).each do |entry|
-      entry = entry.strip
-      next if entry.empty?
-
-      # Try to extract name from "Name <email>" format
-      if (match = entry.match(/^([^<]+)</))
-        name = match[1].strip
-        names << name unless name.empty?
-      elsif !entry.include?("@")
-        # Plain name (no email)
-        names << entry
-      end
-    end
-
-    names
+    parse_name_email_pairs(value).filter_map { |pair| pair[:name] }
   end
 
   # Normalize name for matching
@@ -202,9 +161,15 @@ class Archsight::Import::TeamMatcher
 
   # Match git author name as corporate username pattern {first_initial}{lastname}[-ionos]
   # e.g. "akrieg-ionos" -> initial "a", lastname "krieg" -> matches "Alexander Krieg"
+  #
+  # Limitations: Multi-part names (e.g. "Hans von Braun") only match by the last
+  # name part ("braun"), so "hvonbraun" would not match. Hyphenated lastnames
+  # (e.g. "Meyer-Schmidt") only match the full hyphenated form or the email lastname.
   def pattern_match_username(name)
     username = name.downcase.strip
-    username = username.delete_suffix("-ionos")
+    return nil unless username.match?(/\A[a-z0-9][-a-z0-9]*\z/)
+
+    CORPORATE_USERNAME_SUFFIXES.each { |suffix| username = username.delete_suffix(suffix) }
     return nil if username.length < 3
 
     initial = username[0]
@@ -227,14 +192,10 @@ class Archsight::Import::TeamMatcher
   def build_member_identities
     identities = []
 
-    @teams.each do |team|
-      team_name = team.name
-      all_entries = parse_name_email_pairs(team.annotations["team/members"]) +
-                    parse_name_email_pairs(team.annotations["team/lead"])
-
-      all_entries.each do |entry|
+    each_team_annotation do |team_name, value|
+      parse_name_email_pairs(value).each do |entry|
         name_parts = entry[:name]&.downcase&.split(/\s+/)
-        next unless name_parts&.size&.>=(2)
+        next if name_parts.nil? || name_parts.size < 2
 
         firstname = name_parts.first
         lastname = name_parts.last
