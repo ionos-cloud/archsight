@@ -158,6 +158,54 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              title: "Deployment Container Privileges",
              enum: %w[unprivileged privileged]
 
+  # License information
+  annotation "license/spdx",
+             description: "SPDX license identifier",
+             title: "License",
+             filter: :word,
+             sidebar: false,
+             enum: %w[Apache-2.0 MIT BSD-3-Clause BSD-2-Clause GPL-3.0 GPL-2.0 LGPL-3.0
+                      LGPL-2.1 MPL-2.0 ISC AGPL-3.0 Unlicense CC0-1.0 BSL-1.0 EUPL-1.2
+                      0BSD CDDL-1.0 Ruby NOASSERTION proprietary unknown]
+  annotation "license/file",
+             description: "License file path",
+             title: "License File",
+             sidebar: false
+  annotation "license/category",
+             description: "License category",
+             title: "License Category",
+             filter: :word,
+             enum: %w[permissive copyleft weak-copyleft proprietary unknown]
+  annotation "license/dependencies/count",
+             description: "Total dependencies",
+             title: "Dependencies",
+             type: Integer
+  annotation "license/dependencies/ecosystems",
+             description: "Detected dependency ecosystems",
+             title: "Ecosystems",
+             filter: :list,
+             sidebar: false
+  annotation "license/dependencies/licenses",
+             description: "Dependency license types",
+             title: "Dependency Licenses",
+             filter: :list,
+             sidebar: false
+  annotation "license/dependencies/copyleft",
+             description: "Copyleft dependencies present",
+             title: "Copyleft Dependencies",
+             filter: :word,
+             sidebar: false,
+             enum: %w[true false unknown]
+  annotation "license/dependencies/risk",
+             description: "License risk level",
+             title: "License Risk",
+             filter: :word,
+             sidebar: false,
+             enum: %w[low weak-copyleft copyleft unknown]
+  annotation "license/dependencies/*/count",
+             description: "Dependencies per license type",
+             sidebar: false
+
   # Contributor metrics (unique counts, stored during import)
   annotation "activity/contributors/6m",
              title: "Contributors (6 months)",

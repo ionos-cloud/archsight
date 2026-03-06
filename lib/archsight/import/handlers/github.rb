@@ -17,6 +17,7 @@ require_relative "../registry"
 #   import/config/fallbackTeam - Default team when no contributor match found (propagated to child imports)
 #   import/config/botTeam - Team for bot-only repositories (propagated to child imports)
 #   import/config/corporateAffixes - Comma-separated corporate username affixes for team matching (propagated to child imports)
+#   import/config/defaultVisibility - Default visibility for non-public repos (default: "internal")
 #
 # Environment:
 #   GITHUB_TOKEN - GitHub Personal Access Token (required)
@@ -38,6 +39,7 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
 
     @repo_output_path = config("repoOutputPath")
     @child_cache_time = config("childCacheTime")
+    @default_visibility = config("defaultVisibility", default: "internal")
     @target_dir = File.join(Dir.home, ".cache", "archsight", "git", "github", @org)
 
     # Fetch all repositories with pagination
@@ -143,7 +145,7 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
         "path" => repo_path,
         "gitUrl" => git_url,
         "archived" => repo["isArchived"].to_s,
-        "visibility" => visibility == "public" ? "open-source" : "internal"
+        "visibility" => visibility == "public" ? "open-source" : @default_visibility
       }
       child_config["fallbackTeam"] = config("fallbackTeam") if config("fallbackTeam")
       child_config["botTeam"] = config("botTeam") if config("botTeam")

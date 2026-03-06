@@ -1,0 +1,72 @@
+- instance = db.instance_by_kind(@kind, @instance)
+- return unless instance
+- spdx = instance.annotations['license/spdx']
+- return unless spdx
+
+- category = instance.annotations['license/category'] || 'unknown'
+- dep_count = instance.annotations['license/dependencies/count']
+- ecosystems = (instance.annotations['license/dependencies/ecosystems'] || '').split(',').map(&:strip).reject(&:empty?)
+- risk = instance.annotations['license/dependencies/risk'] || 'unknown'
+- copyleft = instance.annotations['license/dependencies/copyleft'] || 'unknown'
+- dep_licenses = (instance.annotations['license/dependencies/licenses'] || '').split(',').map(&:strip).reject(&:empty?)
+
+%tr
+  %th{scope: 'row'} License
+  %td
+    .activity-summary
+      .activity-item
+        %i.iconoir-shield-check
+        - badge_class = case category
+        - when 'permissive' then 'badge-success'
+        - when 'weak-copyleft' then 'badge-warning'
+        - when 'copyleft' then 'badge-danger'
+        - else 'badge-secondary'
+        %a.badge{class: badge_class, **filter_link_attrs('license/spdx', spdx)}
+          = spdx
+        - unless category == 'unknown'
+          %a.badge.badge-outline{**filter_link_attrs('license/category', category)}
+            = category
+
+      - if dep_count && dep_count.to_i > 0
+        .activity-item
+          %i.iconoir-box
+          %span.activity-label Dependencies:
+          %span.activity-value= dep_count
+          - ecosystems.each do |eco|
+            %a.badge.badge-info{**filter_link_attrs('license/dependencies/ecosystems', eco)}
+              = eco
+          - risk_class = case risk
+          - when 'low' then 'badge-success'
+          - when 'weak-copyleft' then 'badge-warning'
+          - when 'copyleft' then 'badge-danger'
+          - else 'badge-secondary'
+          - risk_title = case risk
+          - when 'copyleft' then 'Copyleft dependencies (GPL, AGPL) or >50% unknown licenses'
+          - when 'weak-copyleft' then 'Weak-copyleft dependencies (LGPL, MPL) present'
+          - when 'low' then 'All dependencies have known permissive licenses'
+          - else 'No dependency license data available'
+          %a.badge{class: risk_class, title: risk_title, **filter_link_attrs('license/dependencies/risk', risk)}
+            = "Risk: #{risk}"
+          - if copyleft == 'true'
+            %a.badge.badge-warning{**filter_link_attrs('license/dependencies/copyleft', 'true')}
+              Copyleft present
+
+      - known_licenses = dep_licenses.reject { |lic| lic == 'unknown' }
+      - if known_licenses.any?
+        - sorted_licenses = known_licenses.map { |lic| [lic, (instance.annotations["license/dependencies/#{lic}/count"] || 0).to_i] }.sort_by { |_, c| -c }
+        .activity-item
+          %i.iconoir-list
+          %span.activity-label Types:
+          - visible = sorted_licenses.first(5)
+          - hidden = sorted_licenses.drop(5)
+          - visible.each do |lic, count|
+            %a.badge.badge-outline{**filter_link_attrs('license/dependencies/licenses', lic)}
+              = count > 0 ? "#{lic} (#{count})" : lic
+          - if hidden.any?
+            %details.license-details-inline
+              %summary.badge.badge-secondary
+                = "+#{hidden.size} more"
+              .license-overflow
+                - hidden.each do |lic, count|
+                  %a.badge.badge-outline{**filter_link_attrs('license/dependencies/licenses', lic)}
+                    = count > 0 ? "#{lic} (#{count})" : lic

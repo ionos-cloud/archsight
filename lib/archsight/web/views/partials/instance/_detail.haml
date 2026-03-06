@@ -62,6 +62,7 @@
         != haml :'partials/artifact/_deployment'
         != haml :'partials/artifact/_workflow'
         != haml :'partials/artifact/_agentic'
+        != haml :'partials/artifact/_licenses'
         != haml :'partials/artifact/_links'
         - instance.annotations.each do |k, v|
           - next if k == 'scc/languages' || k =~ /^scc\/language\/.+\/loc$/
@@ -73,6 +74,7 @@
           - next if k == 'workflow/platforms'
           - next if k == 'workflow/types'
           - next if k == 'agentic/tools'
+          - next if k.start_with?('license/')
           - next if k.start_with?('link/')
           - next if k.start_with?('team/')
           - next if k.start_with?('jira/')

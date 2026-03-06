@@ -989,6 +989,27 @@ a.team-member:hover {
   color: var(--muted-color);
 }
 
+/* License inline details */
+.license-details-inline {
+  display: inline;
+}
+
+.license-details-inline summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.license-details-inline summary::-webkit-details-marker {
+  display: none;
+}
+
+.license-overflow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
 /* Common info section cell padding */
 .info-section-cell {
   padding: 0.5rem 1rem;
