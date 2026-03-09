@@ -2,7 +2,6 @@
 
 require "sinatra/base"
 require "kramdown"
-require "haml"
 require "erb"
 require "fast_mcp"
 
@@ -55,9 +54,7 @@ class Archsight::Web::Application < Sinatra::Base
   end
 
   configure do
-    set :views, File.join(__dir__, "views")
     set :public_folder, File.join(__dir__, "public")
-    set :haml, format: :html5
     set :server, :puma
     set :reload_enabled, true
     set :inline_edit_enabled, false
@@ -83,7 +80,7 @@ class Archsight::Web::Application < Sinatra::Base
         localhost_only: false
   end
 
-  helpers Archsight::GraphvisHelper, Archsight::GraphvisRenderer, Archsight::Helpers
+  helpers Archsight::GraphvisRenderer, Archsight::Helpers
 
   # Register API modules
   register Archsight::Web::API::Routes
@@ -156,168 +153,83 @@ class Archsight::Web::Application < Sinatra::Base
     def render_analysis_section(section)
       Archsight::Helpers.render_analysis_section(section, markdown_renderer: method(:markdown))
     end
+
+    # Serve the Vue SPA shell (built by Vite)
+    def serve_vue
+      vue_path = File.join(settings.public_folder, "vue.html")
+      content_type :html
+      if File.exist?(vue_path)
+        File.read(vue_path)
+      else
+        "<!DOCTYPE html><html><body><p>Vue frontend not built. Run: cd frontend &amp;&amp; npm run build</p></body></html>"
+      end
+    end
   end
 
   get "/" do
-    haml :index
+    serve_vue
   end
 
   get "/reload" do
     halt 404, "Reload is disabled" unless settings.reload_enabled
 
     Archsight::Web::Application.reload!
-    if params["redirect"]&.start_with?("/")
+    if request.env["HTTP_ACCEPT"]&.include?("application/json") || request.xhr?
+      content_type :json
+      JSON.generate({ ok: true })
+    elsif params["redirect"]&.start_with?("/")
       redirect params["redirect"]
     else
       redirect "/"
     end
   rescue Archsight::ResourceError => e
-    @error = e
-    haml :index
+    if request.env["HTTP_ACCEPT"]&.include?("application/json") || request.xhr?
+      content_type :json
+      status 422
+      JSON.generate({
+                      error: e.message,
+                      path: relative_error_path(e.ref.path),
+                      line_no: e.ref.line_no,
+                      context: error_context_lines(e.ref.path, e.ref.line_no)
+                    })
+    else
+      content_type :html
+      path = ERB::Util.html_escape(relative_error_path(e.ref.path))
+      msg = ERB::Util.html_escape(e.message)
+      "<!DOCTYPE html><html><body><h3>Error: #{msg}</h3><p>#{path} line #{e.ref.line_no}</p><a href='/'>Back</a></body></html>"
+    end
   end
 
   get "/doc/resources/:filename" do
-    filename = params["filename"].gsub(/[^a-zA-Z0-9_-]/, "") # sanitize
-    # Convert snake_case to PascalCase for resource kind
-    kind_name = filename.split("_").map(&:capitalize).join
-
-    begin
-      content = Archsight::Documentation.generate(kind_name)
-      @doc_content = markdown(content)
-    rescue StandardError
-      halt 404, "Documentation not found"
-    end
-
-    if request.env["HTTP_HX_REQUEST"]
-      "<article>#{@doc_content}</article>"
-    else
-      haml :index
-    end
+    serve_vue
   end
 
   get "/doc/:filename" do
-    filename = params["filename"].gsub(/[^a-zA-Z0-9_-]/, "") # sanitize
-
-    # Check for ERB template first, then plain markdown
-    erb_path = File.join(settings.views, "..", "doc", "#{filename}.md.erb")
-    md_path = File.join(settings.views, "..", "doc", "#{filename}.md")
-
-    content = if File.exist?(erb_path)
-                template = ERB.new(File.read(erb_path))
-                template.result(binding)
-              elsif File.exist?(md_path)
-                File.read(md_path)
-              else
-                halt 404, "Documentation not found"
-              end
-
-    @doc_content = markdown(content)
-
-    if request.env["HTTP_HX_REQUEST"]
-      "<article>#{@doc_content}</article>"
-    else
-      haml :index
-    end
+    serve_vue
   end
 
-  # Shared search logic for both GET and POST
-  def perform_search
-    start_time = Time.now
-    if (@q = params["q"])
-      @instances = db.query(@q)
-    elsif (@tag = params["tag"]) && (@value = params["value"])
-      @method = params["method"] || "=="
-      # Build query string - quote value for string operators, leave unquoted for numeric
-      quoted_value = if %w[> < >= <=].include?(@method)
-                       @value # Numeric comparison, no quotes
-                     else
-                       "\"#{@value.gsub('"', '\\"')}\"" # String comparison, quote it
-                     end
-      @q = "#{@tag} #{@method} #{quoted_value}"
-      @instances = db.query(@q)
-    else
-      @instances = []
-    end
-    if (@kind = params["kind"])
-      @instances = @instances.select { |i| i.kind == @kind } if @kind
-    end
-    @search_time_ms = ((Time.now - start_time) * 1000).round(2)
-  rescue Archsight::Query::QueryError => e
-    @query_error = e
-    @search_time_ms = ((Time.now - start_time) * 1000).round(2)
-    @q = params["q"] || "#{params["tag"]} #{params["method"] || "=="} \"#{params["value"]}\""
-  end
-
-  # GET /search - for direct URL access, bookmarks, and browser history
+  # GET /search - for direct URL access, Vue SPA handles rendering
   get "/search" do
-    perform_search
-    haml :index
-  end
-
-  # POST /search - for HTMX requests
-  post "/search" do
-    perform_search
-    haml :search
-  end
-
-  get "/svg" do
-    content_type :svg
-    create_graph_all(db, :draw_svg)
+    serve_vue
   end
 
   get "/dot" do
     content_type "text/plain"
-    create_graph_all(db, :draw_dot)
+    create_graph_all(db)
   end
 
   get "/kinds/:kind" do
-    @kind = params["kind"]
-    haml :index
+    serve_vue
   end
 
   get "/kinds/:kind/instances/:instance" do
-    @kind = params["kind"]
-    @instance = params["instance"]
-    haml :index
-  end
-
-  get "/kinds/:kind/instances/:instance/svg" do
-    @kind = params["kind"]
-    @instance = params["instance"]
-    content_type :svg
-    create_graph_one(db, @kind, @instance, :draw_svg)
+    serve_vue
   end
 
   get "/kinds/:kind/instances/:instance/dot" do
     @kind = params["kind"]
     @instance = params["instance"]
     content_type "text/plain"
-    create_graph_one(db, @kind, @instance, :draw_dot)
-  end
-
-  # Execute an Analysis and return HTML results
-  post "/kinds/Analysis/instances/:instance/execute" do
-    require "archsight/analysis"
-
-    @instance = params["instance"]
-    analysis = db.instance_by_kind("Analysis", @instance)
-
-    unless analysis
-      return haml_inline('.analysis-error
-  %i.iconoir-warning-triangle
-  Analysis not found: #{@instance}')
-    end
-
-    executor = Archsight::Analysis::Executor.new(db)
-    result = executor.execute(analysis)
-
-    haml :"partials/instance/_analysis_result", locals: { result: result }
-  end
-
-  private
-
-  # Helper for inline HAML rendering
-  def haml_inline(template)
-    haml template
+    create_graph_one(db, @kind, @instance)
   end
 end

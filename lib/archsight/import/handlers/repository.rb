@@ -434,9 +434,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     # Non-public repos with unknown license are de-facto proprietary
     # (all-rights-reserved), not "unknown"
     category = license_data["license_category"]
-    if category == "unknown" && !%w[public open-source].include?(visibility)
-      category = "proprietary"
-    end
+    category = "proprietary" if category == "unknown" && !%w[public open-source].include?(visibility)
     annotations["license/category"] = category if category
 
     if license_data["dependency_count"]&.positive?

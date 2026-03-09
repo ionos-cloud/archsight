@@ -49,7 +49,7 @@ module Archsight
       graph.edge gname(a_inst), gname(b_inst), label: label, fontname: "#{FONT} italic"
     end
 
-    def create_graph_all(db, method = :draw_dot, root_kinds: nil, max_depth: 3, allowed_kinds: nil)
+    def create_graph_all(db, root_kinds: nil, max_depth: 3, allowed_kinds: nil)
       root_kinds ||= [Archsight::Resources["BusinessProduct"], Archsight::Resources["BusinessProcess"]]
 
       # Default allowed kinds for overview: Products, Processes, Services, and Teams
@@ -61,7 +61,7 @@ module Archsight
       ]
       allowed_kinds_set = allowed_kinds.to_set
 
-      Archsight::Graphvis.new("all").send(method) do |g|
+      Archsight::Graphvis.new("all").draw_dot do |g|
         nodes = {} # Track visited nodes
         edges = {} # Track created edges
 
@@ -104,11 +104,11 @@ module Archsight
       end
     end
 
-    def create_graph_one(db, klass_pat, name_pat, method = :draw_dot)
+    def create_graph_one(db, klass_pat, name_pat)
       name = "#{klass_pat}:#{name_pat}"
       nodes = {}
       edges = {}
-      Archsight::Graphvis.new(name).send(method) do |g|
+      Archsight::Graphvis.new(name).draw_dot do |g|
         klass = Archsight::Resources[klass_pat] || raise("kind #{klass_pat} unknown")
         instances = db.instances[klass]
         inst = instances[name_pat] || raise("name #{name_pat} for kind #{klass_pat} not found")

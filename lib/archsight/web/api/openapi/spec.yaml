@@ -99,6 +99,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/v1/kinds/{kind}/filters:
+    get:
+      summary: Get filterable annotations for a kind
+      description: |
+        Returns the list of annotations that can be used as filters for a given kind,
+        along with their available values.
+      operationId: getKindFilters
+      tags:
+        - Kinds
+      parameters:
+        - $ref: '#/components/parameters/kind'
+      responses:
+        '200':
+          description: Array of filter definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Filter'
+        '404':
+          description: Kind not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/kinds/{kind}/instances/{name}:
     get:
       summary: Get instance details
@@ -121,6 +148,30 @@ paths:
                 $ref: '#/components/schemas/Instance'
         '404':
           description: Kind or instance not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/kinds/Analysis/instances/{name}/execute:
+    post:
+      summary: Execute an analysis
+      description: |
+        Runs the named Analysis instance and returns the result with typed sections.
+      operationId: executeAnalysis
+      tags:
+        - Instances
+      parameters:
+        - $ref: '#/components/parameters/name'
+      responses:
+        '200':
+          description: Analysis execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalysisResult'
+        '404':
+          description: Analysis not found
           content:
             application/json:
               schema:
@@ -174,6 +225,344 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueryError'
+
+  /dot:
+    get:
+      summary: Get full architecture graph as DOT
+      description: Returns the complete architecture graph in GraphViz DOT format.
+      operationId: getFullDot
+      tags:
+        - Graph
+      responses:
+        '200':
+          description: GraphViz DOT source
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /kinds/{kind}/instances/{name}/dot:
+    get:
+      summary: Get instance graph as DOT
+      description: Returns the GraphViz DOT graph centered on a specific instance and its relations.
+      operationId: getInstanceDot
+      tags:
+        - Graph
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - name: name
+          in: path
+          required: true
+          description: Instance name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: GraphViz DOT source
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /api/v1/docs/{filename}:
+    get:
+      summary: Get documentation page
+      description: Returns rendered HTML from a static markdown or ERB documentation file.
+      operationId: getDocPage
+      tags:
+        - Documentation
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          description: Documentation filename (without extension)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rendered HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Documentation not found
+
+  /api/v1/docs/resources/{filename}:
+    get:
+      summary: Get auto-generated resource documentation
+      description: Returns rendered HTML documentation auto-generated for a resource kind.
+      operationId: getResourceDoc
+      tags:
+        - Documentation
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          description: Resource kind in snake_case (e.g., technology_artifact)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rendered HTML documentation
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: Documentation not found
+
+  /reload:
+    get:
+      summary: Reload resources from disk
+      description: |
+        Triggers a reload of all YAML resources from disk.
+        Only works if the server was started with reload enabled (default in development).
+        Returns JSON when Accept header includes application/json, otherwise redirects.
+      operationId: reload
+      tags:
+        - Operations
+      responses:
+        '200':
+          description: Reload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+        '404':
+          description: Reload is disabled on this server
+        '422':
+          description: Resource error during reload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReloadError'
+
+  /api/v1/editor/kinds/{kind}/form:
+    get:
+      summary: Get form metadata for creating a new resource
+      description: Returns field definitions, relation options, and instance lists for the editor form.
+      operationId: getEditorNewForm
+      tags:
+        - Editor
+      parameters:
+        - $ref: '#/components/parameters/kind'
+      responses:
+        '200':
+          description: Form metadata for resource creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EditorFormMetadata'
+        '404':
+          description: Kind not found
+
+  /api/v1/editor/kinds/{kind}/instances/{name}/form:
+    get:
+      summary: Get form metadata for editing an existing resource
+      description: |
+        Returns field definitions, relation options, and current values for editing.
+        Includes content_hash for optimistic locking on save.
+      operationId: getEditorEditForm
+      tags:
+        - Editor
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/name'
+      responses:
+        '200':
+          description: Form metadata with current resource values
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/EditorFormMetadata'
+                  - type: object
+                    properties:
+                      mode:
+                        type: string
+                        enum: [edit]
+                      name:
+                        type: string
+                        description: Current instance name
+                      annotations:
+                        type: object
+                        additionalProperties: true
+                        description: Current annotation values
+                      relations:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            verb:
+                              type: string
+                            kind:
+                              type: string
+                            name:
+                              type: string
+                      path_ref:
+                        type: string
+                        description: "File path and line (e.g., path/to/file.yaml:5)"
+                      content_hash:
+                        type: string
+                        description: Hash for optimistic locking
+        '404':
+          description: Kind or instance not found
+
+  /api/v1/editor/kinds/{kind}/generate:
+    post:
+      summary: Generate YAML for a new resource
+      description: Validates form input and generates YAML for a new resource.
+      operationId: editorGenerateNew
+      tags:
+        - Editor
+      parameters:
+        - $ref: '#/components/parameters/kind'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+      responses:
+        '200':
+          description: Generated YAML or validation errors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateResponse'
+        '404':
+          description: Kind not found
+
+  /api/v1/editor/kinds/{kind}/instances/{name}/generate:
+    post:
+      summary: Generate YAML for an existing resource edit
+      description: Validates form input and generates YAML for editing an existing resource.
+      operationId: editorGenerateEdit
+      tags:
+        - Editor
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/name'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateRequest'
+      responses:
+        '200':
+          description: Generated YAML with path reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerateResponse'
+        '404':
+          description: Kind not found
+
+  /api/v1/editor/kinds/{kind}/instances/{name}/save:
+    post:
+      summary: Save YAML to file
+      description: |
+        Writes generated YAML back to the resource file on disk.
+        Requires the server to be started with --inline-edit flag.
+        Uses optimistic locking via content_hash to detect conflicts.
+      operationId: editorSave
+      tags:
+        - Editor
+      parameters:
+        - $ref: '#/components/parameters/kind'
+        - $ref: '#/components/parameters/name'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveRequest'
+      responses:
+        '200':
+          description: Save successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveResponse'
+        '400':
+          description: Write error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveResponse'
+        '403':
+          description: Inline edit is disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveResponse'
+        '404':
+          description: Instance not found
+        '409':
+          description: Content conflict (file changed since last read)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaveResponse'
+
+  /api/v1/editor/kinds/{kind}/instances:
+    get:
+      summary: List instance names for a kind
+      description: Returns a sorted array of instance name strings for the given kind.
+      operationId: editorListInstances
+      tags:
+        - Editor
+      parameters:
+        - $ref: '#/components/parameters/kind'
+      responses:
+        '200':
+          description: Array of instance name strings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '404':
+          description: Kind not found
+
+  /api/v1/editor/relation-kinds:
+    get:
+      summary: Get target kinds for a relation verb
+      description: Returns the valid target kinds for a given resource kind and relation verb.
+      operationId: editorRelationKinds
+      tags:
+        - Editor
+      parameters:
+        - name: kind
+          in: query
+          required: true
+          description: Source resource kind
+          schema:
+            type: string
+        - name: verb
+          in: query
+          required: true
+          description: Relation verb
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of valid target kind strings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '400':
+          description: Kind and verb parameters required
 
   /mcp:
     get:
@@ -459,6 +848,308 @@ components:
           items:
             $ref: '#/components/schemas/Instance'
 
+    Filter:
+      type: object
+      required:
+        - key
+        - title
+        - filter_type
+        - values
+      properties:
+        key:
+          type: string
+          description: Annotation key path (e.g., "activity/status")
+        title:
+          type: string
+          description: Human-readable title
+        description:
+          type: string
+          description: Description of the filter
+        filter_type:
+          type: string
+          description: Filter type (e.g., "select", "boolean")
+        values:
+          type: array
+          items:
+            type: string
+          description: Available values for the filter
+
+    AnalysisResult:
+      type: object
+      required:
+        - name
+        - success
+        - has_findings
+        - duration
+        - sections
+      properties:
+        name:
+          type: string
+          description: Analysis instance name
+        success:
+          type: boolean
+          description: Whether the analysis executed successfully
+        has_findings:
+          type: boolean
+          description: Whether the analysis produced findings
+        duration:
+          type: number
+          format: float
+          description: Execution duration in seconds
+        sections:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnalysisSection'
+        error:
+          type: string
+          description: Error message (only present on failure)
+        error_backtrace:
+          type: array
+          items:
+            type: string
+          description: Error backtrace lines (only present on failure)
+
+    AnalysisSection:
+      type: object
+      required:
+        - type
+      discriminator:
+        propertyName: type
+      properties:
+        type:
+          type: string
+          enum: [heading, text, message, table, list, code]
+          description: Section type
+        level:
+          type: integer
+          description: Heading level (heading type) or severity (message type)
+        text:
+          type: string
+          description: Heading text (heading type)
+        content:
+          type: string
+          description: Text content (text type) or code content (code type)
+        message:
+          type: string
+          description: Message text (message type)
+        headers:
+          type: array
+          items:
+            type: string
+          description: Table column headers (table type)
+        rows:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: Table rows (table type)
+        items:
+          type: array
+          items:
+            type: string
+          description: List items (list type)
+        lang:
+          type: string
+          description: Code language (code type)
+
+    EditorFormMetadata:
+      type: object
+      required:
+        - kind
+        - icon
+        - layer
+        - fields
+        - relation_options
+        - instances_by_kind
+        - inline_edit_enabled
+        - mode
+      properties:
+        kind:
+          type: string
+          description: Resource kind name
+        icon:
+          type: string
+          description: Kind icon identifier
+        layer:
+          type: string
+          description: Architecture layer
+        mode:
+          type: string
+          enum: [create, edit]
+          description: Form mode
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/EditorField'
+        relation_options:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelationOption'
+          description: Available relation verb+kind combinations
+        instances_by_kind:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: Instance names grouped by target kind (for relation dropdowns)
+        inline_edit_enabled:
+          type: boolean
+          description: Whether inline file editing is enabled on the server
+
+    EditorField:
+      type: object
+      required:
+        - key
+        - title
+        - input_type
+        - required
+      properties:
+        key:
+          type: string
+          description: Annotation key path
+        title:
+          type: string
+          description: Human-readable field title
+        description:
+          type: string
+          description: Field description/help text
+        input_type:
+          type: string
+          description: Input type (text, textarea, select, number, boolean, code, etc.)
+        options:
+          type: array
+          items:
+            type: string
+          description: Available options (for select input type)
+        step:
+          type: number
+          description: Step value (for number input type)
+        required:
+          type: boolean
+          description: Whether the field is required
+        code_language:
+          type: string
+          description: Code language hint (for code input type)
+
+    RelationOption:
+      type: object
+      required:
+        - combo
+        - verb
+        - target_kind
+      properties:
+        combo:
+          type: string
+          description: "Combined key (e.g., \"dependsOn:TechnologyArtifact\")"
+        verb:
+          type: string
+          description: Relation verb
+        target_kind:
+          type: string
+          description: Target resource kind
+
+    GenerateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Resource name
+        annotations:
+          type: object
+          additionalProperties: true
+          description: Annotation key-value pairs
+        relations:
+          type: array
+          items:
+            type: object
+            properties:
+              verb:
+                type: string
+              kind:
+                type: string
+              name:
+                type: string
+              names:
+                type: array
+                items:
+                  type: string
+          description: Relations to include
+        content_hash:
+          type: string
+          description: Content hash for edit mode (passed through to response)
+
+    GenerateResponse:
+      type: object
+      properties:
+        yaml:
+          type: string
+          nullable: true
+          description: Generated YAML (null if validation failed)
+        errors:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: Validation errors (null if valid)
+        path_ref:
+          type: string
+          nullable: true
+          description: "File path reference (edit mode only, e.g., path/file.yaml:5)"
+        content_hash:
+          type: string
+          nullable: true
+          description: Content hash (edit mode only, for optimistic locking)
+
+    SaveRequest:
+      type: object
+      required:
+        - yaml
+        - content_hash
+      properties:
+        yaml:
+          type: string
+          description: YAML content to save
+        content_hash:
+          type: string
+          description: Content hash from the generate response (for conflict detection)
+
+    SaveResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          description: Whether the save was successful
+        message:
+          type: string
+          description: Success message with file path
+        error:
+          type: string
+          description: Error message (on failure)
+
+    ReloadError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+        path:
+          type: string
+          description: File path where the error occurred
+        line_no:
+          type: integer
+          description: Line number of the error
+        context:
+          type: string
+          description: Surrounding lines for context
+
     Error:
       type: object
       required:
@@ -496,5 +1187,13 @@ tags:
     description: Instance operations
   - name: Search
     description: Search and query operations
+  - name: Graph
+    description: GraphViz DOT graph generation
+  - name: Documentation
+    description: Documentation pages (markdown and auto-generated)
+  - name: Editor
+    description: Resource editor form metadata and YAML generation
+  - name: Operations
+    description: Server management operations
   - name: MCP
     description: Model Context Protocol for AI assistant integration

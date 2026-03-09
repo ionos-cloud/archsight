@@ -16,7 +16,6 @@ gem "simplecov", require: false
 gem "webmock", require: false
 
 gem "rubocop", "~> 1.21"
-gem "rubocop-haml"
 gem "rubocop-minitest"
 gem "rubocop-rake"
 

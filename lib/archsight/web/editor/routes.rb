@@ -4,6 +4,7 @@ require "sinatra/base"
 require "sinatra/extension"
 require_relative "../../editor"
 require_relative "form_builder"
+require_relative "helpers"
 
 module Archsight
   module Web
@@ -12,220 +13,124 @@ module Archsight
       module Routes
         extend Sinatra::Extension
 
-        helpers do
-          # Get form fields for a resource kind
-          def editor_fields(kind)
-            FormBuilder.fields_for(kind)
-          end
+        helpers Archsight::Web::Editor::Helpers
 
-          # Get relation verbs for a resource kind
-          def relation_verbs(kind)
-            Archsight::Editor.relation_verbs(kind)
-          end
+        # --- HTML routes (serve Vue SPA) ---
 
-          # Get available relations for a resource kind
-          def available_relations(kind)
-            Archsight::Editor.available_relations(kind)
-          end
-
-          # Extract annotations from form params
-          def extract_annotations(params)
-            annotations = params["annotations"] || {}
-            annotations.transform_values { |v| v.is_a?(String) ? v.strip : v }
-          end
-
-          # Extract relations from form params
-          # Relations come in as arrays: verb[], kind[], name[]
-          def parse_form_relations(params)
-            relations = []
-            relation_data = params["relations"] || []
-
-            relation_data.each do |rel|
-              next unless rel.is_a?(Hash)
-
-              verb = rel["verb"]&.strip
-              kind = rel["kind"]&.strip
-              name = rel["name"]&.strip
-
-              next if verb.nil? || verb.empty?
-              next if kind.nil? || kind.empty?
-              next if name.nil? || name.empty?
-
-              # Find existing relation group or create new one
-              existing = relations.find { |r| r[:verb] == verb && r[:kind] == kind }
-              if existing
-                existing[:names] << name unless existing[:names].include?(name)
-              else
-                relations << { verb: verb, kind: kind, names: [name] }
-              end
-            end
-
-            relations
-          end
-
-          # Validate content hash for optimistic locking
-          def validate_content_hash(instance, expected_hash)
-            Archsight::Editor::ContentHasher.validate(
-              path: instance.path_ref.path,
-              start_line: instance.path_ref.line_no,
-              expected_hash: expected_hash
-            )
-          end
-        end
-
-        # Create mode - empty form
         get "/kinds/:kind/new" do
-          @kind = params["kind"]
-          @klass = Archsight::Resources[@kind]
-          halt 404, "Kind not found" unless @klass
-
-          @editor_mode = true
-          @mode = :create
-          @name = ""
-          @annotations = {}
-          @relations = []
-          @fields = editor_fields(@kind)
-          @errors = {}
-
-          haml :index
+          halt 404, "Kind not found" unless Archsight::Resources[params["kind"]]
+          serve_vue
         end
 
-        # Create mode - generate YAML
-        post "/kinds/:kind/generate" do
-          @kind = params["kind"]
-          @klass = Archsight::Resources[@kind]
-          halt 404, "Kind not found" unless @klass
-
-          @editor_mode = true
-          @mode = :create
-          @name = (params["name"] || "").strip
-          @annotations = extract_annotations(params)
-          @relations = parse_form_relations(params)
-          @fields = editor_fields(@kind)
-
-          # Validate
-          validation = Archsight::Editor.validate(@kind, name: @name, annotations: @annotations)
-
-          unless validation[:valid]
-            @errors = validation[:errors]
-            return haml :index
-          end
-
-          # Build and render YAML
-          resource = Archsight::Editor.build_resource(
-            kind: @kind,
-            name: @name,
-            annotations: @annotations,
-            relations: @relations
-          )
-
-          @generated_yaml = Archsight::Editor.to_yaml(resource)
-          @errors = {}
-
-          haml :index
-        end
-
-        # Edit mode - pre-filled form
         get "/kinds/:kind/instances/:name/edit" do
-          @kind = params["kind"]
-          @instance_name = params["name"]
-          @klass = Archsight::Resources[@kind]
-          halt 404, "Kind not found" unless @klass
+          halt 404, "Kind not found" unless Archsight::Resources[params["kind"]]
+          halt 404, "Instance not found" unless db.instance_by_kind(params["kind"], params["name"])
+          serve_vue
+        end
 
-          instance = db.instance_by_kind(@kind, @instance_name)
-          halt 404, "Instance not found" unless instance
+        # Legacy POST generate routes — Vue SPA handles these now
+        post("/kinds/:kind/generate") { serve_vue }
+        post("/kinds/:kind/instances/:name/generate") { serve_vue }
 
-          @editor_mode = true
-          @mode = :edit
-          @name = instance.name
-          @annotations = instance.annotations.dup
-          @relations = extract_instance_relations(instance)
-          @fields = editor_fields(@kind)
-          @errors = {}
+        # --- JSON API routes ---
 
-          # Compute content hash for optimistic locking
+        get "/api/v1/editor/kinds/:kind/form" do
+          content_type :json
+          kind = params["kind"]
+          klass = Archsight::Resources[kind]
+          halt 404, JSON.generate({ error: "Kind not found" }) unless klass
+
+          data = build_form_metadata(kind, klass)
+          data[:mode] = "create"
+          JSON.generate(data)
+        end
+
+        get "/api/v1/editor/kinds/:kind/instances/:name/form" do
+          content_type :json
+          kind = params["kind"]
+          klass = Archsight::Resources[kind]
+          halt 404, JSON.generate({ error: "Kind not found" }) unless klass
+
+          instance = db.instance_by_kind(kind, params["name"])
+          halt 404, JSON.generate({ error: "Instance not found" }) unless instance
+
+          data = build_form_metadata(kind, klass)
+          data[:mode] = "edit"
+          data[:name] = instance.name
+          data[:annotations] = instance.annotations.dup
+          data[:relations] = extract_instance_relations(instance)
+          data[:path_ref] = "#{instance.path_ref.path}:#{instance.path_ref.line_no}"
+
           original_content = Archsight::Editor::FileWriter.read_document(
-            path: instance.path_ref.path,
-            start_line: instance.path_ref.line_no
+            path: instance.path_ref.path, start_line: instance.path_ref.line_no
           )
-          @content_hash = Archsight::Editor::ContentHasher.hash(original_content)
-
-          haml :index
+          data[:content_hash] = Archsight::Editor::ContentHasher.hash(original_content)
+          JSON.generate(data)
         end
 
-        # Edit mode - generate YAML
-        post "/kinds/:kind/instances/:name/generate" do
-          @kind = params["kind"]
-          @instance_name = params["name"]
-          @klass = Archsight::Resources[@kind]
-          halt 404, "Kind not found" unless @klass
+        post "/api/v1/editor/kinds/:kind/generate" do
+          content_type :json
+          kind = params["kind"]
+          halt 404, JSON.generate({ error: "Kind not found" }) unless Archsight::Resources[kind]
 
-          # Get original instance for path_ref (for inline save)
-          original_instance = db.instance_by_kind(@kind, @instance_name)
-          @path_ref = original_instance&.path_ref
+          body = parse_json_body
+          name = (body["name"] || "").strip
+          annotations = extract_annotations(body)
+          relations = parse_json_relations(body["relations"] || [])
 
-          @editor_mode = true
-          @mode = :edit
-          @name = (params["name_field"] || @instance_name).strip
-          @annotations = extract_annotations(params)
-          @relations = parse_form_relations(params)
-          @fields = editor_fields(@kind)
-          @content_hash = params["content_hash"]
+          validation = Archsight::Editor.validate(kind, name: name, annotations: annotations)
+          return JSON.generate({ yaml: nil, errors: validation[:errors] }) unless validation[:valid]
 
-          # Validate
-          validation = Archsight::Editor.validate(@kind, name: @name, annotations: @annotations)
-
-          unless validation[:valid]
-            @errors = validation[:errors]
-            return haml :index
-          end
-
-          # Build and render YAML
           resource = Archsight::Editor.build_resource(
-            kind: @kind,
-            name: @name,
-            annotations: @annotations,
-            relations: @relations
+            kind: kind, name: name, annotations: annotations, relations: relations
           )
-
-          @generated_yaml = Archsight::Editor.to_yaml(resource)
-          @errors = {}
-
-          haml :index
+          JSON.generate({ yaml: Archsight::Editor.to_yaml(resource), errors: nil })
         end
 
-        # Save YAML to source file (inline edit)
+        post "/api/v1/editor/kinds/:kind/instances/:name/generate" do
+          content_type :json
+          kind = params["kind"]
+          instance_name = params["name"]
+          halt 404, JSON.generate({ error: "Kind not found" }) unless Archsight::Resources[kind]
+
+          body = parse_json_body
+          name = (body["name"] || instance_name).strip
+          annotations = extract_annotations(body)
+          relations = parse_json_relations(body["relations"] || [])
+
+          validation = Archsight::Editor.validate(kind, name: name, annotations: annotations)
+          return JSON.generate({ yaml: nil, errors: validation[:errors] }) unless validation[:valid]
+
+          resource = Archsight::Editor.build_resource(
+            kind: kind, name: name, annotations: annotations, relations: relations
+          )
+
+          original = db.instance_by_kind(kind, instance_name)
+          path_ref = original&.path_ref ? "#{original.path_ref.path}:#{original.path_ref.line_no}" : nil
+
+          JSON.generate({
+                          yaml: Archsight::Editor.to_yaml(resource), errors: nil,
+                          path_ref: path_ref, content_hash: body["content_hash"]
+                        })
+        end
+
         post "/api/v1/editor/kinds/:kind/instances/:name/save" do
           content_type :json
-
-          # Check if inline edit is enabled
           halt 403, JSON.generate({ success: false, error: "Inline edit is disabled. Start server with --inline-edit flag." }) unless settings.inline_edit_enabled
 
-          kind = params["kind"]
-          name = params["name"]
-
-          begin
-            body = JSON.parse(request.body.read)
-            yaml_content = body["yaml"]
-            expected_hash = body["content_hash"]
-          rescue JSON::ParserError
-            halt 400, JSON.generate({ success: false, error: "Invalid JSON" })
-          end
-
-          instance = db.instance_by_kind(kind, name)
+          body = parse_json_body
+          instance = db.instance_by_kind(params["kind"], params["name"])
           halt 404, JSON.generate({ success: false, error: "Instance not found" }) unless instance
 
-          # Optimistic locking: verify content hasn't changed since edit started
-          if (conflict = validate_content_hash(instance, expected_hash))
+          if (conflict = validate_content_hash(instance, body["content_hash"]))
             status 409
             return JSON.generate({ success: false }.merge(conflict))
           end
 
           begin
             Archsight::Editor::FileWriter.replace_document(
-              path: instance.path_ref.path,
-              start_line: instance.path_ref.line_no,
-              new_yaml: yaml_content
+              path: instance.path_ref.path, start_line: instance.path_ref.line_no,
+              new_yaml: body["yaml"]
             )
             db.reload!
             JSON.generate({ success: true, message: "Saved to #{instance.path_ref}" })
@@ -235,56 +140,24 @@ module Archsight
           end
         end
 
-        # HTMX API - Get instance names for a kind (for relation dropdown)
         get "/api/v1/editor/kinds/:kind/instances" do
           kind = params["kind"]
-          klass = Archsight::Resources[kind]
-          halt 404, "Kind not found" unless klass
-
-          instances = db.instances_by_kind(kind).keys.sort
-
+          halt 404, "Kind not found" unless Archsight::Resources[kind]
           content_type :json
-          JSON.generate(instances)
+          JSON.generate(db.instances_by_kind(kind).keys.sort)
         end
 
-        # HTMX API - Get valid target kinds for a verb
         get "/api/v1/editor/relation-kinds" do
-          kind = params["kind"]
-          verb = params["verb"]
-          halt 400, "Kind and verb required" unless kind && verb
-
-          target_kinds = Archsight::Editor.target_kinds_for_verb(kind, verb)
-
+          halt 400, "Kind and verb required" unless params["kind"] && params["verb"]
           content_type :json
-          JSON.generate(target_kinds)
+          JSON.generate(Archsight::Editor.target_kinds_for_verb(params["kind"], params["verb"]))
         end
 
         helpers do
-          # Extract relations from an existing instance into form format
-          # Returns relations with target class names (e.g., "BusinessActor")
-          # not relation names (e.g., "businessActors")
-          def extract_instance_relations(instance)
-            relations = []
-
-            instance.spec.each do |verb, relation_groups|
-              next unless relation_groups.is_a?(Hash)
-
-              relation_groups.each do |relation_name, targets|
-                next unless targets.is_a?(Array)
-
-                # Look up the target class name from the relation definition
-                target_class = Archsight::Editor.target_class_for_relation(instance.kind, verb, relation_name)
-                next unless target_class
-
-                targets.each do |target|
-                  # Target could be an instance object or a string
-                  target_name = target.respond_to?(:name) ? target.name : target.to_s
-                  relations << { verb: verb, kind: target_class, name: target_name }
-                end
-              end
-            end
-
-            relations
+          def parse_json_body
+            JSON.parse(request.body.read)
+          rescue JSON::ParserError
+            halt 400, JSON.generate({ error: "Invalid JSON" })
           end
         end
       end

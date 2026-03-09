@@ -181,7 +181,7 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
 
   computed_annotation "jira/projectUrl",
                       title: "Jira Board",
-                      description: "Link to Jira board (computed from team/jira)",
+                      description: "Link to Jira board (computed from team/jira and Import host config)",
                       format: :link do
     jira_key = @instance.annotations["team/jira"]
     next nil if jira_key.nil? || jira_key.empty?
@@ -190,6 +190,21 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
     primary_key = jira_key.split(/[,\n]/).first&.strip
     next nil if primary_key.nil? || primary_key.empty?
 
-    "https://jira.example.com/projects/#{primary_key}/issues"
+    # Find Jira host from Import resources with a Jira handler
+    jira_host = nil
+    imports = @database.instances_by_kind("Import")
+    imports.each_value do |imp|
+      handler = imp.annotations["import/handler"]
+      next unless handler&.match?(/\AJira/i)
+
+      host = imp.annotations["import/config/host"]
+      if host && !host.empty?
+        jira_host = host
+        break
+      end
+    end
+    next nil unless jira_host
+
+    "https://#{jira_host}/projects/#{primary_key}/issues"
   end
 end

@@ -12,14 +12,14 @@ class RendererTest < Minitest::Test
   end
 
   def test_create_graph_all_returns_dot
-    result = create_graph_all(@db, :draw_dot)
+    result = create_graph_all(@db)
 
     assert_kind_of String, result
     assert_includes result, "digraph"
   end
 
   def test_create_graph_all_with_max_depth
-    result = create_graph_all(@db, :draw_dot, max_depth: 1)
+    result = create_graph_all(@db, max_depth: 1)
 
     assert_kind_of String, result
     assert_includes result, "digraph"
@@ -31,7 +31,7 @@ class RendererTest < Minitest::Test
     skip if instances.nil? || instances.empty?
 
     instance_name = instances.keys.first
-    result = create_graph_one(@db, "TechnologyArtifact", instance_name, :draw_dot)
+    result = create_graph_one(@db, "TechnologyArtifact", instance_name)
 
     assert_kind_of String, result
     assert_includes result, "digraph"
@@ -39,13 +39,13 @@ class RendererTest < Minitest::Test
 
   def test_create_graph_one_raises_for_unknown_kind
     assert_raises(RuntimeError) do
-      create_graph_one(@db, "NonexistentKind", "test", :draw_dot)
+      create_graph_one(@db, "NonexistentKind", "test")
     end
   end
 
   def test_create_graph_one_raises_for_unknown_instance
     assert_raises(RuntimeError) do
-      create_graph_one(@db, "TechnologyArtifact", "NonexistentInstance", :draw_dot)
+      create_graph_one(@db, "TechnologyArtifact", "NonexistentInstance")
     end
   end
 

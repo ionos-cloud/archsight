@@ -57,7 +57,7 @@ metadata:
     architecture/visibility: public
     architecture/tags: https,rest
     architecture/encoding: json
-    architecture/documentation: http://localhost:4567/api/docs
+    architecture/documentation: http://localhost:4567/docs/api
     generated/script: Import:API:archsight
     generated/at: '2026-01-20T09:16:22Z'
 spec:

@@ -39,7 +39,6 @@ Gem::Specification.new do |spec|
   # Runtime dependencies
   spec.add_dependency "dry-inflector", "~> 1.0"
   spec.add_dependency "fast-mcp", "~> 1.0"
-  spec.add_dependency "haml", "~> 6.0"
   spec.add_dependency "kramdown", "~> 2.0"
   spec.add_dependency "kramdown-parser-gfm", "~> 1.0"
   spec.add_dependency "puma", "~> 6.0"

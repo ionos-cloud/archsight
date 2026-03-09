@@ -21,6 +21,6 @@ metadata:
     import/config/version: "1.0"
     import/config/visibility: public
     import/config/specUrl: file://lib/archsight/web/api/openapi/spec.yaml
-    import/config/htmlUrl: http://localhost:4567/api/docs
+    import/config/htmlUrl: http://localhost:4567/docs/api
     import/config/gate: GA
 spec: {}
