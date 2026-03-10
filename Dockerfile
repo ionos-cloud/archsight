@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:4567/ || exit 1
 
 ENTRYPOINT ["archsight"]
-CMD ["web", "--port", "4567"]
+CMD ["web", "--port", "4567", "--host", "0.0.0.0"]

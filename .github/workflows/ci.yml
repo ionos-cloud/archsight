@@ -108,7 +108,7 @@ jobs:
           docker run -d --name smoketest \
             -p 4567:4567 \
             -v "${{ github.workspace }}/examples:/resources" \
-            archsight:latest web --port 4567
+            archsight:latest
 
           # Wait for server to be ready
           for i in $(seq 1 30); do
