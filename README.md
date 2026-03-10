@@ -7,6 +7,10 @@
 
 Ruby gem for visualizing and managing enterprise architecture documentation using YAML resources with GraphViz visualization. Inspired by ArchiMate 3.2.
 
+| Service view | Artifact view |
+|:---:|:---:|
+| ![Service detail with graph and relations](media/service.jpg) | ![Artifact detail with metadata](media/artifact.jpg) |
+
 ## Installation
 
 Add to your Gemfile:
@@ -21,15 +25,7 @@ Or install directly:
 gem install archsight
 ```
 
-### Option 2: Helm (Kubernetes)
-
-```bash
-helm install archsight oci://ghcr.io/ionos-cloud/archsight/charts/archsight
-```
-
 ## Quick Start
-
-### Option 1: CLI
 
 ```bash
 # Start web server (looks for resources in current directory)
@@ -44,29 +40,7 @@ ARCHSIGHT_RESOURCES_DIR=/path/to/resources archsight web
 
 Access at: <http://localhost:4567>
 
-### Option 2: Docker
-
-```bash
-# Run web server (default)
-docker run -p 4567:4567 -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight
-
-# Run in production mode with logging
-docker run -p 4567:4567 -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight web --production
-
-# Run lint
-docker run -v "/path/to/resources:/resources" ghcr.io/ionos-cloud/archsight lint -r /resources
-
-# Run any command
-docker run ghcr.io/ionos-cloud/archsight version
-```
-
-Access web interface at: <http://localhost:4567>
-
-**Notes:**
-
-- Volume mount `-v "/path/to/resources:/resources"` mounts your resources directory
-- Default command starts the web server on port 4567
-- Pass subcommands directly (lint, version, console, template)
+Also available as [Docker](docs/docker.md) image and [Helm chart](docs/kubernetes.md).
 
 ## CLI Commands
 
@@ -188,37 +162,13 @@ Detailed documentation is available in the web interface under the Help menu:
 | [Computed Annotations](docs/computed_annotations.md) | Aggregating values across relations |
 | [ArchiMate Reference](docs/archimate.md) | ArchiMate concepts and mapping |
 | [TOGAF Reference](docs/togaf.md) | TOGAF alignment and concepts |
+| [Architecture](docs/architecture.md) | Technology stack and directory structure |
+| [Docker](docs/docker.md) | Running Archsight in Docker |
+| [Kubernetes](docs/kubernetes.md) | Helm chart deployment guide |
 
 ## Architecture
 
-### Technology Stack
-
-- **Web Framework**: Sinatra
-- **Templating**: Haml
-- **Styling**: Pico CSS v2.x
-- **Interactivity**: HTMX
-- **Icons**: Iconoir (1,671+ icons)
-- **Visualization**: GraphViz (@hpcc-js/wasm for client-side SVG)
-
-### Directory Structure
-
-```text
-archsight/
-├── exe/archsight              # CLI executable
-├── lib/
-│   ├── archsight.rb           # Entry point
-│   └── archsight/
-│       ├── cli.rb             # Thor CLI
-│       ├── configuration.rb   # Resources path config
-│       ├── database.rb        # YAML loader and validator
-│       ├── query/             # Query language (lexer, parser, evaluator)
-│       ├── resources/         # Resource types (20+)
-│       ├── annotations/       # Annotation modules
-│       ├── mcp/               # MCP server tools
-│       └── web/               # Sinatra app, views, assets
-│           └── doc/           # Documentation (markdown)
-└── test/                      # Test suite
-```
+See [Architecture](docs/architecture.md) for the technology stack and directory structure.
 
 ## Contributing
 
