@@ -59,19 +59,6 @@ class ApplicationTest < Minitest::Test
     assert_predicate last_response, :ok?
   end
 
-  def test_post_search
-    post "/search", q: 'name =~ ".*"'
-
-    assert_predicate last_response, :ok?
-  end
-
-  def test_get_svg
-    get "/svg"
-
-    assert_predicate last_response, :ok?
-    assert_includes last_response.content_type, "image/svg+xml"
-  end
-
   def test_get_dot
     get "/dot"
 
@@ -96,17 +83,6 @@ class ApplicationTest < Minitest::Test
     assert_predicate last_response, :ok?
   end
 
-  def test_get_instance_svg
-    artifacts = Archsight::Web::Application.database.instances_by_kind("TechnologyArtifact")
-    skip("No TechnologyArtifact instances") if artifacts.empty?
-
-    instance_name = artifacts.keys.first
-    get "/kinds/TechnologyArtifact/instances/#{instance_name}/svg"
-
-    assert_predicate last_response, :ok?
-    assert_includes last_response.content_type, "image/svg+xml"
-  end
-
   def test_get_instance_dot
     artifacts = Archsight::Web::Application.database.instances_by_kind("TechnologyArtifact")
     skip("No TechnologyArtifact instances") if artifacts.empty?
@@ -119,63 +95,61 @@ class ApplicationTest < Minitest::Test
     assert_includes last_response.body, "digraph"
   end
 
-  # Doc routes - plain markdown file
-  def test_get_doc_markdown
+  # Doc HTML routes serve Vue SPA
+  def test_get_doc_markdown_serves_vue
     get "/doc/search"
 
     assert_predicate last_response, :ok?
     assert_includes last_response.body, "html"
   end
 
-  def test_get_doc_markdown_htmx
-    get "/doc/search", {}, { "HTTP_HX_REQUEST" => "true" }
-
-    assert_predicate last_response, :ok?
-    assert_includes last_response.body, "<article>"
-    refute_includes last_response.body, "<!DOCTYPE"
-  end
-
-  # Doc routes - ERB template file
-  def test_get_doc_erb
+  def test_get_doc_erb_serves_vue
     get "/doc/index"
 
     assert_predicate last_response, :ok?
     assert_includes last_response.body, "html"
   end
 
-  def test_get_doc_erb_htmx
-    get "/doc/index", {}, { "HTTP_HX_REQUEST" => "true" }
-
-    assert_predicate last_response, :ok?
-    assert_includes last_response.body, "<article>"
-    refute_includes last_response.body, "<!DOCTYPE"
-  end
-
-  # Doc routes - resource documentation
-  def test_get_doc_resources
+  def test_get_doc_resources_serves_vue
     get "/doc/resources/technology_artifact"
 
     assert_predicate last_response, :ok?
     assert_includes last_response.body, "html"
   end
 
-  def test_get_doc_resources_htmx
-    get "/doc/resources/technology_artifact", {}, { "HTTP_HX_REQUEST" => "true" }
+  # Doc API routes
+  def test_api_doc_markdown
+    get "/api/v1/docs/search"
 
     assert_predicate last_response, :ok?
+    assert_includes last_response.content_type, "text/html"
     assert_includes last_response.body, "<article>"
-    refute_includes last_response.body, "<!DOCTYPE"
   end
 
-  # Doc routes - nonexistent
-  def test_get_doc_nonexistent
-    get "/doc/nonexistent_file_xyz"
+  def test_api_doc_erb
+    get "/api/v1/docs/index"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.content_type, "text/html"
+    assert_includes last_response.body, "<article>"
+  end
+
+  def test_api_doc_resources
+    get "/api/v1/docs/resources/technology_artifact"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.content_type, "text/html"
+    assert_includes last_response.body, "<article>"
+  end
+
+  def test_api_doc_nonexistent
+    get "/api/v1/docs/nonexistent_file_xyz"
 
     assert_equal 404, last_response.status
   end
 
-  def test_get_doc_resources_nonexistent
-    get "/doc/resources/nonexistent_kind_xyz"
+  def test_api_doc_resources_nonexistent
+    get "/api/v1/docs/resources/nonexistent_kind_xyz"
 
     assert_equal 404, last_response.status
   end
@@ -218,19 +192,13 @@ class ApplicationTest < Minitest::Test
     assert last_response.location.end_with?("/")
   end
 
-  # Test doc routes with HTMX
-  def test_doc_htmx_request
-    get "/doc/resources/application_component", {}, { "HTTP_HX_REQUEST" => "true" }
+  # Test API doc for another resource kind
+  def test_api_doc_resources_application_component
+    get "/api/v1/docs/resources/application_component"
 
     assert_predicate last_response, :ok?
+    assert_includes last_response.content_type, "text/html"
     assert_includes last_response.body, "<article>"
-  end
-
-  # Test doc resources nonexistent
-  def test_doc_resources_nonexistent
-    get "/doc/resources/nonexistent_kind_xyz"
-
-    assert_equal 404, last_response.status
   end
 
   # Class method tests

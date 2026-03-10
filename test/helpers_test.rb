@@ -257,38 +257,6 @@ class HelpersTest < Minitest::Test
     assert_empty result
   end
 
-  # search_link_attrs tests
-
-  def test_search_link_attrs
-    attrs = search_link_attrs("status == active")
-
-    assert attrs.key?("href")
-    assert attrs.key?("hx-post")
-    assert attrs.key?("hx-target")
-  end
-
-  # filter_link_attrs tests
-
-  def test_filter_link_attrs
-    attrs = filter_link_attrs("status", "active")
-
-    assert attrs.key?("href")
-  end
-
-  def test_filter_link_attrs_with_kind
-    attrs = filter_link_attrs("status", "active", "==", "TechnologyArtifact")
-
-    assert attrs.key?("href")
-    assert_includes attrs["href"], "TechnologyArtifact"
-  end
-
-  def test_filter_link_attrs_with_custom_method
-    attrs = filter_link_attrs("count", "10", ">")
-
-    assert attrs.key?("href")
-    assert_includes attrs["href"], "%3E" # URL encoded >
-  end
-
   # More sort_instances tests
 
   def test_sort_instances_by_kind

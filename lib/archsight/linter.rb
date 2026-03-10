@@ -4,7 +4,7 @@ require "kramdown"
 
 module Archsight
   class Linter
-    # Available view components (partials in views/partials/components/)
+    # Valid @component references in View annotations
     VALID_COMPONENTS = %w[activity git jira languages owner repositories status].freeze
 
     def initialize(database)

@@ -27,6 +27,17 @@ module Archsight::MCP
       result
     end
 
+    def annotations_summary(resource, omit_kind: false)
+      result = {
+        name: resource.name,
+        metadata: {
+          annotations: resource.annotations
+        }
+      }
+      result[:kind] = resource.class.to_s.split("::").last unless omit_kind
+      result
+    end
+
     def extract_description(resource)
       description = resource.annotations["architecture/description"]
       return "No description" if description.nil?

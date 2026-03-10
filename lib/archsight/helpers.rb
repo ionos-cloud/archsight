@@ -64,26 +64,6 @@ module Archsight
       end
     end
 
-    # Generate htmx attributes for a custom search query
-    def search_link_attrs(query)
-      search_url = "/search?#{URI.encode_www_form(q: query)}"
-      {
-        "href" => search_url,
-        "hx-post" => "/search",
-        "hx-vals" => { q: query }.to_json,
-        "hx-swap" => "innerHTML",
-        "hx-target" => ".content",
-        "hx-push-url" => search_url
-      }
-    end
-
-    # Generate htmx attributes for filtering by annotation (convenience wrapper)
-    def filter_link_attrs(tag, value, method = "==", kind = nil)
-      query = "#{tag} #{method} \"#{value}\""
-      query = "#{kind}: #{query}" if kind
-      search_link_attrs(query)
-    end
-
     # Get icon class for a URL based on domain patterns
     def icon_for_url(url)
       case url

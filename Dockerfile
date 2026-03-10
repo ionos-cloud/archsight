@@ -1,10 +1,13 @@
 # Build stage
 FROM ruby:4.0-alpine3.23 AS builder
 
-RUN apk add --no-cache build-base git libffi-dev yaml-dev
+RUN apk add --no-cache build-base git libffi-dev yaml-dev nodejs npm
 
 WORKDIR /app
 COPY . .
+
+# Build frontend assets
+RUN cd frontend && npm ci && npm run build
 
 # Build and install the gem
 RUN gem build archsight.gemspec && \
@@ -12,8 +15,6 @@ RUN gem build archsight.gemspec && \
 
 # Runtime stage
 FROM ruby:4.0-alpine3.23
-
-RUN apk add --no-cache graphviz
 
 # Copy installed gems from builder (including default gems that were updated)
 COPY --from=builder /usr/local/bundle /usr/local/bundle
@@ -35,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:4567/ || exit 1
 
 ENTRYPOINT ["archsight"]
-CMD ["web", "--port", "4567"]
+CMD ["web", "--port", "4567", "--host", "0.0.0.0"]

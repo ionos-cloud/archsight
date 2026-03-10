@@ -34,3 +34,8 @@
 
 # Byebug history
 .byebug_history
+
+# Vue.js frontend
+frontend/node_modules/
+lib/archsight/web/public/vue/
+lib/archsight/web/public/vue.html

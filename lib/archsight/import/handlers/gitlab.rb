@@ -22,6 +22,7 @@ require_relative "../registry"
 #   import/config/fallbackTeam - Default team when no contributor match found (propagated to child imports)
 #   import/config/botTeam - Team for bot-only repositories (propagated to child imports)
 #   import/config/corporateAffixes - Comma-separated corporate username affixes for team matching (propagated to child imports)
+#   import/config/defaultVisibility - Default visibility when API returns none (default: "internal")
 #
 # Environment:
 #   GITLAB_TOKEN - GitLab personal access token (required)
@@ -39,6 +40,7 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
 
     @repo_output_path = config("repoOutputPath")
     @child_cache_time = config("childCacheTime")
+    @default_visibility = config("defaultVisibility", default: "internal")
 
     @target_dir = File.join(Dir.home, ".cache", "archsight", "git", "gitlab")
     @explore_groups = config("exploreGroups") == "true"
@@ -184,7 +186,7 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
         "path" => repo_path,
         "gitUrl" => git_url,
         "archived" => project["archived"].to_s,
-        "visibility" => project["visibility"] || "internal"
+        "visibility" => project["visibility"] || @default_visibility
       }
       child_config["fallbackTeam"] = config("fallbackTeam") if config("fallbackTeam")
       child_config["botTeam"] = config("botTeam") if config("botTeam")

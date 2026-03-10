@@ -2,6 +2,17 @@
 
 require "bundler/gem_tasks"
 
+desc "Build Vue.js frontend"
+task :frontend do
+  Dir.chdir("frontend") do
+    sh "npm ci"
+    sh "npm run build"
+  end
+end
+
+# Ensure frontend is built before packaging the gem
+Rake::Task["build"].enhance([:frontend])
+
 # Override release tasks to skip git operations in CI
 if ENV["CI"]
   Rake::Task["release:guard_clean"].clear

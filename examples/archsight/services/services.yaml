@@ -30,7 +30,7 @@ metadata:
     architecture/description: |
       Web-based user interface for browsing and searching architecture
       resources with visualization support via GraphViz.
-    architecture/tags: web,sinatra,htmx
+    architecture/tags: web,sinatra,vue
     architecture/plane: control
 spec:
   realizedThrough:

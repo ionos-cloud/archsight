@@ -125,7 +125,7 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 **Browse & Search:**
 
 - Browse resources by type (Products, Services, Components, Requirements, etc.)
-- Search by name or tag using the [query language](lib/archsight/web/doc/search.md)
+- Search by name or tag using the [query language](docs/search.md)
 - Filter by annotations (quality attributes, status, frameworks)
 
 **Visualization:**
@@ -183,11 +183,11 @@ Detailed documentation is available in the web interface under the Help menu:
 
 | Guide | Description |
 |-------|-------------|
-| [Modeling Guide](lib/archsight/web/doc/modeling.md) | How to model architecture using resource types and relations |
-| [Query Language](lib/archsight/web/doc/search.md) | Full query syntax reference for searching resources |
-| [Computed Annotations](lib/archsight/web/doc/computed_annotations.md) | Aggregating values across relations |
-| [ArchiMate Reference](lib/archsight/web/doc/archimate.md) | ArchiMate concepts and mapping |
-| [TOGAF Reference](lib/archsight/web/doc/togaf.md) | TOGAF alignment and concepts |
+| [Modeling Guide](docs/modeling.md) | How to model architecture using resource types and relations |
+| [Query Language](docs/search.md) | Full query syntax reference for searching resources |
+| [Computed Annotations](docs/computed_annotations.md) | Aggregating values across relations |
+| [ArchiMate Reference](docs/archimate.md) | ArchiMate concepts and mapping |
+| [TOGAF Reference](docs/togaf.md) | TOGAF alignment and concepts |
 
 ## Architecture
 

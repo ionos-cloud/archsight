@@ -111,45 +111,10 @@ class GraphvisTest < Minitest::Test
   # Custom graph attributes
 
   def test_graph_with_custom_attrs
-    graph = Archsight::Graphvis.new("custom", :dot, rankdir: :TB, splines: :ortho)
+    graph = Archsight::Graphvis.new("custom", rankdir: :TB, splines: :ortho)
     dot = graph.draw_dot { |_g| nil }
 
     assert_includes dot, '"rankdir" = "TB"'
     assert_includes dot, '"splines" = "ortho"'
-  end
-end
-
-class GraphvisHelperTest < Minitest::Test
-  include Archsight::GraphvisHelper
-
-  def test_graphviz_svg_generates_javascript
-    result = graphviz_svg("digraph { a -> b }", "graph-container")
-
-    assert_includes result, "<script type=\"module\">"
-    assert_includes result, "Graphviz.load()"
-    assert_includes result, "digraph { a -> b }"
-    assert_includes result, "graph-container"
-  end
-
-  def test_graphviz_svg_escapes_dot_content
-    result = graphviz_svg('digraph { label="test\nvalue" }', "el")
-
-    assert_includes result, "digraph"
-    # The dot content should be properly escaped in JavaScript
-    assert_includes result, "const dot ="
-  end
-
-  def test_graphviz_svg_includes_css_fetch
-    result = graphviz_svg("digraph {}", "id")
-
-    assert_includes result, "fetch(\"/css/graph.css?"
-    assert_includes result, "cssResponse.text()"
-  end
-
-  def test_graphviz_svg_dispatches_ready_event
-    result = graphviz_svg("digraph {}", "my-graph")
-
-    assert_includes result, "graphviz:ready"
-    assert_includes result, "my-graph"
   end
 end

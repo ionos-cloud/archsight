@@ -42,6 +42,15 @@ module Archsight::Web::API::Routes
     json_response(build_list_response(kind, pagination, resources))
   end
 
+  # GET /api/v1/kinds/:kind/filters - Get filterable annotations with values
+  get "/api/v1/kinds/:kind/filters" do
+    kind = params[:kind]
+    klass = Archsight::Resources[kind]
+    json_error("Kind '#{kind}' not found", status: 404, error_type: "NotFound") unless klass
+
+    json_response(build_filters_response(kind))
+  end
+
   # GET /api/v1/kinds/:kind/instances/:name - Get instance details with relations
   get "/api/v1/kinds/:kind/instances/:name" do
     kind = params[:kind]
@@ -77,6 +86,20 @@ module Archsight::Web::API::Routes
     rescue Archsight::Query::QueryError => e
       json_error(e.message, status: 400, error_type: "QueryError", query: query)
     end
+  end
+
+  # POST /api/v1/kinds/Analysis/instances/:name/execute - Execute an analysis
+  post "/api/v1/kinds/Analysis/instances/:name/execute" do
+    require "archsight/analysis"
+
+    name = params[:name]
+    analysis = db.instance_by_kind("Analysis", name)
+    json_error("Analysis '#{name}' not found", status: 404, error_type: "NotFound") unless analysis
+
+    executor = Archsight::Analysis::Executor.new(db)
+    result = executor.execute(analysis)
+
+    json_response(build_analysis_result(result))
   end
 
   # GET /api/v1/openapi.yaml - OpenAPI specification

@@ -22,12 +22,19 @@ module Archsight::Web::API::JsonHelpers
   end
 
   def resource_summary(resource, output:, omit_kind: false)
-    case output
-    when "brief"
-      Archsight::MCP.brief_summary(resource, omit_kind: omit_kind)
-    else # "complete"
-      Archsight::MCP.complete_summary(resource, omit_kind: omit_kind)
-    end
+    result = case output
+             when "brief"
+               Archsight::MCP.brief_summary(resource, omit_kind: omit_kind)
+             when "annotations"
+               Archsight::MCP.annotations_summary(resource, omit_kind: omit_kind)
+             else # "complete"
+               summary = Archsight::MCP.complete_summary(resource, omit_kind: omit_kind)
+               summary[:spec] = serialize_spec(summary[:spec]) if summary[:spec]
+               summary
+             end
+    result[:icon] = resource.class.icon
+    result[:layer] = resource.class.layer
+    result
   end
 
   def paginate(collection, limit:, offset:)
@@ -76,15 +83,27 @@ module Archsight::Web::API::JsonHelpers
     }
   end
 
+  MARKDOWN_ANNOTATION_KEYS = Set["architecture/description"].freeze
+
   def build_instance_response(kind, instance)
     {
       kind: kind,
       name: instance.name,
-      metadata: { annotations: instance.annotations },
+      metadata: { annotations: render_annotations(instance.annotations) },
       spec: serialize_spec(instance.spec),
       relations: extract_relations(instance),
       references: extract_references(instance)
     }
+  end
+
+  def render_annotations(annotations)
+    annotations.each_with_object({}) do |(key, value), result|
+      result[key] = if MARKDOWN_ANNOTATION_KEYS.include?(key) && value.is_a?(String)
+                      markdown(value)
+                    else
+                      value
+                    end
+    end
   end
 
   def serialize_spec(spec)
@@ -110,15 +129,14 @@ module Archsight::Web::API::JsonHelpers
     }
   end
 
-  def build_search_response(query, results, parsed_query, query_time_ms)
+  def build_search_response(query, results, _parsed_query, query_time_ms)
     limit, offset = parse_pagination_params
     output = parse_output_param
-    omit_kind = !parsed_query.kind_filter.nil?
     sorted = results.sort_by(&:name)
     pagination = paginate(sorted, limit: limit, offset: offset)
 
     instances = pagination[:items].map do |r|
-      resource_summary(r, output: output, omit_kind: omit_kind)
+      resource_summary(r, output: output, omit_kind: false)
     end
 
     {
@@ -135,15 +153,63 @@ module Archsight::Web::API::JsonHelpers
   def extract_relations(instance)
     relations = {}
 
-    instance.class.relations.each do |verb, kind_name, _|
-      rels = instance.relations(verb, kind_name).map(&:name)
+    instance.class.relations.each do |verb, spec_key, kind|
+      rels = instance.relations(verb, spec_key).map(&:name)
       next if rels.empty?
 
       relations[verb] ||= {}
-      relations[verb][kind_name] = rels
+      relations[verb][kind] = rels
     end
 
     relations
+  end
+
+  def build_filters_response(kind)
+    db.filters_for_kind(kind).map do |annotation, values|
+      {
+        key: annotation.key,
+        title: annotation.title,
+        description: annotation.description,
+        filter_type: annotation.filter.to_s,
+        values: values
+      }
+    end
+  end
+
+  def build_analysis_result(result)
+    data = {
+      name: result.name,
+      success: result.success?,
+      has_findings: result.has_findings?,
+      duration: result.duration,
+      sections: result.sections.map { |s| serialize_analysis_section(s) }
+    }
+
+    if result.failed?
+      data[:error] = result.error
+      data[:error_backtrace] = result.error_backtrace if result.error_backtrace&.any?
+    end
+
+    data
+  end
+
+  def serialize_analysis_section(section)
+    case section[:type]
+    when :heading
+      { type: "heading", level: section[:level], text: section[:text] }
+    when :text
+      { type: "text", content: section[:content] }
+    when :message
+      { type: "message", level: section[:level].to_s, message: section[:message] }
+    when :table
+      { type: "table", headers: section[:headers], rows: section[:rows] }
+    when :list
+      { type: "list", items: section[:items] }
+    when :code
+      { type: "code", lang: section[:lang], content: section[:content] }
+    else
+      { type: section[:type].to_s }
+    end
   end
 
   def extract_references(instance)

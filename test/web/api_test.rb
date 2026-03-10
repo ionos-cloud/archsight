@@ -116,6 +116,21 @@ class APITest < Minitest::Test
     assert_nil resource["spec"]
   end
 
+  def test_get_api_kinds_kind_output_annotations
+    get "/api/v1/kinds/TechnologyArtifact", output: "annotations", limit: 5
+
+    assert_predicate last_response, :ok?
+    data = json_response
+
+    # Annotations output should have name and metadata but no spec
+    resource = data["instances"].first
+
+    assert resource["name"]
+    assert resource["metadata"]
+    assert resource["metadata"]["annotations"]
+    assert_nil resource["spec"]
+  end
+
   def test_get_api_kinds_kind_output_complete
     get "/api/v1/kinds/TechnologyArtifact", output: "complete", limit: 5
 
@@ -249,6 +264,21 @@ class APITest < Minitest::Test
     assert_nil data["offset"]
   end
 
+  def test_get_api_search_output_annotations
+    get "/api/v1/search", q: 'name =~ ".*"', output: "annotations", limit: 5
+
+    assert_predicate last_response, :ok?
+    data = json_response
+
+    # Annotations output should have name and metadata but no spec
+    resource = data["instances"].first
+
+    assert resource["name"]
+    assert resource["metadata"]
+    assert resource["metadata"]["annotations"]
+    assert_nil resource["spec"]
+  end
+
   def test_get_api_search_output_brief
     get "/api/v1/search", q: 'name =~ ".*"', output: "brief", limit: 5
 
@@ -269,11 +299,11 @@ class APITest < Minitest::Test
     assert_predicate last_response, :ok?
     data = json_response
 
-    # When filtering by kind, kind should be omitted from results
+    # Kind is always included for frontend routing
     resource = data["instances"].first
 
     assert resource["name"]
-    assert_nil resource["kind"]
+    assert_equal "TechnologyArtifact", resource["kind"]
   end
 
   # GET /api/v1/openapi.yaml tests
@@ -287,15 +317,14 @@ class APITest < Minitest::Test
     assert_includes last_response.body, "Archsight API"
   end
 
-  # GET /api/docs tests
+  # GET /docs/api tests
 
   def test_get_api_docs
-    get "/api/docs"
+    get "/docs/api"
 
     assert_predicate last_response, :ok?
     assert_includes last_response.content_type, "text/html"
-    assert_includes last_response.body, "redoc"
-    assert_includes last_response.body, "openapi.yaml"
+    assert_includes last_response.body, "html"
   end
 
   # Convenience alias tests
@@ -338,6 +367,42 @@ class APITest < Minitest::Test
 
     assert_equal "TechnologyArtifact", data["kind"]
     assert_equal instance_name, data["name"]
+  end
+
+  # POST /api/v1/kinds/Analysis/instances/:name/execute tests
+
+  def test_execute_analysis
+    analyses = Archsight::Web::Application.database.instances_by_kind("Analysis")
+    skip("No Analysis instances") if analyses.empty?
+
+    name = analyses.keys.first
+    post "/api/v1/kinds/Analysis/instances/#{name}/execute"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.content_type, "application/json"
+
+    data = json_response
+
+    assert_equal name, data["name"]
+    assert_includes [true, false], data["success"]
+    assert_kind_of Array, data["sections"]
+
+    if data["sections"].any? # rubocop:disable Style/GuardClause
+      section = data["sections"].first
+
+      assert section["type"], "Section must have a type"
+    end
+  end
+
+  def test_execute_analysis_not_found
+    post "/api/v1/kinds/Analysis/instances/nonexistent_analysis_xyz/execute"
+
+    assert_equal 404, last_response.status
+    assert_includes last_response.content_type, "application/json"
+
+    data = json_response
+
+    assert_equal "NotFound", data["error"]
   end
 
   # Helper tests

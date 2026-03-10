@@ -6,6 +6,7 @@ require "fileutils"
 require_relative "../handler"
 require_relative "../registry"
 require_relative "../git_analytics"
+require_relative "../license_analyzer"
 require_relative "../team_matcher"
 
 # Repository handler - clones/syncs and analyzes a git repository, generates a TechnologyArtifact
@@ -71,13 +72,13 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     progress.update("Analyzing git history")
     git_data = run_git_analytics(@path)
 
-    # Match contributors to teams
-    progress.update("Matching teams")
-    team_result = match_teams(git_data["top_contributors"], git_data["activity_status"])
+    # Analyze licenses and match teams in parallel (independent of each other)
+    progress.update("Analyzing licenses & matching teams")
+    license_data, team_result = run_license_and_team_analysis(@path, scc_data, git_data)
 
     # Build resource
     progress.update("Generating resource")
-    resource = build_technology_artifact(@path, scc_data, git_data, team_result)
+    resource = build_technology_artifact(@path, scc_data, git_data, team_result, license_data)
 
     # Write output with self-marker for caching
     yaml_content = YAML.dump(resource) + YAML.dump(self_marker)
@@ -274,7 +275,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     result
   end
 
-  def build_technology_artifact(path, scc_data, git_data, team_result = nil)
+  def build_technology_artifact(path, scc_data, git_data, team_result = nil, license_data = nil)
     annotations = {}
 
     # Artifact type
@@ -296,6 +297,9 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
 
     # Deployment annotations
     annotations.merge!(build_deployment_annotations(git_data))
+
+    # License annotations
+    annotations.merge!(build_license_annotations(license_data, visibility)) if license_data
 
     # Generated metadata
     annotations["generated/script"] = import_resource.name
@@ -400,6 +404,50 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     if git_data["recent_tags"]&.any?
       tag_names = git_data["recent_tags"].map { |t| t["name"] }
       annotations["repository/recentTags"] = tag_names.join(",")
+    end
+
+    annotations
+  end
+
+  # Run license analysis and team matching in parallel
+  def run_license_and_team_analysis(path, scc_data, git_data)
+    languages = (scc_data["languageSummary"] || []).map { |l| l["Name"] }
+    license_thread = Thread.new { run_license_analysis(path, languages) }
+    team_result = match_teams(git_data["top_contributors"], git_data["activity_status"])
+    [license_thread.value, team_result]
+  end
+
+  def run_license_analysis(path, languages = [])
+    Archsight::Import::LicenseAnalyzer.new(path, languages: languages).analyze
+  rescue StandardError => e
+    progress.warn("License analysis failed: #{e.message}")
+    nil
+  end
+
+  def build_license_annotations(license_data, visibility = "internal")
+    annotations = {}
+    return annotations unless license_data
+
+    annotations["license/spdx"] = license_data["license_spdx"] if license_data["license_spdx"]
+    annotations["license/file"] = license_data["license_file"] if license_data["license_file"]
+
+    # Non-public repos with unknown license are de-facto proprietary
+    # (all-rights-reserved), not "unknown"
+    category = license_data["license_category"]
+    category = "proprietary" if category == "unknown" && !%w[public open-source].include?(visibility)
+    annotations["license/category"] = category if category
+
+    if license_data["dependency_count"]&.positive?
+      annotations["license/dependencies/count"] = license_data["dependency_count"].to_s
+      annotations["license/dependencies/ecosystems"] = license_data["dependency_ecosystems"] if license_data["dependency_ecosystems"]
+      annotations["license/dependencies/licenses"] = license_data["dependency_licenses"] if license_data["dependency_licenses"]
+      annotations["license/dependencies/copyleft"] = license_data["dependency_copyleft"] if license_data["dependency_copyleft"]
+      annotations["license/dependencies/risk"] = license_data["dependency_risk"] if license_data["dependency_risk"]
+
+      # Per-license-type counts
+      (license_data["dependency_license_counts"] || {}).each do |license_name, count|
+        annotations["license/dependencies/#{license_name}/count"] = count.to_s
+      end
     end
 
     annotations
