@@ -4,7 +4,7 @@ metadata:
   name: Tech:RubyGems:Sinatra
   annotations:
     architecture/description: |
-      Sinatra web framework for building the archsight web UI.
+      Sinatra web framework serving the archsight REST API and Vue SPA.
     architecture/tags: ruby,web,framework
     architecture/documentation: https://sinatrarb.com
 spec:

@@ -77,7 +77,7 @@ class RestApiHandlerTest < Minitest::Test
     assert_equal "ApplicationInterface", resource["kind"]
     assert_equal "Private:Compute:v6:RestAPI", resource["metadata"]["name"]
     assert_equal "Compute API", resource["metadata"]["annotations"]["architecture/title"]
-    assert_equal "GA", resource["metadata"]["annotations"]["architecture/status"]
+    assert_equal "General-Availability", resource["metadata"]["annotations"]["architecture/status"]
     assert_equal "private", resource["metadata"]["annotations"]["architecture/visibility"]
     assert_includes resource["metadata"]["annotations"]["architecture/tags"], "jwt"
     assert_equal "https://example.com/rest-api/compute/redoc.html",

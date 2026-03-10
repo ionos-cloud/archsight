@@ -18,7 +18,7 @@ metadata:
       | `instance_count` | integer | Yes | Number of instances of this kind |
     generated/variants: Kind, KindList
     generated/script: Import:API:archsight
-    generated/at: '2026-01-20T09:16:22Z'
+    generated/at: '2026-03-10T10:43:29Z'
 spec: {}
 
 ---
@@ -42,5 +42,169 @@ metadata:
       | `references` | object | No | Incoming references grouped by kind and verb (detail view only) |
     generated/variants: Instance, InstanceList
     generated/script: Import:API:archsight
-    generated/at: '2026-01-20T09:16:22Z'
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Filter
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `key` | string | Yes | Annotation key path (e.g., "activity/status") |
+      | `title` | string | Yes | Human-readable title |
+      | `description` | string | No | Description of the filter |
+      | `filter_type` | string | Yes | Filter type (e.g., "select", "boolean") |
+      | `values` | array | Yes | Available values for the filter |
+    generated/variants: Filter
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Analysis
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `name` | string | Yes | Analysis instance name |
+      | `success` | boolean | Yes | Whether the analysis executed successfully |
+      | `has_findings` | boolean | Yes | Whether the analysis produced findings |
+      | `duration` | number (float) | Yes | Execution duration in seconds |
+      | `sections` | array (AnalysisSection) | Yes |  |
+      | `error` | string | No | Error message (only present on failure) |
+      | `error_backtrace` | array | No | Error backtrace lines (only present on failure) |
+    generated/variants: AnalysisResult
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:AnalysisSection
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `type` | string | Yes | Section type |
+      | `level` | integer | No | Heading level (heading type) or severity (message type) |
+      | `text` | string | No | Heading text (heading type) |
+      | `content` | string | No | Text content (text type) or code content (code type) |
+      | `message` | string | No | Message text (message type) |
+      | `headers` | array | No | Table column headers (table type) |
+      | `rows` | array | No | Table rows (table type) |
+      | `items` | array | No | List items (list type) |
+      | `lang` | string | No | Code language (code type) |
+    generated/variants: AnalysisSection
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:EditorField
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `key` | string | Yes | Annotation key path |
+      | `title` | string | Yes | Human-readable field title |
+      | `description` | string | No | Field description/help text |
+      | `input_type` | string | Yes | Input type (text, textarea, select, number, boolean, code, etc.) |
+      | `options` | array | No | Available options (for select input type) |
+      | `step` | number | No | Step value (for number input type) |
+      | `required` | boolean | Yes | Whether the field is required |
+      | `code_language` | string | No | Code language hint (for code input type) |
+    generated/variants: EditorField
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:RelationOption
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `combo` | string | Yes | Combined key (e.g., "dependsOn:TechnologyArtifact") |
+      | `verb` | string | Yes | Relation verb |
+      | `target_kind` | string | Yes | Target resource kind |
+    generated/variants: RelationOption
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Generate
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `name` | string | Yes | Resource name |
+      | `annotations` | object | No | Annotation key-value pairs |
+      | `relations` | array | No | Relations to include |
+      | `content_hash` | string | No | Content hash for edit mode (passed through to response) |
+    generated/variants: GenerateRequest, GenerateResponse
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Save
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `yaml` | string | Yes | YAML content to save |
+      | `content_hash` | string | Yes | Content hash from the generate response (for conflict detection) |
+    generated/variants: SaveRequest, SaveResponse
+    generated/script: Import:API:archsight
+    generated/at: '2026-03-10T10:43:29Z'
 spec: {}
