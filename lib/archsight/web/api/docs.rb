@@ -33,8 +33,9 @@ module Archsight::Web::API::Docs
   get "/api/v1/docs/:filename" do
     filename = params["filename"].gsub(/[^a-zA-Z0-9_-]/, "")
 
-    erb_path = File.join(settings.views, "..", "doc", "#{filename}.md.erb")
-    md_path = File.join(settings.views, "..", "doc", "#{filename}.md")
+    doc_dir = File.expand_path("../../../../docs", __dir__)
+    erb_path = File.join(doc_dir, "#{filename}.md.erb")
+    md_path = File.join(doc_dir, "#{filename}.md")
 
     content = if File.exist?(erb_path)
                 template = ERB.new(File.read(erb_path))
