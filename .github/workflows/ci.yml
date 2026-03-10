@@ -152,8 +152,8 @@ jobs:
 
           echo "=== Smoketest ==="
 
-          # Vue SPA serves correctly
-          check "http://localhost:4567/" "vue.js"
+          # Vue SPA HTML references a JS bundle
+          check "http://localhost:4567/" "/vue/"
 
           # Vue JS bundle is served (extract asset path from HTML)
           VUE_JS=$(curl -sf http://localhost:4567/ | grep -oE '/vue/[^"]+\.js' | head -1)
@@ -174,7 +174,7 @@ jobs:
           check "http://localhost:4567/api/v1/kinds/ApplicationComponent" '"kind"'
 
           # API: search
-          check "http://localhost:4567/api/v1/search?q=kind:ApplicationComponent" '"kind"'
+          check "http://localhost:4567/api/v1/search?q=ApplicationComponent:" '"kind"'
 
           # API: OpenAPI spec
           check "http://localhost:4567/api/v1/openapi.yaml" "openapi"
