@@ -12,6 +12,7 @@ class Archsight::Annotations::Annotation
     @explicit_title = options[:title]
     @filter = options[:filter]
     @enum = options[:enum]
+    @validator = options[:validator]
     @sidebar = options.fetch(:sidebar, true)
     @list = options.fetch(:list, false)
     @editor = options.fetch(:editor, true)
@@ -54,7 +55,7 @@ class Archsight::Annotations::Annotation
   end
 
   def has_validation?
-    @enum || @type.is_a?(Class)
+    @enum || @validator || @type.is_a?(Class)
   end
 
   # === Value Methods (for instance values) ===
@@ -85,6 +86,7 @@ class Archsight::Annotations::Annotation
     return errors if value.nil?
 
     validate_enum(value, errors)
+    validate_custom(value, errors) if errors.empty?
     validate_type(value, errors) if errors.empty?
     validate_code(value, errors) if errors.empty?
 
@@ -144,6 +146,16 @@ class Archsight::Annotations::Annotation
     invalid_values = values.reject { |v| @enum.include?(v) }
     invalid_values.each do |v|
       errors << "invalid value '#{v}'. Expected one of: #{@enum.join(", ")}"
+    end
+  end
+
+  def validate_custom(value, errors)
+    return unless @validator
+
+    values = list? ? value.to_s.split(",").map(&:strip) : [value.to_s]
+    values.each do |v|
+      message = @validator.call(v) # steep:ignore
+      errors << message if message
     end
   end
 

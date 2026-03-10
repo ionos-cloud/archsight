@@ -51,6 +51,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "rouge", "~> 4.7.0"
   spec.add_dependency "sinatra", "~> 4.0"
   spec.add_dependency "sinatra-contrib", "~> 4.0"
+  spec.add_dependency "spdx-licenses", "~> 1.0"
   spec.add_dependency "thor", "~> 1.0"
   spec.add_dependency "tty-markdown", "~> 0.7"
 end

@@ -81,7 +81,7 @@ Metrics/BlockLength:
     - "*.gemspec"
 
 Metrics/ParameterLists:
-  Max: 10
+  Max: 12
   Exclude:
     - "test/**/*"
 

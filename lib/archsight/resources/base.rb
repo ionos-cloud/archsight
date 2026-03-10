@@ -25,10 +25,10 @@ module Archsight
 
       # Define an annotation using the Annotation class
       def self.annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil, sidebar: true,
-                          type: nil, list: false, editor: true)
+                          type: nil, list: false, editor: true, validator: nil)
         @annotations ||= [] #: Array[Archsight::Annotations::Annotation]
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, list: list, editor: editor }
+                    sidebar: sidebar, type: type, list: list, editor: editor, validator: validator }
         @annotations << Archsight::Annotations::Annotation.new(key, options)
       end
 
