@@ -1,10 +1,13 @@
 # Build stage
 FROM ruby:4.0-alpine3.23 AS builder
 
-RUN apk add --no-cache build-base git libffi-dev yaml-dev
+RUN apk add --no-cache build-base git libffi-dev yaml-dev nodejs npm
 
 WORKDIR /app
 COPY . .
+
+# Build frontend assets
+RUN cd frontend && npm ci && npm run build
 
 # Build and install the gem
 RUN gem build archsight.gemspec && \
