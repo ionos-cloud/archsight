@@ -102,6 +102,91 @@ jobs:
           docker run --rm archsight:latest version
           docker run --rm -v "${{ github.workspace }}/examples:/resources" archsight:latest lint
 
+      - name: Smoketest Docker image
+        run: |
+          # Start container with example data
+          docker run -d --name smoketest \
+            -p 4567:4567 \
+            -v "${{ github.workspace }}/examples:/resources" \
+            archsight:latest web --port 4567
+
+          # Wait for server to be ready
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4567/ > /dev/null 2>&1; then
+              break
+            fi
+            if [ "$i" = "30" ]; then
+              echo "FAIL: Server did not start within 30s"
+              docker logs smoketest
+              exit 1
+            fi
+            sleep 1
+          done
+
+          PASS=0
+          FAIL=0
+
+          check() {
+            URL=$1
+            MATCH=$2
+            BODY=$(curl -sf "$URL") || { echo "FAIL: $URL (request failed)"; FAIL=$((FAIL+1)); return; }
+            if echo "$BODY" | grep -q "$MATCH"; then
+              echo "OK:   $URL"
+              PASS=$((PASS+1))
+            else
+              echo "FAIL: $URL (expected '$MATCH')"
+              FAIL=$((FAIL+1))
+            fi
+          }
+
+          check_status() {
+            URL=$1
+            if curl -sf -o /dev/null "$URL"; then
+              echo "OK:   $URL"
+              PASS=$((PASS+1))
+            else
+              echo "FAIL: $URL (expected HTTP 200)"
+              FAIL=$((FAIL+1))
+            fi
+          }
+
+          echo "=== Smoketest ==="
+
+          # Vue SPA serves correctly
+          check "http://localhost:4567/" "vue.js"
+
+          # Vue JS bundle is served (extract asset path from HTML)
+          VUE_JS=$(curl -sf http://localhost:4567/ | grep -oE '/vue/[^"]+\.js' | head -1)
+          if [ -n "$VUE_JS" ]; then
+            check_status "http://localhost:4567$VUE_JS"
+          else
+            echo "FAIL: Could not find Vue JS bundle path in HTML"
+            FAIL=$((FAIL+1))
+          fi
+
+          # Favicon is served
+          check_status "http://localhost:4567/favicon.ico"
+
+          # API: kinds list returns JSON with resource types
+          check "http://localhost:4567/api/v1/kinds" "ApplicationComponent"
+
+          # API: instances of a kind
+          check "http://localhost:4567/api/v1/kinds/ApplicationComponent" '"kind"'
+
+          # API: search
+          check "http://localhost:4567/api/v1/search?q=kind:ApplicationComponent" '"kind"'
+
+          # API: OpenAPI spec
+          check "http://localhost:4567/api/v1/openapi.yaml" "openapi"
+
+          echo "=== Results: $PASS passed, $FAIL failed ==="
+
+          docker stop smoketest
+
+          if [ "$FAIL" -gt 0 ]; then
+            exit 1
+          fi
+
   release-gem:
     needs: [test, lint, typecheck, security]
     if: startsWith(github.ref, 'refs/tags/v')
