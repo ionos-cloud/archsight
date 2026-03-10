@@ -79,8 +79,9 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
 
     # Configure SSL verification
     if @ssl_fingerprint
-      # Use certificate pinning - disable default verification, we verify fingerprint manually
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      # Use certificate pinning - verify fingerprint in callback, return false to reject
+      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+      fingerprint_mismatch = nil
       http.verify_callback = lambda do |_preverify_ok, cert_store|
         # Get the peer certificate from the chain
         cert = cert_store.chain&.first
@@ -90,7 +91,10 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
         fingerprint = OpenSSL::Digest::SHA256.new(cert.to_der).to_s.upcase.scan(/../).join(":")
         expected = @ssl_fingerprint.upcase
 
-        raise OpenSSL::SSL::SSLError, "Certificate fingerprint mismatch! Expected: #{expected}, Got: #{fingerprint}" if fingerprint != expected
+        if fingerprint != expected
+          fingerprint_mismatch = "Certificate fingerprint mismatch! Expected: #{expected}, Got: #{fingerprint}"
+          return false
+        end
 
         true
       end
@@ -101,7 +105,11 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
     request = Net::HTTP::Get.new(uri)
     request["PRIVATE-TOKEN"] = @token
 
-    response = http.request(request)
+    begin
+      response = http.request(request)
+    rescue OpenSSL::SSL::SSLError => e
+      raise OpenSSL::SSL::SSLError, fingerprint_mismatch || e.message
+    end
 
     raise "GitLab API error: #{response.code} #{response.message}" unless response.is_a?(Net::HTTPSuccess)
 
