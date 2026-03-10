@@ -2,6 +2,7 @@
 
 require "open3"
 require "json"
+require "spdx-licenses"
 require "archsight/import"
 
 # License detection and dependency license scanning for repositories
@@ -32,6 +33,7 @@ class Archsight::Import::LicenseAnalyzer
     { id: "Unlicense",    re: /\bThis is free and unencumbered software\b/mi },
     { id: "CC0-1.0",      re: /Creative Commons.*CC0|CC0 1\.0 Universal/mi },
     { id: "BSL-1.0",      re: /Boost Software License/mi },
+    { id: "BUSL-1.1",     re: /Business Source License.*1\.1/mi },
     { id: "EUPL-1.2",     re: /European Union Public Licen[cs]e.*1\.2/mi }
   ].freeze
 
@@ -40,6 +42,7 @@ class Archsight::Import::LicenseAnalyzer
     "permissive" => %w[Apache-2.0 MIT BSD-3-Clause BSD-2-Clause ISC Unlicense CC0-1.0 BSL-1.0 0BSD Ruby],
     "copyleft" => %w[GPL-3.0 GPL-2.0 AGPL-3.0],
     "weak-copyleft" => %w[LGPL-3.0 LGPL-2.1 MPL-2.0 EUPL-1.2 CDDL-1.0],
+    "source-available" => %w[BUSL-1.1],
     "proprietary" => %w[proprietary]
   }.freeze
 
@@ -56,10 +59,8 @@ class Archsight::Import::LicenseAnalyzer
     \(c\)\s
   /xi
 
-  # Known SPDX IDs for dual-license splitting
-  KNOWN_SPDX = Set.new(
-    CATEGORIES.values.flatten + %w[NOASSERTION unknown]
-  ).freeze
+  # Custom non-SPDX values we accept
+  CUSTOM_LICENSE_VALUES = Set.new(%w[NOASSERTION proprietary unknown]).freeze
 
   # License file names to search (in order of priority)
   LICENSE_FILES = %w[
@@ -289,7 +290,7 @@ class Archsight::Import::LicenseAnalyzer
       parts = cleaned.split(%r{\s*/\s*|\s+OR\s+}i)
       parts.each do |part|
         normalized = normalize_spdx_single(part.strip)
-        return normalized if KNOWN_SPDX.include?(normalized)
+        return normalized if known_spdx?(normalized)
       end
     end
 
@@ -320,6 +321,11 @@ class Archsight::Import::LicenseAnalyzer
     when /^ruby$/i then "Ruby"
     else cleaned
     end
+  end
+
+  # Check if a value is a known SPDX ID or one of our custom values
+  def known_spdx?(value)
+    CUSTOM_LICENSE_VALUES.include?(value) || SpdxLicenses.exist?(value)
   end
 
   # Categorize a license SPDX identifier
@@ -633,13 +639,15 @@ class Archsight::Import::LicenseAnalyzer
 
     strong_copyleft = CATEGORIES["copyleft"]
     weak_copyleft = CATEGORIES["weak-copyleft"]
+    source_available = CATEGORIES["source-available"]
 
     has_strong = license_names.any? { |l| strong_copyleft.include?(l) }
     has_weak = license_names.any? { |l| weak_copyleft.include?(l) }
+    has_source_available = license_names.any? { |l| source_available.include?(l) }
     unknown_count = license_names.count { |l| l == "unknown" }
     many_unknown = unknown_count.positive? && (unknown_count.to_f / license_names.size) > 0.5
 
-    if has_strong || many_unknown
+    if has_strong || many_unknown || has_source_available
       "copyleft"
     elsif has_weak
       "weak-copyleft"

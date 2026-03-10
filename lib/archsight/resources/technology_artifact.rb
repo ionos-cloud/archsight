@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "uri"
+require "spdx-licenses"
 
 # TechnologyArtifact usually a source code repository or container
 class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
@@ -159,14 +160,17 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              enum: %w[unprivileged privileged]
 
   # License information
+  SPDX_CUSTOM_VALUES = Set.new(%w[NOASSERTION proprietary unknown]).freeze
+  SPDX_VALIDATOR = lambda { |v|
+    "invalid SPDX license identifier '#{v}'" unless SPDX_CUSTOM_VALUES.include?(v) || SpdxLicenses.exist?(v)
+  }
+
   annotation "license/spdx",
              description: "SPDX license identifier",
              title: "License",
              filter: :word,
              sidebar: false,
-             enum: %w[Apache-2.0 MIT BSD-3-Clause BSD-2-Clause GPL-3.0 GPL-2.0 LGPL-3.0
-                      LGPL-2.1 MPL-2.0 ISC AGPL-3.0 Unlicense CC0-1.0 BSL-1.0 EUPL-1.2
-                      0BSD CDDL-1.0 Ruby NOASSERTION proprietary unknown]
+             validator: SPDX_VALIDATOR
   annotation "license/file",
              description: "License file path",
              title: "License File",

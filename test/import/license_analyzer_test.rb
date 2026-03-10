@@ -646,7 +646,111 @@ class LicenseAnalyzerTest < Minitest::Test
     assert_equal "MIT", result["license_spdx"]
   end
 
+  # --- SPDX gem validation (known_spdx?) ---
+
+  def test_dual_license_recognizes_spdx_id_not_in_categories
+    # Artistic-2.0 is a valid SPDX ID but not in our CATEGORIES hash;
+    # the gem should still recognize it during dual-license splitting
+    write_license_manifest("Artistic-2.0/MIT")
+    result = analyze
+
+    assert_equal "Artistic-2.0", result["license_spdx"]
+  end
+
+  def test_dual_license_recognizes_mpl_2_0_plus_uncommon_spdx
+    # Zlib is valid SPDX but was never in the old hardcoded list
+    write_license_manifest("Zlib OR MIT")
+    result = analyze
+
+    assert_equal "Zlib", result["license_spdx"]
+  end
+
+  def test_dual_license_recognizes_custom_value_noassertion
+    write_license_manifest("NOASSERTION/MIT")
+    result = analyze
+
+    assert_equal "NOASSERTION", result["license_spdx"]
+  end
+
+  def test_dual_license_skips_unrecognized_picks_known
+    # "FooBar-1.0" is not a real SPDX ID; should skip it and pick MIT
+    write_license_manifest("FooBar-1.0/MIT")
+    result = analyze
+
+    assert_equal "MIT", result["license_spdx"]
+  end
+
+  # --- BUSL-1.1 (source-available) ---
+
+  def test_detects_busl_license_file
+    write_license("Business Source License 1.1\nLicensor: Acme Corp")
+    result = analyze
+
+    assert_equal "BUSL-1.1", result["license_spdx"]
+  end
+
+  def test_busl_categorized_as_source_available
+    assert_equal "source-available",
+                 Archsight::Import::LicenseAnalyzer::CATEGORY_LOOKUP["BUSL-1.1"]
+  end
+
+  # --- SpdxLicenses gem integration ---
+
+  def test_spdx_gem_recognizes_common_licenses
+    %w[MIT Apache-2.0 GPL-3.0-only BSD-3-Clause ISC].each do |id|
+      assert SpdxLicenses.exist?(id), "Expected SpdxLicenses to recognize #{id}"
+    end
+  end
+
+  def test_spdx_gem_rejects_invalid_ids
+    %w[NOASSERTION proprietary unknown FooBar-1.0].each do |id|
+      refute SpdxLicenses.exist?(id), "Expected SpdxLicenses to NOT recognize #{id}"
+    end
+  end
+
+  def test_custom_license_values_includes_our_special_ids
+    custom = Archsight::Import::LicenseAnalyzer::CUSTOM_LICENSE_VALUES
+
+    assert_includes custom, "NOASSERTION"
+    assert_includes custom, "proprietary"
+    assert_includes custom, "unknown"
+  end
+
+  # --- Lint validation (TechnologyArtifact license/spdx annotation) ---
+
+  def test_spdx_annotation_validates_valid_license
+    annotation = spdx_annotation
+
+    assert_empty annotation.validate("MIT")
+    assert_empty annotation.validate("Apache-2.0")
+    assert_empty annotation.validate("GPL-3.0-only")
+  end
+
+  def test_spdx_annotation_validates_custom_values
+    annotation = spdx_annotation
+
+    assert_empty annotation.validate("NOASSERTION")
+    assert_empty annotation.validate("proprietary")
+    assert_empty annotation.validate("unknown")
+  end
+
+  def test_spdx_annotation_rejects_invalid_license
+    annotation = spdx_annotation
+    errors = annotation.validate("NotARealLicense-1.0")
+
+    refute_empty errors
+    assert_match(/invalid SPDX/, errors.first)
+  end
+
+  def test_spdx_annotation_has_validation
+    assert_predicate spdx_annotation, :has_validation?, "license/spdx annotation should have validation"
+  end
+
   private
+
+  def spdx_annotation
+    Archsight::Resources::TechnologyArtifact.annotations.find { |a| a.key == "license/spdx" }
+  end
 
   # Write a license string via package.json manifest (simulates dependency-tool output)
   def write_license_manifest(license_string)
