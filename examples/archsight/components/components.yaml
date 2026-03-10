@@ -25,8 +25,8 @@ metadata:
   annotations:
     architecture/abbr: API
     architecture/description: |
-      REST API component providing JSON endpoints for kinds, instances,
-      and search functionality with OpenAPI documentation.
+      REST API component serving the Vue SPA and providing JSON endpoints
+      for kinds, instances, and search functionality with OpenAPI documentation.
     architecture/tags: rest,api,json
     architecture/kind: hexagonal
     architecture/size: microservice
@@ -96,8 +96,8 @@ metadata:
   annotations:
     architecture/abbr: GV
     architecture/description: |
-      GraphViz renderer generating SVG and DOT output for architecture
-      visualization with customizable graph styling.
+      GraphViz DOT renderer producing graph descriptions for architecture
+      visualization. Rendering to SVG is done client-side via @hpcc-js/wasm.
     architecture/tags: graphviz,svg,visualization
     architecture/kind: hexagonal
     architecture/size: microservice
@@ -179,3 +179,24 @@ spec:
   exposes:
     applicationInterfaces:
       - Public:Archsight:v1:CLI
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Web:Frontend
+  annotations:
+    architecture/abbr: FE
+    architecture/description: |
+      Vue 3 single-page application with Vue Router, Pico CSS,
+      and client-side GraphViz rendering via @hpcc-js/wasm.
+    architecture/tags: vue,frontend,spa
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+  servedBy:
+    technologyComponents:
+      - Tech:Vue
+      - Tech:Vite

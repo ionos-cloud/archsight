@@ -23,3 +23,33 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:Vue
+  annotations:
+    architecture/description: |
+      Vue 3 SPA framework powering the archsight frontend with
+      Vue Router, composables, and reactive components (5,568 LOC).
+    architecture/tags: vue,frontend,spa
+    architecture/documentation: https://vuejs.org
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:Vite
+  annotations:
+    architecture/description: |
+      Vite build tool and dev server bundling the Vue SPA,
+      CSS, and npm dependencies for production and development.
+    architecture/tags: vite,build,bundler
+    architecture/documentation: https://vite.dev
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight

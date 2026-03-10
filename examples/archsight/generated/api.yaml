@@ -1,0 +1,19 @@
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:API:archsight
+spec:
+  generates:
+    dataObjects:
+    - Archsight:Kind
+    - Archsight:Instance
+    - Archsight:Filter
+    - Archsight:Analysis
+    - Archsight:AnalysisSection
+    - Archsight:EditorField
+    - Archsight:RelationOption
+    - Archsight:Generate
+    - Archsight:Save
+    applicationInterfaces:
+    - Public:Archsight:v1:RestAPI

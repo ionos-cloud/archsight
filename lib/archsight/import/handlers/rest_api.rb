@@ -35,7 +35,7 @@ class Archsight::Import::Handlers::RestApi < Archsight::Import::Handler
     raise "Missing required config: specUrl" unless @spec_url
 
     @html_url = config("htmlUrl")
-    @gate = config("gate", default: "GA")
+    @gate = normalize_gate(config("gate", default: "GA"))
 
     @interface_output_path = config("interfaceOutputPath")
     @data_object_output_path = config("dataObjectOutputPath")
@@ -79,7 +79,19 @@ class Archsight::Import::Handlers::RestApi < Archsight::Import::Handler
     write_generates_meta
   end
 
+  GATE_ALIASES = {
+    "GA" => "General-Availability",
+    "EA" => "Early-Access",
+    "DEV" => "Development"
+  }.freeze
+
   private
+
+  def normalize_gate(value)
+    GATE_ALIASES.fetch(value.upcase, value)
+  rescue NoMethodError
+    value
+  end
 
   def safe_api_name
     @name.gsub(/[^a-zA-Z0-9_-]/, "_").downcase

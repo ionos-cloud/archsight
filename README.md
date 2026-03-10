@@ -59,6 +59,7 @@ archsight version            # Show version
 ```bash
 archsight web [--resources PATH] [--port PORT] [--host HOST]
               [--production] [--disable-reload] [--enable-logging]
+              [--inline-edit]
 ```
 
 | Option | Description |
@@ -69,6 +70,7 @@ archsight web [--resources PATH] [--port PORT] [--host HOST]
 | `--production` | Run in production mode (quiet startup) |
 | `--disable-reload` | Disable the reload button in the UI |
 | `--enable-logging` | Enable request logging (default: false in dev, true in prod) |
+| `--inline-edit` | Enable inline editing to save directly to source files |
 
 ## Features
 
