@@ -104,7 +104,7 @@ module Archsight
 
       # Create database that loads from resources directory
       # Only load Import resources to avoid validation errors on incomplete resources
-      db = Archsight::Database.new(resources_dir, verbose: options[:verbose], only_kinds: ["Import"], verify: false)
+      db = Archsight::Database.new(resources_dir, verbose: options[:verbose], only_kinds: ["Import", "BusinessActor"], verify: false)
 
       if options[:dry_run]
         puts "Execution Plan:"
