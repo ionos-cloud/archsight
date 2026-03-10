@@ -9,9 +9,9 @@ metadata:
     repository/visibility: open-source
     scc/languages: BASH,CSS,CloudFormation (YAML),Docker ignore,Dockerfile,Gemfile,HTML,JSON,JavaScript,Markdown,Plain
       Text,Rakefile,Ruby,Ruby HTML,Smarty Template,Vue,YAML
-    scc/estimatedCost: '1018917.22'
-    scc/estimatedScheduleMonths: '13.85'
-    scc/estimatedPeople: '6.54'
+    scc/estimatedCost: '1027550.69'
+    scc/estimatedScheduleMonths: '13.90'
+    scc/estimatedPeople: '6.57'
     scc/language/BASH/loc: '4'
     scc/language/CSS/loc: '406'
     scc/language/CloudFormation (YAML)/loc: '60'
@@ -21,23 +21,23 @@ metadata:
     scc/language/HTML/loc: '13'
     scc/language/JSON/loc: '33'
     scc/language/JavaScript/loc: '471'
-    scc/language/Markdown/loc: '2285'
+    scc/language/Markdown/loc: '2287'
     scc/language/Plain Text/loc: '191'
     scc/language/Rakefile/loc: '47'
-    scc/language/Ruby/loc: '19726'
+    scc/language/Ruby/loc: '19736'
     scc/language/Ruby HTML/loc: '51'
     scc/language/Smarty Template/loc: '57'
     scc/language/Vue/loc: '5568'
-    scc/language/YAML/loc: '2778'
+    scc/language/YAML/loc: '3022'
     activity/status: active
-    activity/commits: '41,3,2'
+    activity/commits: '41,3,4'
     activity/contributors: '4,2,1'
     activity/contributors/6m: '3'
     activity/contributors/total: '5'
     activity/busFactor: high
     agentic/tools: none
     activity/createdAt: '2026-01-07T15:34:50+01:00'
-    activity/lastHumanCommit: '2026-03-10T11:14:16+01:00'
+    activity/lastHumanCommit: '2026-03-10T11:07:00Z'
     repository/recentTags: v0.1.5,v0.1.4,v0.1.3,v0.1.2,v0.1.1,v0.1.0
     repository/artifacts: container
     workflow/platforms: github-actions
@@ -63,18 +63,21 @@ metadata:
     license/dependencies/risk: copyleft
     license/dependencies/unknown/count: '98'
     generated/script: Import:Repo:archsight
-    generated/at: '2026-03-10T10:42:11Z'
+    generated/at: '2026-03-10T12:37:48Z'
 spec:
   suppliedBy:
     technologyComponents:
     - Git:Github
+  maintainedBy:
+    businessActors:
+    - Archsight:Maintainers
 ---
 apiVersion: architecture/v1alpha1
 kind: Import
 metadata:
   name: Import:Repo:archsight
   annotations:
-    generated/at: '2026-03-10T10:42:11Z'
+    generated/at: '2026-03-10T12:37:48Z'
     generated/configHash: 6cc08da45e93aaa0
 spec: {}
 ---
