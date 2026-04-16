@@ -35,11 +35,11 @@ jobs:
 
       - name: Set up Helm
         if: steps.check-version.outputs.version_changed == 'true'
-        uses: azure/setup-helm@v4
+        uses: azure/setup-helm@v5
 
       - name: Log in to Container Registry
         if: steps.check-version.outputs.version_changed == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}

@@ -9,6 +9,7 @@ gem "irb"
 gem "rake", "~> 13.0"
 
 gem "bundler-audit"
+gem "json", ">= 2.19.2" # CVE-2026-33210: format string injection
 
 gem "minitest", ">= 5.16"
 gem "rack-test", require: false
