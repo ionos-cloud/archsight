@@ -41,6 +41,63 @@ class ApplicationTest < Minitest::Test
     assert last_response.location.end_with?("/kinds/TechnologyArtifact")
   end
 
+  def test_post_maintenance_restart_disabled_by_default
+    post "/maintenance/restart"
+
+    assert_equal 404, last_response.status
+    assert_includes last_response.body, "Restart endpoint is disabled"
+  end
+
+  def with_restart_enabled(token: nil)
+    original = Archsight::Web::Application.method(:perform_restart!)
+    Archsight::Web::Application.set :restart_enabled, true
+    Archsight::Web::Application.set :restart_token, token
+    Archsight::Web::Application.define_singleton_method(:perform_restart!) { nil }
+    yield
+  ensure
+    Archsight::Web::Application.define_singleton_method(:perform_restart!, &original)
+    Archsight::Web::Application.set :restart_enabled, false
+    Archsight::Web::Application.set :restart_token, nil
+  end
+
+  def test_post_maintenance_restart_enabled_response_body
+    with_restart_enabled do
+      post "/maintenance/restart"
+    end
+
+    assert_predicate last_response, :ok?
+
+    body = JSON.parse(last_response.body)
+
+    assert body["ok"]
+    assert_includes body["message"], "shutting down"
+  end
+
+  def test_post_maintenance_restart_token_required_missing_header
+    with_restart_enabled(token: "secret") do
+      post "/maintenance/restart"
+    end
+
+    assert_equal 401, last_response.status
+    assert_includes last_response.body, "Invalid or missing restart token"
+  end
+
+  def test_post_maintenance_restart_token_required_wrong_header
+    with_restart_enabled(token: "secret") do
+      post "/maintenance/restart", {}, { "HTTP_X_RESTART_TOKEN" => "wrong" }
+    end
+
+    assert_equal 401, last_response.status
+  end
+
+  def test_post_maintenance_restart_token_correct
+    with_restart_enabled(token: "secret") do
+      post "/maintenance/restart", {}, { "HTTP_X_RESTART_TOKEN" => "secret" }
+    end
+
+    assert_predicate last_response, :ok?
+  end
+
   def test_get_search_without_query
     get "/search"
 

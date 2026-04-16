@@ -53,11 +53,20 @@ class Archsight::Web::Application < Sinatra::Base
     end
   end
 
+  RESTART_SHUTDOWN_DELAY =
+    begin
+      Float(ENV.fetch("ARCHSIGHT_RESTART_SHUTDOWN_DELAY", "2.0"))
+    rescue ArgumentError, TypeError
+      2.0
+    end
+
   configure do
     set :public_folder, File.join(__dir__, "public")
     set :server, :puma
     set :reload_enabled, true
     set :inline_edit_enabled, false
+    set :restart_enabled, false
+    set :restart_token, nil
   end
 
   # MCP Server setup
@@ -98,6 +107,16 @@ class Archsight::Web::Application < Sinatra::Base
 
     def inline_edit_enabled?
       settings.inline_edit_enabled
+    end
+
+    def restart_enabled?
+      settings.restart_enabled
+    end
+
+    def authorized_restart?
+      return true if settings.restart_token.nil?
+
+      request.env["HTTP_X_RESTART_TOKEN"] == settings.restart_token
     end
 
     def production?
@@ -198,6 +217,25 @@ class Archsight::Web::Application < Sinatra::Base
       msg = ERB::Util.html_escape(e.message)
       "<!DOCTYPE html><html><body><h3>Error: #{msg}</h3><p>#{path} line #{e.ref.line_no}</p><a href='/'>Back</a></body></html>"
     end
+  end
+
+  after do
+    Archsight::Web::Application.perform_restart! if request.env["archsight.restart_requested"]
+  end
+
+  def self.perform_restart!
+    Thread.new do
+      sleep RESTART_SHUTDOWN_DELAY if RESTART_SHUTDOWN_DELAY.positive?
+      Process.kill("TERM", Process.pid)
+    end
+  end
+
+  post "/maintenance/restart" do
+    halt 404, "Restart endpoint is disabled" unless settings.restart_enabled
+    halt 401, "Invalid or missing restart token" unless authorized_restart?
+    request.env["archsight.restart_requested"] = true
+    content_type :json
+    JSON.generate({ ok: true, message: "Server shutting down" })
   end
 
   get "/doc/resources/:filename" do

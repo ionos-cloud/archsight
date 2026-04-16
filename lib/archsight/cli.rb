@@ -20,6 +20,10 @@ module Archsight
     option :disable_reload, type: :boolean, default: false, desc: "Disable the reload button in the UI"
     option :enable_logging, type: :boolean, default: nil, desc: "Enable request logging (default: false in dev, true in prod)"
     option :inline_edit, type: :boolean, default: false, desc: "Enable inline editing (save directly to source files)"
+    option :enable_restart, type: :boolean, default: false,
+                            desc: "Enable POST /maintenance/restart endpoint (use with imagePullPolicy: Always in Kubernetes)"
+    option :restart_token, type: :string, default: nil,
+                           desc: "Shared secret required as X-Restart-Token header on POST /maintenance/restart"
     def web
       configure_resources
       require "archsight/web/application"
@@ -28,6 +32,8 @@ module Archsight
       Archsight::Web::Application.configure_environment!(env, logging: options[:enable_logging])
       Archsight::Web::Application.set :reload_enabled, !options[:disable_reload]
       Archsight::Web::Application.set :inline_edit_enabled, options[:inline_edit]
+      Archsight::Web::Application.set :restart_enabled, options[:enable_restart]
+      Archsight::Web::Application.set :restart_token, options[:restart_token]
       Archsight::Web::Application.setup_mcp!
       Archsight::Web::Application.run!(port: options[:port], bind: options[:host])
     rescue Archsight::ResourceError => e
