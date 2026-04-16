@@ -142,6 +142,44 @@ sidecars:
         mountPath: /resources
 ```
 
+## Rolling Restart via Maintenance Endpoint
+
+For simple deployments where you want to trigger a pod restart (and image re-pull) without `kubectl`, you can enable the `POST /maintenance/restart` endpoint.
+
+**How it works:**
+1. A `POST` to `/maintenance/restart` signals the server to shut down gracefully.
+2. Kubernetes detects the pod has exited and restarts it (`restartPolicy: Always`).
+3. With `imagePullPolicy: Always`, the new image is pulled on every pod start.
+
+**Enable in values.yaml:**
+
+```yaml
+image:
+  pullPolicy: Always  # Pull a fresh image on every pod restart
+
+args:
+  - web
+  - "--port"
+  - "4567"
+  - "-H"
+  - "0.0.0.0"
+  - "--production"
+  - "--enable-restart"  # Opt-in: exposes POST /maintenance/restart
+```
+
+**Trigger a restart:**
+
+```bash
+curl -X POST http://<archsight-service>/maintenance/restart
+# → {"ok":true,"message":"Server shutting down"}
+```
+
+The pod exits, Kubernetes restarts it, and the new image is pulled automatically.
+
+When the endpoint is disabled (the default), it returns `404 Restart endpoint is disabled`.
+
+> **Security note:** This endpoint has no authentication. Restrict access at the network/ingress level if your instance is publicly reachable.
+
 ## Uninstalling the Chart
 
 ```bash

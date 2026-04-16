@@ -58,6 +58,7 @@ class Archsight::Web::Application < Sinatra::Base
     set :server, :puma
     set :reload_enabled, true
     set :inline_edit_enabled, false
+    set :restart_enabled, false
   end
 
   # MCP Server setup
@@ -98,6 +99,10 @@ class Archsight::Web::Application < Sinatra::Base
 
     def inline_edit_enabled?
       settings.inline_edit_enabled
+    end
+
+    def restart_enabled?
+      settings.restart_enabled
     end
 
     def production?
@@ -198,6 +203,20 @@ class Archsight::Web::Application < Sinatra::Base
       msg = ERB::Util.html_escape(e.message)
       "<!DOCTYPE html><html><body><h3>Error: #{msg}</h3><p>#{path} line #{e.ref.line_no}</p><a href='/'>Back</a></body></html>"
     end
+  end
+
+  def self.perform_restart!
+    Thread.new do
+      sleep 0.5
+      Process.kill("TERM", Process.pid)
+    end
+  end
+
+  post "/maintenance/restart" do
+    halt 404, "Restart endpoint is disabled" unless settings.restart_enabled
+    Archsight::Web::Application.perform_restart!
+    content_type :json
+    JSON.generate({ ok: true, message: "Server shutting down" })
   end
 
   get "/doc/resources/:filename" do

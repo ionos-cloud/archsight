@@ -41,6 +41,33 @@ class ApplicationTest < Minitest::Test
     assert last_response.location.end_with?("/kinds/TechnologyArtifact")
   end
 
+  def test_post_maintenance_restart_disabled_by_default
+    post "/maintenance/restart"
+
+    assert_equal 404, last_response.status
+    assert_includes last_response.body, "Restart endpoint is disabled"
+  end
+
+  def test_post_maintenance_restart_enabled_response_body
+    Archsight::Web::Application.set :restart_enabled, true
+    restart_called = false
+    original = Archsight::Web::Application.method(:perform_restart!)
+    Archsight::Web::Application.define_singleton_method(:perform_restart!) { restart_called = true }
+
+    post "/maintenance/restart"
+
+    assert_predicate last_response, :ok?
+    assert restart_called, "expected perform_restart! to be called"
+
+    body = JSON.parse(last_response.body)
+
+    assert body["ok"]
+    assert_includes body["message"], "shutting down"
+  ensure
+    Archsight::Web::Application.define_singleton_method(:perform_restart!, &original)
+    Archsight::Web::Application.set :restart_enabled, false
+  end
+
   def test_get_search_without_query
     get "/search"
 

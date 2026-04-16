@@ -159,4 +159,6 @@ extraVolumes: []
 extraVolumeMounts: []
 
 # Command arguments (passed to ENTRYPOINT ["archsight"])
+# Add "--enable-restart" together with image.pullPolicy: Always to enable
+# the POST /maintenance/restart endpoint for lightweight rolling deployments.
 args: ["web", "--port", "4567", "-H", "0.0.0.0", "--production"]
