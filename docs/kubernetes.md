@@ -164,21 +164,36 @@ args:
   - "-H"
   - "0.0.0.0"
   - "--production"
-  - "--enable-restart"  # Opt-in: exposes POST /maintenance/restart
+  - "--enable-restart"          # Opt-in: exposes POST /maintenance/restart
+  - "--restart-token"
+  - "your-secret-token"         # Recommended: require a shared secret
 ```
 
 **Trigger a restart:**
 
 ```bash
-curl -X POST http://<archsight-service>/maintenance/restart
+curl -X POST http://<archsight-service>/maintenance/restart \
+  -H "X-Restart-Token: your-secret-token"
 # → {"ok":true,"message":"Server shutting down"}
 ```
 
 The pod exits, Kubernetes restarts it, and the new image is pulled automatically.
 
 When the endpoint is disabled (the default), it returns `404 Restart endpoint is disabled`.
+When a token is configured and the header is missing or wrong, it returns `401 Invalid or missing restart token`.
 
-> **Security note:** This endpoint has no authentication. Restrict access at the network/ingress level if your instance is publicly reachable.
+**Configuring the shutdown delay:**
+
+The server waits 2 seconds (default) before sending SIGTERM to allow the response to be
+flushed. Override with the `ARCHSIGHT_RESTART_SHUTDOWN_DELAY` environment variable (seconds, float):
+
+```yaml
+env:
+  - name: ARCHSIGHT_RESTART_SHUTDOWN_DELAY
+    value: "3.0"
+```
+
+> **Security note:** Restrict access to this endpoint at the network/ingress level. The `--restart-token` flag adds a shared-secret check in code, but network-level restrictions (e.g., internal-only ingress, NetworkPolicy) are the primary defence for publicly reachable deployments.
 
 ## Uninstalling the Chart
 
