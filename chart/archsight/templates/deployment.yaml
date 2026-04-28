@@ -44,6 +44,17 @@ spec:
               value: {{ .Values.app.resourcesDir | quote }}
             - name: APP_ENV
               value: {{ .Values.app.env | quote }}
+            {{- if .Values.restart.enabled }}
+            - name: ARCHSIGHT_RESTART_ENABLED
+              value: "true"
+            {{- if or .Values.restart.token .Values.restart.existingSecret }}
+            - name: ARCHSIGHT_RESTART_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.restart.existingSecret | default (printf "%s-restart-token" (include "archsight.fullname" .)) }}
+                  key: {{ .Values.restart.secretKey | default "restart-token" }}
+            {{- end }}
+            {{- end }}
           {{- if .Values.args }}
           args:
             {{- toYaml .Values.args | nindent 12 }}

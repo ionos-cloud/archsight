@@ -157,16 +157,19 @@ For simple deployments where you want to trigger a pod restart (and image re-pul
 image:
   pullPolicy: Always  # Pull a fresh image on every pod restart
 
-args:
-  - web
-  - "--port"
-  - "4567"
-  - "-H"
-  - "0.0.0.0"
-  - "--production"
-  - "--enable-restart"          # Opt-in: exposes POST /maintenance/restart
-  - "--restart-token"
-  - "your-secret-token"         # Recommended: require a shared secret
+restart:
+  enabled: true
+  token: "your-secret-token"   # Stored as a Kubernetes Secret automatically
+```
+
+The chart creates a `Secret` containing the token and injects it as `ARCHSIGHT_RESTART_TOKEN`
+into the container. To use a pre-existing Secret instead:
+
+```yaml
+restart:
+  enabled: true
+  existingSecret: "my-restart-secret"
+  secretKey: "restart-token"       # key inside the Secret (default)
 ```
 
 **Trigger a restart:**

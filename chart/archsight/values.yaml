@@ -79,6 +79,18 @@ app:
   resourcesDir: /resources
   env: production
 
+# Restart endpoint configuration
+# Enables POST /maintenance/restart to trigger a rolling restart (useful with imagePullPolicy: Always)
+restart:
+  enabled: false
+  # Plain-text token value. A Kubernetes Secret will be created automatically.
+  # The app will require this value in the X-Restart-Token header.
+  token: ""
+  # Use an existing Secret instead of creating one. The Secret must contain the token.
+  existingSecret: ""
+  # Key inside the Secret that holds the token (default: "restart-token")
+  secretKey: "restart-token"
+
 # Strategy for populating the /resources directory
 # Options are "emptyDir", "configMap", "persistence" (PVC), or usage of "extraVolumes"
 content:

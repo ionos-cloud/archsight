@@ -32,8 +32,11 @@ module Archsight
       Archsight::Web::Application.configure_environment!(env, logging: options[:enable_logging])
       Archsight::Web::Application.set :reload_enabled, !options[:disable_reload]
       Archsight::Web::Application.set :inline_edit_enabled, options[:inline_edit]
-      Archsight::Web::Application.set :restart_enabled, options[:enable_restart]
-      Archsight::Web::Application.set :restart_token, options[:restart_token]
+
+      restart_enabled = options[:enable_restart] || ENV["ARCHSIGHT_RESTART_ENABLED"] == "true"
+      restart_token = options[:restart_token] || ENV.fetch("ARCHSIGHT_RESTART_TOKEN", nil)
+      Archsight::Web::Application.set :restart_enabled, restart_enabled
+      Archsight::Web::Application.set :restart_token, restart_token
       Archsight::Web::Application.setup_mcp!
       Archsight::Web::Application.run!(port: options[:port], bind: options[:host])
     rescue Archsight::ResourceError => e
