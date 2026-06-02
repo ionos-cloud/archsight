@@ -15,6 +15,7 @@ const badgeClass = computed(() => {
   switch (category.value) {
     case 'permissive': return 'badge-success'
     case 'weak-copyleft': return 'badge-warning'
+    case 'source-available': return 'badge-warning'
     case 'copyleft': return 'badge-danger'
     default: return 'badge-secondary'
   }

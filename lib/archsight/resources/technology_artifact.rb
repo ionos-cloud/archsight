@@ -179,7 +179,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              description: "License category",
              title: "License Category",
              filter: :word,
-             enum: %w[permissive copyleft weak-copyleft proprietary unknown]
+             enum: %w[permissive copyleft weak-copyleft source-available proprietary unknown]
   annotation "license/dependencies/count",
              description: "Total dependencies",
              title: "Dependencies",

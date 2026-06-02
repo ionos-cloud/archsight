@@ -694,6 +694,13 @@ class LicenseAnalyzerTest < Minitest::Test
                  Archsight::Import::LicenseAnalyzer::CATEGORY_LOOKUP["BUSL-1.1"]
   end
 
+  def test_busl_license_category_is_source_available
+    write_license("Business Source License 1.1\nLicensor: Acme Corp")
+    result = analyze
+
+    assert_equal "source-available", result["license_category"]
+  end
+
   # --- SpdxLicenses gem integration ---
 
   def test_spdx_gem_recognizes_common_licenses
