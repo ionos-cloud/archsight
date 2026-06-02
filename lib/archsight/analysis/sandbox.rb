@@ -285,7 +285,7 @@ module Archsight
         return if data.empty?
 
         # If array of hashes with consistent keys, render as table
-        if data.all? { |item| item.is_a?(Hash) }
+        if data.all?(Hash)
           keys = data.first.keys
           if data.all? { |item| item.keys == keys }
             table(headers: keys.map(&:to_s), rows: data.map { |item| keys.map { |k| item[k] } })

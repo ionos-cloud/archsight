@@ -318,7 +318,7 @@ class JiraMetricsHandlerTest < Minitest::Test
 
   class MockJiraMetricsDatabase
     def initialize(teams)
-      @teams = teams.each_with_object({}) { |t, h| h[t.name] = t }
+      @teams = teams.to_h { |t| [t.name, t] }
     end
 
     def instances_by_kind(kind)
