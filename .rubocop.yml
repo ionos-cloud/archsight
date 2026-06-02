@@ -135,3 +135,7 @@ Style/ComparableClamp:
 # Allow Steep RBS type annotations (#: Type)
 Layout/LeadingCommentSpace:
   AllowRBSInlineAnnotation: true
+
+# Namespace stub modules before the main definition are a deliberate pattern here
+Style/OneClassPerFile:
+  Enabled: false
