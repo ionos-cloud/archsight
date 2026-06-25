@@ -22,8 +22,8 @@ export default defineConfig({
     rollupOptions: {
       input: resolve(__dirname, 'index.html'),
       output: {
-        manualChunks: {
-          mermaid: ['mermaid'],
+        manualChunks: (id) => {
+          if (id.includes('/mermaid/')) return 'mermaid'
         },
         chunkFileNames: 'vue/[name]-[hash].js',
         entryFileNames: 'vue/[name]-[hash].js',
