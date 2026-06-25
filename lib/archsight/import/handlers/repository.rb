@@ -80,9 +80,11 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     progress.update("Generating resource")
     resource = build_technology_artifact(@path, scc_data, git_data, team_result, license_data)
 
-    # Write output with self-marker for caching
-    yaml_content = YAML.dump(resource) + YAML.dump(self_marker)
-    write_yaml(yaml_content)
+    # Write output: artifact + optional go-grapher child import + self-marker for caching
+    docs = [resource]
+    docs << go_grapher_import(resource["metadata"]["name"]) if go_module?
+    docs << self_marker
+    write_yaml(docs.map { |d| YAML.dump(d) }.join)
 
     write_generates_meta
   end
@@ -451,6 +453,24 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     end
 
     annotations
+  end
+
+  def go_module?
+    File.exist?(File.join(@path, "go.mod")) || File.exist?(File.join(@path, "go.work"))
+  end
+
+  def go_grapher_import(artifact_name)
+    child_name = "Import:GoGrapher:#{artifact_name.delete_prefix("Repo:")}"
+    child_annotations = {}
+    if (output_path = config("goGrapherOutputPath"))
+      child_annotations["import/outputPath"] = output_path
+    end
+    import_yaml(
+      name: child_name,
+      handler: "go-grapher",
+      config: { "path" => @path },
+      annotations: child_annotations
+    )
   end
 
   def build_deployment_annotations(git_data)

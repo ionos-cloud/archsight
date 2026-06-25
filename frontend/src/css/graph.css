@@ -1,7 +1,8 @@
 /* ===== Global Styles ===== */
 
-/* Hide table borders in all nodes */
-.node polygon[fill="none"] {
+/* Hide table-cell separator borders in the relation graph's record-style nodes.
+   Scoped to #graphviz so module-graph box nodes keep their borders. */
+#graphviz .node polygon[fill="none"] {
     stroke: none !important;
 }
 

@@ -7,6 +7,7 @@ import { timeAgo } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { renderMermaidIn } from '../../composables/useMermaid.js'
 import RelationsGrid from './RelationsGrid.vue'
+import ModuleGraph from './ModuleGraph.vue'
 import RequirementsSection from './RequirementsSection.vue'
 import GitInfo from '../artifact/GitInfo.vue'
 import LanguageStats from '../artifact/LanguageStats.vue'
@@ -42,13 +43,15 @@ const hasRelations = computed(() => {
 const generatedScript = computed(() => annotations.value['generated/script'])
 const generatedAt = computed(() => annotations.value['generated/at'])
 const description = computed(() => annotations.value['architecture/description'])
+const moduleDot = computed(() => annotations.value['architecture/modules'])
 
 // Filter out system annotations for the custom annotations table
 const SKIP_PREFIXES = [
   'scc/language/', 'repository/artifacts/', 'link/', 'team/', 'jira/', 'generated/', 'license/',
 ]
 const SKIP_KEYS = new Set([
-  'scc/languages', 'architecture/description', 'workflow/platforms', 'workflow/types',
+  'scc/languages', 'architecture/description', 'architecture/modules',
+  'workflow/platforms', 'workflow/types',
   'agentic/tools', 'repository/artifacts', 'repository/git', 'repository/visibility',
 ])
 const SKIP_PATTERNS = [
@@ -133,6 +136,8 @@ function initPanZoomOnGraph() {
 
     <div ref="descEl" v-if="description" v-html="description" :class="{ footer: hasRelations }"></div>
   </article>
+
+  <ModuleGraph v-if="moduleDot" :dot="moduleDot" />
 
   <RequirementsSection :data="data" />
 
