@@ -45,7 +45,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "fast-mcp", "~> 1.0"
   spec.add_dependency "kramdown", "~> 2.0"
   spec.add_dependency "kramdown-parser-gfm", "~> 1.0"
-  spec.add_dependency "puma", "~> 6.0"
+  spec.add_dependency "puma", ">= 8.0.2"
   spec.add_dependency "rackup", "~> 2.0"
   spec.add_dependency "rexml", "~> 3.0"
   spec.add_dependency "rouge", "~> 4.7.0"
