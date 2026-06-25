@@ -220,6 +220,11 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              description: "Total unique contributors",
              type: Integer
 
+  annotation "architecture/modules",
+             description: "GraphViz DOT graph of module/package structure (language-agnostic; produced by go-grapher, java-grapher, etc.)",
+             title: "Module Structure",
+             sidebar: false
+
   relation :servedBy, :technologyComponents, :TechnologyArtifact
   relation :suppliedBy, :technologyComponents, :TechnologyService
   relation :maintainedBy, :businessActors, :BusinessActor

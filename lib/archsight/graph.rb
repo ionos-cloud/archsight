@@ -54,6 +54,14 @@ module Archsight
       val =~ /^<.*>$/ ? "<#{val}>" : val.inspect
     end
 
+    def defaults(type, attrs = {})
+      @file.print "  #{type} ["
+      attrs.each do |k, v|
+        @file.print " #{k.to_s.inspect} = #{value v}"
+      end
+      @file.puts " ];"
+    end
+
     def same_rank
       @file.puts "  { rank = same; "
       yield(self)
