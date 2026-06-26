@@ -52,6 +52,7 @@ module Archsight
       case language
       when "go"     then Archsight::Import::Handlers::GoGrapher
       when "python" then Archsight::Import::Handlers::PythonGrapher
+      when "java"   then Archsight::Import::Handlers::JavaGrapher
       else
         return Archsight::Import::Handlers::GoGrapher if
           File.exist?(File.join(path, "go.mod")) || File.exist?(File.join(path, "go.work"))
@@ -60,6 +61,10 @@ module Archsight
           File.exist?(File.join(path, "pyproject.toml")) ||
           File.exist?(File.join(path, "setup.py")) ||
           Dir.glob(File.join(path, "*/__init__.py")).any?
+        return Archsight::Import::Handlers::JavaGrapher if
+          File.exist?(File.join(path, "pom.xml")) ||
+          File.exist?(File.join(path, "build.gradle")) ||
+          File.exist?(File.join(path, "build.gradle.kts"))
 
         nil
       end

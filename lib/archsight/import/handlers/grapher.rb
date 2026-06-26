@@ -130,10 +130,20 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   def init_node(graph, pkg, mod_name, prefix, cluster_label)
     lbl = short_label(pkg, mod_name)
     if lbl == cluster_label
-      graph.node(node_id(pkg, prefix), label: "", style: :invis, width: 0, height: 0)
+      if show_root_package_node?
+        graph.node(node_id(pkg, prefix), label: "◆")
+      else
+        graph.node(node_id(pkg, prefix), label: "", style: :invis, width: 0, height: 0)
+      end
     else
       graph.node(node_id(pkg, prefix), label: lbl)
     end
+  end
+
+  # Hook: return true to render the package node even when its label matches the cluster label.
+  # Python/Go leave it false (hide redundant package-root node); Java overrides to true.
+  def show_root_package_node?
+    false
   end
 
   def darken(hex_color, factor = 0.88)
@@ -477,11 +487,18 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
 
       pkgs[pkg].uniq.sort.each do |dep|
         next if dep == pkg
-        next if has_children.include?(dep)
+        next if suppress_edge_to?(dep, pkg_set, has_children)
 
         graph.edge(node_id(pkg, prefix), node_id(dep, prefix), color: edge_color, style: :solid)
       end
     end
+  end
+
+  # Hook: return true to suppress the dependency edge to +dep+.
+  # Default: suppress edges to any ancestor path (avoids edges to invisible cluster-root nodes).
+  # Java overrides to only suppress structural ancestors (not actual packages in pkg_set).
+  def suppress_edge_to?(dep, _pkg_set, has_children)
+    has_children.include?(dep)
   end
 
   # ── Artifact name ─────────────────────────────────────────────────────────

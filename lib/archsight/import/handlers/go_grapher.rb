@@ -16,6 +16,14 @@ require_relative "../registry"
 class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grapher
   private
 
+  def show_root_package_node?
+    true
+  end
+
+  def suppress_edge_to?(dep, pkg_set, has_children)
+    has_children.include?(dep) && !pkg_set.include?(dep)
+  end
+
   # ── Module discovery ─────────────────────────────────────────────────────
 
   def discover_modules(repo_root)
