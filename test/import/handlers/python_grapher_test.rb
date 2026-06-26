@@ -211,7 +211,7 @@ class PythonGrapherTest < Minitest::Test
   def read_dot_annotation(_handler)
     resources = YAML.load_stream(read_output(_handler))
     artifact = resources.find { |r| r["kind"] == "TechnologyArtifact" }
-    artifact&.dig("metadata", "annotations", "architecture/modules") || ""
+    artifact&.dig("metadata", "annotations", "architecture/python/modules") || ""
   end
 
   # Mock import resource matching the pattern used across handler tests

@@ -221,9 +221,21 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              type: Integer
 
   annotation "architecture/modules",
-             description: "GraphViz DOT graph of module/package structure (language-agnostic; produced by go-grapher, java-grapher, etc.)",
+             description: "GraphViz DOT graph of module/package structure (legacy single-language key; superseded by architecture/<lang>/modules)",
              title: "Module Structure",
              sidebar: false
+
+  {
+    "go" => "Go", "python" => "Python", "java" => "Java",
+    "typescript" => "TypeScript", "javascript" => "JavaScript",
+    "rust" => "Rust", "ruby" => "Ruby", "crystal" => "Crystal",
+    "csharp" => "C#", "zig" => "Zig", "elixir" => "Elixir"
+  }.each do |lang, label|
+    annotation "architecture/#{lang}/modules",
+               description: "GraphViz DOT — #{label} module/package structure",
+               title: "#{label} Module Structure",
+               sidebar: false
+  end
 
   relation :servedBy, :technologyComponents, :TechnologyArtifact
   relation :suppliedBy, :technologyComponents, :TechnologyService

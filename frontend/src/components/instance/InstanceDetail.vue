@@ -43,7 +43,21 @@ const hasRelations = computed(() => {
 const generatedScript = computed(() => annotations.value['generated/script'])
 const generatedAt = computed(() => annotations.value['generated/at'])
 const description = computed(() => annotations.value['architecture/description'])
-const moduleDot = computed(() => annotations.value['architecture/modules'])
+
+const LANG_LABELS = [
+  ['go', 'Go'], ['python', 'Python'], ['java', 'Java'],
+  ['typescript', 'TypeScript'], ['javascript', 'JavaScript'],
+  ['rust', 'Rust'], ['ruby', 'Ruby'], ['crystal', 'Crystal'],
+  ['csharp', 'C#'], ['zig', 'Zig'], ['elixir', 'Elixir'],
+]
+const moduleGraphs = computed(() => {
+  const results = LANG_LABELS
+    .filter(([lang]) => annotations.value[`architecture/${lang}/modules`])
+    .map(([lang, label]) => ({ label: `${label} Module Structure`, dot: annotations.value[`architecture/${lang}/modules`] }))
+  if (!results.length && annotations.value['architecture/modules'])
+    results.push({ label: 'Module Structure', dot: annotations.value['architecture/modules'] })
+  return results
+})
 
 // Filter out system annotations for the custom annotations table
 const SKIP_PREFIXES = [
@@ -59,6 +73,7 @@ const SKIP_PATTERNS = [
   /^activity\/(commits|contributors(\/.*)?|status|busFactor|createdAt)$/,
   /^scc\/language\/.+\/loc$/,
   /^repository\/$/,
+  /^architecture\/.+\/modules$/,
 ]
 
 const customAnnotations = computed(() => {
@@ -137,7 +152,7 @@ function initPanZoomOnGraph() {
     <div ref="descEl" v-if="description" v-html="description" :class="{ footer: hasRelations }"></div>
   </article>
 
-  <ModuleGraph v-if="moduleDot" :dot="moduleDot" />
+  <ModuleGraph v-for="g in moduleGraphs" :key="g.label" :dot="g.dot" :label="g.label" />
 
   <RequirementsSection :data="data" />
 

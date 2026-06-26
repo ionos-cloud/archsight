@@ -16,10 +16,10 @@ require_relative "../registry"
 class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grapher
   def self.language_name = "go"
 
-  def self.detect(path)
-    return 95 if File.exist?(File.join(path, "go.work"))
-    return 90 if File.exist?(File.join(path, "go.mod"))
-    Dir.glob(File.join(path, "**/go.mod")).any? ? 50 : 0
+  def self.applicable?(path)
+    File.exist?(File.join(path, "go.work")) ||
+      File.exist?(File.join(path, "go.mod")) ||
+      Dir.glob(File.join(path, "**/go.mod")).any?
   end
 
   private

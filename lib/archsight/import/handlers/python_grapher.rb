@@ -20,11 +20,11 @@ require_relative "../registry"
 class Archsight::Import::Handlers::PythonGrapher < Archsight::Import::Handlers::Grapher
   def self.language_name = "python"
 
-  def self.detect(path)
-    return 90 if File.exist?(File.join(path, "__init__.py"))
-    return 85 if File.exist?(File.join(path, "pyproject.toml")) ||
-                 File.exist?(File.join(path, "setup.py"))
-    Dir.glob(File.join(path, "*/__init__.py")).any? ? 60 : 0
+  def self.applicable?(path)
+    File.exist?(File.join(path, "__init__.py")) ||
+      File.exist?(File.join(path, "pyproject.toml")) ||
+      File.exist?(File.join(path, "setup.py")) ||
+      Dir.glob(File.join(path, "*/__init__.py")).any?
   end
 
   # Inline Python3 script — scans a single package directory with stdlib ast.

@@ -21,24 +21,31 @@ module Archsight
       end
 
       load_handlers
-      handler_class = resolve_handler(path, options[:language])
-      if handler_class.nil?
-        warn "Could not detect language for #{path} — use --language go|python"
+      handler_classes = resolve_handler(path, options[:language])
+      if handler_classes.empty?
+        warn "Could not detect language for #{path} — use --language go|python|java"
         exit 1
       end
 
       require "archsight/import/progress"
       stub = Struct.new(:name, :annotations, :path_ref).new("module-graph", {}, nil)
-      progress = Archsight::Import::Progress.new(output: $stderr)
-      handler = handler_class.new(stub, database: nil, resources_dir: Dir.tmpdir,
-                                  progress: progress)
-      dot = handler.dot_graph(path: path, ranksep: options[:ranksep],
-                              nodesep: options[:nodesep])
-      if dot.nil?
+      any_output = false
+      handler_classes.each do |handler_class|
+        progress = Archsight::Import::Progress.new(output: $stderr)
+        handler = handler_class.new(stub, database: nil, resources_dir: Dir.tmpdir,
+                                    progress: progress)
+        dot = handler.dot_graph(path: path, ranksep: options[:ranksep],
+                                nodesep: options[:nodesep])
+        next unless dot
+
+        puts "# #{handler_class.language_name} modules" if handler_classes.size > 1
+        puts dot
+        any_output = true
+      end
+      unless any_output
         warn "No modules found in #{path}"
         exit 1
       end
-      puts dot
     end
 
     private
@@ -51,11 +58,11 @@ module Archsight
     def resolve_handler(path, language)
       require "archsight/import/registry"
       if language == "auto" || language.nil?
-        Archsight::Import::Registry.detect(path)
+        Archsight::Import::Registry.handlers_for(path)
       else
         handler = Archsight::Import::Registry.handler_for_language(language)
         warn "Unknown language: #{language}. Use go, python, or java." unless handler
-        handler
+        [handler].compact
       end
     end
   end

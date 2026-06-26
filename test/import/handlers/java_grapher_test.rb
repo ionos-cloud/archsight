@@ -243,7 +243,7 @@ class JavaGrapherTest < Minitest::Test
     output = run_full_handler(path)
     resources = YAML.load_stream(output)
     artifact = resources.find { |r| r["kind"] == "TechnologyArtifact" }
-    artifact&.dig("metadata", "annotations", "architecture/modules") || ""
+    artifact&.dig("metadata", "annotations", "architecture/java/modules") || ""
   end
 
   class MockJavaImport

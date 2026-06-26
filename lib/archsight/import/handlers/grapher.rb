@@ -25,9 +25,9 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   # Subclasses declare their language name for explicit --language lookup.
   def self.language_name = nil
 
-  # Subclasses return a confidence score (0 = cannot handle, 1–100 = can).
-  # Used by Registry.detect to auto-select the right grapher for a path.
-  def self.detect(_path) = 0
+  # Subclasses return true when they can handle the given path.
+  # Used by Registry.handlers_for to collect all applicable graphers.
+  def self.applicable?(_path) = false
 
   PALETTE = [
     { fill: "#ddeeff", edge: "#2266cc" },
@@ -68,7 +68,7 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
     resource = resource_yaml(
       kind: "TechnologyArtifact",
       name: artifact_name(@path),
-      annotations: { "architecture/modules" => dot_content },
+      annotations: { annotation_key => dot_content },
       spec: {}
     )
 
@@ -88,6 +88,11 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   end
 
   private
+
+  def annotation_key
+    lang = self.class.language_name
+    lang ? "architecture/#{lang}/modules" : "architecture/modules"
+  end
 
   # @abstract Discover modules/packages in the repository.
   # @param repo_root [String] Absolute path to the repository root

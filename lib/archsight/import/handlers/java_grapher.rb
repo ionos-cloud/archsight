@@ -19,11 +19,11 @@ require_relative "../registry"
 class Archsight::Import::Handlers::JavaGrapher < Archsight::Import::Handlers::Grapher
   def self.language_name = "java"
 
-  def self.detect(path)
-    return 90 if File.exist?(File.join(path, "pom.xml"))
-    return 85 if File.exist?(File.join(path, "build.gradle")) ||
-                 File.exist?(File.join(path, "build.gradle.kts"))
-    Dir.glob(File.join(path, "*/pom.xml")).any? ? 60 : 0
+  def self.applicable?(path)
+    File.exist?(File.join(path, "pom.xml")) ||
+      File.exist?(File.join(path, "build.gradle")) ||
+      File.exist?(File.join(path, "build.gradle.kts")) ||
+      Dir.glob(File.join(path, "*/pom.xml")).any?
   end
 
   SKIP_DIRS = %w[test tests generated target build .git node_modules .gradle resources].freeze
