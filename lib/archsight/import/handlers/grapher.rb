@@ -22,6 +22,13 @@ require_relative "../handler"
 #   import/config/ranksep  - Horizontal gap between rank columns (default: 0.6)
 #   import/config/nodesep  - Vertical gap between nodes in a column (default: 0.15)
 class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
+  # Subclasses declare their language name for explicit --language lookup.
+  def self.language_name = nil
+
+  # Subclasses return a confidence score (0 = cannot handle, 1–100 = can).
+  # Used by Registry.detect to auto-select the right grapher for a path.
+  def self.detect(_path) = 0
+
   PALETTE = [
     { fill: "#ddeeff", edge: "#2266cc" },
     { fill: "#ddffd8", edge: "#2a8a1e" },

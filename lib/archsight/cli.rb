@@ -10,7 +10,7 @@ module Archsight
 
     desc "graph PATH", "Print module dependency graph (DOT) for a repository to stdout"
     option :language, aliases: "-l", type: :string, default: "auto",
-                      desc: "Language: go, python, or auto (default)"
+                      desc: "Language: go, python, java, or auto (default)"
     option :ranksep, type: :numeric, default: 0.6, desc: "Horizontal gap between rank columns"
     option :nodesep, type: :numeric, default: 0.15, desc: "Vertical gap between nodes"
     def graph(path)
@@ -49,24 +49,13 @@ module Archsight
     end
 
     def resolve_handler(path, language)
-      case language
-      when "go"     then Archsight::Import::Handlers::GoGrapher
-      when "python" then Archsight::Import::Handlers::PythonGrapher
-      when "java"   then Archsight::Import::Handlers::JavaGrapher
+      require "archsight/import/registry"
+      if language == "auto" || language.nil?
+        Archsight::Import::Registry.detect(path)
       else
-        return Archsight::Import::Handlers::GoGrapher if
-          File.exist?(File.join(path, "go.mod")) || File.exist?(File.join(path, "go.work"))
-        return Archsight::Import::Handlers::PythonGrapher if
-          File.exist?(File.join(path, "__init__.py")) ||
-          File.exist?(File.join(path, "pyproject.toml")) ||
-          File.exist?(File.join(path, "setup.py")) ||
-          Dir.glob(File.join(path, "*/__init__.py")).any?
-        return Archsight::Import::Handlers::JavaGrapher if
-          File.exist?(File.join(path, "pom.xml")) ||
-          File.exist?(File.join(path, "build.gradle")) ||
-          File.exist?(File.join(path, "build.gradle.kts"))
-
-        nil
+        handler = Archsight::Import::Registry.handler_for_language(language)
+        warn "Unknown language: #{language}. Use go, python, or java." unless handler
+        handler
       end
     end
   end

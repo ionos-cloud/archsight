@@ -17,6 +17,15 @@ require_relative "../registry"
 #   import/config/ranksep  - Horizontal gap between rank columns (default: 0.6)
 #   import/config/nodesep  - Vertical gap between nodes in a column (default: 0.15)
 class Archsight::Import::Handlers::JavaGrapher < Archsight::Import::Handlers::Grapher
+  def self.language_name = "java"
+
+  def self.detect(path)
+    return 90 if File.exist?(File.join(path, "pom.xml"))
+    return 85 if File.exist?(File.join(path, "build.gradle")) ||
+                 File.exist?(File.join(path, "build.gradle.kts"))
+    Dir.glob(File.join(path, "*/pom.xml")).any? ? 60 : 0
+  end
+
   SKIP_DIRS = %w[test tests generated target build .git node_modules .gradle resources].freeze
 
   # Cap relative package depth at 2 levels to keep the graph readable.

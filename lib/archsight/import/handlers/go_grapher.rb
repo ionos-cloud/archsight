@@ -14,6 +14,14 @@ require_relative "../registry"
 #   import/config/ranksep  - Horizontal gap between rank columns (default: 0.6)
 #   import/config/nodesep  - Vertical gap between nodes in a column (default: 0.15)
 class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grapher
+  def self.language_name = "go"
+
+  def self.detect(path)
+    return 95 if File.exist?(File.join(path, "go.work"))
+    return 90 if File.exist?(File.join(path, "go.mod"))
+    Dir.glob(File.join(path, "**/go.mod")).any? ? 50 : 0
+  end
+
   private
 
   def show_root_package_node?
@@ -45,7 +53,20 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
       end
     else
       mod_name = read_module_name(repo_root)
-      modules << [".", mod_name] if mod_name
+      if mod_name
+        modules << [".", mod_name]
+      else
+        # No root go.mod: scan subdirectories for go.mod files (monorepo without go.work)
+        Find.find(repo_root) do |path|
+          bn = File.basename(path)
+          Find.prune if File.directory?(path) && %w[vendor testdata .git node_modules].include?(bn)
+          next unless bn == "go.mod"
+          mod_dir = File.dirname(path)
+          rel = mod_dir.delete_prefix("#{repo_root}/")
+          name = read_module_name(mod_dir)
+          modules << [rel, name] if name
+        end
+      end
     end
 
     modules

@@ -37,6 +37,30 @@ module Archsight::Import::Registry
       handler_class
     end
 
+    # Auto-detect the best grapher for a given path.
+    # Each registered handler class may implement `self.detect(path)` returning
+    # an integer confidence (0 = cannot handle, higher = more confident).
+    # Returns the highest-scoring class, or nil if none score above zero.
+    def detect(path)
+      best_class = nil
+      best_score = 0
+      @handlers.each_value do |klass|
+        next unless klass.respond_to?(:detect)
+        score = klass.detect(path)
+        if score > best_score
+          best_score = score
+          best_class = klass
+        end
+      end
+      best_class
+    end
+
+    # Look up a grapher handler by its declared language name.
+    # Handler classes opt in by implementing `self.language_name`.
+    def handler_for_language(lang)
+      @handlers.values.find { |h| h.respond_to?(:language_name) && h.language_name == lang }
+    end
+
     # List all registered handler names
     # @return [Array<String>] Handler names
     def handlers

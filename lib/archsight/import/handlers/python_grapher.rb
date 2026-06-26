@@ -18,6 +18,15 @@ require_relative "../registry"
 #   import/config/ranksep  - Horizontal gap between rank columns (default: 0.6)
 #   import/config/nodesep  - Vertical gap between nodes in a column (default: 0.15)
 class Archsight::Import::Handlers::PythonGrapher < Archsight::Import::Handlers::Grapher
+  def self.language_name = "python"
+
+  def self.detect(path)
+    return 90 if File.exist?(File.join(path, "__init__.py"))
+    return 85 if File.exist?(File.join(path, "pyproject.toml")) ||
+                 File.exist?(File.join(path, "setup.py"))
+    Dir.glob(File.join(path, "*/__init__.py")).any? ? 60 : 0
+  end
+
   # Inline Python3 script — scans a single package directory with stdlib ast.
   # Argv: <pkg_root_dir> <pkg_name>
   # Stdout: JSON object mapping slash-separated module paths to arrays of deps.
