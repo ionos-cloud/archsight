@@ -305,6 +305,13 @@ class Archsight::Import::Executor
         slot_progress = @concurrent_progress.acquire_slot(imp.name)
 
         begin
+          # Skip work queued before the interrupt — let already-running imports finish
+          if @interrupted
+            @mutex.synchronize { @executed_this_run.delete(imp.name) }
+            slot_progress.complete("Skipped")
+            next
+          end
+
           result = execute_single_import(imp, slot_progress)
           if result == :cached
             slot_progress.complete("Cached")
@@ -313,11 +320,12 @@ class Archsight::Import::Executor
             slot_progress.complete("Done")
           end
         rescue StandardError => e
+          detail = [e.message, e.backtrace.first].compact.join(" @ ")
           @mutex.synchronize do
-            @failed_imports[imp.name] = e.message
-            @first_error ||= { name: imp.name, message: e.message }
+            @failed_imports[imp.name] = detail
+            @first_error ||= { name: imp.name, message: detail }
           end
-          slot_progress.error(e.message)
+          slot_progress.error(detail)
         ensure
           # Update overall progress and release slot
           @concurrent_progress.increment_completed

@@ -3,6 +3,69 @@
 require "thor"
 
 module Archsight
+  class ModuleCLI < Thor
+    def self.exit_on_failure?
+      true
+    end
+
+    desc "graph PATH", "Print module dependency graph (DOT) for a repository to stdout"
+    option :language, aliases: "-l", type: :string, default: "auto",
+                      desc: "Language: go, python, or auto (default)"
+    option :ranksep, type: :numeric, default: 0.6, desc: "Horizontal gap between rank columns"
+    option :nodesep, type: :numeric, default: 0.15, desc: "Vertical gap between nodes"
+    def graph(path)
+      path = File.expand_path(path)
+      unless File.directory?(path)
+        warn "Error: not a directory: #{path}"
+        exit 1
+      end
+
+      load_handlers
+      handler_class = resolve_handler(path, options[:language])
+      if handler_class.nil?
+        warn "Could not detect language for #{path} — use --language go|python"
+        exit 1
+      end
+
+      require "archsight/import/progress"
+      stub = Struct.new(:name, :annotations, :path_ref).new("module-graph", {}, nil)
+      progress = Archsight::Import::Progress.new(output: $stderr)
+      handler = handler_class.new(stub, database: nil, resources_dir: Dir.tmpdir,
+                                  progress: progress)
+      dot = handler.dot_graph(path: path, ranksep: options[:ranksep],
+                              nodesep: options[:nodesep])
+      if dot.nil?
+        warn "No modules found in #{path}"
+        exit 1
+      end
+      puts dot
+    end
+
+    private
+
+    def load_handlers
+      handlers_dir = File.expand_path("import/handlers", __dir__)
+      Dir.glob(File.join(handlers_dir, "*.rb")).each { |f| require f }
+    end
+
+    def resolve_handler(path, language)
+      case language
+      when "go"     then Archsight::Import::Handlers::GoGrapher
+      when "python" then Archsight::Import::Handlers::PythonGrapher
+      else
+        return Archsight::Import::Handlers::GoGrapher if
+          File.exist?(File.join(path, "go.mod")) || File.exist?(File.join(path, "go.work"))
+        return Archsight::Import::Handlers::PythonGrapher if
+          File.exist?(File.join(path, "__init__.py")) ||
+          File.exist?(File.join(path, "pyproject.toml")) ||
+          File.exist?(File.join(path, "setup.py")) ||
+          Dir.glob(File.join(path, "*/__init__.py")).any?
+
+        nil
+      end
+    end
+  end
+
   class CLI < Thor
     def self.exit_on_failure?
       true
@@ -174,6 +237,9 @@ module Archsight
     def version
       puts "archsight #{Archsight::VERSION}"
     end
+
+    desc "module SUBCOMMAND", "Module analysis commands (e.g. module graph PATH)"
+    subcommand "module", ModuleCLI
 
     default_task :version
 

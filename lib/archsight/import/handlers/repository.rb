@@ -80,9 +80,10 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     progress.update("Generating resource")
     resource = build_technology_artifact(@path, scc_data, git_data, team_result, license_data)
 
-    # Write output: artifact + optional go-grapher child import + self-marker for caching
+    # Write output: artifact + optional grapher child imports + self-marker for caching
     docs = [resource]
     docs << go_grapher_import(resource["metadata"]["name"]) if go_module?
+    docs << python_grapher_import(resource["metadata"]["name"]) if python_module?
     docs << self_marker
     write_yaml(docs.map { |d| YAML.dump(d) }.join)
 
@@ -468,6 +469,30 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     import_yaml(
       name: child_name,
       handler: "go-grapher",
+      config: { "path" => @path },
+      annotations: child_annotations
+    )
+  end
+
+  def python_module?
+    %w[pyproject.toml setup.py setup.cfg].any? { |f| File.exist?(File.join(@path, f)) } ||
+      Dir.each_child(@path).any? do |entry|
+        File.directory?(File.join(@path, entry)) &&
+          File.exist?(File.join(@path, entry, "__init__.py"))
+      end
+  rescue Errno::ENOENT
+    false
+  end
+
+  def python_grapher_import(artifact_name)
+    child_name = "Import:PythonGrapher:#{artifact_name.delete_prefix("Repo:")}"
+    child_annotations = {}
+    if (output_path = config("pythonGrapherOutputPath"))
+      child_annotations["import/outputPath"] = output_path
+    end
+    import_yaml(
+      name: child_name,
+      handler: "python-grapher",
       config: { "path" => @path },
       annotations: child_annotations
     )
