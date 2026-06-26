@@ -387,12 +387,28 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
 
   # ── DOT generation ────────────────────────────────────────────────────────
 
+  # Choose GraphViz spline style based on graph complexity.
+  # curved: best quality, expensive routing — fine for small graphs.
+  # ortho:  right-angle edges, much faster for medium graphs.
+  # line:   straight lines, fastest — used for large graphs.
+  def splines_for(pkgs)
+    edge_count = pkgs.values.sum(&:length)
+    if edge_count < 80
+      :curved
+    elsif edge_count < 400
+      :ortho
+    else
+      :line
+    end
+  end
+
   def emit_dot(pkgs, modules, module_colors, prefix, ranksep: 0.6, nodesep: 0.15)
     by_dir = modules.each_with_object({}) { |(rel_dir, _), h| h[rel_dir] = [] }
     pkgs.keys.sort.each { |pkg| assign_pkg_to_dir(pkg, modules, prefix, by_dir) }
 
     Archsight::Graphvis.new("packages",
-                            rankdir: :LR, compound: true, splines: :curved,
+                            rankdir: :LR, compound: true, splines: splines_for(pkgs),
+                            concentrate: true,
                             ranksep: ranksep, nodesep: nodesep,
                             fontname: "Helvetica", fontsize: 10).draw_dot do |graph|
       graph.defaults(:node, fontname: "Helvetica", fontsize: 8, shape: :box,
