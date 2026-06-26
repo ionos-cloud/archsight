@@ -49,6 +49,11 @@ module Archsight::Import::Registry
       @handlers.values.find { |h| h.respond_to?(:language_name) && h.language_name == lang }
     end
 
+    # Reverse lookup: return the registered name for a handler class, or nil.
+    def name_for(klass)
+      @handlers.key(klass)
+    end
+
     # List all registered handler names
     # @return [Array<String>] Handler names
     def handlers

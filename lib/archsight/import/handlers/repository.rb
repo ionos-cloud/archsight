@@ -20,6 +20,7 @@ require_relative "../team_matcher"
 #   import/config/fallbackTeam - Optional team name when no contributor match found
 #   import/config/botTeam - Optional team name for bot-only repositories
 #   import/config/corporateAffixes - Optional comma-separated corporate username affixes for team matching (e.g., "ionos,1and1")
+#   import/config/grapherOutputPath - Optional output path for language-grapher child imports
 class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
   def execute
     @path = config("path")
@@ -80,10 +81,12 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     progress.update("Generating resource")
     resource = build_technology_artifact(@path, scc_data, git_data, team_result, license_data)
 
-    # Write output: artifact + optional grapher child imports + self-marker for caching
+    # Write output: artifact + child imports for every applicable language grapher + self-marker
+    artifact_name = resource["metadata"]["name"]
     docs = [resource]
-    docs << go_grapher_import(resource["metadata"]["name"]) if go_module?
-    docs << python_grapher_import(resource["metadata"]["name"]) if python_module?
+    Archsight::Import::Registry.handlers_for(@path).each do |handler_class|
+      docs << grapher_import(artifact_name, handler_class)
+    end
     docs << self_marker
     write_yaml(docs.map { |d| YAML.dump(d) }.join)
 
@@ -456,43 +459,17 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     annotations
   end
 
-  def go_module?
-    File.exist?(File.join(@path, "go.mod")) || File.exist?(File.join(@path, "go.work"))
-  end
-
-  def go_grapher_import(artifact_name)
-    child_name = "Import:GoGrapher:#{artifact_name.delete_prefix("Repo:")}"
+  def grapher_import(artifact_name, handler_class)
+    lang = handler_class.language_name
+    handler_name = Archsight::Import::Registry.name_for(handler_class)
+    child_name = "Import:#{lang.capitalize}Grapher:#{artifact_name.delete_prefix("Repo:")}"
     child_annotations = {}
-    if (output_path = config("goGrapherOutputPath"))
+    if (output_path = config("grapherOutputPath"))
       child_annotations["import/outputPath"] = output_path
     end
     import_yaml(
       name: child_name,
-      handler: "go-grapher",
-      config: { "path" => @path },
-      annotations: child_annotations
-    )
-  end
-
-  def python_module?
-    %w[pyproject.toml setup.py setup.cfg].any? { |f| File.exist?(File.join(@path, f)) } ||
-      Dir.each_child(@path).any? do |entry|
-        File.directory?(File.join(@path, entry)) &&
-          File.exist?(File.join(@path, entry, "__init__.py"))
-      end
-  rescue Errno::ENOENT
-    false
-  end
-
-  def python_grapher_import(artifact_name)
-    child_name = "Import:PythonGrapher:#{artifact_name.delete_prefix("Repo:")}"
-    child_annotations = {}
-    if (output_path = config("pythonGrapherOutputPath"))
-      child_annotations["import/outputPath"] = output_path
-    end
-    import_yaml(
-      name: child_name,
-      handler: "python-grapher",
+      handler: handler_name,
       config: { "path" => @path },
       annotations: child_annotations
     )
