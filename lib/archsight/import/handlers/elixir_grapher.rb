@@ -44,10 +44,18 @@ class Archsight::Import::Handlers::ElixirGrapher < Archsight::Import::Handlers::
     return umbrella_modules(repo_root) if umbrella?(repo_root)
 
     lib = File.join(repo_root, "lib")
-    mod_name = lib_top_dir(lib) ||
-               parse_app_name(File.join(repo_root, "mix.exs")) ||
-               File.basename(repo_root)
-    [[".", mod_name]]
+    dirs = lib_all_top_dirs(lib)
+
+    if dirs.empty?
+      # No lib sub-dirs: single flat app
+      app_name = parse_app_name(File.join(repo_root, "mix.exs")) || File.basename(repo_root)
+      return [[".", app_name]]
+    end
+
+    # One namespace dir (common case): use it as the single module.
+    # Multiple dirs (e.g. Phoenix: ic_daily + ic_daily_web + mix): each becomes its own cluster.
+    # rel_dir "lib/<ns>" lets collect_packages scope scans and pkg_module_dir assign correctly.
+    dirs.map { |d| ["lib/#{d}", d] }
   end
 
   def umbrella?(repo_root)
@@ -75,11 +83,10 @@ class Archsight::Import::Handlers::ElixirGrapher < Archsight::Import::Handlers::
     nil
   end
 
-  def lib_top_dir(lib_dir)
-    return nil unless Dir.exist?(lib_dir)
+  def lib_all_top_dirs(lib_dir)
+    return [] unless Dir.exist?(lib_dir)
 
-    dirs = Dir.children(lib_dir).select { |e| File.directory?(File.join(lib_dir, e)) }
-    dirs.length == 1 ? dirs.first : nil
+    Dir.children(lib_dir).select { |e| File.directory?(File.join(lib_dir, e)) }.sort
   end
 
   # ── Package collection ────────────────────────────────────────────────────
@@ -94,6 +101,12 @@ class Archsight::Import::Handlers::ElixirGrapher < Archsight::Import::Handlers::
 
       scan_lib_dir(lib_dir, mod_name, known_prefixes, all_pkgs)
     end
+
+    # Drop deps that don't correspond to any scanned package: this removes references to
+    # framework modules whose namespace collides with an application namespace (e.g.
+    # Mix.Task from the stdlib when the app also has a lib/mix/ directory).
+    pkg_set = all_pkgs.keys.to_set
+    all_pkgs.each_value { |deps| deps.select! { |d| pkg_set.include?(d) } }
 
     all_pkgs
   end
@@ -161,11 +174,16 @@ class Archsight::Import::Handlers::ElixirGrapher < Archsight::Import::Handlers::
 
   # ── Package path helpers ──────────────────────────────────────────────────
 
-  # Uses full lib-relative path (minus extension) so flat files like
-  # lib/my_app/accounts.ex become my_app/accounts rather than collapsing into my_app.
+  # Maps a file to a package path. Prepends mod_name when lib_dir is the namespace dir
+  # itself (rel_dir = "lib/<ns>") so that accounts.ex → my_app/accounts, not just accounts.
+  # When lib_dir is the parent lib/ directory (rel_dir = "."), the rel path already carries
+  # the namespace prefix and is returned as-is.
   def file_to_pkg(abs_path, lib_dir, mod_name)
     rel = abs_path.delete_prefix("#{lib_dir}/").delete_suffix(File.extname(abs_path))
-    rel == mod_name ? mod_name : rel
+    return mod_name if rel == mod_name
+    return rel if rel.start_with?("#{mod_name}/")
+
+    "#{mod_name}/#{rel}"
   end
 
   def cap_depth(pkg, mod_name)
