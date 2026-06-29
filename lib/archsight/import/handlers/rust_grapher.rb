@@ -131,11 +131,18 @@ class Archsight::Import::Handlers::RustGrapher < Archsight::Import::Handlers::Gr
 
   def scan_src_dir(src_dir, mod_name, known_crates, all_pkgs)
     Dir.glob(File.join(src_dir, "**", "*.rs")).each do |rs_file|
-      rel_parts = rs_file.delete_prefix("#{src_dir}/").split("/")
+      rel = rs_file.delete_prefix("#{src_dir}/")
+      rel_parts = rel.split("/")
       next if rel_parts.any? { |p| SKIP_DIRS.include?(p) }
 
       pkg = cap_depth(file_to_pkg(rs_file, src_dir, mod_name), mod_name)
       all_pkgs[pkg] ||= []
+
+      # lib.rs and main.rs are crate entry points — they wire binaries and
+      # re-export the public API but don't express module architecture.
+      # Extracting their deps would produce hub-spoke edges from the invisible
+      # root node to every child, which matches no other language grapher's style.
+      next if %w[lib.rs main.rs].include?(rel)
 
       extract_deps(rs_file, mod_name, known_crates).each do |dep|
         dep = cap_depth(dep, mod_name)

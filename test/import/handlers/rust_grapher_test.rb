@@ -35,13 +35,13 @@ class RustGrapherTest < Minitest::Test
   def test_dependency_edge_from_use_crate
     with_repo do |repo|
       write(repo, "Cargo.toml", cargo_toml("my_crate"))
-      write(repo, "src/lib.rs", "use crate::model::Foo;")
+      write(repo, "src/lib.rs", "")
+      write(repo, "src/api.rs", "use crate::model::Foo;")
       write(repo, "src/model.rs", "")
 
       dot = run_grapher(repo)
-      # Single crate: node IDs strip "my_crate/" prefix; lib.rs → root (invisible)
-      # lib.rs deps are under my_crate root node; model → "model"
-      assert_match(/"model"/, dot)
+      # node IDs strip "my_crate/" prefix
+      assert_match(/"api"\s*->\s*"model"/, dot)
     end
   end
 
@@ -86,27 +86,31 @@ class RustGrapherTest < Minitest::Test
 
   # ── File mapping ──────────────────────────────────────────────────────────
 
-  def test_lib_rs_maps_to_root_package
+  def test_lib_rs_deps_are_not_extracted
     with_repo do |repo|
       write(repo, "Cargo.toml", cargo_toml("my_crate"))
+      # lib.rs is the entry point — its use statements are wiring, not module architecture
       write(repo, "src/lib.rs", "use crate::model::Foo;")
       write(repo, "src/model.rs", "")
 
       dot = run_grapher(repo)
-      # lib.rs → root; root node is invisible but model should appear
+      # model node exists but no edge from invisible root
       assert_match(/model/, dot)
+      refute_match(/"my_crate"\s*->/, dot)
     end
   end
 
-  def test_main_rs_maps_to_root_package
+  def test_main_rs_deps_are_not_extracted
     with_repo do |repo|
       write(repo, "Cargo.toml", cargo_toml("my_app"))
+      # main.rs is the binary entry point — deps not extracted to avoid hub-spoke
       write(repo, "src/main.rs", "use crate::handler::run;")
       write(repo, "src/handler.rs", "")
 
       dot = run_grapher(repo)
 
       assert_match(/handler/, dot)
+      refute_match(/"my_app"\s*->/, dot)
     end
   end
 
@@ -189,15 +193,15 @@ class RustGrapherTest < Minitest::Test
     with_repo do |repo|
       write(repo, "Cargo.toml", workspace_toml(%w[api core]))
       write(repo, "api/Cargo.toml", cargo_toml("api"))
-      # api crate sits directly in api/src/; cross-crate import of core
-      write(repo, "api/src/lib.rs", "use core::user::User;")
+      write(repo, "api/src/lib.rs", "")
+      # cross-crate dep lives in a regular module file, not lib.rs
+      write(repo, "api/src/handler.rs", "use core::user::User;")
       write(repo, "core/Cargo.toml", cargo_toml("core"))
       write(repo, "core/src/user.rs", "")
 
       dot = run_grapher(repo)
-      # workspace: no common prefix; api root → "api", core/user → "core_user"
-      # use core::user::User → dep core/user → node "core_user"
-      assert_match(/"api"\s*->\s*"core_user"/, dot)
+      # workspace: no common prefix; api/handler → "api_handler", core/user → "core_user"
+      assert_match(/"api_handler"\s*->\s*"core_user"/, dot)
     end
   end
 
