@@ -31,7 +31,9 @@ class Archsight::Import::Handlers::CppGrapher < Archsight::Import::Handlers::Gra
   def self.applicable?(path)
     File.exist?(File.join(path, "CMakeLists.txt")) ||
       File.exist?(File.join(path, "meson.build")) ||
-      Dir.glob(File.join(path, "*.{cpp,c,cc,cxx,h,hpp}")).any?
+      Dir.glob(File.join(path, "*.{cpp,c,cc,cxx,h,hpp}")).any? ||
+      Dir.glob(File.join(path, "src/*.{cpp,c,cc,cxx}")).any? ||
+      Dir.glob(File.join(path, "include/*.{h,hpp,hh}")).any?
   end
 
   def wrap_single_module?
