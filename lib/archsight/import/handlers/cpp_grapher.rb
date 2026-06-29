@@ -54,26 +54,7 @@ class Archsight::Import::Handlers::CppGrapher < Archsight::Import::Handlers::Gra
   # ── Module discovery ─────────────────────────────────────────────────────
 
   def discover_modules(repo_root)
-    cmake_sub_modules(repo_root) ||
-      [[".", cmake_project_name(repo_root) || File.basename(repo_root)]]
-  end
-
-  def cmake_sub_modules(repo_root)
-    cmake = File.join(repo_root, "CMakeLists.txt")
-    return nil unless File.exist?(cmake)
-
-    content = File.read(cmake, encoding: "utf-8")
-    dirs = content.scan(/^\s*add_subdirectory\s*\(\s*([^\s)]+)/).flatten
-    return nil if dirs.empty?
-
-    modules = dirs.filter_map do |dir|
-      abs = File.join(repo_root, dir)
-      next unless File.directory?(abs)
-
-      mod_name = cmake_project_name(abs) || dir.gsub(/[^a-zA-Z0-9]/, "_").downcase
-      [dir, mod_name]
-    end
-    modules.any? ? modules : nil
+    [[".", cmake_project_name(repo_root) || File.basename(repo_root)]]
   end
 
   def cmake_project_name(dir)

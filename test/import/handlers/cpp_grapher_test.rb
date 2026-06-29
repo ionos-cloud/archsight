@@ -135,7 +135,7 @@ class CppGrapherTest < Minitest::Test
 
   # ── Multi-project (CMake workspace) ──────────────────────────────────────
 
-  def test_cmake_multi_project_discovers_subdirs
+  def test_cmake_multi_project_becomes_packages
     with_repo do |repo|
       write(repo, "CMakeLists.txt", workspace_cmake(%w[client server]))
       write(repo, "client/CMakeLists.txt", cmake_lists("client"))
@@ -145,12 +145,13 @@ class CppGrapherTest < Minitest::Test
 
       dot = run_grapher(repo)
 
-      assert_includes dot, "cluster"
-      assert_match(/handler|listener/, dot)
+      # Single cluster for the whole project; subdirs become package nodes
+      assert_match(/"client"/, dot)
+      assert_match(/"server"/, dot)
     end
   end
 
-  def test_cross_module_include_creates_edge
+  def test_cross_directory_include_creates_edge
     with_repo do |repo|
       write(repo, "CMakeLists.txt", workspace_cmake(%w[client common]))
       write(repo, "client/CMakeLists.txt", cmake_lists("client"))
@@ -159,9 +160,8 @@ class CppGrapherTest < Minitest::Test
       write(repo, "common/include/common/types.h", "")
 
       dot = run_grapher(repo)
-      # workspace: no common prefix; client/handler → "client_handler"
-      # common/include/common/types.h → strips include/ prefix → common/types → "common_types"
-      assert_match(/"client_handler"\s*->\s*"common_types"/, dot)
+      # cap_depth folds client/src/handler → client, common/include/common/types → common
+      assert_match(/"client"\s*->\s*"common"/, dot)
     end
   end
 
