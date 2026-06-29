@@ -27,6 +27,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       output = read_output(handler)
+
       assert_includes output, "digraph"
       assert_includes output, "core"
       assert_includes output, "utils"
@@ -46,6 +47,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       dot = read_dot_annotation(handler)
+
       assert_match(/"core"\s*->\s*"utils"/, dot)
     ensure
       FileUtils.rm_rf(repo)
@@ -63,6 +65,7 @@ class PythonGrapherTest < Minitest::Test
       output = read_output(handler)
       resources = YAML.load_stream(output)
       kinds = resources.map { |r| r["kind"] }
+
       assert_equal ["Import"], kinds
     ensure
       FileUtils.rm_rf(repo)
@@ -79,6 +82,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       output = read_output(handler)
+
       assert_includes output, "TechnologyArtifact"
     ensure
       FileUtils.rm_rf(repo)
@@ -98,6 +102,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       dot = read_dot_annotation(handler)
+
       refute_includes dot, "tests"
       refute_includes dot, "vendor"
     ensure
@@ -126,6 +131,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       dot = read_dot_annotation(handler)
+
       refute_match(/"mypkg"\s*\[/, dot)
       refute_match(/"sub"\s*\[/, dot)
     ensure
@@ -143,6 +149,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       dot = read_dot_annotation(handler)
+
       assert_match(/"mypkg"\s*\[/, dot)
     ensure
       FileUtils.rm_rf(repo)
@@ -161,6 +168,7 @@ class PythonGrapherTest < Minitest::Test
       handler.execute
 
       dot = read_dot_annotation(handler)
+
       assert_includes dot, "cluster"
       assert_match(/pkga|pkgb/, dot)
     ensure

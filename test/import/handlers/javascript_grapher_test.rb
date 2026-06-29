@@ -24,6 +24,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/utils/helper.ts", "")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_match(/components/, dot)
       assert_match(/utils/, dot)
@@ -37,6 +38,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/utils/helper.ts", "")
 
       dot = run_grapher(repo)
+
       assert_match(/"components"\s*->\s*"utils"/, dot)
     end
   end
@@ -48,6 +50,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/services/api.ts", "")
 
       dot = run_grapher(repo)
+
       assert_match(/"api"\s*->\s*"services"/, dot)
     end
   end
@@ -61,6 +64,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/db/client.js", "")
 
       dot = run_grapher(repo)
+
       assert_match(/"routes"\s*->\s*"db"/, dot)
     end
   end
@@ -72,6 +76,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "lib/core/utils.js", "")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_match(/core/, dot)
     end
@@ -88,6 +93,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/utils/helper.ts", "")
 
       dot = run_grapher(repo)
+
       refute_match(/"components"\s*->\s*"types"/, dot)
       assert_match(/"components"\s*->\s*"utils"/, dot)
     end
@@ -102,6 +108,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "node_modules/lodash/index.js", "")
 
       dot = run_grapher(repo)
+
       refute_includes dot, "lodash"
     end
   end
@@ -113,6 +120,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "dist/app.js", "")
 
       dot = run_grapher(repo)
+
       refute_match(/"dist"/, dot)
     end
   end
@@ -124,6 +132,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/__tests__/api.test.ts", "import { api } from '../services/api'")
 
       dot = run_grapher(repo)
+
       refute_match(/__tests__/, dot)
     end
   end
@@ -137,6 +146,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "src/services/auth/providers/github.ts", "")
 
       dot = run_grapher(repo)
+
       refute_match(/"providers"/, dot)
       assert_match(/services/, dot)
     end
@@ -148,15 +158,16 @@ class JavaScriptGrapherTest < Minitest::Test
     with_repo do |repo|
       write(repo, "package.json", json(name: "myapp"))
       write(repo, "tsconfig.json", JSON.generate(
-        "compilerOptions" => {
-          "baseUrl" => ".",
-          "paths" => { "@/*" => ["src/*"] }
-        }
-      ))
+                                     "compilerOptions" => {
+                                       "baseUrl" => ".",
+                                       "paths" => { "@/*" => ["src/*"] }
+                                     }
+                                   ))
       write(repo, "src/components/Button.ts", "import { helper } from '@/utils/helper'")
       write(repo, "src/utils/helper.ts", "")
 
       dot = run_grapher(repo)
+
       assert_match(/"components"\s*->\s*"utils"/, dot)
     end
   end
@@ -165,15 +176,16 @@ class JavaScriptGrapherTest < Minitest::Test
     with_repo do |repo|
       write(repo, "package.json", json(name: "myapp"))
       write(repo, "tsconfig.json", JSON.generate(
-        "compilerOptions" => {
-          "baseUrl" => ".",
-          "paths" => { "@services/*" => ["src/services/*"] }
-        }
-      ))
+                                     "compilerOptions" => {
+                                       "baseUrl" => ".",
+                                       "paths" => { "@services/*" => ["src/services/*"] }
+                                     }
+                                   ))
       write(repo, "src/api/handler.ts", "import { client } from '@services/http'")
       write(repo, "src/services/http.ts", "")
 
       dot = run_grapher(repo)
+
       assert_match(/"api"\s*->\s*"services"/, dot)
     end
   end
@@ -205,7 +217,8 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "packages/shared/src/index.ts", "")
 
       dot = run_grapher(repo)
-      assert_match(/@mono\/api.*->.*@mono\/shared|api.*->.*shared/, dot)
+
+      assert_match(%r{@mono/api.*->.*@mono/shared|api.*->.*shared}, dot)
     end
   end
 
@@ -219,6 +232,7 @@ class JavaScriptGrapherTest < Minitest::Test
       write(repo, "packages/core/src/index.ts", "")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_includes dot, "core"
     end
@@ -233,7 +247,8 @@ class JavaScriptGrapherTest < Minitest::Test
 
       output = run_full_handler(repo)
       resources = YAML.load_stream(output)
-      assert_equal ["Import"], resources.map { |r| r["kind"] }
+
+      assert_equal(["Import"], resources.map { |r| r["kind"] })
     end
   end
 

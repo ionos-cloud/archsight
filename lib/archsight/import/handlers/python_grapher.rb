@@ -200,13 +200,12 @@ class Archsight::Import::Handlers::PythonGrapher < Archsight::Import::Handlers::
 
   def discover_modules(repo_root)
     # If the root itself is a Python package, treat it as a single module.
-    if File.exist?(File.join(repo_root, "__init__.py"))
-      return [[".", File.basename(repo_root)]]
-    end
+    return [[".", File.basename(repo_root)]] if File.exist?(File.join(repo_root, "__init__.py"))
 
     modules = []
     Dir.each_child(repo_root) do |entry|
       next if SKIP_DIRS.include?(entry) || entry.start_with?(".")
+
       dir = File.join(repo_root, entry)
       next unless File.directory?(dir) && File.exist?(File.join(dir, "__init__.py"))
 

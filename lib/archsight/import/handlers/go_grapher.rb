@@ -61,6 +61,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
           bn = File.basename(path)
           Find.prune if File.directory?(path) && %w[vendor testdata .git node_modules].include?(bn)
           next unless bn == "go.mod"
+
           mod_dir = File.dirname(path)
           rel = mod_dir.delete_prefix("#{repo_root}/")
           name = read_module_name(mod_dir)
@@ -90,7 +91,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     mod_names = modules.map { |_, mod_name| mod_name }
     all_pkgs = {}
 
-    modules.each do |rel_dir, _|
+    modules.each_key do |rel_dir|
       mod_dir = rel_dir == "." ? repo_root : File.join(repo_root, rel_dir)
       cmd = ["go", "list", "-e", "-f", "{{.ImportPath}}|||{{join .Imports \" \"}}", "./..."]
       cmd.insert(2, "-mod=vendor") if File.directory?(File.join(mod_dir, "vendor"))

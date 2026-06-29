@@ -36,19 +36,10 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
           return
         end
       rescue StandardError => e
-        # Access denied or other git errors - create minimal artifact
-        if access_denied_error?(e.message)
-          progress.update("Access denied - creating minimal artifact")
-          write_minimal_artifact(
-            status: "inaccessible",
-            reason: "Repository not accessible",
-            error: e.message,
-            visibility: "private"
-          )
-          write_generates_meta
-          return
-        end
-        raise
+        raise unless access_denied_error?(e.message)
+
+        write_inaccessible_artifact(e.message)
+        return
       end
     end
 
@@ -163,6 +154,17 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
 
     # Truncate if too long
     first_line.length > 100 ? "#{first_line[0, 97]}..." : first_line
+  end
+
+  def write_inaccessible_artifact(error_message)
+    progress.update("Access denied - creating minimal artifact")
+    write_minimal_artifact(
+      status: "inaccessible",
+      reason: "Repository not accessible",
+      error: error_message,
+      visibility: "private"
+    )
+    write_generates_meta
   end
 
   # Check if error message indicates access denied

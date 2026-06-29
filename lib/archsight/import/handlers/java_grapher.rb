@@ -53,60 +53,67 @@ class Archsight::Import::Handlers::JavaGrapher < Archsight::Import::Handlers::Gr
   # ── Module discovery ─────────────────────────────────────────────────────
 
   def discover_modules(repo_root)
-    # Maven
+    discover_maven_modules(repo_root) ||
+      discover_gradle_modules(repo_root) ||
+      discover_source_fallback(repo_root) ||
+      []
+  end
+
+  def discover_maven_modules(repo_root)
     root_pom = File.join(repo_root, "pom.xml")
-    if File.exist?(root_pom)
-      sub_dirs = maven_submodule_dirs(root_pom)
-      if sub_dirs.any?
-        modules = sub_dirs.filter_map do |rel|
-          abs = File.join(repo_root, rel)
-          next unless File.directory?(abs)
-          src = find_source_dir(abs)
-          next unless src
-          pkg_prefix = common_java_prefix(src)
-          next unless pkg_prefix
-          [rel, pkg_prefix]
-        end
-        return modules if modules.any?
-      end
-      src = find_source_dir(repo_root)
-      if src
-        pkg_prefix = common_java_prefix(src)
-        return [[".", pkg_prefix]] if pkg_prefix
-      end
+    return unless File.exist?(root_pom)
+
+    sub_dirs = maven_submodule_dirs(root_pom)
+    if sub_dirs.any?
+      modules = sub_module_list(repo_root, sub_dirs)
+      return modules if modules.any?
     end
 
-    # Gradle
-    settings = ["settings.gradle", "settings.gradle.kts"].map { |f| File.join(repo_root, f) }.find { |f| File.exist?(f) }
-    if settings
-      includes = gradle_includes(settings)
-      if includes.any?
-        modules = includes.filter_map do |rel|
-          abs = File.join(repo_root, rel)
-          next unless File.directory?(abs)
-          src = find_source_dir(abs)
-          next unless src
-          pkg_prefix = common_java_prefix(src)
-          next unless pkg_prefix
-          [rel, pkg_prefix]
-        end
-        return modules if modules.any?
-      end
-      src = find_source_dir(repo_root)
-      if src
-        pkg_prefix = common_java_prefix(src)
-        return [[".", pkg_prefix]] if pkg_prefix
-      end
+    single_module_from_root(repo_root)
+  end
+
+  def discover_gradle_modules(repo_root)
+    settings = ["settings.gradle", "settings.gradle.kts"]
+               .map { |f| File.join(repo_root, f) }
+               .find { |f| File.exist?(f) }
+    return unless settings
+
+    includes = gradle_includes(settings)
+    if includes.any?
+      modules = sub_module_list(repo_root, includes)
+      return modules if modules.any?
     end
 
-    # Fallback: any .java files in the tree
-    src = find_source_dir(repo_root)
-    if src
+    single_module_from_root(repo_root)
+  end
+
+  def discover_source_fallback(repo_root)
+    single_module_from_root(repo_root)
+  end
+
+  def sub_module_list(repo_root, rel_dirs)
+    rel_dirs.filter_map do |rel|
+      abs = File.join(repo_root, rel)
+      next unless File.directory?(abs)
+
+      src = find_source_dir(abs)
+      next unless src
+
       pkg_prefix = common_java_prefix(src)
-      return [[".", pkg_prefix]] if pkg_prefix
-    end
+      next unless pkg_prefix
 
-    []
+      [rel, pkg_prefix]
+    end
+  end
+
+  def single_module_from_root(repo_root)
+    src = find_source_dir(repo_root)
+    return unless src
+
+    pkg_prefix = common_java_prefix(src)
+    return unless pkg_prefix
+
+    [[".", pkg_prefix]]
   end
 
   # ── Package collection ────────────────────────────────────────────────────
@@ -142,15 +149,15 @@ class Archsight::Import::Handlers::JavaGrapher < Archsight::Import::Handlers::Gr
 
   def maven_submodule_dirs(pom_path)
     content = File.read(pom_path)
-    m = content.match(/<modules>(.*?)<\/modules>/m)
+    m = content.match(%r{<modules>(.*?)</modules>}m)
     return [] unless m
 
-    m[1].scan(/<module>(.*?)<\/module>/).flatten.map(&:strip).reject(&:empty?)
+    m[1].scan(%r{<module>(.*?)</module>}).flatten.map(&:strip).reject(&:empty?)
   end
 
   def gradle_includes(settings_path)
     content = File.read(settings_path)
-    content.scan(/include\s*[\('":]+([^'"):\s,]+)/).flatten.map do |name|
+    content.scan(/include\s*[('":]+([^'"):\s,]+)/).flatten.map do |name|
       name.tr(":", "/").delete_prefix("/")
     end.reject(&:empty?)
   end

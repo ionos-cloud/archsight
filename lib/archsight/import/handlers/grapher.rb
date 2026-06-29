@@ -316,7 +316,7 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   end
 
   def emit_l1_subclusters(graph, l1_groups, cluster_id, l1_fill, l2_fill, mod_name, prefix,
-                           fontsize: 12)
+                          fontsize: 12)
     l1_groups.keys.sort.each do |l1|
       nil_pkgs = l1_groups[l1][nil] || []
       l2_keys = l1_groups[l1].keys.compact

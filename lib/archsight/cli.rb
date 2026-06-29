@@ -33,7 +33,7 @@ module Archsight
       handler_classes.each do |handler_class|
         progress = Archsight::Import::Progress.new(output: $stderr)
         handler = handler_class.new(stub, database: nil, resources_dir: Dir.tmpdir,
-                                    progress: progress)
+                                          progress: progress)
         dot = handler.dot_graph(path: path, ranksep: options[:ranksep],
                                 nodesep: options[:nodesep])
         next unless dot
@@ -42,10 +42,10 @@ module Archsight
         puts dot
         any_output = true
       end
-      unless any_output
-        warn "No modules found in #{path}"
-        exit 1
-      end
+      return if any_output
+
+      warn "No modules found in #{path}"
+      exit 1
     end
 
     private

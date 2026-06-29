@@ -24,6 +24,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "lib/my_app/user.ex", "defmodule MyApp.User do\nend\n")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_match(/accounts|user/, dot)
     end
@@ -50,6 +51,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "lib/my_app/helpers.ex", "defmodule MyApp.Helpers do\nend\n")
 
       dot = run_grapher(repo)
+
       assert_match(/"web_router"\s*->\s*"helpers"/, dot)
     end
   end
@@ -62,6 +64,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "lib/my_app/accounts.ex", "defmodule MyApp.Accounts do\nend\n")
 
       dot = run_grapher(repo)
+
       assert_match(/"web_controller"\s*->\s*"accounts"/, dot)
     end
   end
@@ -75,6 +78,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "lib/my_app/repo.ex", "defmodule MyApp.Repo do\nend\n")
 
       dot = run_grapher(repo)
+
       assert_match(/"api_handler"\s*->\s*"accounts"/, dot)
       assert_match(/"api_handler"\s*->\s*"repo"/, dot)
     end
@@ -89,6 +93,7 @@ class ElixirGrapherTest < Minitest::Test
             "defmodule MyApp.Schema do\n  use Ecto.Schema\n  import Phoenix.Controller\nend\n")
 
       dot = run_grapher(repo)
+
       refute_match(/Ecto/, dot)
       refute_match(/Phoenix/, dot)
     end
@@ -103,6 +108,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "_build/dev/lib/my_app/compiled.ex", "defmodule MyApp.Compiled do\nend\n")
 
       dot = run_grapher(repo)
+
       refute_match(/compiled/, dot)
     end
   end
@@ -114,6 +120,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "deps/ecto/lib/ecto/schema.ex", "defmodule Ecto.Schema do\nend\n")
 
       dot = run_grapher(repo)
+
       refute_includes dot, "ecto"
     end
   end
@@ -126,6 +133,7 @@ class ElixirGrapherTest < Minitest::Test
             "defmodule MyApp.ServiceTest do\n  alias MyApp.Service\nend\n")
 
       dot = run_grapher(repo)
+
       refute_match(/service_test/, dot)
     end
   end
@@ -142,12 +150,12 @@ class ElixirGrapherTest < Minitest::Test
 
       dot = run_grapher(repo)
       # Depth-3 package my_app/web/controllers should remain (MAX_PKG_DEPTH=3)
-      assert_match(/web\/controllers|controllers/, dot)
+      assert_match(%r{web/controllers|controllers}, dot)
       # But depth-4 (my_app/web/controllers/sub) would fold — just checking depth 3 stays
     end
   end
 
-  def test_depth_4_folded_to_depth_3
+  def test_depth_four_folded_to_depth_three
     with_repo do |repo|
       write(repo, "mix.exs", mixexs("my_app"))
       write(repo, "lib/my_app/web/controllers/admin/dashboard.ex",
@@ -172,6 +180,7 @@ class ElixirGrapherTest < Minitest::Test
       write(repo, "apps/core/lib/core/user.ex", "defmodule Core.User do\nend\n")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_includes dot, "cluster"
       assert_match(/router|user/, dot)
@@ -202,7 +211,8 @@ class ElixirGrapherTest < Minitest::Test
 
       output = run_full_handler(repo)
       resources = YAML.load_stream(output)
-      assert_equal ["Import"], resources.map { |r| r["kind"] }
+
+      assert_equal(["Import"], resources.map { |r| r["kind"] })
     end
   end
 

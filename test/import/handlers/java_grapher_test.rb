@@ -22,6 +22,7 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "src/main/java/com/example/util/Util.java", "com.example.util")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_match(/core|util/, dot)
     ensure
@@ -37,6 +38,7 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "src/main/java/com/example/util/Util.java", "com.example.util")
 
       dot = run_grapher(repo)
+
       assert_match(/"core"\s*->\s*"util"/, dot)
     ensure
       FileUtils.rm_rf(repo)
@@ -50,6 +52,7 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "src/test/java/com/example/service/ServiceTest.java", "com.example.service")
 
       dot = run_grapher(repo)
+
       refute_match(/ServiceTest/, dot)
     ensure
       FileUtils.rm_rf(repo)
@@ -63,7 +66,8 @@ class JavaGrapherTest < Minitest::Test
 
       output = run_full_handler(repo)
       resources = YAML.load_stream(output)
-      assert_equal ["Import"], resources.map { |r| r["kind"] }
+
+      assert_equal(["Import"], resources.map { |r| r["kind"] })
     ensure
       FileUtils.rm_rf(repo)
     end
@@ -86,6 +90,7 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "core/src/main/java/com/example/core/Core.java", "com.example.core")
 
       dot = run_grapher(repo)
+
       assert_includes dot, "digraph"
       assert_match(/cluster/, dot)
     ensure
@@ -100,7 +105,8 @@ class JavaGrapherTest < Minitest::Test
                  imports: ["java.util.List", "org.springframework.stereotype.Component"])
 
       dot = run_grapher(repo)
-      refute_match(/java\/util/, dot)
+
+      refute_match(%r{java/util}, dot)
       refute_match(/springframework/, dot)
     ensure
       FileUtils.rm_rf(repo)
@@ -114,7 +120,8 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "target/generated/com/example/gen/Gen.java", "com.example.gen")
 
       dot = run_grapher(repo)
-      refute_match(/com\/example\/gen/, dot)
+
+      refute_match(%r{com/example/gen}, dot)
     ensure
       FileUtils.rm_rf(repo)
     end
@@ -128,6 +135,7 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "src/main/java/com/example/util/Util.java", "com.example.util")
 
       dot = run_grapher(repo)
+
       assert_match(/"core"\s*->\s*"util"/, dot)
     ensure
       FileUtils.rm_rf(repo)
@@ -164,6 +172,7 @@ class JavaGrapherTest < Minitest::Test
       write_java(repo, "src/main/java/com/example/service/MyService.java", "com.example.service")
 
       dot = run_grapher(repo)
+
       assert_match(/"main"\s*\[/, dot)
       assert_match(/"main"\s*->\s*"app"/, dot)
     ensure
