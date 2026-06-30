@@ -108,7 +108,7 @@ class Archsight::Import::Handlers::CrystalGrapher < Archsight::Import::Handlers:
   # ── Scanning ─────────────────────────────────────────────────────────────
 
   def scan_src_dir(src_dir, mod_name, src_dirs, all_pkgs)
-    Dir.glob(File.join(src_dir, "**", "*.cr")).each do |cr_file|
+    safe_glob(File.join(src_dir, "**", "*.cr")).each do |cr_file|
       rel_parts = cr_file.delete_prefix("#{src_dir}/").split("/")
       next if rel_parts.any? { |p| SKIP_DIRS.include?(p) }
 

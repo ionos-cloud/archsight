@@ -95,7 +95,7 @@ class Archsight::Import::Handlers::RubyGrapher < Archsight::Import::Handlers::Gr
   # ── Scanning helpers ──────────────────────────────────────────────────────
 
   def scan_lib_dir(lib_dir, mod_name, lib_dirs, all_pkgs)
-    Dir.glob(File.join(lib_dir, "**", "*.rb")).each do |rb_file|
+    safe_glob(File.join(lib_dir, "**", "*.rb")).each do |rb_file|
       rel_parts = rb_file.delete_prefix("#{lib_dir}/").split("/")
       next if rel_parts.any? { |p| SKIP_DIRS.include?(p) }
 

@@ -40,7 +40,13 @@ module Archsight::Import::Registry
     # Return all grapher handler classes that can handle the given path.
     # Each class opts in by implementing `self.applicable?(path)` returning true/false.
     def handlers_for(path)
-      @handlers.values.select { |h| h.respond_to?(:applicable?) && h.applicable?(path) }
+      @handlers.values.select do |h|
+        h.respond_to?(:applicable?) && begin
+          h.applicable?(path)
+        rescue Errno::ELOOP, Errno::ENOTDIR
+          false
+        end
+      end
     end
 
     # Look up a grapher handler by its declared language name.

@@ -29,6 +29,12 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   # Used by Registry.handlers_for to collect all applicable graphers.
   def self.applicable?(_path) = false
 
+  def safe_glob(pattern)
+    Dir.glob(pattern)
+  rescue Errno::ELOOP, Errno::ENOTDIR
+    []
+  end
+
   PALETTE = [
     { fill: "#ddeeff", edge: "#2266cc" },
     { fill: "#ddffd8", edge: "#2a8a1e" },

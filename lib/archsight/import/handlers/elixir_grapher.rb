@@ -112,7 +112,7 @@ class Archsight::Import::Handlers::ElixirGrapher < Archsight::Import::Handlers::
   end
 
   def scan_lib_dir(lib_dir, mod_name, known_prefixes, all_pkgs)
-    Dir.glob(File.join(lib_dir, "**", "*.ex")).each do |ex_file|
+    safe_glob(File.join(lib_dir, "**", "*.ex")).each do |ex_file|
       rel_parts = ex_file.delete_prefix("#{lib_dir}/").split("/")
       next if rel_parts.any? { |p| SKIP_DIRS.include?(p) }
 

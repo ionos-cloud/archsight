@@ -20,6 +20,8 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     File.exist?(File.join(path, "go.work")) ||
       File.exist?(File.join(path, "go.mod")) ||
       Dir.glob(File.join(path, "**/go.mod")).any?
+  rescue Errno::ELOOP, Errno::ENOTDIR
+    false
   end
 
   private

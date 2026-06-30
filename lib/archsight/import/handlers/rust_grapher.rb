@@ -130,7 +130,7 @@ class Archsight::Import::Handlers::RustGrapher < Archsight::Import::Handlers::Gr
   # ── Scanning ─────────────────────────────────────────────────────────────
 
   def scan_src_dir(src_dir, mod_name, known_crates, all_pkgs)
-    Dir.glob(File.join(src_dir, "**", "*.rs")).each do |rs_file|
+    safe_glob(File.join(src_dir, "**", "*.rs")).each do |rs_file|
       rel = rs_file.delete_prefix("#{src_dir}/")
       rel_parts = rel.split("/")
       next if rel_parts.any? { |p| SKIP_DIRS.include?(p) }

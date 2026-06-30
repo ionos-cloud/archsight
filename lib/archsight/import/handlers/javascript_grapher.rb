@@ -120,7 +120,7 @@ class Archsight::Import::Handlers::JavaScriptGrapher < Archsight::Import::Handle
 
   def scan_source_files(src_root, mod_name, tsconfig_paths, workspace_names, all_pkgs)
     glob = File.join(src_root, "**", "*{#{SOURCE_EXTS.join(",")}}")
-    Dir.glob(glob).each do |source_file|
+    safe_glob(glob).each do |source_file|
       rel_parts = source_file.delete_prefix("#{src_root}/").split("/")
       next if rel_parts.any? { |p| SKIP_DIRS.include?(p) }
 
