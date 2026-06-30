@@ -290,10 +290,11 @@ class Archsight::Import::Handlers::JavaScriptGrapher < Archsight::Import::Handle
     globs.flat_map do |glob|
       Dir.glob(File.join(repo_root, glob)).filter_map do |dir|
         next unless File.directory?(dir) && File.exist?(File.join(dir, "package.json"))
-        next if SKIP_DIRS.any? { |skip| dir.split("/").include?(skip) }
 
-        rel     = dir.delete_prefix("#{repo_root}/")
-        pkg     = read_package_json(dir)
+        rel = dir.delete_prefix("#{repo_root}/")
+        next if rel.split("/").any? { |part| SKIP_DIRS.include?(part) }
+
+        pkg      = read_package_json(dir)
         mod_name = pkg&.dig("name") || File.basename(dir)
         [rel, mod_name]
       end
