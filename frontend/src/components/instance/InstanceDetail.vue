@@ -48,7 +48,7 @@ const LANG_LABELS = [
   ['go', 'Go'], ['python', 'Python'], ['java', 'Java'],
   ['typescript', 'TypeScript'], ['javascript', 'JavaScript'],
   ['rust', 'Rust'], ['ruby', 'Ruby'], ['crystal', 'Crystal'],
-  ['csharp', 'C#'], ['zig', 'Zig'], ['elixir', 'Elixir'],
+  ['cpp', 'C++'], ['csharp', 'C#'], ['zig', 'Zig'], ['elixir', 'Elixir'],
 ]
 const moduleGraphs = computed(() => {
   const results = LANG_LABELS

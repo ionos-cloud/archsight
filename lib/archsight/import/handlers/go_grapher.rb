@@ -93,7 +93,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     mod_names = modules.map { |_, mod_name| mod_name }
     all_pkgs = {}
 
-    modules.each_key do |rel_dir|
+    modules.each do |rel_dir, _|
       mod_dir = rel_dir == "." ? repo_root : File.join(repo_root, rel_dir)
       cmd = ["go", "list", "-e", "-f", "{{.ImportPath}}|||{{join .Imports \" \"}}", "./..."]
       cmd.insert(2, "-mod=vendor") if File.directory?(File.join(mod_dir, "vendor"))
