@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "stringio"
+
 module Archsight
   # Graphvis implements a graphviz abstraction
   class Graphvis

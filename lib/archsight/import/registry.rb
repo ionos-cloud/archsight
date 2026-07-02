@@ -37,6 +37,29 @@ module Archsight::Import::Registry
       handler_class
     end
 
+    # Return all grapher handler classes that can handle the given path.
+    # Each class opts in by implementing `self.applicable?(path)` returning true/false.
+    def handlers_for(path)
+      @handlers.values.select do |h|
+        h.respond_to?(:applicable?) && begin
+          h.applicable?(path)
+        rescue Errno::ELOOP, Errno::ENOTDIR
+          false
+        end
+      end
+    end
+
+    # Look up a grapher handler by its declared language name.
+    # Handler classes opt in by implementing `self.language_name`.
+    def handler_for_language(lang)
+      @handlers.values.find { |h| h.respond_to?(:language_name) && h.language_name == lang }
+    end
+
+    # Reverse lookup: return the registered name for a handler class, or nil.
+    def name_for(klass)
+      @handlers.key(klass)
+    end
+
     # List all registered handler names
     # @return [Array<String>] Handler names
     def handlers

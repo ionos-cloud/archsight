@@ -20,6 +20,7 @@ require_relative "../team_matcher"
 #   import/config/fallbackTeam - Optional team name when no contributor match found
 #   import/config/botTeam - Optional team name for bot-only repositories
 #   import/config/corporateAffixes - Optional comma-separated corporate username affixes for team matching (e.g., "ionos,1and1")
+#   import/config/grapherOutputPath - Optional output path for language-grapher child imports
 class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
   def execute
     @path = config("path")
@@ -35,19 +36,10 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
           return
         end
       rescue StandardError => e
-        # Access denied or other git errors - create minimal artifact
-        if access_denied_error?(e.message)
-          progress.update("Access denied - creating minimal artifact")
-          write_minimal_artifact(
-            status: "inaccessible",
-            reason: "Repository not accessible",
-            error: e.message,
-            visibility: "private"
-          )
-          write_generates_meta
-          return
-        end
-        raise
+        raise unless access_denied_error?(e.message)
+
+        write_inaccessible_artifact(e.message)
+        return
       end
     end
 
@@ -80,9 +72,12 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     progress.update("Generating resource")
     resource = build_technology_artifact(@path, scc_data, git_data, team_result, license_data)
 
-    # Write output: artifact + optional go-grapher child import + self-marker for caching
+    # Write output: artifact + child imports for every applicable language grapher + self-marker
+    artifact_name = resource["metadata"]["name"]
     docs = [resource]
-    docs << go_grapher_import(resource["metadata"]["name"]) if go_module?
+    Archsight::Import::Registry.handlers_for(@path).each do |handler_class|
+      docs << grapher_import(artifact_name, handler_class)
+    end
     docs << self_marker
     write_yaml(docs.map { |d| YAML.dump(d) }.join)
 
@@ -159,6 +154,17 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
 
     # Truncate if too long
     first_line.length > 100 ? "#{first_line[0, 97]}..." : first_line
+  end
+
+  def write_inaccessible_artifact(error_message)
+    progress.update("Access denied - creating minimal artifact")
+    write_minimal_artifact(
+      status: "inaccessible",
+      reason: "Repository not accessible",
+      error: error_message,
+      visibility: "private"
+    )
+    write_generates_meta
   end
 
   # Check if error message indicates access denied
@@ -455,19 +461,17 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     annotations
   end
 
-  def go_module?
-    File.exist?(File.join(@path, "go.mod")) || File.exist?(File.join(@path, "go.work"))
-  end
-
-  def go_grapher_import(artifact_name)
-    child_name = "Import:GoGrapher:#{artifact_name.delete_prefix("Repo:")}"
+  def grapher_import(artifact_name, handler_class)
+    lang = handler_class.language_name
+    handler_name = Archsight::Import::Registry.name_for(handler_class)
+    child_name = "Import:#{lang.capitalize}Grapher:#{artifact_name.delete_prefix("Repo:")}"
     child_annotations = {}
-    if (output_path = config("goGrapherOutputPath"))
+    if (output_path = config("grapherOutputPath"))
       child_annotations["import/outputPath"] = output_path
     end
     import_yaml(
       name: child_name,
-      handler: "go-grapher",
+      handler: handler_name,
       config: { "path" => @path },
       annotations: child_annotations
     )

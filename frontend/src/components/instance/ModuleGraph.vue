@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { renderDot } from '../../composables/useGraphviz.js'
 import { initSvgPanZoom } from '../../composables/usePanZoom.js'
 
-const props = defineProps({ dot: String })
+const props = defineProps({ dot: String, label: { type: String, default: 'Module Structure' } })
 const svgHtml = ref('')
 const loading = ref(true)
 const error = ref(null)
@@ -38,7 +38,7 @@ onUnmounted(() => { panZoom?.destroy() })
 
 <template>
   <article>
-    <header><h2>Module Structure</h2></header>
+    <header><h2>{{ label }}</h2></header>
     <div v-if="loading"><p>Loading graph...</p></div>
     <p v-else-if="error" class="graph-error"><i class="iconoir-warning-triangle"></i> {{ error }}</p>
     <div v-else-if="svgHtml" class="graph-container">

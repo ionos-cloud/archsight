@@ -3,6 +3,70 @@
 require "thor"
 
 module Archsight
+  class ModuleCLI < Thor
+    def self.exit_on_failure?
+      true
+    end
+
+    desc "graph PATH", "Print module dependency graph (DOT) for a repository to stdout"
+    option :language, aliases: "-l", type: :string, default: "auto",
+                      desc: "Language: go, python, java, or auto (default)"
+    option :ranksep, type: :numeric, default: 0.6, desc: "Horizontal gap between rank columns"
+    option :nodesep, type: :numeric, default: 0.15, desc: "Vertical gap between nodes"
+    def graph(path)
+      path = File.expand_path(path)
+      unless File.directory?(path)
+        warn "Error: not a directory: #{path}"
+        exit 1
+      end
+
+      load_handlers
+      handler_classes = resolve_handler(path, options[:language])
+      if handler_classes.empty?
+        warn "Could not detect language for #{path} — use --language go|python|java"
+        exit 1
+      end
+
+      require "archsight/import/progress"
+      stub = Struct.new(:name, :annotations, :path_ref).new("module-graph", {}, nil)
+      any_output = false
+      handler_classes.each do |handler_class|
+        progress = Archsight::Import::Progress.new(output: $stderr)
+        handler = handler_class.new(stub, database: nil, resources_dir: Dir.tmpdir,
+                                          progress: progress)
+        dot = handler.dot_graph(path: path, ranksep: options[:ranksep],
+                                nodesep: options[:nodesep])
+        next unless dot
+
+        puts "# #{handler_class.language_name} modules" if handler_classes.size > 1
+        puts dot
+        any_output = true
+      end
+      return if any_output
+
+      warn "No modules found in #{path}"
+      exit 1
+    end
+
+    private
+
+    def load_handlers
+      handlers_dir = File.expand_path("import/handlers", __dir__)
+      Dir.glob(File.join(handlers_dir, "*.rb")).each { |f| require f }
+    end
+
+    def resolve_handler(path, language)
+      require "archsight/import/registry"
+      if language == "auto" || language.nil?
+        Archsight::Import::Registry.handlers_for(path)
+      else
+        handler = Archsight::Import::Registry.handler_for_language(language)
+        warn "Unknown language: #{language}. Use go, python, or java." unless handler
+        [handler].compact
+      end
+    end
+  end
+
   class CLI < Thor
     def self.exit_on_failure?
       true
@@ -174,6 +238,9 @@ module Archsight
     def version
       puts "archsight #{Archsight::VERSION}"
     end
+
+    desc "module SUBCOMMAND", "Module analysis commands (e.g. module graph PATH)"
+    subcommand "module", ModuleCLI
 
     default_task :version
 
