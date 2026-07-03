@@ -219,7 +219,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
   private
 
   def run_scc(path)
-    cmd = ["scc", "-f", "json2", "--sort", "name", path]
+    cmd = ["scc", "--exclude-dir", ".git,.hg,.svn,vendor,node_modules", "-f", "json2", "--sort", "name", path]
 
     out, err, status = Open3.capture3(*cmd)
     raise "scc failed: #{cmd.join(" ")}\n#{err}" unless status.success?

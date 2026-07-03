@@ -198,7 +198,7 @@ module Archsight::Web::API::JsonHelpers
     when :heading
       { type: "heading", level: section[:level], text: section[:text] }
     when :text
-      { type: "text", content: section[:content] }
+      { type: "text", content: markdown(section[:content]) }
     when :message
       { type: "message", level: section[:level].to_s, message: section[:message] }
     when :table

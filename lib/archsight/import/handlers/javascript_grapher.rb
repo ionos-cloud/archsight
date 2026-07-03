@@ -94,6 +94,12 @@ class Archsight::Import::Handlers::JavaScriptGrapher < Archsight::Import::Handle
       return modules if modules.any?
     end
 
+    # No root package.json but subdirectory packages exist (e.g. a repo with a frontend/ subdir)
+    if root_pkg.nil?
+      modules = scan_subdir_modules(repo_root)
+      return modules if modules.any?
+    end
+
     # Single module fallback
     name = root_pkg&.dig("name") || File.basename(repo_root)
     [[".", name]]
