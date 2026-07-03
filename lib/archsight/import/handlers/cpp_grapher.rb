@@ -154,7 +154,7 @@ class Archsight::Import::Handlers::CppGrapher < Archsight::Import::Handlers::Gra
       deps << dep if dep
     end
     deps.uniq
-  rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError
+  rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError, ArgumentError
     []
   end
 
