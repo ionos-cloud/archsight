@@ -53,6 +53,11 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
     raise "Missing required config: path" unless @path
     raise "Directory not found: #{@path}" unless File.directory?(@path)
 
+    # Consolidate all grapher output into a single shared file unless an
+    # explicit output path is already set (e.g. via grapherOutputPath on the
+    # parent Repository import).
+    import_resource.annotations["import/outputPath"] ||= "generated/modules.yaml"
+
     @ranksep = config("ranksep", default: "0.6").to_f
     @nodesep = config("nodesep", default: "0.15").to_f
 
@@ -71,14 +76,16 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
                            ranksep: @ranksep, nodesep: @nodesep)
 
     progress.update("Generating resource")
+    repo_name = artifact_name(@path)
     resource = resource_yaml(
       kind: "TechnologyArtifact",
-      name: artifact_name(@path),
+      name: repo_name,
       annotations: { annotation_key => dot_content },
       spec: {}
     )
 
-    write_yaml(YAML.dump(resource) + YAML.dump(self_marker))
+    extra = additional_resources(@path, modules, repo_name)
+    write_yaml(YAML.dump(resource) + extra + YAML.dump(self_marker))
     write_generates_meta
   end
 
@@ -533,6 +540,12 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   # Java overrides to only suppress structural ancestors (not actual packages in pkg_set).
   def suppress_edge_to?(dep, _pkg_set, has_children)
     has_children.include?(dep)
+  end
+
+  # Hook: subclasses may override to emit additional YAML resources (as a
+  # concatenated YAML string) alongside the TechnologyArtifact in the output.
+  def additional_resources(_path, _modules, _artifact_name)
+    ""
   end
 
   # ── Artifact name ─────────────────────────────────────────────────────────

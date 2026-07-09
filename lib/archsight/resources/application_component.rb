@@ -343,4 +343,5 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   relation :servedBy, :technologyComponents, :TechnologySystemSoftware
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface
+  relation :dependsOn, :applicationComponents, :ApplicationComponent
 end

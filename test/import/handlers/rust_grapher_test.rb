@@ -266,7 +266,7 @@ class RustGrapherTest < Minitest::Test
   end
 
   def output_path
-    File.join(@resources_dir, "generated", "Import_RustGrapher_test.yaml")
+    File.join(@resources_dir, "generated", "modules.yaml")
   end
 
   def run_full_handler(path)

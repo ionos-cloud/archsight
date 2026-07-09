@@ -42,7 +42,10 @@ class Archsight::Resources::Import < Archsight::Resources::Base
                gitlab github repository
                rest-api rest-api-index
                jira-discover jira-metrics
-               go-grapher
+               go-grapher go-dep-resolver
+               cpp-grapher ruby-grapher python-grapher
+               java-grapher javascript-grapher
+               rust-grapher crystal-grapher elixir-grapher
              ]
 
   # Output configuration

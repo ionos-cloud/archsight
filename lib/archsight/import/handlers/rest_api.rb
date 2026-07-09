@@ -44,6 +44,12 @@ class Archsight::Import::Handlers::RestApi < Archsight::Import::Handler
     progress.update("Downloading OpenAPI spec for #{@name}")
     openapi_doc = fetch_openapi_spec(@spec_url)
 
+    if openapi_doc.nil?
+      progress.warn("Spec not found (404) for #{@name} at #{@spec_url} — skipping")
+      write_yaml(YAML.dump(self_marker))
+      return
+    end
+
     # Parse schemas and generate DataObjects first (needed for interface relations)
     progress.update("Extracting DataObjects from #{@name} schemas")
     parser = Archsight::Import::Handlers::OpenAPISchemaParser.new(openapi_doc)
@@ -141,8 +147,9 @@ class Archsight::Import::Handlers::RestApi < Archsight::Import::Handler
     when Net::HTTPSuccess
       parse_spec_content(response.body)
     when Net::HTTPRedirection
-      # Follow redirect
       fetch_openapi_spec(response["location"])
+    when Net::HTTPNotFound
+      nil
     else
       raise "Failed to fetch OpenAPI spec from #{uri}: #{response.code} #{response.message}"
     end

@@ -1,19 +1,33 @@
 # frozen_string_literal: true
 
+require "json"
 require "open3"
-require "find"
 require_relative "grapher"
+require_relative "go_module_parser"
 require_relative "../registry"
 
 # GoGrapher handler - analyses a Go repository and generates a GraphViz DOT
-# graph of its module/package structure, stored as architecture/modules on
+# graph of its module/package structure, stored as architecture/go/modules on
 # the TechnologyArtifact so it can be rendered in the frontend.
 #
+# Also emits one ApplicationComponent per go.mod module, linked to the repo
+# artifact via realizedThrough. If OpenAPI spec files are found in a module
+# directory, the component gains an exposes relation to the matching interface.
+#
+# dependsOn relations between components are resolved in a second pass by the
+# GoDepResolver handler, which runs after all graphers have seeded the database.
+#
 # Configuration:
-#   import/config/path     - Path to the Go repository root (go.mod or go.work)
-#   import/config/ranksep  - Horizontal gap between rank columns (default: 0.6)
-#   import/config/nodesep  - Vertical gap between nodes in a column (default: 0.15)
+#   import/config/path                 - Path to the Go repository root (go.mod or go.work)
+#   import/config/ranksep              - Horizontal gap between rank columns (default: 0.6)
+#   import/config/nodesep              - Vertical gap between nodes in a column (default: 0.15)
+#   import/config/interface_visibility - Visibility prefix for detected interfaces (default: Private)
 class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grapher
+  include Archsight::Import::Handlers::GoModuleParser
+
+  OPENAPI_FILENAMES = %w[openapi.yaml openapi.yml openapi.json swagger.yaml swagger.yml swagger.json].freeze
+  OPENAPI_SUBDIRS   = %w[api docs spec].freeze
+
   def self.language_name = "go"
 
   def self.applicable?(path)
@@ -34,56 +48,44 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     has_children.include?(dep) && !pkg_set.include?(dep)
   end
 
-  # ── Module discovery ─────────────────────────────────────────────────────
+  # ── Application resources ─────────────────────────────────────────────────
 
-  def discover_modules(repo_root)
-    work_file = File.join(repo_root, "go.work")
-    modules = []
+  def additional_resources(path, modules, artifact_name)
+    visibility = config("interface_visibility", default: "Private")
+    output = +""
 
-    if File.exist?(work_file)
-      content = File.read(work_file)
-      dirs = if (block_match = content.match(/\buse\s*\((.*?)\)/m))
-               block_match[1].split.map(&:strip).reject(&:empty?)
-             else
-               content.scan(/\buse\s+(\S+)/).flatten
-             end
-      dirs.each do |d|
-        rel = d == "." ? "" : d.delete_prefix("./")
-        abs_dir = rel.empty? ? repo_root : File.join(repo_root, rel)
-        mod_name = read_module_name(abs_dir)
-        modules << [rel.empty? ? "." : rel, mod_name] if mod_name
-      end
-    else
-      mod_name = read_module_name(repo_root)
-      if mod_name
-        modules << [".", mod_name]
-      else
-        # No root go.mod: scan subdirectories for go.mod files (monorepo without go.work)
-        Find.find(repo_root) do |path|
-          bn = File.basename(path)
-          Find.prune if File.directory?(path) && %w[vendor testdata .git node_modules].include?(bn)
-          next unless bn == "go.mod"
+    modules.each do |rel_dir, mod_name|
+      mod_dir = rel_dir == "." ? path : File.join(path, rel_dir)
+      specs = detect_openapi_specs(mod_dir)
+      existing_interfaces = database&.instances_by_kind("ApplicationInterface") || {}
+      interface_names = specs.filter_map { |s| interface_name_from_spec(s, visibility: visibility) }
+                             .select { |n| existing_interfaces.key?(n) }
 
-          mod_dir = File.dirname(path)
-          rel = mod_dir.delete_prefix("#{repo_root}/")
-          name = read_module_name(mod_dir)
-          modules << [rel, name] if name
-        end
-      end
+      comp_spec = { "realizedThrough" => { "technologyArtifacts" => [artifact_name] } }
+      comp_spec["exposes"] = { "applicationInterfaces" => interface_names } if interface_names.any?
+
+      # Build directly without resource_yaml so the component is not tracked in
+      # the generates spec — ApplicationComponents are seed resources the user
+      # is expected to keep and refine, not auto-regenerated on each run.
+      component = untracked_resource_yaml(
+        kind: "ApplicationComponent",
+        name: component_name(mod_name),
+        spec: comp_spec
+      )
+      output << YAML.dump(component)
     end
 
-    modules
-  end
+    # Emit a GoDepResolver import so dependsOn relations can be resolved in a
+    # second pass, after all graphers have run and the database has been reloaded
+    # with the full set of ApplicationComponents.
+    resolver_name = "Import:GoDepResolver:#{artifact_name.delete_prefix("Repo:")}"
+    output << YAML.dump(import_yaml(
+                          name: resolver_name,
+                          handler: "go-dep-resolver",
+                          config: { "path" => path }
+                        ))
 
-  def read_module_name(mod_dir)
-    gomod = File.join(mod_dir, "go.mod")
-    return nil unless File.exist?(gomod)
-
-    File.foreach(gomod) do |line|
-      m = line.match(/^\s*module\s+(\S+)/)
-      return m[1] if m
-    end
-    nil
+    output
   end
 
   # ── Package collection ────────────────────────────────────────────────────
@@ -93,7 +95,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     mod_names = modules.map { |_, mod_name| mod_name }
     all_pkgs = {}
 
-    modules.each_key do |rel_dir|
+    modules.map(&:first).each do |rel_dir|
       mod_dir = rel_dir == "." ? repo_root : File.join(repo_root, rel_dir)
       cmd = ["go", "list", "-e", "-f", "{{.ImportPath}}|||{{join .Imports \" \"}}", "./..."]
       cmd.insert(2, "-mod=vendor") if File.directory?(File.join(mod_dir, "vendor"))
@@ -121,6 +123,54 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     end
 
     all_pkgs
+  end
+
+  # ── OpenAPI detection ─────────────────────────────────────────────────────
+
+  def untracked_resource_yaml(kind:, name:, spec: {})
+    {
+      "apiVersion" => "architecture/v1alpha1",
+      "kind" => kind,
+      "metadata" => {
+        "name" => name,
+        "annotations" => {
+          "generated/script" => import_resource.name,
+          "generated/at" => Time.now.utc.iso8601
+        }
+      },
+      "spec" => spec
+    }
+  end
+
+  def detect_openapi_specs(mod_dir)
+    candidates = OPENAPI_FILENAMES.map { |f| File.join(mod_dir, f) }
+    OPENAPI_SUBDIRS.each do |sub|
+      OPENAPI_FILENAMES.each { |f| candidates << File.join(mod_dir, sub, f) }
+    end
+
+    candidates.filter_map do |path|
+      next unless File.file?(path)
+
+      begin
+        content = File.read(path)
+        doc = path.end_with?(".json") ? JSON.parse(content) : YAML.safe_load(content)
+        doc.is_a?(Hash) ? doc : nil
+      rescue StandardError
+        nil
+      end
+    end
+  end
+
+  def interface_name_from_spec(spec, visibility: "Private")
+    info = spec["info"] || {}
+    title = (info["title"] || "").strip
+    return nil if title.empty?
+
+    version = (info["version"] || "1.0").to_s
+    api_name = title.split(/[\s\-_]/).map(&:capitalize).join
+    version_str = version.split(".").first.to_s.sub(/^v/i, "")
+    vis = visibility.split("-").map(&:capitalize).join
+    "#{vis}:#{api_name}:v#{version_str}:RestAPI"
   end
 end
 

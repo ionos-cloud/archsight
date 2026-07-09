@@ -210,9 +210,26 @@ class RestApiHandlerTest < Minitest::Test
     assert_includes server["metadata"]["annotations"]["generated/variants"], "ServerCreate"
   end
 
-  def test_handles_http_errors
+  def test_handles_404_as_warning
     stub_request(:get, "https://example.com/api.yaml")
       .to_return(status: 404, body: "Not Found")
+
+    progress_io = StringIO.new
+    handler = create_handler(
+      name: "test",
+      spec_url: "https://example.com/api.yaml",
+      progress_io: progress_io
+    )
+
+    # Should not raise — 404 is a warning, not a fatal error
+    handler.execute
+
+    assert_match(/not found/i, progress_io.string)
+  end
+
+  def test_handles_other_http_errors
+    stub_request(:get, "https://example.com/api.yaml")
+      .to_return(status: 500, body: "Internal Server Error")
 
     handler = create_handler(
       name: "test",
@@ -221,7 +238,7 @@ class RestApiHandlerTest < Minitest::Test
 
     error = assert_raises(RuntimeError) { handler.execute }
 
-    assert_includes error.message, "404"
+    assert_includes error.message, "500"
   end
 
   def test_follows_redirects
@@ -345,7 +362,7 @@ class RestApiHandlerTest < Minitest::Test
   private
 
   def create_handler(name:, spec_url:, version: "1.0", visibility: "private",
-                     html_url: nil, gate: "GA")
+                     html_url: nil, gate: "GA", progress_io: nil)
     annotations = {
       "import/handler" => "rest-api"
     }
@@ -367,7 +384,7 @@ class RestApiHandlerTest < Minitest::Test
     }
 
     import_resource = MockRestApiImport.new(import_raw)
-    progress = Archsight::Import::Progress.new(output: StringIO.new)
+    progress = Archsight::Import::Progress.new(output: progress_io || StringIO.new)
     Archsight::Import::Handlers::RestApi.new(import_resource, database: nil, resources_dir: @resources_dir,
                                                               progress: progress)
   end
