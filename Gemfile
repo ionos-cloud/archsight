@@ -9,7 +9,7 @@ gem "irb"
 gem "rake", "~> 13.0"
 
 gem "bundler-audit"
-gem "json", ">= 2.19.2" # CVE-2026-33210: format string injection
+gem "json", ">= 2.19.9" # CVE-2026-33210: format string injection, CVE-2026-54696: heap buffer overflow
 
 gem "minitest", ">= 5.16"
 gem "rack-test", require: false
