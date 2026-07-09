@@ -209,7 +209,7 @@ class PythonGrapherTest < Minitest::Test
   end
 
   def output_path
-    File.join(@resources_dir, "generated", "Import_PythonGrapher_test.yaml")
+    File.join(@resources_dir, "generated", "modules.yaml")
   end
 
   def read_output(_handler)

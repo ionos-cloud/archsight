@@ -115,9 +115,12 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     run_git(%w[git fetch --quiet], @path)
     return if empty_repository? # Skip merge for empty repos
 
-    # Check if update is needed
+    # FETCH_HEAD may be absent when git fetch brings nothing new (e.g. no
+    # tracking refs configured, or the remote has no branches). Skip merge.
+    fetch_head = resolve_ref("FETCH_HEAD")
+    return unless fetch_head
+
     current_head = run_git(%w[git rev-parse HEAD], @path).strip
-    fetch_head = run_git(%w[git rev-parse FETCH_HEAD], @path).strip
     return if current_head == fetch_head # Already up-to-date
 
     run_git(%w[git merge --ff-only FETCH_HEAD], @path)
@@ -131,6 +134,11 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     # Check if HEAD exists (empty repos have no commits)
     _, _, status = Open3.capture3("git", "rev-parse", "HEAD", chdir: @path)
     !status.success?
+  end
+
+  def resolve_ref(ref)
+    out, _, status = Open3.capture3("git", "rev-parse", ref, chdir: @path)
+    status.success? ? out.strip : nil
   end
 
   # Run a git command safely using array form to prevent shell injection

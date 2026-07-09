@@ -176,8 +176,14 @@ module Archsight
       require_import_handlers
 
       # Create database that loads from resources directory
-      # Only load Import resources to avoid validation errors on incomplete resources
-      db = Archsight::Database.new(resources_dir, verbose: options[:verbose], only_kinds: %w[Import BusinessActor], verify: false)
+      # Only load the kinds that import handlers inspect at runtime (ApplicationComponent
+      # and ApplicationInterface for GoGrapher/GoDepResolver cross-referencing, BusinessActor
+      # for repository handler owner lookup). Validation is disabled because resources may be
+      # in an incomplete state during an in-progress import run.
+      db = Archsight::Database.new(resources_dir,
+                                   verbose: options[:verbose],
+                                   only_kinds: %w[Import BusinessActor ApplicationComponent ApplicationInterface],
+                                   verify: false)
 
       if options[:dry_run]
         puts "Execution Plan:"

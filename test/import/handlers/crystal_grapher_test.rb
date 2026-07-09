@@ -224,7 +224,7 @@ class CrystalGrapherTest < Minitest::Test
   end
 
   def output_path
-    File.join(@resources_dir, "generated", "Import_CrystalGrapher_test.yaml")
+    File.join(@resources_dir, "generated", "modules.yaml")
   end
 
   def run_full_handler(path)

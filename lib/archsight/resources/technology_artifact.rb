@@ -229,7 +229,8 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
     "go" => "Go", "python" => "Python", "java" => "Java",
     "typescript" => "TypeScript", "javascript" => "JavaScript",
     "rust" => "Rust", "ruby" => "Ruby", "crystal" => "Crystal",
-    "csharp" => "C#", "zig" => "Zig", "elixir" => "Elixir"
+    "csharp" => "C#", "zig" => "Zig", "elixir" => "Elixir",
+    "cpp" => "C++"
   }.each do |lang, label|
     annotation "architecture/#{lang}/modules",
                description: "GraphViz DOT — #{label} module/package structure",
