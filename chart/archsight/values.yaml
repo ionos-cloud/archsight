@@ -53,6 +53,19 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# Startup probe configuration.
+# Protects slow application startup: the full resource dataset is loaded and
+# verified synchronously before the HTTP server starts accepting connections,
+# which can take minutes for large datasets (10k+ resources). While this probe
+# is failing, the livenessProbe/readinessProbe below are not evaluated, so the
+# container won't be killed or marked unready mid-startup.
+# Default budget: periodSeconds * failureThreshold = 10 minutes. Increase
+# failureThreshold for larger datasets.
+startupProbe:
+  periodSeconds: 30
+  failureThreshold: 20
+  timeoutSeconds: 3
+
 resources: {}
   # limits:
   #   cpu: 100m
