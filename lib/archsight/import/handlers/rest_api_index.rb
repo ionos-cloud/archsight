@@ -18,6 +18,10 @@ require_relative "../registry"
 #   import/config/skipVisibility - Comma-separated visibilities to skip (e.g., "public-preview")
 #   import/config/childCacheTime - Cache time for generated child imports (e.g., "1h", "30m")
 #
+# APIs whose "gate" value isn't a recognized status (General-Availability,
+# Early-Access, Development, or their GA/EA/DEV aliases) are skipped, since
+# they can't be represented by the ApplicationInterface status annotation.
+#
 # Output:
 #   Generates Import:RestApi:* resources for each API in the index
 #
@@ -36,6 +40,8 @@ require_relative "../registry"
 #     ]
 #   }
 class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
+  VALID_GATES = %w[General-Availability Early-Access Development GA EA DEV].freeze
+
   def execute
     @index_url = config("indexUrl")
     raise "Missing required config: indexUrl" unless @index_url
@@ -55,10 +61,10 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
       return
     end
 
-    # Filter APIs by visibility
+    # Filter APIs by visibility and gate
     original_count = apis.size
     apis = filter_apis(apis)
-    progress.update("Filtered to #{apis.size} APIs (skipped #{original_count - apis.size} by visibility)") if apis.size < original_count
+    progress.update("Filtered to #{apis.size} APIs (skipped #{original_count - apis.size} by visibility/gate)") if apis.size < original_count
 
     # Generate child imports
     progress.update("Generating #{apis.size} import resources")
@@ -107,12 +113,17 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
   end
 
   def filter_apis(apis)
-    return apis if @skip_visibilities.empty?
-
     apis.reject do |api|
       visibility = api["visibility"]&.downcase
-      @skip_visibilities.any? { |skip| visibility == skip.downcase }
+      skipped_by_visibility = @skip_visibilities.any? { |skip| visibility == skip.downcase }
+      skipped_by_visibility || !valid_gate?(api["gate"])
     end
+  end
+
+  def valid_gate?(gate)
+    return true if gate.nil? # falls back to "GA" default in generate_api_imports
+
+    VALID_GATES.any? { |valid| gate.casecmp?(valid) }
   end
 
   def generate_api_imports(apis)
