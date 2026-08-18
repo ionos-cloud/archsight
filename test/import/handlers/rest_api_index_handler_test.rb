@@ -39,7 +39,7 @@ class RestApiIndexHandlerTest < Minitest::Test
         "version" => "2.0",
         "visibility" => "private",
         "specPath" => "/rest-api/storage/openapi.yaml",
-        "gate" => "BETA"
+        "gate" => "Early-Access"
       }
     ].to_json
 
@@ -87,7 +87,31 @@ class RestApiIndexHandlerTest < Minitest::Test
 
     refute_nil storage_import
     assert_nil storage_import["metadata"]["annotations"]["import/config/htmlUrl"]
-    assert_equal "BETA", storage_import["metadata"]["annotations"]["import/config/gate"]
+    assert_equal "Early-Access", storage_import["metadata"]["annotations"]["import/config/gate"]
+  end
+
+  def test_skips_apis_with_unrecognized_gate
+    index_json = [
+      { "name" => "stable", "version" => "v1", "specPath" => "/stable.yaml", "gate" => "General-Availability" },
+      { "name" => "rogue", "version" => "v1", "specPath" => "/rogue.yaml", "gate" => "ionosc" },
+      { "name" => "defaulted", "version" => "v1", "specPath" => "/defaulted.yaml" }
+    ].to_json
+
+    stub_request(:get, "https://example.com/index.json")
+      .to_return(status: 200, body: index_json)
+
+    handler = create_handler(index_url: "https://example.com/index.json")
+    handler.execute
+
+    output_path = File.join(@resources_dir, "generated", "Import_RestApi_Index.yaml")
+    content = File.read(output_path)
+    resources = YAML.load_stream(content)
+
+    import_names = resources.map { |r| r["metadata"]["name"] }
+
+    assert_includes import_names, "Import:RestApi:public:stable:v1"
+    assert_includes import_names, "Import:RestApi:public:defaulted:v1"
+    refute_includes import_names, "Import:RestApi:public:rogue:v1"
   end
 
   def test_derives_base_url_from_index_url
