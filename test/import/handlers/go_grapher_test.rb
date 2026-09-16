@@ -96,6 +96,21 @@ class GoGrapherTest < Minitest::Test
     end
   end
 
+  def test_foreign_nested_go_mod_not_promoted_to_component
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      write(repo, "legacy/dcd-blueprint-rest/go.mod", "module github.com/ionos-cloud/dcd-blueprint-rest\n\ngo 1.21\n")
+      write(repo, "legacy/dcd-blueprint-rest/main.go", "package main\n")
+
+      resources = run_full_handler(repo)
+      components = resources.select { |r| r["kind"] == "ApplicationComponent" }
+
+      assert_equal 1, components.size
+      assert_equal "example:myapp", components.first.dig("metadata", "name")
+    end
+  end
+
   def test_emits_go_dep_resolver_import
     with_repo do |repo|
       write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
