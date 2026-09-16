@@ -115,7 +115,7 @@ class Archsight::Import::Handler
       # Use thread-safe shared writer for concurrent execution
       # Default sort key is import name for stable output ordering
       key = sort_key || import_resource.name
-      @shared_writer.append_yaml(full_path, content, sort_key: key)
+      @shared_writer.append_yaml(full_path, content, sort_key: key, producer: import_resource.name)
     else
       # Direct write for non-concurrent mode
       FileUtils.mkdir_p(File.dirname(full_path))
@@ -209,7 +209,8 @@ class Archsight::Import::Handler
                 end
 
     if @shared_writer
-      @shared_writer.append_yaml(full_path, YAML.dump(meta), sort_key: "#{import_resource.name}:generates")
+      @shared_writer.append_yaml(full_path, YAML.dump(meta), sort_key: "#{import_resource.name}:generates",
+                                                             producer: import_resource.name)
     else
       # Append to existing file
       File.open(full_path, "a") { |f| f.write(YAML.dump(meta)) }

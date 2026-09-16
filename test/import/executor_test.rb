@@ -255,12 +255,51 @@ class ExecutorTest < Minitest::Test
     assert_includes error.message, "unknown verb dependsOn"
   end
 
+  def test_cached_import_output_survives_a_run_where_a_sibling_writes_the_same_shared_file
+    Archsight::Import::Registry.register("write-resource", TestResourceWritingHandler)
+
+    create_import("Import:First", handler: "write-resource",
+                                  output_path: "generated/shared.yaml",
+                                  cache_time: "1h",
+                                  config: { "resourceName" => "Repo:example:first" })
+    create_import("Import:Second", handler: "write-resource",
+                                   output_path: "generated/shared.yaml",
+                                   config: { "resourceName" => "Repo:example:second" })
+
+    db = create_database
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
+    executor.run!
+
+    output_path = File.join(@tmp_dir, "generated", "shared.yaml")
+    content = File.read(output_path)
+
+    assert_includes content, "Repo:example:first"
+    assert_includes content, "Repo:example:second"
+
+    # Second run: Import:First is now fresh (cacheTime: 1h, just generated) so
+    # it's served from cache and never re-executes, while Import:Second always
+    # executes and writes to the same shared output path again.
+    db2 = create_database
+    executor2 = Archsight::Import::Executor.new(database: db2, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
+    executor2.run!
+
+    content_after = File.read(output_path)
+
+    assert_includes content_after, "Repo:example:first",
+                    "cached import's previously-generated output should survive a run that doesn't re-execute it"
+    assert_includes content_after, "Repo:example:second"
+  end
+
   private
 
-  def create_import(name, handler:, priority: nil, generates: [], enabled: nil)
+  def create_import(name, handler:, priority: nil, generates: [], enabled: nil, output_path: nil, cache_time: nil,
+                    config: {})
     annotations = { "import/handler" => handler }
     annotations["import/priority"] = priority if priority
     annotations["import/enabled"] = enabled if enabled
+    annotations["import/outputPath"] = output_path if output_path
+    annotations["import/cacheTime"] = cache_time if cache_time
+    config.each { |key, value| annotations["import/config/#{key}"] = value }
 
     spec = {}
     spec["generates"] = { "imports" => generates } unless generates.empty?
@@ -305,6 +344,17 @@ class ExecutorTest < Minitest::Test
   class FailingHandler < Archsight::Import::Handler
     def execute
       raise "Intentional failure for testing"
+    end
+  end
+
+  # Test handler that actually writes a resource via the real write_yaml/
+  # write_generates_meta path, so shared-file merge behavior can be exercised
+  # end-to-end through the executor.
+  class TestResourceWritingHandler < Archsight::Import::Handler
+    def execute
+      resource = resource_yaml(kind: "TechnologyArtifact", name: config("resourceName"), spec: {})
+      write_yaml(YAML.dump(resource) + YAML.dump(self_marker))
+      write_generates_meta
     end
   end
 end
