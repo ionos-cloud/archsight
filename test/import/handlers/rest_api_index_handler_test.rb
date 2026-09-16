@@ -114,6 +114,31 @@ class RestApiIndexHandlerTest < Minitest::Test
     refute_includes import_names, "Import:RestApi:public:rogue:v1"
   end
 
+  def test_extracts_recognized_stage_token_from_suffixed_gate
+    index_json = [
+      { "name" => "vpn", "version" => "v1", "specPath" => "/vpn.yaml", "gate" => "ea.ionosc" },
+      { "name" => "tagging", "version" => "v0", "specPath" => "/tagging.yaml", "gate" => "dev.ionosc" }
+    ].to_json
+
+    stub_request(:get, "https://example.com/index.json")
+      .to_return(status: 200, body: index_json)
+
+    handler = create_handler(index_url: "https://example.com/index.json")
+    handler.execute
+
+    output_path = File.join(@resources_dir, "generated", "Import_RestApi_Index.yaml")
+    content = File.read(output_path)
+    resources = YAML.load_stream(content)
+
+    vpn_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:public:vpn:v1" }
+    tagging_import = resources.find { |r| r["metadata"]["name"] == "Import:RestApi:public:tagging:v0" }
+
+    refute_nil vpn_import
+    refute_nil tagging_import
+    assert_equal "EA", vpn_import["metadata"]["annotations"]["import/config/gate"]
+    assert_equal "DEV", tagging_import["metadata"]["annotations"]["import/config/gate"]
+  end
+
   def test_derives_base_url_from_index_url
     index_json = [
       { "name" => "test", "version" => "v1", "specPath" => "/api.yaml" }
