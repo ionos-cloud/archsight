@@ -21,6 +21,9 @@ require_relative "../registry"
 # APIs whose "gate" value isn't a recognized status (General-Availability,
 # Early-Access, Development, or their GA/EA/DEV aliases) are skipped, since
 # they can't be represented by the ApplicationInterface status annotation.
+# A gate value that embeds a recognized GA/EA/DEV token alongside extra
+# segments (e.g. "ea.ionosc") is tolerated by extracting that token instead
+# of being rejected outright.
 #
 # Output:
 #   Generates Import:RestApi:* resources for each API in the index
@@ -41,6 +44,7 @@ require_relative "../registry"
 #   }
 class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
   VALID_GATES = %w[General-Availability Early-Access Development GA EA DEV].freeze
+  GATE_TOKEN_RE = /\b(ga|ea|dev)\b/i
 
   def execute
     @index_url = config("indexUrl")
@@ -123,7 +127,21 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
   def valid_gate?(gate)
     return true if gate.nil? # falls back to "GA" default in generate_api_imports
 
-    VALID_GATES.any? { |valid| gate.casecmp?(valid) }
+    !resolve_gate(gate).nil?
+  end
+
+  # Resolve a gate value to a recognized stage (a VALID_GATES entry, matched
+  # as given, or an extracted GA/EA/DEV token), tolerating extra trailing
+  # segments some index entries carry (e.g. an "ionosc" variant suffix like
+  # "ea.ionosc") by pulling the first recognized stage token out of an
+  # otherwise-unrecognized value rather than rejecting it outright.
+  # @return [String, nil] Resolved gate, or nil if no recognized stage found
+  def resolve_gate(gate)
+    return nil if gate.nil?
+    return gate if VALID_GATES.any? { |valid| gate.casecmp?(valid) }
+
+    match = GATE_TOKEN_RE.match(gate)
+    match && match[1].upcase
   end
 
   def generate_api_imports(apis)
@@ -148,7 +166,7 @@ class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
         "version" => api["version"] || "1.0",
         "visibility" => visibility,
         "specUrl" => spec_url,
-        "gate" => api["gate"] || "GA"
+        "gate" => resolve_gate(api["gate"]) || "GA"
       }
       child_config["htmlUrl"] = html_url if html_url
 
