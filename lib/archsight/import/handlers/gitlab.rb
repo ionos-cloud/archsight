@@ -8,6 +8,7 @@ require "uri"
 require "openssl"
 require_relative "../handler"
 require_relative "../registry"
+require_relative "cache_pruner"
 
 # GitLab handler - lists repositories from a GitLab instance and generates child Import resources
 #
@@ -23,6 +24,7 @@ require_relative "../registry"
 #   import/config/botTeam - Team for bot-only repositories (propagated to child imports)
 #   import/config/corporateAffixes - Comma-separated corporate username affixes for team matching (propagated to child imports)
 #   import/config/defaultVisibility - Default visibility when API returns none (default: "internal")
+#   import/config/cacheRoot - Override for the local git cache root (default: ~/.cache/archsight/git)
 #
 # Environment:
 #   GITLAB_TOKEN - GitLab personal access token (required)
@@ -30,7 +32,14 @@ require_relative "../registry"
 # Output:
 #   Generates Import:Repo:* resources for each repository
 #   The repository handler will clone/sync the actual git repositories (via SSH)
+#
+# Before generating imports, prunes any cache subdirectory under
+# cacheRoot/gitlab that no longer corresponds to a project returned by the
+# API (e.g. a project that was renamed, moved, or deleted), so stale clones
+# don't linger and get picked up by later importers.
 class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
+  include Archsight::Import::Handlers::CachePruner
+
   def execute
     @host = config("host")
     raise "Missing required config: host" unless @host
@@ -42,7 +51,8 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
     @child_cache_time = config("childCacheTime")
     @default_visibility = config("defaultVisibility", default: "internal")
 
-    @target_dir = File.join(Dir.home, ".cache", "archsight", "git", "gitlab")
+    cache_root = config("cacheRoot", default: File.join(Dir.home, ".cache", "archsight", "git"))
+    @target_dir = File.join(cache_root, "gitlab")
     @explore_groups = config("exploreGroups") == "true"
     @per_page = config("perPage", default: "100").to_i
     @verify_ssl = config("verifySSL") != "false"
@@ -56,6 +66,8 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
       progress.warn("No projects found on GitLab")
       return
     end
+
+    prune_stale_cache_entries(@target_dir, projects.map { |p| safe_dir_name(p["path_with_namespace"]) })
 
     # Generate Import resources for each repository
     progress.update("Generating #{projects.size} import resources")
