@@ -33,20 +33,41 @@ module Archsight::Import::Handlers::GoModuleParser
     else
       root_mod = read_module_name(repo_root)
       modules << [".", root_mod] if root_mod
+      modules.concat(discover_nested_modules(repo_root, root_mod))
+    end
 
-      # Also scan subdirectories for additional go.mod files (multi-module monorepo without go.work)
-      Find.find(repo_root) do |path|
-        bn = File.basename(path)
-        Find.prune if File.directory?(path) && %w[vendor testdata .git node_modules].include?(bn)
-        next unless bn == "go.mod"
+    modules
+  end
 
-        mod_dir = File.dirname(path)
-        next if mod_dir == repo_root # already added above
+  # Scan subdirectories for additional go.mod files (multi-module monorepo
+  # without go.work). Skips a nested go.mod whose declared module path is
+  # unrelated to the repo's own root module - likely a vendored/embedded copy
+  # of a foreign project (e.g. a full committed snapshot of another,
+  # possibly since-renamed, repo) rather than an intentional submodule of
+  # this one - so it doesn't manufacture a cross-repo component/dependency.
+  #
+  # @return [Array<Array<String>>] List of [rel_dir, mod_name] pairs
+  def discover_nested_modules(repo_root, root_mod)
+    modules = []
 
-        rel = mod_dir.delete_prefix("#{repo_root}/")
-        name = read_module_name(mod_dir)
-        modules << [rel, name] if name
+    Find.find(repo_root) do |path|
+      bn = File.basename(path)
+      Find.prune if File.directory?(path) && %w[vendor testdata .git node_modules].include?(bn)
+      next unless bn == "go.mod"
+
+      mod_dir = File.dirname(path)
+      next if mod_dir == repo_root # already added above
+
+      rel = mod_dir.delete_prefix("#{repo_root}/")
+      name = read_module_name(mod_dir)
+      next unless name
+
+      if root_mod && !nested_under_root?(name, root_mod)
+        progress.warn("Skipping foreign nested go.mod at #{rel}: module #{name} is unrelated to root module #{root_mod}")
+        next
       end
+
+      modules << [rel, name]
     end
 
     modules
@@ -89,6 +110,15 @@ module Archsight::Import::Handlers::GoModuleParser
     end
 
     paths.uniq
+  end
+
+  # Whether a nested module's declared path is the root module itself or
+  # genuinely nested under it (a real monorepo submodule), as opposed to an
+  # unrelated/foreign module path (a vendored or embedded copy of another
+  # project) that happens to live in a subdirectory.
+  # @return [Boolean]
+  def nested_under_root?(mod_name, root_mod_name)
+    mod_name == root_mod_name || mod_name.start_with?("#{root_mod_name}/")
   end
 
   # Return the SCM host+org prefix shared by modules in the same org, e.g. "github.com/ionos-cloud/".
