@@ -194,9 +194,98 @@ class GithubHandlerTest < Minitest::Test
     refute_includes content, "corporateAffixes"
   end
 
+  def test_prunes_stale_cache_directory_for_renamed_repo
+    cache_root = Dir.mktmpdir
+    begin
+      org_dir = File.join(cache_root, "github", "test-org")
+      FileUtils.mkdir_p(File.join(org_dir, "stale-repo"))
+      FileUtils.mkdir_p(File.join(org_dir, "repo1"))
+
+      stub_request(:get, "https://api.github.com/orgs/test-org/repos?page=1&per_page=100")
+        .to_return(
+          status: 200,
+          body: [
+            {
+              "name" => "repo1",
+              "archived" => false,
+              "visibility" => "public",
+              "ssh_url" => "git@github.com:test-org/repo1.git",
+              "html_url" => "https://github.com/test-org/repo1"
+            }
+          ].to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      handler = create_handler(org: "test-org", cache_root: cache_root)
+      handler.execute
+
+      refute_path_exists File.join(org_dir, "stale-repo")
+      assert_path_exists File.join(org_dir, "repo1")
+    ensure
+      FileUtils.rm_rf(cache_root)
+    end
+  end
+
+  def test_pruning_skips_when_cache_root_does_not_exist
+    cache_root = Dir.mktmpdir
+    FileUtils.rm_rf(cache_root)
+
+    stub_request(:get, "https://api.github.com/orgs/test-org/repos?page=1&per_page=100")
+      .to_return(
+        status: 200,
+        body: [
+          {
+            "name" => "repo1",
+            "archived" => false,
+            "visibility" => "public",
+            "ssh_url" => "git@github.com:test-org/repo1.git",
+            "html_url" => "https://github.com/test-org/repo1"
+          }
+        ].to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    handler = create_handler(org: "test-org", cache_root: cache_root)
+
+    handler.execute # should not raise
+  end
+
+  def test_pruning_leaves_non_directory_entries_alone
+    cache_root = Dir.mktmpdir
+    begin
+      org_dir = File.join(cache_root, "github", "test-org")
+      FileUtils.mkdir_p(org_dir)
+      stray_file = File.join(org_dir, "stray-file")
+      File.write(stray_file, "not a repo")
+
+      stub_request(:get, "https://api.github.com/orgs/test-org/repos?page=1&per_page=100")
+        .to_return(
+          status: 200,
+          body: [
+            {
+              "name" => "repo1",
+              "archived" => false,
+              "visibility" => "public",
+              "ssh_url" => "git@github.com:test-org/repo1.git",
+              "html_url" => "https://github.com/test-org/repo1"
+            }
+          ].to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      handler = create_handler(org: "test-org", cache_root: cache_root)
+      handler.execute
+
+      assert_path_exists stray_file
+    ensure
+      FileUtils.rm_rf(cache_root)
+    end
+  end
+
   private
 
-  def create_handler(org:, repo_output_path: nil, fallback_team: nil, bot_team: nil, corporate_affixes: nil)
+  def create_handler(org:, repo_output_path: nil, fallback_team: nil, bot_team: nil, corporate_affixes: nil,
+                     cache_root: nil)
     annotations = {
       "import/handler" => "github"
     }
@@ -205,6 +294,7 @@ class GithubHandlerTest < Minitest::Test
     annotations["import/config/fallbackTeam"] = fallback_team if fallback_team
     annotations["import/config/botTeam"] = bot_team if bot_team
     annotations["import/config/corporateAffixes"] = corporate_affixes if corporate_affixes
+    annotations["import/config/cacheRoot"] = cache_root if cache_root
 
     import_raw = {
       "apiVersion" => "architecture/v1alpha1",

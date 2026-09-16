@@ -64,6 +64,58 @@ class GitlabHandlerTest < Minitest::Test
     refute_includes content, "corporateAffixes"
   end
 
+  def test_prunes_stale_cache_directory_for_renamed_project
+    cache_root = Dir.mktmpdir
+    begin
+      gitlab_dir = File.join(cache_root, "gitlab")
+      FileUtils.mkdir_p(File.join(gitlab_dir, "my-group.stale-service"))
+      FileUtils.mkdir_p(File.join(gitlab_dir, "my-group.my-service"))
+
+      stub_groups_request
+      stub_projects_request
+
+      handler = create_handler(host: "gitlab.example.com", cache_root: cache_root)
+      handler.execute
+
+      refute_path_exists File.join(gitlab_dir, "my-group.stale-service")
+      assert_path_exists File.join(gitlab_dir, "my-group.my-service")
+    ensure
+      FileUtils.rm_rf(cache_root)
+    end
+  end
+
+  def test_pruning_skips_when_cache_root_does_not_exist
+    cache_root = Dir.mktmpdir
+    FileUtils.rm_rf(cache_root)
+
+    stub_groups_request
+    stub_projects_request
+
+    handler = create_handler(host: "gitlab.example.com", cache_root: cache_root)
+
+    handler.execute # should not raise
+  end
+
+  def test_pruning_leaves_non_directory_entries_alone
+    cache_root = Dir.mktmpdir
+    begin
+      gitlab_dir = File.join(cache_root, "gitlab")
+      FileUtils.mkdir_p(gitlab_dir)
+      stray_file = File.join(gitlab_dir, "stray-file")
+      File.write(stray_file, "not a repo")
+
+      stub_groups_request
+      stub_projects_request
+
+      handler = create_handler(host: "gitlab.example.com", cache_root: cache_root)
+      handler.execute
+
+      assert_path_exists stray_file
+    ensure
+      FileUtils.rm_rf(cache_root)
+    end
+  end
+
   private
 
   def stub_groups_request
@@ -112,7 +164,7 @@ class GitlabHandlerTest < Minitest::Test
       )
   end
 
-  def create_handler(host:, fallback_team: nil, bot_team: nil, corporate_affixes: nil)
+  def create_handler(host:, fallback_team: nil, bot_team: nil, corporate_affixes: nil, cache_root: nil)
     annotations = {
       "import/handler" => "gitlab",
       "import/config/host" => host
@@ -120,6 +172,7 @@ class GitlabHandlerTest < Minitest::Test
     annotations["import/config/fallbackTeam"] = fallback_team if fallback_team
     annotations["import/config/botTeam"] = bot_team if bot_team
     annotations["import/config/corporateAffixes"] = corporate_affixes if corporate_affixes
+    annotations["import/config/cacheRoot"] = cache_root if cache_root
 
     import_raw = {
       "apiVersion" => "architecture/v1alpha1",
