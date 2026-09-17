@@ -189,6 +189,72 @@ class SharedFileWriterTest < Minitest::Test
     end
   end
 
+  # Producer-aware merge tests
+
+  def resource_doc(name, producer:)
+    <<~YAML
+      apiVersion: architecture/v1alpha1
+      kind: TechnologyArtifact
+      metadata:
+        name: #{name}
+        annotations:
+          generated/script: #{producer}
+      spec: {}
+    YAML
+  end
+
+  def test_preserves_existing_document_from_a_different_producer
+    path = File.join(@tmpdir, "shared.yaml")
+    File.write(path, resource_doc("Repo:example:cached", producer: "Import:Repo:github:example:cached"))
+
+    @writer.append_yaml(path, resource_doc("Repo:example:fresh", producer: "Import:Repo:github:example:fresh"),
+                        sort_key: "fresh", producer: "Import:Repo:github:example:fresh")
+    @writer.close_all
+
+    content = File.read(path)
+
+    assert_includes content, "Repo:example:cached"
+    assert_includes content, "Repo:example:fresh"
+  end
+
+  def test_replaces_existing_document_from_the_same_producer
+    path = File.join(@tmpdir, "shared.yaml")
+    File.write(path, resource_doc("Repo:example:old-name", producer: "Import:Repo:github:example:svc"))
+
+    @writer.append_yaml(path, resource_doc("Repo:example:svc", producer: "Import:Repo:github:example:svc"),
+                        sort_key: "svc", producer: "Import:Repo:github:example:svc")
+    @writer.close_all
+
+    content = File.read(path)
+
+    refute_includes content, "old-name"
+    assert_includes content, "Repo:example:svc"
+  end
+
+  def test_preserves_self_marker_import_document_by_its_own_name
+    path = File.join(@tmpdir, "shared.yaml")
+    self_marker = <<~YAML
+      apiVersion: architecture/v1alpha1
+      kind: Import
+      metadata:
+        name: Import:Repo:github:example:cached
+        annotations:
+          generated/at: "2026-01-01T00:00:00Z"
+          generated/configHash: abc123
+      spec: {}
+    YAML
+    File.write(path, self_marker)
+
+    @writer.append_yaml(path, resource_doc("Repo:example:fresh", producer: "Import:Repo:github:example:fresh"),
+                        sort_key: "fresh", producer: "Import:Repo:github:example:fresh")
+    @writer.close_all
+
+    content = File.read(path)
+
+    assert_includes content, "Import:Repo:github:example:cached"
+    assert_includes content, "Repo:example:fresh"
+  end
+
   def test_close_all_clears_buffer
     path = File.join(@tmpdir, "clear.yaml")
     @writer.append_yaml(path, "first: 1", sort_key: "A")
