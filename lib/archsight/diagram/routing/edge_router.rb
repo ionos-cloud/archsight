@@ -64,6 +64,15 @@ module Archsight
       # width plus its gap to a neighbor.
       CROSSING_PENALTY = 200.0
 
+      # Among routes that draw over the same number of boxes, every bend
+      # beyond the fewest bends any of them needs costs this many extra
+      # pixels of length -- so a longer route with one corner beats a
+      # shorter Z-shaped jog hugging the target. Charged relative to the
+      # best candidate in the same crossing class rather than absolutely, so
+      # it never tips the balance against `CROSSING_PENALTY`: a bridge that
+      # clears a box still beats a bend-free line through it.
+      TURN_PENALTY = 100.0
+
       # Two edges running right along each other for a stretch reads as
       # clutter too, but far more mildly than either one cutting through a
       # box -- weighting each pixel of *collinear* overlap with a sibling
@@ -114,8 +123,13 @@ module Archsight
         crossings, lengths = Native.score_paths(candidates, obstacles)
         crossings ||= candidates.map { |path| PathMetrics.crossing_count(path, obstacles) }
         lengths ||= candidates.map { |path| Geometry.path_length(path) }
+        turns = candidates.map { |path| Geometry.turn_count(path) }
+        fewest_turns = crossings.zip(turns).group_by(&:first).transform_values { |pairs| pairs.map(&:last).min }
         candidates.each_with_index.map do |path, i|
-          { path: path, crossing: crossings[i], length: lengths[i] }
+          # Folded into `length` (rather than a separate term) so the native
+          # selection kernels, which only know crossings and length, apply it too.
+          extra_turns = turns[i] - fewest_turns[crossings[i]]
+          { path: path, crossing: crossings[i], length: lengths[i] + (TURN_PENALTY * extra_turns) }
         end
       end
 

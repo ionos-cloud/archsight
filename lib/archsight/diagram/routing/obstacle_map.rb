@@ -29,8 +29,12 @@ module Archsight
         end
       end
 
-      def initialize(boxes)
+      # `ignoring` ids are never obstacles: boxes that aren't drawn (the
+      # anonymous stack/layer wrappers a diagram groups its nodes with), so
+      # a line clipping one crosses nothing visible.
+      def initialize(boxes, ignoring: [])
         @boxes = boxes
+        @ignored = ignoring.to_a
         return unless Native.available?
 
         @index = boxes.keys.each_with_index.to_h
@@ -38,7 +42,7 @@ module Archsight
       end
 
       def excluding(from, to)
-        skip = from.ancestor_ids | to.ancestor_ids
+        skip = from.ancestor_ids | to.ancestor_ids | @ignored
         obstacles = @boxes.except(*skip).values
         return Obstacles.new(obstacles) unless @native_table
 

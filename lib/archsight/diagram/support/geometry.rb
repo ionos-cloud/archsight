@@ -21,6 +21,15 @@ module Archsight
         points.each_cons(2).sum { |a, b| point_distance(a, b) }
       end
 
+      # How many times the path changes direction: interior points where
+      # the two adjoining segments aren't collinear (a straight line, however
+      # slanted, has none).
+      def turn_count(points)
+        points.each_cons(3).count do |(x1, y1), (x2, y2), (x3, y3)|
+          (((x2 - x1) * (y3 - y2)) - ((y2 - y1) * (x3 - x2))).abs > 1e-6
+        end
+      end
+
       # The point at `fraction` of the way along the path's total length --
       # `path_midpoint` is just `point_along(points, 0.5)`.
       def point_along(points, fraction)

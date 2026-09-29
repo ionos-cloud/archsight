@@ -83,13 +83,13 @@ class DiagramEdgeRouterTest < Minitest::Test
     # single turn's corner would double back through a box, so only a
     # mid-jog, bent in the vertical gap between them, clears both.
     a = box(0, 0, 100, 60)
-    b = box(30, 200, 100, 60)
+    b = box(10, 200, 100, 60) # spans -40..60: no entry point on its top lies beyond a's right edge (50)
 
     points = Archsight::Diagram::EdgeRouter.route(a, b, "orthogonal")
 
     assert_equal 4, points.length
     assert_equal [0, 30.0], points.first # leaves `a`'s bottom, facing `b`
-    assert_equal [30, 170.0], points.last # enters `b`'s top
+    assert_equal [10, 170.0], points.last # enters `b`'s top
   end
 
   def test_offers_no_mid_jog_along_an_axis_the_two_boxes_overlap_on
@@ -299,8 +299,8 @@ class DiagramEdgeRouterTest < Minitest::Test
   end
 
   def test_best_path_prefers_an_otherwise_equal_candidate_that_doesn_t_cross_a_sibling_edge_s_line
-    crossing = [[0.0, 50.0], [100.0, 50.0]] # crosses the sibling's vertical run at (50, 50)
-    clear = [[0.0, 50.0], [0.0, 30.0], [100.0, 30.0], [100.0, 50.0]] # jogs above the sibling's (narrow) span instead
+    crossing = [[0.0, 40.0], [0.0, 50.0], [100.0, 50.0], [100.0, 40.0]] # crosses the sibling's vertical run at (50, 50)
+    clear = [[0.0, 40.0], [0.0, 30.0], [100.0, 30.0], [100.0, 40.0]] # jogs above the sibling's (narrow) span instead
     sibling = [[50.0, 40.0], [50.0, 60.0]]
 
     best = Archsight::Diagram::EdgeRouter.best_path([crossing, clear], [], sibling_paths: [sibling])
@@ -433,6 +433,71 @@ class DiagramEdgeRouterTest < Minitest::Test
     above = box(700, 100, 100, 40)
 
     refute_equal 2, Archsight::Diagram::EdgeRouter.route(above, wide, "orthogonal").length
+  end
+
+  def test_prefers_a_longer_route_with_fewer_bends_among_routes_that_clear_the_same_boxes
+    zig_zag = [[0.0, 0.0], [0.0, 50.0], [100.0, 50.0], [100.0, 100.0]] # 200 long, two turns
+    one_corner = [[0.0, 0.0], [130.0, 0.0], [130.0, 100.0]] # 230 long, one turn
+    much_longer = [[0.0, 0.0], [300.0, 0.0], [300.0, 100.0]] # 400 long: too big a detour to be worth a bend
+
+    assert_equal one_corner, Archsight::Diagram::EdgeRouter.best_path([zig_zag, one_corner], [])
+    assert_equal zig_zag, Archsight::Diagram::EdgeRouter.best_path([zig_zag, much_longer], [])
+  end
+
+  def test_extra_bends_never_outweigh_avoiding_a_box
+    obstacle = box(50, 0, 20, 20)
+    through = [[0.0, 0.0], [100.0, 0.0]] # straight, but draws through the obstacle
+    around = [[0.0, 0.0], [0.0, 60.0], [100.0, 60.0], [100.0, 0.0]] # 3 more bends' worth of turns, clear
+
+    assert_equal around, Archsight::Diagram::EdgeRouter.best_path([through, around], [obstacle])
+  end
+
+  def test_offers_a_single_turn_entering_the_target_off_center_when_the_centered_entry_is_blocked
+    source = box(0, 0, 100, 60)
+    target = box(300, 300, 400, 60) # top edge spans x 100..500
+    blocker = box(300, 150, 40, 40) # sits on the drop into the target's center
+
+    points = Archsight::Diagram::EdgeRouter.route(source, target, "orthogonal", obstacles: [blocker])
+
+    assert_equal 3, points.length # exit, one corner, entry -- not a two-turn jog
+    refute_equal target.x, points.last[0]
+    assert_equal 0, Archsight::Diagram::EdgeRouter.crossing_count(points, [blocker])
+  end
+
+  def test_obstacle_map_leaves_out_ignored_boxes_such_as_undrawn_wrappers
+    boxes = { "a" => box(0, 0, 10, 10), "wrapper" => box(50, 50, 100, 100), "b" => box(200, 200, 10, 10), "c" => box(300, 0, 10, 10) }
+    node = Struct.new(:ancestor_ids)
+    from = node.new(["a"])
+    to = node.new(["b"])
+
+    assert_equal [boxes["wrapper"], boxes["c"]], Archsight::Diagram::ObstacleMap.new(boxes).excluding(from, to).to_a
+    assert_equal [boxes["c"]], Archsight::Diagram::ObstacleMap.new(boxes, ignoring: ["wrapper"]).excluding(from, to).to_a
+  end
+
+  def test_an_undrawn_anonymous_wrapper_does_not_push_a_line_off_the_port_next_to_it
+    # Regression test: `cli` has a slanted line to `target`, and the anonymous
+    # stack wrapping `other` sits in the way of the only free port -- it draws
+    # nothing, so it must not count as something to avoid.
+    source = <<~SRC
+      layer {
+        component "cli" { }
+        stack {
+          component "other" { }
+        }
+      }
+      component "target" { }
+      cli -> target
+    SRC
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
+    layout = Archsight::Diagram::Layout.compute(graph)
+    renderer = Archsight::Diagram::Renderer.new(graph, layout)
+    obstacle_map = renderer.instance_variable_get(:@edge_routing).instance_variable_get(:@obstacle_map)
+    anonymous = graph.nodes_by_id.values.select { |n| n.anonymous? && !n.leaf? }
+
+    refute_empty anonymous
+    obstacles = obstacle_map.excluding(graph.nodes_by_id["cli"], graph.nodes_by_id["target"]).to_a
+
+    anonymous.each { |n| refute(obstacles.any? { |b| b.equal?(layout.boxes[n.id]) }, "#{n.id} is an obstacle") }
   end
 
   private

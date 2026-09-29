@@ -17,6 +17,13 @@ module Archsight
         # the centered one doesn't.
         MID_JOG_RATIOS = [0.5, 0.3, 0.7, 0.2, 0.8, 0.4, 0.6].freeze
 
+        # Where a single turn's second run enters `b`, as a fraction along
+        # the facing side of `b` -- centered first, then off-center entries
+        # nearer either end. Turning nearer `a` can clear a neighbour that a
+        # run dropping at `b`'s far-off center would cut through, without
+        # resorting to a two-turn mid-jog.
+        SINGLE_TURN_RATIOS = [0.5, 0.1, 0.9].freeze
+
         module_function
 
         # Every orthogonal path worth considering between `a` and `b`: up to
@@ -36,10 +43,13 @@ module Archsight
           dx = b.x - a.x
           dy = b.y - a.y
 
+          horizontal = SINGLE_TURN_RATIOS.map { |ratio| single_turn_horizontal_first(a, b, dx, dy, ratio) }
+          vertical = SINGLE_TURN_RATIOS.map { |ratio| single_turn_vertical_first(a, b, dx, dy, ratio) }
+          # Centered entries first (dominant axis leading), off-center ones after.
           singles = if dx.abs >= dy.abs
-                      [single_turn_horizontal_first(a, b, dx, dy), single_turn_vertical_first(a, b, dx, dy)]
+                      [horizontal.first, vertical.first, *horizontal.drop(1), *vertical.drop(1)]
                     else
-                      [single_turn_vertical_first(a, b, dx, dy), single_turn_horizontal_first(a, b, dx, dy)]
+                      [vertical.first, horizontal.first, *vertical.drop(1), *horizontal.drop(1)]
                     end.compact
 
           mid_jogs = MID_JOG_RATIOS.flat_map do |ratio|
@@ -93,34 +103,40 @@ module Archsight
         end
 
         # Exit `a` from whichever side (left/right) faces `b`, corner at
-        # `(b.x, a.y)`, then straight into `b`'s facing top/bottom edge.
+        # `(entry_x, a.y)` -- `entry_x` being `b`'s center, or `ratio` of the
+        # way along `b`'s width (see `SINGLE_TURN_RATIOS`) -- then straight
+        # into `b`'s facing top/bottom edge.
         # Safe exactly when: (1) the corner truly lies beyond `a` in `b`'s
         # direction, so the exit run can't double back through `a`, which
-        # also guarantees the corner-to-entry run (at x = b.x) clears `a`
+        # also guarantees the corner-to-entry run (at x = entry_x) clears `a`
         # entirely; and (2) `a`'s own y sits outside `b`'s vertical span, so
         # the exit-to-corner run (at y = a.y) clears `b` entirely.
-        def single_turn_horizontal_first(a, b, dx, dy)
+        def single_turn_horizontal_first(a, b, dx, dy, ratio = 0.5)
           return nil if dx.zero?
-          return nil if dx.positive? ? (b.x <= a.right) : (b.x >= a.left)
+
+          corner_x = ratio == 0.5 ? b.x : b.left + (b.width * ratio)
+          return nil if dx.positive? ? (corner_x <= a.right) : (corner_x >= a.left)
           return nil unless a.y < b.top || a.y > b.bottom
 
           exit_point = [dx.positive? ? a.right : a.left, a.y]
-          corner = [b.x, a.y]
-          entry_point = [b.x, dy.positive? ? b.top : b.bottom]
+          corner = [corner_x, a.y]
+          entry_point = [corner_x, dy.positive? ? b.top : b.bottom]
           [exit_point, corner, entry_point]
         end
 
         # The transpose of `single_turn_horizontal_first`: exit `a` from
         # whichever top/bottom edge faces `b`, corner at `(a.x, b.y)`, then
         # straight into `b`'s facing left/right edge.
-        def single_turn_vertical_first(a, b, dx, dy)
+        def single_turn_vertical_first(a, b, dx, dy, ratio = 0.5)
           return nil if dy.zero?
-          return nil if dy.positive? ? (b.y <= a.bottom) : (b.y >= a.top)
+
+          corner_y = ratio == 0.5 ? b.y : b.top + (b.height * ratio)
+          return nil if dy.positive? ? (corner_y <= a.bottom) : (corner_y >= a.top)
           return nil unless a.x < b.left || a.x > b.right
 
           exit_point = [a.x, dy.positive? ? a.bottom : a.top]
-          corner = [a.x, b.y]
-          entry_point = [dx.positive? ? b.left : b.right, b.y]
+          corner = [a.x, corner_y]
+          entry_point = [dx.positive? ? b.left : b.right, corner_y]
           [exit_point, corner, entry_point]
         end
       end

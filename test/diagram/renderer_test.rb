@@ -540,9 +540,11 @@ class DiagramRendererTest < Minitest::Test
     assert_operator Archsight::Diagram::EdgeRouter::PathMetrics.overlap_length(a, [b]), :>, 0 # confirms the scenario actually needs fixing
 
     edge_routing.refine_line_overlap!(edge_paths)
+    edge_routing.assign_ports!(edge_paths) # bends cost more than a short shared run, so the ports finish separating the two
     a, b = edge_paths.map(&:points)
 
     assert_equal(0.0, Archsight::Diagram::EdgeRouter::PathMetrics.overlap_length(a, [b]))
+    assert_operator a.length, :<=, 4 # a mid-jog, not a bridge around the whole box
   end
 
   def test_routes_a_plain_edge_off_an_implements_tree_s_trunk_when_an_equally_clear_drop_exists

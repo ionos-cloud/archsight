@@ -80,7 +80,7 @@ module Archsight
                                                                        ids: @ids, theme: theme)
         # Both routing stages avoid the same boxes, so they share one map
         # (and, with the native kernels, one packed box table).
-        obstacle_map = ObstacleMap.new(@boxes)
+        obstacle_map = ObstacleMap.new(@boxes, ignoring: nodes.select { |n| n.anonymous? && !n.leaf? }.map(&:id))
         @edge_routing = EdgeRouting.new(@graph, @boxes, obstacle_map: obstacle_map)
         @edge_renderer = EdgeRenderer.new(path_renderer: @path_renderer, text_renderer: @text_renderer, label_placer: @label_placer,
                                           ids: @ids, theme: theme)
