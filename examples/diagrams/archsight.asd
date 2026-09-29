@@ -1,86 +1,82 @@
 # Archsight's own architecture, as an .asd diagram.
 #   archsight diagram examples/diagrams/archsight.asd
+#
+# A boundary (the archsight process) holding a stack of layers: frontends
+# run on top of APIs, which run on top of the features, which run on the core. The import system
+# is a stack of its own inside the features layer.
 
 theme "compact"
 
-actor "maintainer" { label "Maintainer" }
-actor "browser" { label "Browser" }
-actor "assistant" { label "AI assistant" }
-
-stack "archsight" {
-  label "Archsight"
-
-  layer "interfaces" {
-    label "Interfaces"
-
-    application "cli" { label "CLI (Thor)" }
-
-    group "web" {
-      label "Web"
-      application "spa" { label "Web UI (Vue SPA)" }
-      api "api" { label "REST API" }
-      component "editor" { label "Resource editor" }
-    }
-
-    api "mcp" { label "MCP server (SSE)" }
+stack {
+  layer {
+    actor "maintainer" { label "Maintainer" }
+    actor "browser" { label "Browser" }
+    actor "assistant" { label "AI assistant" }
   }
 
-  layer "features" {
-    label "Features"
+  boundary "archsight" {
+    label "Archsight"
 
-    group "cli_commands" {
-      label "CLI commands"
-      component "linter" { label "Linter" }
-      component "template" { label "Template" }
-      component "diagram" { label "Diagram renderer (.asd)" }
-    }
+    stack {
+      layer "frontends" {
+        application "cli" { label "CLI (Thor)" }
+        application "spa" { label "Web UI (Vue SPA)" }
+      }
 
-    group "query_system" {
-      label "Query + analysis"
-      component "query" { label "Query engine" }
-      component "analysis" { label "Analysis executor" }
-    }
+      layer "apis" {
+        api "api" { label "REST API" }
+        api "mcp" { label "MCP server (SSE)" }
+      }
 
-    group "rendering" {
-      label "Rendering"
-      component "graphviz" { label "GraphViz DOT" }
-      component "documentation" { label "Documentation" }
-    }
+      layer "features" {
+        component "linter" { label "Linter" }
+        component "template" { label "Template generator" }
+        component "diagram" { label "Diagram renderer (.asd)" }
+        component "editor" { label "Resource editor" }
+        component "query" { label "Query engine" }
+        component "analysis" { label "Analysis executor" }
+        component "graphviz" { label "GraphViz DOT" }
+        component "docs" { label "Documentation" }
 
-    group "import_system" {
-      label "Import system"
-      component "executor" { label "Import executor" }
-      component "handlers" { label "Handlers (GitHub, GitLab, Jira, REST API)" }
-      component "graphers" { label "Language graphers (Go, Ruby, Python, ...)" }
-      component "writer" { label "Shared file writer" }
+        stack "import" {
+          label "Import system"
+          component "executor" { label "Import executor" }
+          component "contract" { label "Handler contract" }
+          layer {
+            component "handlers" { label "Handlers (GitHub, GitLab, Jira, REST API)" }
+            component "graphers" { label "Language graphers (Go, Ruby, Python, ...)" }
+          }
+          component "writer" { label "Shared file writer" }
+        }
+      }
+
+      layer "core" {
+        component "database" { label "Database" }
+        component "resources" { label "Resources (ArchiMate kinds)" }
+        component "annotations" { label "Annotations + computed values" }
+      }
     }
   }
 
-  layer "core" {
-    label "Core"
-    component "database" { label "Database" }
-    component "resources" { label "Resources (ArchiMate kinds)" }
-    component "annotations" { label "Annotations + computed values" }
+  layer {
+    application "sources" { label "GitHub / GitLab / Jira" }
+    database "yaml" { label "YAML resources" }
+    database "generated" { label "Generated resources" }
   }
 }
-
-database "yaml" { label "YAML resources" }
-database "generated" { label "Generated resources" }
-application "sources" { label "GitHub / GitLab / Jira" }
 
 maintainer -> cli
 browser -> spa
 assistant -> mcp
 
-spa -> api
-spa -> editor
+spa -> api { label "HTTPS / JSON" }
 api -> query
 api -> graphviz
-api -> documentation
+api -> docs
+api -> editor
 mcp -> query
 mcp -> analysis
-mcp -> documentation
-editor -> database
+mcp -> docs
 
 cli -> linter
 cli -> template
@@ -88,20 +84,26 @@ cli -> diagram
 cli -> analysis
 cli -> executor
 
+executor -> handlers
+executor -> graphers
+handlers -> contract { relation "implements" }
+graphers -> contract { relation "implements" }
+
 query -> database
 analysis -> database
 graphviz -> database
 linter -> database
+editor -> database
 template -> resources
-
-executor -> handlers
-executor -> graphers
-handlers -> sources
-handlers -> writer
-graphers -> writer
-writer -> generated
-
 database -> resources
 database -> annotations
-database -> yaml
-database -> generated
+database -> yaml { label "loads" }
+
+dataflow "import" {
+  hop "sources"
+  hop "handlers"
+  hop "writer"
+  hop "generated"
+  color "#1a56db"
+  label "import"
+}
