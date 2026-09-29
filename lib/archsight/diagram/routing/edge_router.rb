@@ -118,13 +118,13 @@ module Archsight
       # can compute it once and feed it to `select_best` on every round,
       # instead of rebuilding identical candidate geometry and rescoring it
       # against the same, unchanged `obstacles` each time. The crossing
-      # counts and lengths come from `Native.score_paths` in one packing when
+      # counts, lengths and turns come from `Native.score_paths` in one packing when
       # the native kernels are built.
       def score_candidates(candidates, obstacles)
-        crossings, lengths = Native.score_paths(candidates, obstacles)
+        crossings, lengths, turns = Native.score_paths(candidates, obstacles)
         crossings ||= candidates.map { |path| PathMetrics.crossing_count(path, obstacles) }
         lengths ||= candidates.map { |path| Geometry.path_length(path) }
-        turns = candidates.map { |path| Geometry.turn_count(path) }
+        turns ||= candidates.map { |path| Geometry.turn_count(path) }
         fewest_turns = crossings.zip(turns).group_by(&:first).transform_values { |pairs| pairs.map(&:last).min }
         candidates.each_with_index.map do |path, i|
           # Folded into `length` (rather than a separate term) so the native
@@ -194,7 +194,13 @@ module Archsight
       # kernels are built. `EdgeRouting#shift_for` checks a shifted port
       # with it.
       def crossing_count(points, obstacles)
-        Native.crossing_counts([points], obstacles)&.first || PathMetrics.crossing_count(points, obstacles)
+        crossing_counts([points], obstacles).first
+      end
+
+      # `crossing_count` for several paths in one call (one packing of the
+      # paths and the obstacles when the native kernels are built).
+      def crossing_counts(paths, obstacles)
+        Native.crossing_counts(paths, obstacles) || paths.map { |points| PathMetrics.crossing_count(points, obstacles) }
       end
     end
   end

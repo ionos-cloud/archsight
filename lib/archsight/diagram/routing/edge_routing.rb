@@ -144,13 +144,15 @@ module Archsight
       # pays for one overlap check per bridge and nothing more.
       def separate_bridge_lanes!(edge_paths, fixed_paths: [])
         extended = false
-        fixed = fixed_routes(fixed_paths)
+        # Every route (and fixed line) and its bounding box, once: each bridge
+        # is then asked "does anything else run along me?" without rebuilding
+        # either. Routes don't move inside this loop, only their candidates grow.
+        everyone = (edge_paths + fixed_routes(fixed_paths)).map(&:points)
+        boxes = everyone.map { |points| EdgeRouter::PathMetrics.bounding_box(points) }
 
-        edge_paths.each do |ep|
+        edge_paths.each_with_index do |ep, index|
           next unless EdgeRouter::BridgePath.bridge?(ep.points)
-
-          siblings = (edge_paths + fixed).filter_map { |other| other.points unless other.equal?(ep) }
-          next unless EdgeRouter::PathMetrics.overlap_length(ep.points, siblings).positive?
+          next unless EdgeRouter::PathMetrics.overlaps?(ep.points, everyone, boxes: boxes, skip: index)
 
           variants = EdgeRouter::BridgePath.lane_variants(ep.points, ep.to_box)
           next if variants.empty?
@@ -182,6 +184,8 @@ module Archsight
         end
 
         groups.each_value { |members| apply_port_slots(members) if members.length > 1 }
+      ensure
+        @original_crossings = nil
       end
 
       private
@@ -385,21 +389,39 @@ module Archsight
         keep = member.edge_path.points.length == 2 && EdgeRouter::PathMetrics.close?(member.approach, member.original) &&
                member.original.between?(side_low, side_high)
         positions = [*(member.original if keep), *preferred, band_low, band_high].uniq
-        positions.filter_map { |pos| shift_for(member, pos) }
+        shifts_for(member, positions)
       end
 
       # `[pos, shifted points]` for moving `member`'s endpoint to `pos`, or
       # nil when that would make its route cross more obstacles than it
       # already does.
       def shift_for(member, pos)
+        shifts_for(member, [pos]).first
+      end
+
+      # `shift_for` for each of `positions` (the nils dropped), scoring every
+      # shifted route against the obstacles in one batch.
+      def shifts_for(member, positions)
         path = member.edge_path
-        delta = pos - member.original
-        return [pos, path.points] if delta.zero?
+        moves = positions.map do |pos|
+          delta = pos - member.original
+          [pos, delta.zero? ? path.points : EdgeRouter::Attachment.shift_attachment(path.points, member.axis, delta, at: member.role), delta.zero?]
+        end
+        moved = moves.reject(&:last)
+        return moves.map { |pos, points, _| [pos, points] } if moved.empty?
 
-        shifted = EdgeRouter::Attachment.shift_attachment(path.points, member.axis, delta, at: member.role)
-        return nil if EdgeRouter.crossing_count(shifted, path.obstacles) > EdgeRouter.crossing_count(path.points, path.obstacles)
+        limit = original_crossings(path)
+        counts = EdgeRouter.crossing_counts(moved.map { |_, points, _| points }, path.obstacles)
+        within = {}.compare_by_identity
+        moved.zip(counts) { |(_, points, _), count| within[points] = count <= limit }
+        moves.filter_map { |pos, points, unchanged| [pos, points] if unchanged || within[points] }
+      end
 
-        [pos, shifted]
+      # How many obstacles `path`'s route as it stands draws over -- the same
+      # for every position tried for it, and for as long as this
+      # `assign_ports!` doesn't replace its points.
+      def original_crossings(path)
+        (@original_crossings ||= {}.compare_by_identity)[path.points] ||= EdgeRouter.crossing_count(path.points, path.obstacles)
       end
     end
   end

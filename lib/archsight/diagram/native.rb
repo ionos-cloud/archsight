@@ -50,12 +50,13 @@ module Archsight
         Kernels.crossing_counts(points, offsets, *box_table(obstacles)).unpack("l*")
       end
 
-      # `[crossing_counts(paths, obstacles), lengths]` from one packing of
-      # `paths` -- `EdgeRouter.score_candidates`'s two per-candidate terms,
-      # each length exactly `Geometry.path_length` (Integer 0 for a path
-      # with no segment, as Ruby's empty `sum`). Nil when the kernels
-      # aren't available, or for a non-Float coordinate (`Math.hypot` of
-      # Integers is fine, but the crossing test isn't).
+      # `[crossing_counts(paths, obstacles), lengths, turns]` from one packing
+      # of `paths` -- `EdgeRouter.score_candidates`'s three per-candidate
+      # terms, each length exactly `Geometry.path_length` (Integer 0 for a
+      # path with no segment, as Ruby's empty `sum`) and each turn count
+      # exactly `Geometry.turn_count`. Nil when the kernels aren't
+      # available, or for a non-Float coordinate (`Math.hypot` of Integers
+      # is fine, but the crossing test isn't).
       def score_paths(paths, obstacles)
         return nil unless available? && all_float?(paths)
 
@@ -63,7 +64,7 @@ module Archsight
         crossings = Kernels.crossing_counts(points, offsets, *box_table(obstacles)).unpack("l*")
         lengths = Kernels.path_lengths(points, offsets).unpack("d*")
         paths.each_with_index { |path, i| lengths[i] = 0 if path.length < 2 }
-        [crossings, lengths]
+        [crossings, lengths, Kernels.path_turns(points, offsets).unpack("l*")]
       end
 
       # For every path in `paths`, whether it runs through `a`'s or `b`'s

@@ -551,6 +551,39 @@ class DiagramEdgeRouterTest < Minitest::Test
     assert_equal around, Archsight::Diagram::EdgeRouter.select_best(scored, sibling_paths: [[[0.0, 200.0], [10.0, 200.0]]])
   end
 
+  def test_overlaps_agrees_with_a_positive_overlap_length_on_random_axis_aligned_paths
+    metrics = Archsight::Diagram::EdgeRouter::PathMetrics
+    rng = Random.new(7)
+    # Coordinates on a coarse grid, some nudged by less than EDGE_EPSILON, so
+    # collinear runs, touching endpoints, crossings and near-misses all occur.
+    coord = -> { (rng.rand(0..6) * 10.0) + (rng.rand < 0.3 ? rng.rand(-0.4..0.4) : 0.0) }
+    path = lambda do
+      points = [[coord.call, coord.call]]
+      rng.rand(1..4).times { points << (rng.rand < 0.5 ? [coord.call, points.last[1]] : [points.last[0], coord.call]) }
+      points
+    end
+
+    400.times do
+      mine = path.call
+      others = Array.new(rng.rand(0..6)) { path.call }
+      boxes = others.map { |other| metrics.bounding_box(other) }
+      expected = metrics.overlap_length(mine, others).positive?
+
+      assert_equal expected, metrics.overlaps?(mine, others), "#{mine.inspect} vs #{others.inspect}"
+      assert_equal expected, metrics.overlaps?(mine, others, boxes: boxes)
+    end
+  end
+
+  def test_overlaps_can_skip_the_path_s_own_slot
+    metrics = Archsight::Diagram::EdgeRouter::PathMetrics
+    line = [[0.0, 0.0], [50.0, 0.0]]
+    everyone = [line, [[100.0, 10.0], [100.0, 40.0]]]
+
+    assert metrics.overlaps?(line, everyone) # it overlaps itself
+    refute metrics.overlaps?(line, everyone, skip: 0)
+    assert metrics.overlaps?(line, [line, [[10.0, 0.0], [30.0, 0.0]]], skip: 0)
+  end
+
   private
 
   def box(x, y, width, height)

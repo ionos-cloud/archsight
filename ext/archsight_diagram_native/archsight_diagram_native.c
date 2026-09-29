@@ -336,6 +336,39 @@ rb_path_lengths(VALUE self, VALUE points, VALUE offsets)
     return out;
 }
 
+/* ---- Kernels.path_turns: Geometry.turn_count per path ---- */
+
+/*
+ * path_turns(points, offsets) -> packed int32 per path
+ *
+ * The interior points where the two adjoining segments aren't collinear:
+ * |(x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)| > 1e-6, the very
+ * expression (and operation order, no fused multiply-add) `Geometry.turn_count`
+ * evaluates. A path with fewer than three points has none.
+ */
+static VALUE
+rb_path_turns(VALUE self, VALUE points, VALUE offsets)
+{
+    paths_t p;
+    load_paths(&p, points, offsets);
+
+    VALUE out = rb_str_new(NULL, (long)sizeof(int32_t) * p.npaths);
+    int32_t *turns = (int32_t *)RSTRING_PTR(out);
+
+    for (long k = 0; k < p.npaths; k++) {
+        int32_t count = 0;
+        for (int32_t i = p.off[k]; i + 2 < p.off[k + 1]; i++) {
+            double x1 = PX(&p, i), y1 = PY(&p, i);
+            double x2 = PX(&p, i + 1), y2 = PY(&p, i + 1);
+            double x3 = PX(&p, i + 2), y3 = PY(&p, i + 2);
+            if (fabs(((x2 - x1) * (y3 - y2)) - ((y2 - y1) * (x3 - x2))) > 1e-6)
+                count++;
+        }
+        turns[k] = count;
+    }
+    return out;
+}
+
 /* ---- Kernels.bridge_scan: BridgePath.bridge_candidates's obstacle scans ---- */
 
 /* Box#overlap_on(axis, other) > 0 (overlaps_x? / overlaps_y?), with its
@@ -813,6 +846,7 @@ Init_archsight_diagram_native(void)
 
     rb_define_module_function(kernels, "crossing_counts", rb_crossing_counts, 4);
     rb_define_module_function(kernels, "path_lengths", rb_path_lengths, 2);
+    rb_define_module_function(kernels, "path_turns", rb_path_turns, 2);
     rb_define_module_function(kernels, "bridge_scan", rb_bridge_scan, 4);
     rb_define_module_function(kernels, "rect_overlap_counts", rb_rect_overlap_counts, 3);
     rb_define_module_function(kernels, "path_rect_hits", rb_path_rect_hits, 4);

@@ -615,6 +615,32 @@ class DiagramRendererTest < Minitest::Test
     assert_operator left.points.first[0], :<, right.points.first[0]
   end
 
+  def test_scores_all_of_a_member_s_candidate_ports_in_one_batch_exactly_as_one_by_one
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(%(component "src" { }\ncomponent "dst" { }\nsrc -> dst\n)))
+    boxes = { "src" => Archsight::Diagram::Layout::Box.new(300, 0, 600, 60), "dst" => Archsight::Diagram::Layout::Box.new(300, 300, 600, 60) }
+    obstacle = Archsight::Diagram::Layout::Box.new(200, 150, 30, 30) # sits on the line from x=100 down to the target
+    points = [[300.0, 30.0], [300.0, 270.0]]
+    edge_path = Archsight::Diagram::EdgeRouting::RoutedEdge.new(edge: graph.edges.first, points: points, from_box: boxes["src"], to_box: boxes["dst"],
+                                                                obstacles: [obstacle], scored: [{ path: points, crossing: 0, length: 240.0 }])
+    member = Archsight::Diagram::EdgeRouting::PortMember.new(edge_path: edge_path, role: :start, box: boxes["src"], axis: :x, original: 300.0,
+                                                             approach: 300.0, order: 300.0, far: 300.0)
+    routing = Archsight::Diagram::EdgeRouting.new(graph, boxes)
+    positions = [300.0, 100.0, 500.0, 40.0]
+
+    expected = positions.filter_map do |pos|
+      delta = pos - member.original
+      next [pos, points] if delta.zero?
+
+      shifted = Archsight::Diagram::EdgeRouter::Attachment.shift_attachment(points, :x, delta, at: :start)
+      [pos, shifted] unless Archsight::Diagram::EdgeRouter.crossing_count(shifted, [obstacle]) > Archsight::Diagram::EdgeRouter.crossing_count(points, [obstacle])
+    end
+
+    assert_equal expected, routing.send(:shifts_for, member, positions)
+    assert_equal [300.0, 500.0], expected.map(&:first) # the two that run through the obstacle are dropped
+    assert_equal expected.first, routing.send(:shift_for, member, 300.0)
+    assert_nil routing.send(:shift_for, member, 100.0)
+  end
+
   def test_keeps_many_edges_into_a_wide_box_straight_after_port_assignment
     xs = [60, 100, 140, 700, 760] # clustered, so equal-width port bands alone would tilt most of them
     source = [*xs.each_index.map { |i| %(component "s#{i}" { }) }, %(component "wide" { }),

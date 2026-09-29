@@ -41,6 +41,29 @@ module Archsight
           end
         end
 
+        # Whether `path` runs collinearly along any of `sibling_paths` at
+        # all -- `overlap_length(path, sibling_paths).positive?`, but
+        # stopping at the first overlapping segment pair instead of summing
+        # them all. `boxes` are the siblings' `bounding_box`es when the caller
+        # asks about many paths against the same siblings (so each sibling's is
+        # computed once, not once per question); `skip` is an index into
+        # `sibling_paths` to leave out (the path's own slot).
+        def overlaps?(path, sibling_paths, boxes: sibling_paths.map { |other| bounding_box(other) }, skip: nil)
+          lo_x, hi_x, lo_y, hi_y = bounding_box(path)
+
+          sibling_paths.each_with_index.any? do |other, i|
+            next false if i == skip
+
+            olo_x, ohi_x, olo_y, ohi_y = boxes[i]
+            next false unless olo_x - EDGE_EPSILON <= hi_x && ohi_x + EDGE_EPSILON >= lo_x &&
+                              olo_y - EDGE_EPSILON <= hi_y && ohi_y + EDGE_EPSILON >= lo_y
+
+            path.each_cons(2).any? do |a1, a2|
+              other.each_cons(2).any? { |b1, b2| collinear_overlap(a1, a2, b1, b2).positive? }
+            end
+          end
+        end
+
         # How much of segment (a1, a2) overlaps segment (b1, b2), when
         # they're collinear (both vertical at the same x, or both horizontal
         # at the same y) -- 0 if they merely cross at a point, run along

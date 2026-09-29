@@ -31,13 +31,30 @@ class DiagramNativeTest < Minitest::Test
     200.times do
       paths = Array.new(rng.rand(1..8)) { random_path } + [[[grid(400), grid(400)]]]
       obstacles = Array.new(rng.rand(0..12)) { random_box }
-      crossings, lengths = Archsight::Diagram::Native.score_paths(paths, obstacles)
+      crossings, lengths, turns = Archsight::Diagram::Native.score_paths(paths, obstacles)
 
       assert_equal paths.map { |path| Archsight::Diagram::EdgeRouter::PathMetrics.crossing_count(path, obstacles) }, crossings
+      assert_equal paths.map { |path| Archsight::Diagram::Geometry.turn_count(path) }, turns
       # `eql?`, not a tolerance: a last-ulp difference could flip a tie, and
       # a lone point's length stays Ruby's Integer 0.
       paths.zip(lengths) { |path, length| assert_operator Archsight::Diagram::Geometry.path_length(path), :eql?, length }
     end
+  end
+
+  def test_score_paths_counts_turns_exactly_as_geometry_turn_count_around_its_threshold
+    paths = [
+      [[0.0, 0.0]], [[0.0, 0.0], [10.0, 0.0]], [[0.0, 0.0], [10.0, 0.0], [20.0, 0.0]], # no segment / one / collinear
+      [[0.0, 0.0], [10.0, 10.0], [20.0, 20.0]], # collinear, slanted
+      [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0]], # one corner
+      [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]], # two
+      [[0.0, 0.0], [1.0, 0.0], [2.0, 5.0e-7]], # cross product 5e-7: below 1e-6, straight
+      [[0.0, 0.0], [1.0, 0.0], [2.0, 2.0e-6]], # 2e-6: a turn
+      [[0.0, 0.0], [10.0, 0.0], [0.0, 0.0]] # doubling back on itself is collinear
+    ]
+    _crossings, _lengths, turns = Archsight::Diagram::Native.score_paths(paths, [])
+
+    assert_equal paths.map { |path| Archsight::Diagram::Geometry.turn_count(path) }, turns
+    assert_equal [0, 0, 0, 0, 1, 2, 0, 1, 0], turns
   end
 
   # .interior_hits
