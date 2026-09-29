@@ -66,12 +66,13 @@ module Archsight
 
       # Among routes that draw over the same number of boxes, every bend
       # beyond the fewest bends any of them needs costs this many extra
-      # pixels of length -- so a longer route with one corner beats a
-      # shorter Z-shaped jog hugging the target. Charged relative to the
-      # best candidate in the same crossing class rather than absolutely, so
-      # it never tips the balance against `CROSSING_PENALTY`: a bridge that
-      # clears a box still beats a bend-free line through it.
-      TURN_PENALTY = 100.0
+      # pixels of length -- so a one-corner route wins over a zig-zag (with
+      # its short stub into the target) unless it is over this much longer.
+      # Charged relative to the best candidate in the same crossing class
+      # rather than absolutely, so however large it is it never tips the
+      # balance against `CROSSING_PENALTY`: a bridge that clears a box still
+      # beats a bend-free line through it.
+      TURN_PENALTY = 300.0
 
       # Two edges running right along each other for a stretch reads as
       # clutter too, but far more mildly than either one cutting through a

@@ -577,6 +577,44 @@ class DiagramRendererTest < Minitest::Test
     end
   end
 
+  def test_gives_a_bent_edge_the_port_past_the_straight_drops_it_would_otherwise_cross
+    # Regression test: `far`'s Z leaves the middle of `src`'s bottom, then
+    # jogs right past `down`'s straight drop. Ordered by where each line is
+    # just off the side it sorted first, left of `down`, and crossed it.
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(%(component "src" { }\ncomponent "down" { }\ncomponent "far" { }\nsrc -> down\nsrc -> far\n)))
+    boxes = { "src" => Archsight::Diagram::Layout::Box.new(600, 0, 1200, 60), "down" => Archsight::Diagram::Layout::Box.new(800, 300, 100, 60),
+              "far" => Archsight::Diagram::Layout::Box.new(1500, 300, 200, 60) }
+    routed = lambda do |edge, points|
+      Archsight::Diagram::EdgeRouting::RoutedEdge.new(edge: edge, points: points, from_box: boxes["src"], to_box: boxes[edge.to.id], obstacles: [],
+                                                      scored: [{ path: points, crossing: 0, length: Archsight::Diagram::Geometry.path_length(points) }])
+    end
+    down = routed.call(graph.edges[0], [[800.0, 30.0], [800.0, 270.0]])
+    far = routed.call(graph.edges[1], [[600.0, 30.0], [600.0, 150.0], [1500.0, 150.0], [1500.0, 270.0]])
+    crossings = Archsight::Diagram::EdgeRouter::PathMetrics.crossing_edges_count(down.points, [far.points])
+
+    assert_operator crossings, :>, 0 # confirms the scenario really crosses before port assignment
+    Archsight::Diagram::EdgeRouting.new(graph, boxes).assign_ports!([down, far])
+
+    assert_equal 0, Archsight::Diagram::EdgeRouter::PathMetrics.crossing_edges_count(down.points, [far.points])
+    assert_operator far.points.first[0], :>, down.points.first[0]
+  end
+
+  def test_keeps_the_order_of_edges_that_do_not_cross_on_a_shared_side
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(%(component "src" { }\ncomponent "a" { }\ncomponent "b" { }\nsrc -> a\nsrc -> b\n)))
+    boxes = { "src" => Archsight::Diagram::Layout::Box.new(300, 0, 600, 60), "a" => Archsight::Diagram::Layout::Box.new(100, 300, 100, 60),
+              "b" => Archsight::Diagram::Layout::Box.new(500, 300, 100, 60) }
+    routed = lambda do |edge, points|
+      Archsight::Diagram::EdgeRouting::RoutedEdge.new(edge: edge, points: points, from_box: boxes["src"], to_box: boxes[edge.to.id], obstacles: [],
+                                                      scored: [{ path: points, crossing: 0, length: Archsight::Diagram::Geometry.path_length(points) }])
+    end
+    left = routed.call(graph.edges[0], [[100.0, 30.0], [100.0, 270.0]])
+    right = routed.call(graph.edges[1], [[500.0, 30.0], [500.0, 270.0]])
+
+    Archsight::Diagram::EdgeRouting.new(graph, boxes).assign_ports!([left, right])
+
+    assert_operator left.points.first[0], :<, right.points.first[0]
+  end
+
   def test_keeps_many_edges_into_a_wide_box_straight_after_port_assignment
     xs = [60, 100, 140, 700, 760] # clustered, so equal-width port bands alone would tilt most of them
     source = [*xs.each_index.map { |i| %(component "s#{i}" { }) }, %(component "wide" { }),

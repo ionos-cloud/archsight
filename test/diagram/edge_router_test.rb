@@ -438,10 +438,19 @@ class DiagramEdgeRouterTest < Minitest::Test
   def test_prefers_a_longer_route_with_fewer_bends_among_routes_that_clear_the_same_boxes
     zig_zag = [[0.0, 0.0], [0.0, 50.0], [100.0, 50.0], [100.0, 100.0]] # 200 long, two turns
     one_corner = [[0.0, 0.0], [130.0, 0.0], [130.0, 100.0]] # 230 long, one turn
-    much_longer = [[0.0, 0.0], [300.0, 0.0], [300.0, 100.0]] # 400 long: too big a detour to be worth a bend
+    much_longer = [[0.0, 0.0], [600.0, 0.0], [600.0, 100.0]] # 700 long: over the 300px a bend is worth
 
     assert_equal one_corner, Archsight::Diagram::EdgeRouter.best_path([zig_zag, one_corner], [])
     assert_equal zig_zag, Archsight::Diagram::EdgeRouter.best_path([zig_zag, much_longer], [])
+  end
+
+  def test_a_one_corner_route_beats_a_zig_zag_that_is_up_to_the_turn_penalty_shorter
+    # The mcp -> webserver shape: a Z ending in a 12px stub (181) against a
+    # one-corner route (403) that is 222 longer.
+    zig_zag = [[777.0, 244.0], [824.0, 244.0], [824.0, 366.0], [836.0, 366.0]]
+    one_corner = [[777.0, 244.0], [1080.0, 244.0], [1080.0, 344.0]]
+
+    assert_equal one_corner, Archsight::Diagram::EdgeRouter.best_path([zig_zag, one_corner], [])
   end
 
   def test_extra_bends_never_outweigh_avoiding_a_box

@@ -283,7 +283,7 @@ module Archsight
         # apart) still passes despite float rounding.
         min_gap = [PORT_MIN_GAP, band_width].min - 1e-6
 
-        placements = members.sort { |m, n| port_order(m, n) }.each_with_index.map do |member, i|
+        placements = uncross_members(members.sort { |m, n| port_order(m, n) }, low, band_width).each_with_index.map do |member, i|
           band_low = low + (band_width * i)
           [member, band_shifts(member, band_low, band_low + band_width, low, high)]
         end
@@ -313,6 +313,43 @@ module Archsight
           member.edge_path.points = points
           moved << member.edge_path
         end
+      end
+
+      # `port_order` sorts by where each line is just off the side, which
+      # can rank a bent line ahead of a sibling it then turns past (a Z that
+      # drops from the middle of the side, then jogs right, sorted left of a
+      # straight drop it goes on to cross). Swaps adjacent members whose
+      # lines, placed in their slots, cross each other whenever the other
+      # order crosses strictly less. Bounded to one sweep per member, and
+      # a pair that doesn't cross is never touched, so `port_order`'s own
+      # choices stand everywhere else.
+      def uncross_members(sorted, low, band_width)
+        sorted.length.times do
+          swapped = false
+          (sorted.length - 1).times do |i|
+            first = sorted[i]
+            second = sorted[i + 1]
+            next unless slot_crossings(first, second, low, band_width, i) > slot_crossings(second, first, low, band_width, i)
+
+            sorted[i] = second
+            sorted[i + 1] = first
+            swapped = true
+          end
+          break unless swapped
+        end
+        sorted
+      end
+
+      # How often `first` and `second` cross when `first` takes slot `index`
+      # and `second` the next one (each slot's centre).
+      def slot_crossings(first, second, low, band_width, index)
+        a = slot_path(first, low + (band_width * (index + 0.5)))
+        b = slot_path(second, low + (band_width * (index + 1.5)))
+        EdgeRouter::PathMetrics.crossing_edges_count(a, [b])
+      end
+
+      def slot_path(member, pos)
+        EdgeRouter::Attachment.shift_attachment(member.edge_path.points, member.axis, pos - member.original, at: member.role)
       end
 
       def port_order(m, n)
