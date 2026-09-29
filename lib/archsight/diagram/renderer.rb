@@ -94,16 +94,20 @@ module Archsight
         body = Markup.new
         @graph.roots.each { |node| @node_renderer.render(body, node) }
 
+        # Tree lines are fixed by the boxes alone, so plain edges can route
+        # around them like any other line.
+        trees = implements_tree_groups.map { |target, edges| [target, edges, @implements_tree_renderer.segments(edges, target)] }
+        tree_paths = trees.flat_map { |*, tree| tree.paths }
+
         edge_paths = @edge_routing.compute_paths(individually_routed_edges)
-        @edge_routing.refine_line_overlap!(edge_paths)
-        @edge_routing.separate_bridge_lanes!(edge_paths)
+        @edge_routing.refine_line_overlap!(edge_paths, fixed_paths: tree_paths)
+        @edge_routing.separate_bridge_lanes!(edge_paths, fixed_paths: tree_paths)
         @edge_routing.assign_ports!(edge_paths)
         dataflow_routes = @dataflow_routing.compute_routes(edge_paths.map(&:points))
 
         # Every line is known before any label is placed, so each label can
         # keep clear of lines drawn after it too (see `LabelPlacer`).
-        trees = implements_tree_groups.map { |target, edges| [target, edges, @implements_tree_renderer.segments(edges, target)] }
-        @label_placer.register_paths(edge_paths.map(&:points) + trees.flat_map { |*, tree| tree.paths } + dataflow_routes.map(&:points))
+        @label_placer.register_paths(edge_paths.map(&:points) + tree_paths + dataflow_routes.map(&:points))
 
         edge_paths.each { |ep| @edge_renderer.render(body, ep.edge, ep.points) }
         trees.each { |target, edges, tree| @implements_tree_renderer.render(body, edges, target, tree: tree) }

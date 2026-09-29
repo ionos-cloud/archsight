@@ -118,11 +118,17 @@ module Archsight
       # `Native.refine_line_overlap!` runs this whole sweep in C when the
       # native kernels are built (it's quadratic in the edge count, and by
       # far the most expensive part of rendering a large diagram).
-      def refine_line_overlap!(edge_paths)
-        return if Native.refine_line_overlap!(edge_paths, LINE_OVERLAP_REFINEMENT_ROUNDS)
+      #
+      # `fixed_paths` are lines something else draws (an implements tree's
+      # spine, stubs and trunk): they never move, but every edge is scored
+      # against them like any sibling. They join the sweep as edges with
+      # a single, already-chosen candidate, so the kernels need no special case.
+      def refine_line_overlap!(edge_paths, fixed_paths: [])
+        all_paths = edge_paths + fixed_routes(fixed_paths)
+        return if Native.refine_line_overlap!(all_paths, LINE_OVERLAP_REFINEMENT_ROUNDS)
 
         LINE_OVERLAP_REFINEMENT_ROUNDS.times do
-          break unless refine_line_overlap_once!(edge_paths)
+          break unless refine_line_overlap_once!(all_paths)
         end
       end
 
@@ -136,13 +142,14 @@ module Archsight
       # rather than giving every edge every lane up front: bridges are
       # rare, and overlapping ones rarer, so a diagram without the problem
       # pays for one overlap check per bridge and nothing more.
-      def separate_bridge_lanes!(edge_paths)
+      def separate_bridge_lanes!(edge_paths, fixed_paths: [])
         extended = false
+        fixed = fixed_routes(fixed_paths)
 
         edge_paths.each do |ep|
           next unless EdgeRouter::BridgePath.bridge?(ep.points)
 
-          siblings = edge_paths.filter_map { |other| other.points unless other.equal?(ep) }
+          siblings = (edge_paths + fixed).filter_map { |other| other.points unless other.equal?(ep) }
           next unless EdgeRouter::PathMetrics.overlap_length(ep.points, siblings).positive?
 
           variants = EdgeRouter::BridgePath.lane_variants(ep.points, ep.to_box)
@@ -152,7 +159,7 @@ module Archsight
           extended = true
         end
 
-        refine_line_overlap!(edge_paths) if extended
+        refine_line_overlap!(edge_paths, fixed_paths: fixed_paths) if extended
       end
 
       # A box's default attachment point (the box's own center coordinate
@@ -179,6 +186,15 @@ module Archsight
 
       private
 
+      # `fixed_paths` as immovable pseudo-edges (see `refine_line_overlap!`),
+      # each offering only the path it already has.
+      def fixed_routes(fixed_paths)
+        fixed_paths.map do |points|
+          scored = [{ path: points, crossing: 0, length: Geometry.path_length(points) }]
+          RoutedEdge.new(edge: nil, points: points, obstacles: [], scored: scored)
+        end
+      end
+
       def positioned(node)
         Layout::PositionedNode.new(node, @boxes[node.id])
       end
@@ -188,6 +204,10 @@ module Archsight
         changed = false
 
         edge_paths.each do |ep|
+          # Nothing to choose between (e.g. a fixed tree line): its route
+          # is its only candidate whatever the siblings look like.
+          next if ep.scored.length == 1
+
           siblings = edge_paths.filter_map { |other| other.points unless other.equal?(ep) }
           new_points = EdgeRouter.select_best(ep.scored, sibling_paths: siblings)
           changed = true if new_points != ep.points

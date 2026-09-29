@@ -545,6 +545,36 @@ class DiagramRendererTest < Minitest::Test
     assert_equal(0.0, Archsight::Diagram::EdgeRouter::PathMetrics.overlap_length(a, [b]))
   end
 
+  def test_routes_a_plain_edge_off_an_implements_tree_s_trunk_when_an_equally_clear_drop_exists
+    # Regression test: `executor` sits above `contract`, whose implements
+    # tree trunk runs down from its center -- and `executor`'s own center
+    # is the same x, so dropping there ran right along the trunk. The
+    # implementers' centers are equally clear drops, minus the trunk overlap.
+    source = <<~SRC
+      stack {
+        component "executor" { }
+        component "contract" { }
+        layer {
+          component "handlers" { label "Handlers for GitHub, GitLab, Jira and REST APIs" }
+          component "graphers" { }
+        }
+      }
+      executor -> handlers
+      executor -> graphers
+      handlers -> contract { relation "implements" }
+      graphers -> contract { relation "implements" }
+    SRC
+    doc = REXML::Document.new(Archsight::Diagram.render(source))
+    trunk = REXML::XPath.match(doc, "//g[@id='asd-tree-contract']//path").map { |p| p.attributes["d"] }.last
+    trunk_x = trunk.split[1].to_f
+
+    %w[handlers graphers].each do |name|
+      line = REXML::XPath.first(doc, "//g[@id='asd-edge-executor__#{name}']//path").attributes["d"]
+
+      refute_in_delta trunk_x, line.split[1].to_f, 1.0, "executor -> #{name} runs along the implements trunk"
+    end
+  end
+
   def test_keeps_many_edges_into_a_wide_box_straight_after_port_assignment
     xs = [60, 100, 140, 700, 760] # clustered, so equal-width port bands alone would tilt most of them
     source = [*xs.each_index.map { |i| %(component "s#{i}" { }) }, %(component "wide" { }),
