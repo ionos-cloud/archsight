@@ -500,6 +500,48 @@ class DiagramEdgeRouterTest < Minitest::Test
     anonymous.each { |n| refute(obstacles.any? { |b| b.equal?(layout.boxes[n.id]) }, "#{n.id} is an obstacle") }
   end
 
+  def test_enters_the_target_at_its_center_when_nothing_favors_an_off_center_entry
+    # Regression test: an off-center entry is always a little shorter, so it
+    # used to win on length alone and land the line near the target's corner.
+    source = box(0, 0, 100, 60)
+    target = box(400, 300, 300, 60) # left edge x=250, center y=330
+
+    points = Archsight::Diagram::EdgeRouter.route(source, target, "orthogonal")
+
+    assert_equal 3, points.length
+    assert_equal [target.left, target.y], points.last # into the middle of its left side
+  end
+
+  def test_charges_an_off_center_entry_the_length_it_saves_so_the_centered_one_wins_ties
+    a = box(0, 0, 100, 60)
+    b = box(400, 300, 300, 60)
+    candidates = Archsight::Diagram::EdgeRouter::OrthogonalPath.orthogonal_candidates(a, b)
+    scored = Archsight::Diagram::EdgeRouter.score_candidates(candidates, [])
+    off_center = Archsight::Diagram::EdgeRouter::OrthogonalPath::OffCenterPath
+    horizontal_first = ->(s) { s[:path].length == 3 && s[:path][0][1] == s[:path][1][1] }
+
+    refute_empty(scored.select { |s| s[:path].is_a?(off_center) })
+    [true, false].each do |horizontal|
+      family = scored.select { |s| s[:path].length == 3 && horizontal_first.call(s) == horizontal }
+      centered, others = family.partition { |s| !s[:path].is_a?(off_center) }
+
+      refute_empty others
+      others.each { |s| assert_operator s[:length], :>, centered.first[:length], "an off-center entry must not beat the centered one on length alone" }
+    end
+  end
+
+  def test_scores_a_candidate_inside_the_tolerance_band_by_its_crossings_too
+    # Regression test: `through` draws over one box but is only 30 worse
+    # (300 vs 270) than `around`'s crossing+length score, inside the band
+    # where sibling lines get a say -- and it used to win there purely for
+    # being shorter.
+    through = [[0.0, 0.0], [100.0, 0.0]] # draws over one box
+    around = [[0.0, 0.0], [0.0, 60.0], [100.0, 60.0], [100.0, 0.0]]
+    scored = [through, around].map { |path| { path: path, crossing: path == through ? 1 : 0, length: path == through ? 100.0 : 270.0 } }
+
+    assert_equal around, Archsight::Diagram::EdgeRouter.select_best(scored, sibling_paths: [[[0.0, 200.0], [10.0, 200.0]]])
+  end
+
   private
 
   def box(x, y, width, height)

@@ -646,12 +646,12 @@ select_best(const paths_t *p, long lo, long hi, const int32_t *crossing, const d
         double primary = (crossing[c] * pr->crossing_penalty) + length[c];
         if (!(crossing[c] == min_crossing || primary <= best_primary + pr->overlap_tie_tolerance))
             continue;
-        if (length[c] >= best_score)
+        if (primary >= best_score)
             continue;
 
         double score = (overlap_length(p, c, s, pr->edge_epsilon) * pr->line_overlap_penalty) +
                        ((double)crossing_edges_count(p, c, s) * pr->line_crossing_penalty) +
-                       length[c];
+                       primary;
         if (!(score < best_score))
             continue;
 

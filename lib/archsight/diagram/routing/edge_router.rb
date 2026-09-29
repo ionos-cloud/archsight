@@ -129,16 +129,23 @@ module Archsight
           # Folded into `length` (rather than a separate term) so the native
           # selection kernels, which only know crossings and length, apply it too.
           extra_turns = turns[i] - fewest_turns[crossings[i]]
-          { path: path, crossing: crossings[i], length: lengths[i] + (TURN_PENALTY * extra_turns) }
+          { path: path, crossing: crossings[i], length: lengths[i] + (TURN_PENALTY * extra_turns) + off_center_cost(path) }
         end
+      end
+
+      # What an off-center entry saves in length over the centered one (see
+      # `OrthogonalPath::OffCenterPath`), plus a hair so a tie always goes
+      # to the centered route despite float rounding.
+      def off_center_cost(path)
+        path.is_a?(OrthogonalPath::OffCenterPath) ? path.entry_offset + 0.01 : 0.0
       end
 
       # Picks the best already-`score_candidates`d path, scoring `contenders`
       # against `sibling_paths` in their original (tie-break) order and
       # tracking the best score seen so far. Every scoring term
-      # (`overlap_length`, `crossing_edges_count`, `length` itself) is >= 0,
-      # so a contender's own `length` alone is already a lower bound on its
-      # total score -- once it's no better than the current best, no amount
+      # (`overlap_length`, `crossing_edges_count`, `crossing` and `length`
+      # themselves) is >= 0, so a contender's own crossing + length score
+      # alone is already a lower bound on its total score -- once it's no better than the current best, no amount
       # of sibling-clearance can save it, so its (expensive, O(segments x
       # siblings) `overlap_length`/`crossing_edges_count`) score is never
       # computed. This changes nothing about the result: skipped contenders
@@ -162,11 +169,15 @@ module Archsight
         best_score = Float::INFINITY
 
         contenders.each do |s|
-          next if s[:length] >= best_score
+          # The contender's own crossing + length score, not length alone: a
+          # candidate inside the band that draws over more boxes must not
+          # win on being shorter.
+          primary = (s[:crossing] * CROSSING_PENALTY) + s[:length]
+          next if primary >= best_score
 
           score = (PathMetrics.overlap_length(s[:path], sibling_paths) * LINE_OVERLAP_PENALTY) +
                   (PathMetrics.crossing_edges_count(s[:path], sibling_paths) * LINE_CROSSING_PENALTY) +
-                  s[:length]
+                  primary
           next unless score < best_score
 
           best_score = score

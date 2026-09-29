@@ -24,6 +24,20 @@ module Archsight
         # resorting to a two-turn mid-jog.
         SINGLE_TURN_RATIOS = [0.5, 0.1, 0.9].freeze
 
+        # A single turn entering the target off its center, remembering by
+        # how far. Entering nearer the source is always exactly that much
+        # shorter, so `EdgeRouter.score_candidates` charges it back: the
+        # centered entry then wins every tie, and an off-center one only
+        # when it draws over fewer boxes or runs clear of a sibling's line.
+        class OffCenterPath < Array
+          attr_reader :entry_offset
+
+          def initialize(points, entry_offset)
+            super(points)
+            @entry_offset = entry_offset
+          end
+        end
+
         module_function
 
         # Every orthogonal path worth considering between `a` and `b`: up to
@@ -121,7 +135,7 @@ module Archsight
           exit_point = [dx.positive? ? a.right : a.left, a.y]
           corner = [corner_x, a.y]
           entry_point = [corner_x, dy.positive? ? b.top : b.bottom]
-          [exit_point, corner, entry_point]
+          off_center(ratio, corner_x - b.x, [exit_point, corner, entry_point])
         end
 
         # The transpose of `single_turn_horizontal_first`: exit `a` from
@@ -137,7 +151,11 @@ module Archsight
           exit_point = [a.x, dy.positive? ? a.bottom : a.top]
           corner = [a.x, corner_y]
           entry_point = [dx.positive? ? b.left : b.right, corner_y]
-          [exit_point, corner, entry_point]
+          off_center(ratio, corner_y - b.y, [exit_point, corner, entry_point])
+        end
+
+        def off_center(ratio, offset, points)
+          ratio == SINGLE_TURN_RATIOS.first ? points : OffCenterPath.new(points, offset.abs)
         end
       end
     end
