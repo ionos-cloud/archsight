@@ -3,7 +3,8 @@
 #
 # A boundary (the archsight process) holding a stack of layers: frontends
 # run on top of APIs, which run on top of the features, which run on the core. The import system
-# is a stack of its own inside the features layer.
+# is a stack of its own inside the features layer; the web subsystem puts its
+# web server in front of its components.
 
 theme "compact"
 
@@ -31,15 +32,6 @@ stack {
       }
 
       layer "features" {
-        component "linter" { label "Linter" }
-        component "template" { label "Template generator" }
-        component "diagram" { label "Diagram renderer (.asd)" }
-        component "editor" { label "Resource editor" }
-        component "query" { label "Query engine" }
-        component "analysis" { label "Analysis executor" }
-        component "graphviz" { label "GraphViz DOT" }
-        component "docs" { label "Documentation" }
-
         stack "import" {
           gap "500%"
           label "Import system"
@@ -50,6 +42,26 @@ stack {
             component "graphers" { label "Language graphers (Go, Ruby, Python, ...)" }
           }
           component "writer" { label "Shared file writer" }
+        }
+
+        layer "cli_subsystem" {
+          label "CLI subsystem"
+          component "linter" { label "Linter" }
+          component "template" { label "Template generator" }
+          component "diagram" { label "Diagram renderer (.asd)" }
+        }
+
+        stack "web_subsystem" {
+          gap "500%"
+          label "Web subsystem"
+          component "webserver" { label "Web server (Puma + Sinatra)" }
+          layer {
+            component "editor" { label "Resource editor" }
+            component "query" { label "Query engine" }
+            component "analysis" { label "Analysis executor" }
+            component "graphviz" { label "GraphViz DOT" }
+            component "docs" { label "Documentation" }
+          }
         }
       }
 
@@ -76,18 +88,17 @@ browser -> spa
 assistant -> mcp
 
 spa -> api { label "HTTPS / JSON" }
-api -> query
-api -> graphviz
-api -> docs
-api -> editor
-mcp -> query
-mcp -> analysis
-mcp -> docs
+api -> webserver
+mcp -> webserver
+webserver -> editor
+webserver -> query
+webserver -> analysis
+webserver -> graphviz
+webserver -> docs
 
 cli -> linter
 cli -> template
 cli -> diagram
-cli -> analysis
 cli -> executor
 
 executor -> handlers
