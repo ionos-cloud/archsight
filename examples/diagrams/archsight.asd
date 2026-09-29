@@ -8,6 +8,7 @@
 theme "compact"
 
 stack {
+  gap "500%"
   layer {
     actor "maintainer" { label "Maintainer" }
     actor "browser" { label "Browser" }
@@ -18,6 +19,7 @@ stack {
     label "Archsight"
 
     stack {
+      gap "500%"
       layer "frontends" {
         application "cli" { label "CLI (Thor)" }
         application "spa" { label "Web UI (Vue SPA)" }
@@ -39,6 +41,7 @@ stack {
         component "docs" { label "Documentation" }
 
         stack "import" {
+          gap "500%"
           label "Import system"
           component "executor" { label "Import executor" }
           component "contract" { label "Handler contract" }
@@ -50,8 +53,11 @@ stack {
         }
       }
 
-      layer "core" {
+      layer "storage" {
         component "database" { label "Database" }
+      }
+
+      layer "model" {
         component "resources" { label "Resources (ArchiMate kinds)" }
         component "annotations" { label "Annotations + computed values" }
       }
