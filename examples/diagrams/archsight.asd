@@ -9,7 +9,8 @@ group "archsight" {
   layer "interfaces" {
     label "Interfaces"
     application "cli" { label "CLI (Thor)" }
-    application "web" { label "Web UI + REST API" }
+    application "web" { label "Web UI (Vue SPA)" }
+    api "rest" { label "REST API" }
     api "mcp" { label "MCP server" }
   }
 
@@ -35,8 +36,9 @@ maintainer -> web
 maintainer -> mcp
 cli -> linter
 cli -> diagram
-web -> graphviz
-web -> query
+web -> rest
+rest -> graphviz
+rest -> query
 mcp -> query
 linter -> database
 graphviz -> database
