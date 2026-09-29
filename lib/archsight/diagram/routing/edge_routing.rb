@@ -265,7 +265,7 @@ module Archsight
 
         placements = members.sort { |m, n| port_order(m, n) }.each_with_index.map do |member, i|
           band_low = low + (band_width * i)
-          [member, band_shifts(member, band_low, band_low + band_width)]
+          [member, band_shifts(member, band_low, band_low + band_width, low, high)]
         end
 
         order = placements.each_with_index.sort_by do |(member, shifts), i|
@@ -315,11 +315,19 @@ module Archsight
       # stays straight wherever it lands, prefers the center, so a side's
       # lines spread evenly across it instead of bunching up around
       # wherever they happened to be routed.
-      def band_shifts(member, band_low, band_high)
+      #
+      # A line that's already straight (a two-point run perpendicular to
+      # the side) first tries to stay exactly where it is, anywhere along
+      # the side and not just within its band: moving only its box end
+      # would tilt it, and `place_members` already keeps it clear of every
+      # endpoint placed before it.
+      def band_shifts(member, band_low, band_high, side_low, side_high)
         straight = member.approach.clamp(band_low, band_high)
         center = (band_low + band_high) / 2.0
         preferred = flexible?(member) ? [center, straight] : [straight, center]
-        positions = [*preferred, band_low, band_high].uniq
+        keep = member.edge_path.points.length == 2 && EdgeRouter::PathMetrics.close?(member.approach, member.original) &&
+               member.original.between?(side_low, side_high)
+        positions = [*(member.original if keep), *preferred, band_low, band_high].uniq
         positions.filter_map { |pos| shift_for(member, pos) }
       end
 

@@ -364,6 +364,77 @@ class DiagramEdgeRouterTest < Minitest::Test
     assert_same false, Archsight::Diagram::EdgeRouter::PathMetrics.segments_cross?([0.0, 0.0], [100.0, 0.0], [20.0, 0.0], [80.0, 0.0])
   end
 
+  def test_offers_a_straight_vertical_drop_at_each_box_s_center_that_lies_inside_both_spans
+    wide = box(400, 300, 800, 40) # left 0, right 800
+    above = box(150, 100, 100, 40) # left 100, right 200 -- entirely inside wide's span
+
+    paths = Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(above, wide)
+
+    assert_equal [[[150, above.bottom], [150, wide.top]]], paths # wide's center (400) is outside above's span
+  end
+
+  def test_aligned_paths_keep_the_edge_direction_when_the_source_is_the_lower_box
+    wide = box(400, 300, 800, 40)
+    above = box(150, 100, 100, 40)
+
+    path = Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(wide, above).first
+
+    assert_equal [150, wide.top], path.first
+    assert_equal [150, above.bottom], path.last
+  end
+
+  def test_aligned_paths_run_horizontally_for_boxes_side_by_side_that_overlap_on_y
+    tall = box(100, 300, 40, 600) # top 0, bottom 600
+    beside = box(400, 150, 40, 100) # top 100, bottom 200
+
+    path = Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(beside, tall).first
+
+    assert_equal [[beside.left, 150], [tall.right, 150]], path
+  end
+
+  def test_aligned_paths_are_empty_when_the_boxes_do_not_overlap_on_either_axis_or_overlap_on_both
+    a = box(0, 0, 100, 60)
+
+    assert_empty Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(a, box(300, 200, 100, 60))
+    assert_empty Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(a, box(50, 30, 100, 60))
+  end
+
+  def test_aligned_paths_stay_clear_of_the_shared_span_s_corners
+    a = box(0, 0, 100, 60) # right edge at 50
+    b = box(100, 200, 100, 60) # left edge at 50 -- the spans only touch
+
+    assert_empty Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(a, b)
+
+    c = box(95, 200, 100, 60) # left 45, right 145: the shared span is 45..50, narrower than the corner margins
+
+    assert_empty Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(a, c)
+  end
+
+  def test_aligned_paths_only_anchor_an_elliptical_endpoint_at_its_own_center
+    circle = box(150, 100, 60, 60) # left 120, right 180
+    rect = box(160, 300, 200, 40) # its center (160) lies inside the circle's span, but is not the circle's own
+
+    paths = Archsight::Diagram::EdgeRouter::StraightPath.aligned_paths(circle, rect, from_shape: "circle")
+
+    assert_equal [[[150, circle.bottom], [150, rect.top]]], paths
+  end
+
+  def test_routes_a_box_straight_down_onto_a_wide_box_instead_of_angling_towards_its_center
+    wide = box(400, 300, 800, 40)
+    above = box(700, 100, 100, 40)
+
+    points = Archsight::Diagram::EdgeRouter.route(above, wide, nil)
+
+    assert_equal [[700, above.bottom], [700, wide.top]], points
+  end
+
+  def test_an_explicit_orthogonal_style_keeps_its_bends_even_when_a_straight_drop_is_possible
+    wide = box(400, 300, 800, 40)
+    above = box(700, 100, 100, 40)
+
+    refute_equal 2, Archsight::Diagram::EdgeRouter.route(above, wide, "orthogonal").length
+  end
+
   private
 
   def box(x, y, width, height)

@@ -39,13 +39,17 @@ module Archsight
       end
 
       def candidate_paths(a, b, style, from_shape: "rectangle", to_shape: "rectangle", obstacles: [])
+        # A straight axis-aligned line joins the straight family (and the
+        # automatic choice), listed first so it wins ties against the
+        # diagonal. An explicit `style "orthogonal"` keeps its bends.
+        aligned = StraightPath.aligned_paths(a, b, from_shape: from_shape, to_shape: to_shape)
         straight = [StraightPath.straight_path(a, b, from_shape: from_shape, to_shape: to_shape)]
         orthogonal = OrthogonalPath.orthogonal_candidates(a, b, obstacles)
 
         case style
-        when "straight" then straight
+        when "straight" then aligned + straight
         when "orthogonal" then orthogonal
-        else straight + orthogonal
+        else aligned + straight + orthogonal
         end
       end
 

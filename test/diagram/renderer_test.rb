@@ -545,6 +545,45 @@ class DiagramRendererTest < Minitest::Test
     assert_equal(0.0, Archsight::Diagram::EdgeRouter::PathMetrics.overlap_length(a, [b]))
   end
 
+  def test_keeps_many_edges_into_a_wide_box_straight_after_port_assignment
+    xs = [60, 100, 140, 700, 760] # clustered, so equal-width port bands alone would tilt most of them
+    source = [*xs.each_index.map { |i| %(component "s#{i}" { }) }, %(component "wide" { }),
+              *xs.each_index.map { |i| "s#{i} -> wide" }].join("\n")
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
+    boxes = xs.each_with_index.to_h { |x, i| ["s#{i}", Archsight::Diagram::Layout::Box.new(x, 0, 30, 60)] }
+    boxes["wide"] = Archsight::Diagram::Layout::Box.new(420, 300, 800, 60)
+    edge_routing = Archsight::Diagram::EdgeRouting.new(graph, boxes)
+
+    edge_paths = edge_routing.compute_paths(graph.edges)
+    edge_routing.refine_line_overlap!(edge_paths)
+    edge_routing.assign_ports!(edge_paths)
+
+    edge_paths.each do |ep|
+      assert_equal 2, ep.points.length
+      assert_in_delta ep.points.first[0], ep.points.last[0], 0.01, "#{ep.edge.from.id} -> wide should drop straight down"
+    end
+    landing = edge_paths.map { |ep| ep.points.last[0] }.sort
+
+    landing.each_cons(2) { |a, b| assert_operator b - a, :>=, Archsight::Diagram::EdgeRouting::PORT_MIN_GAP - 0.01 }
+  end
+
+  def test_still_separates_straight_edges_that_would_land_on_the_same_spot_of_a_wide_box
+    source = %(component "a" { }\ncomponent "b" { }\ncomponent "wide" { }\na -> wide\nb -> wide\n)
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
+    boxes = {
+      "a" => Archsight::Diagram::Layout::Box.new(400, 0, 100, 60),
+      "b" => Archsight::Diagram::Layout::Box.new(402, 0, 100, 60),
+      "wide" => Archsight::Diagram::Layout::Box.new(400, 300, 800, 60)
+    }
+    edge_routing = Archsight::Diagram::EdgeRouting.new(graph, boxes)
+
+    edge_paths = edge_routing.compute_paths(graph.edges)
+    edge_routing.assign_ports!(edge_paths)
+    a, b = edge_paths.map { |ep| ep.points.last[0] }
+
+    assert_operator (a - b).abs, :>=, Archsight::Diagram::EdgeRouting::PORT_MIN_GAP - 0.01
+  end
+
   def test_keeps_three_edges_converging_on_the_same_target_from_crossing_each_other
     # Regression test for examples/iam_hexagonal.asd's kubestore/kubecrypt/
     # kuberbac -> k8s_api: with only one round of refinement, an edge

@@ -58,6 +58,57 @@ module Archsight
           [[a_left_of_b ? a.right : a.left, smaller.y], [a_left_of_b ? b.left : b.right, smaller.y]]
         end
 
+        # How far in from a box's corner an aligned line must sit, so it
+        # never leaves or enters right at a rounded corner.
+        ALIGNED_CORNER_MARGIN = 8.0
+
+        # Straight axis-aligned lines between two boxes that sit one above
+        # the other (or side by side) and overlap on the other axis: a
+        # vertical drop at `a`'s or `b`'s own center coordinate, whichever
+        # lies inside both boxes' spans -- e.g. many components above one
+        # wide database can each drop straight down onto it instead of
+        # angling towards its center. Empty when the boxes don't stack, or
+        # when they overlap on both axes (`shared_edge_path` and the
+        # center-to-center ray cover the flush cases).
+        #
+        # Like `straight_path`, always returns `a`'s point first. A
+        # rounded shape only anchors cleanly at its own center, so an
+        # elliptical endpoint restricts the line to that box's center.
+        def aligned_paths(a, b, from_shape: "rectangle", to_shape: "rectangle")
+          vertical = !a.overlaps_y?(b) && a.overlaps_x?(b)
+          horizontal = !a.overlaps_x?(b) && a.overlaps_y?(b)
+          return [] unless vertical || horizontal
+
+          axis = vertical ? 0 : 1
+          coordinates = aligned_coordinates(a, b, axis, from_shape, to_shape)
+          coordinates.map do |c|
+            vertical ? vertical_line(a, b, c) : horizontal_line(a, b, c)
+          end
+        end
+
+        def aligned_coordinates(a, b, axis, from_shape, to_shape)
+          lo_hi = lambda do |box|
+            axis.zero? ? [box.left, box.right] : [box.top, box.bottom]
+          end
+          low = [lo_hi.call(a).first, lo_hi.call(b).first].max + ALIGNED_CORNER_MARGIN
+          high = [lo_hi.call(a).last, lo_hi.call(b).last].min - ALIGNED_CORNER_MARGIN
+
+          candidates = []
+          candidates << a[axis] unless Representers.for(to_shape).elliptical? && !PathMetrics.close?(a[axis], b[axis])
+          candidates << b[axis] unless Representers.for(from_shape).elliptical? && !PathMetrics.close?(a[axis], b[axis])
+          candidates.uniq.grep(low..high)
+        end
+
+        def vertical_line(a, b, x)
+          a_above_b = a.y <= b.y
+          [[x, a_above_b ? a.bottom : a.top], [x, a_above_b ? b.top : b.bottom]]
+        end
+
+        def horizontal_line(a, b, y)
+          a_left_of_b = a.x <= b.x
+          [[a_left_of_b ? a.right : a.left, y], [a_left_of_b ? b.left : b.right, y]]
+        end
+
         # Finds where a line from box's center toward (tx, ty) crosses the
         # box's boundary — rectangular by default, or the ellipse inscribed in
         # the box when `shape` renders as an ellipse -- then lets that shape's
