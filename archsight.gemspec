@@ -36,6 +36,9 @@ Gem::Specification.new do |spec|
   spec.files += Dir.glob("lib/archsight/web/public/vue.html")
   spec.files += Dir.glob("lib/archsight/web/public/vue/**/*")
 
+  # Optional C kernels for diagram edge routing (pure Ruby is used if the build is skipped)
+  spec.extensions = ["ext/archsight_diagram_native/extconf.rb"]
+
   spec.bindir = "exe"
   spec.executables = ["archsight"]
   spec.require_paths = ["lib"]

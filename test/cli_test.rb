@@ -4,6 +4,7 @@ require "test_helper"
 require "archsight/cli"
 require "stringio"
 require "tempfile"
+require "tmpdir"
 
 class CLITest < Minitest::Test
   def setup
@@ -174,6 +175,46 @@ class CLITest < Minitest::Test
 
       # Should format line numbers with proper width
       assert_match(/\s+\d+\s+\|/, output)
+    end
+  end
+
+  def test_diagram_renders_asd_files_to_svg
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "a.asd")
+      File.write(input, %(component "x" { label "X" }\n))
+
+      output = capture_stdout { Archsight::CLI.start(["diagram", input]) }
+
+      assert_includes output, "a.svg"
+      assert_includes File.read(File.join(dir, "a.svg")), "<svg"
+    end
+  end
+
+  def test_diagram_accepts_relation_all_and_explicit_output
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "a.asd")
+      out = File.join(dir, "custom.svg")
+      File.write(input, %(component "a" { }\ncomponent "b" { }\na -> b\n))
+
+      capture_stdout { Archsight::CLI.start(["diagram", input, "-o", out, "--relation=all", "--theme=compact"]) }
+
+      assert_path_exists out
+    end
+  end
+
+  def test_diagram_exits_non_zero_for_invalid_source
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "bad.asd")
+      File.write(input, "not valid diagram source\n")
+
+      status = nil
+      capture_stdout do
+        Archsight::CLI.start(["diagram", input])
+      rescue SystemExit => e
+        status = e.status
+      end
+
+      assert_equal 1, status
     end
   end
 

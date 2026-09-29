@@ -1,0 +1,20 @@
+inherit_from: ../../../.rubocop.yml
+
+# Geometry and routing code conventionally uses short coordinate/segment
+# names (x, y, a, b, dx, p1, ...).
+Naming/MethodParameterName:
+  MinNameLength: 1
+
+# The layout and routing loops are order-sensitive: the globalizer marks
+# every child before recursing, and the force simulation's accumulation
+# order feeds its floating-point sums.
+Style/CombinableLoops:
+  Enabled: false
+
+# Long, but linear pipeline methods; splitting them would only scatter
+# the steps.
+Metrics/AbcSize:
+  Exclude:
+    - layout/force_simulation.rb
+    - renderer.rb
+    - renderer/text_renderer.rb

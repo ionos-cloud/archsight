@@ -1,0 +1,11 @@
+inherit_from: ../../.rubocop.yml
+
+# Layout and routing are deterministic down to the last bit (rendering is
+# byte-identical with or without the native kernels), so float results are
+# compared exactly rather than within Minitest's default 0.001 delta.
+Minitest/AssertInDelta:
+  Enabled: false
+
+# Tests build geometry fixtures with short coordinate names (x, y, a, b, ...)
+Naming/MethodParameterName:
+  MinNameLength: 1
