@@ -17,6 +17,7 @@ metadata:
       | `console` | Open an interactive Ruby console with database loaded |
       | `mcp` | Start the MCP server for AI assistant integration |
       | `import` | Run import handlers to generate resources |
+      | `diagram` | Render `.asd` diagram files to SVG |
       | `version` | Display the archsight version |
     architecture/version: '1.0'
     architecture/status: General-Availability

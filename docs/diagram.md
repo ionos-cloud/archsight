@@ -32,10 +32,12 @@ api_service -> db { style "orthogonal"; label "reads/writes" }
 ```
 
 
+Ready-made sources live in `examples/diagrams/` (`archsight.asd` models archsight itself; `three_tier.asd`, `aws_vpc.asd` and `dag.asd` show containers, boundaries and ranks).
+
 ## Usage
 
 ```
-archsight diagram aws_vpc.asd -o diagram.svg
+archsight diagram examples/diagrams/aws_vpc.asd -o diagram.svg
 archsight diagram aws_vpc.asd --watch              # re-renders on every save
 archsight diagram three_tier.asd --relation=all    # also show control/data-flow edges
 archsight diagram overview.asd --theme=compact     # denser spacing + smaller fonts (or cozy)

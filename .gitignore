@@ -44,3 +44,4 @@ lib/archsight/web/public/vue.html
 /lib/archsight/diagram/*.bundle
 /lib/archsight/diagram/*.so
 /lib/archsight/diagram/*.dll
+/examples/diagrams/*.svg
