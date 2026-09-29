@@ -53,18 +53,27 @@ module Archsight
           until cursor.check(:rbrace)
             next if yield
 
+            line = cursor.current.line
             if bare_flag?
               key, value = bare_flag
-              attrs[key] = value
+              store_attr(attrs, key, value, line, error_context)
             elsif cursor.check(:ident)
               key, value = attr
-              attrs[key] = value
+              store_attr(attrs, key, value, line, error_context)
             else
               t = cursor.current
               raise ParseError, "expected #{expected}, or '}' to close #{error_context}, but got " \
                                 "#{t.type} #{t.value.inspect} at line #{t.line}#{token_hint(t)}"
             end
           end
+        end
+
+        # A second `label "..."` in one block would silently replace the
+        # first (the hash keeps only the last), so it's an error instead.
+        def store_attr(attrs, key, value, line, error_context)
+          raise ParseError, "duplicate attribute '#{key}' in #{error_context} at line #{line}" if attrs.key?(key)
+
+          attrs[key] = value
         end
 
         # A short, common-mistake-specific nudge appended to an "unexpected

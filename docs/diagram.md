@@ -122,7 +122,29 @@ covers the common case.
 
 ### Attributes
 
-`key "value"` inside any block, e.g. `label "..."`.
+`key "value"` inside any block, e.g. `label "..."`. Every attribute and
+value is checked when the diagram is built: an attribute that doesn't apply
+to where it sits, a value outside its allowed set, or the same attribute
+given twice in one block is an error naming the line (with a "did you mean"
+hint for near misses), never silently ignored.
+
+| attribute | on | values |
+|---|---|---|
+| `label` | everything | any text (see *Label text*) |
+| `tint` | nodes, containers, edges | `gray`, `blue`, `indigo`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `brown` |
+| `link` | nodes, containers | `http(s)://…`, `mailto:…` or a relative URL |
+| `extend` | nodes, containers | `true`, `false`; containers also `height` |
+| `shape` | leaves | `rectangle`, `circle`, `cylinder`, `pipe`, `actor`, `file`, `module` |
+| `gap` | containers | pixels (`40`), a percentage (`150%`) or a signed one (`+20%`, `-50%`) |
+| `ranks` | containers | `auto`, `on`, `down`, `right`, `off` |
+| `columns` | containers | a positive integer |
+| `style` | edges | `straight`, `orthogonal` |
+| `relation` | edges | `dependency`, `implements`, `control`, `data` |
+| `color` | dataflows | a hex color such as `#1a56db` |
+
+`no-gap` and `no-extend` are shorthand for `gap "0"` and `extend "false"`.
+A dataflow with a repeated hop, a duplicate dataflow id, a node with an
+empty id, and an edge from a node to itself are errors too.
 
 - `link "https://..."` — on any node (leaf or container), turns its
   shape and its whole label into a clickable link (an SVG `<a>`, with a

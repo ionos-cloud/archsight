@@ -318,4 +318,134 @@ class DiagramGraphTest < Minitest::Test
 
     assert_equal "theme already set at line 1 (line 2)", error.message
   end
+
+  # --- attribute validation ------------------------------------------------
+
+  def build(source)
+    Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
+  end
+
+  def build_error(source)
+    assert_raises(Archsight::Diagram::GraphError) { build(source) }.message
+  end
+
+  def test_rejects_an_unknown_attribute_on_a_leaf_with_a_suggestion
+    message = build_error(%(component "a" { lable "x" }\n))
+
+    assert_equal 'unknown attribute "lable" on component "a" (line 1); expected one of label, tint, link, extend, shape -- did you mean "label"?', message
+  end
+
+  def test_rejects_an_attribute_that_does_not_apply_to_a_leaf_or_to_a_container
+    assert_match(/unknown attribute "gap" on component "a"/, build_error(%(component "a" { gap "10" }\n)))
+    assert_match(/unknown attribute "ranks" on component "a"/, build_error(%(component "a" { ranks "on" }\n)))
+    assert_match(/unknown attribute "shape" on group "g"/, build_error(%(group "g" { shape "circle" }\n)))
+    assert_match(/unknown attribute "link" on edge a -> b/, build_error(%(component "a" { }\ncomponent "b" { }\na -> b { link "https://example.com" }\n)))
+  end
+
+  def test_rejects_the_attributes_that_only_apply_to_nodes_on_an_edge
+    message = build_error(%(component "a" { }\ncomponent "b" { }\na -> b { label "write"; shape "orthorgonal" }\n))
+
+    assert_match(/unknown attribute "shape" on edge a -> b \(line 3\); expected one of label, style, relation, tint/, message)
+  end
+
+  def test_rejects_an_unknown_attribute_on_an_anonymous_container_a_dataflow_and_a_branch
+    assert_match(/unknown attribute "colour" on layer \(anonymous\)/, build_error(%(layer { colour "red" }\n)))
+    assert_match(/unknown attribute "shape" on dataflow "f" \(line 3\)/, build_error(%(component "a" { }\ncomponent "b" { }\ndataflow "f" { hop "a"; hop "b"; shape "x" }\n)))
+    branch = %(component "a" { }\ncomponent "b" { }\ncomponent "c" { }\ndataflow "f" { hop "a"; hop group { branch { hop "b"; width "3" } branch { hop "c" } } }\n)
+
+    assert_match(/unknown attribute "width" on a branch of dataflow "f"/, build_error(branch))
+  end
+
+  def test_rejects_an_unknown_edge_style_relation_and_tint_with_a_suggestion
+    base = %(component "a" { }\ncomponent "b" { }\n)
+
+    assert_match(/unknown style "orthorgonal" on edge a -> b \(line 3\); expected one of straight, orthogonal -- did you mean "orthogonal"\?/,
+                 build_error("#{base}a -> b { style \"orthorgonal\" }\n"))
+    assert_match(/unknown relation "dependancy" on edge a -> b.*did you mean "dependency"/, build_error("#{base}a -> b { relation \"dependancy\" }\n"))
+    assert_match(/unknown tint "reed" on edge a <-> b.*did you mean "red"/, build_error("#{base}a <-> b { tint \"reed\" }\n"))
+  end
+
+  def test_rejects_an_unknown_shape_tint_extend_and_gap_on_nodes
+    assert_match(/unknown shape "circel" on component "a".*did you mean "circle"/, build_error(%(component "a" { shape "circel" }\n)))
+    assert_match(/unknown tint "bleu" on component "a".*did you mean "blue"/, build_error(%(component "a" { tint "bleu" }\n)))
+    assert_match(/unknown extend "yes" on layer "l".*expected one of true, false, height/, build_error(%(layer "l" { extend "yes" }\n)))
+    assert_match(/unknown extend "height" on component "a".*expected one of true, false\z/, build_error(%(component "a" { extend "height" }\n)))
+    assert_match(/invalid gap "wide" on group "g"/, build_error(%(group "g" { gap "wide" }\n)))
+    assert_match(/invalid gap "10px" on group "g"/, build_error(%(group "g" { gap "10px" }\n)))
+  end
+
+  def test_accepts_every_documented_attribute_value
+    source = <<~SRC
+      group "g" { label "G"; tint "red"; link "https://example.com/a?b=1"; extend "false"; gap "40"; ranks "on"; columns "2"
+        component "a" { shape "circle"; tint "blue"; link "/relative"; extend "true" }
+        component "b" { link "mailto:me@example.com" }
+      }
+      layer "l" { gap "150%"; extend "height" }
+      layer "m" { gap "+20%" }
+      stack "s" { no-gap; no-extend }
+      stack "t" { gap "-50%" }
+      component "c" { link "#anchor" }
+      component "d" { }
+      a -> b { label "x"; style "orthogonal"; relation "data"; tint "green" }
+      dataflow "f" { hop "c"; hop "d"; color "#1a56db"; label "flow" }
+    SRC
+
+    assert_kind_of Archsight::Diagram::Graph, build(source)
+  end
+
+  def test_only_allows_a_hex_color_on_a_dataflow_since_it_reaches_the_style_block_unescaped
+    base = %(component "a" { }\ncomponent "b" { }\n)
+
+    ["red", "#12", "#12345", "#gggggg", "#fff; } body { display: none", "url(x)"].each do |color|
+      assert_match(/invalid color/, build_error("#{base}dataflow \"f\" { hop \"a\"; hop \"b\"; color #{color.inspect} }\n"), color)
+    end
+    %w[#fff #ffff #1a56db #1a56dbff].each do |color|
+      assert_kind_of Archsight::Diagram::Graph, build("#{base}dataflow \"f\" { hop \"a\"; hop \"b\"; color \"#{color}\" }\n")
+    end
+  end
+
+  def test_only_allows_web_mail_or_relative_links
+    ["javascript:alert(1)", "JaVaScRiPt:alert(1)", "data:text/html,x", "vbscript:x", "java\tscript:alert(1)", "https://a b", "ftp://host/f"].each do |link|
+      assert_match(/invalid link/, build_error("component \"a\" { link #{link.inspect} }\n"), link)
+    end
+  end
+
+  def test_reports_the_line_of_the_offending_block
+    message = build_error(%(component "ok" { }\n\ngroup "g" {\n  component "bad" { tint "nope" }\n}\n))
+
+    assert_match(/component "bad" \(line 4\)/, message)
+  end
+
+  def test_rejects_an_edge_from_a_node_to_itself_and_a_dataflow_hop_repeating_the_previous_one
+    assert_match(/edge a -> a \(line 2\) connects a node to itself/, build_error(%(component "a" { }\na -> a\n)))
+    assert_match(/edge a <-> a/, build_error(%(component "a" { }\na <-> a\n)))
+    assert_match(/dataflow "f" \(line 3\) hops from "a" to itself/,
+                 build_error(%(component "a" { }\ncomponent "b" { }\ndataflow "f" { hop "a"; hop "a"; hop "b" }\n)))
+  end
+
+  def test_only_allows_safe_links_inside_labels_too
+    base = %(component "b" { }\n)
+
+    assert_match(/invalid link "javascript:alert\(1"/, build_error(%(component "a" { label "[go](javascript:alert(1))" }\n)))
+    assert_match(/invalid link.*on edge a -> b/, build_error(%(component "a" { }\n#{base}a -> b { label "see [this](data:text/html,x)" }\n)))
+    assert_match(/invalid link.*on dataflow "f"/, build_error(%(component "a" { }\n#{base}dataflow "f" { hop "a"; hop "b"; label "[x](vbscript:y)" }\n)))
+    assert_kind_of Archsight::Diagram::Graph, build(%(component "a" { label "**bold** and [docs](https://example.com/x) and [rel](/x)" }\n))
+  end
+
+  def test_rejects_an_empty_node_id_and_a_duplicate_dataflow_id
+    assert_match(/component has an empty id \(line 1\)/, build_error(%(component "" { }\n)))
+    assert_match(/component has an empty id/, build_error(%(component "  " { }\n)))
+    flows = %(component "a" { }\ncomponent "b" { }\ndataflow "f" { hop "a"; hop "b" }\n\ndataflow "f" { hop "a"; hop "b" }\n)
+
+    assert_equal 'duplicate dataflow id "f" (line 5, first defined at line 3)', build_error(flows)
+  end
+
+  def test_every_bundled_example_and_fixture_is_valid_and_renders
+    files = Dir[File.expand_path("../../examples/diagrams/*.asd", __dir__), File.expand_path("fixtures/*.asd", __dir__)]
+
+    refute_empty files
+    files.each do |file|
+      assert_includes Archsight::Diagram.render(File.read(file)), "<svg", file
+    end
+  end
 end

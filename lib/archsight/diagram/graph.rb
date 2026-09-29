@@ -10,6 +10,7 @@ require_relative "legend/modes"
 require_relative "graph/node"
 require_relative "graph/edge"
 require_relative "graph/dataflow"
+require_relative "graph/attributes"
 require_relative "graph/builder"
 
 module Archsight
@@ -54,6 +55,15 @@ module Archsight
           end
         end
 
+        raw_edges.each { |e| Attributes.check_edge!(e) }
+        raw_dataflows.each_with_object({}) do |df, seen|
+          if (first = seen[df.id])
+            raise GraphError, "duplicate dataflow id #{df.id.inspect} (line #{df.line}, first defined at line #{first})"
+          end
+
+          seen[df.id] = df.line
+          Attributes.check_dataflow!(df)
+        end
         @edges = raw_edges.map { |e| resolve_edge(e) }
         @dataflows = raw_dataflows.map { |df| resolve_dataflow(df) }
       end

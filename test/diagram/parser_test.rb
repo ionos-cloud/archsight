@@ -455,4 +455,19 @@ class DiagramParserTest < Minitest::Test
     assert_kind_of Archsight::Diagram::AST::Edge, stmts.last
     assert_equal "theme", stmts.last.from
   end
+
+  def test_rejects_an_attribute_given_twice_in_one_block
+    error = assert_raises(Archsight::Diagram::ParseError) { Archsight::Diagram::Parser.parse(%(component "a" {\n  label "x"\n  label "y"\n}\n)) }
+
+    assert_equal %(duplicate attribute 'label' in component "a" at line 3), error.message
+  end
+
+  def test_rejects_a_flag_and_its_attribute_given_together_and_a_repeated_edge_or_dataflow_attribute
+    assert_raises(Archsight::Diagram::ParseError) { Archsight::Diagram::Parser.parse(%(component "a" { gap "1"; no-gap }\n)) }
+    edge = assert_raises(Archsight::Diagram::ParseError) { Archsight::Diagram::Parser.parse(%(a -> b { style "straight"; style "orthogonal" }\n)) }
+    flow = assert_raises(Archsight::Diagram::ParseError) { Archsight::Diagram::Parser.parse(%(dataflow "f" { hop "a"; hop "b"; color "#fff"; color "#000" }\n)) }
+
+    assert_match(/duplicate attribute 'style' in edge a -> b at line 1/, edge.message)
+    assert_match(/duplicate attribute 'color' in dataflow "f"/, flow.message)
+  end
 end

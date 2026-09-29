@@ -145,7 +145,7 @@ class DiagramRankedLayoutTest < Minitest::Test
 
     attr = assert_raises(Archsight::Diagram::GraphError) { layout(%(group "g" {\n ranks "sideways"\n}\n)) }
 
-    assert_equal 'unknown ranks "sideways" (line 1); expected one of auto, on, down, right, off', attr.message
+    assert_equal 'unknown ranks "sideways" on group "g" (line 1); expected one of auto, on, down, right, off', attr.message
     twice = assert_raises(Archsight::Diagram::GraphError) { layout(%(ranks "on"\nranks "off"\n)) }
 
     assert_equal "ranks already set at line 1 (line 2)", twice.message

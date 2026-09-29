@@ -7,8 +7,9 @@ module Archsight
 
       def build_node(block, parent, raw_edges)
         raise GraphError, "duplicate id #{block.id.inspect} (line #{block.line})" if @nodes_by_id.key?(block.id)
+        raise GraphError, "#{block.kind} has an empty id (line #{block.line})" if block.id.strip.empty?
 
-        check_setting_value("ranks", block.attrs["ranks"], RANKS_MODES, block.line) if block.attrs.key?("ranks")
+        Attributes.check_node!(block, ranks_modes: RANKS_MODES)
 
         node = Node.for(id: block.id, kind: block.kind, attrs: block.attrs, children: [], parent: parent,
                         anonymous: block.anonymous, line: block.line)

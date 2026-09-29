@@ -170,8 +170,9 @@ module Archsight
         if cursor.check(:lbrace)
           cursor.advance
           until cursor.check(:rbrace)
+            line = cursor.current.line
             key, value = attr
-            attrs[key] = value
+            store_attr(attrs, key, value, line, "edge #{from_token.value} #{arrow_token.value} #{to_token.value}")
           end
           cursor.expect(:rbrace, "expected '}' to close edge attributes")
         end
