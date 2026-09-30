@@ -59,7 +59,7 @@ metadata:
     architecture/encoding: json
     architecture/documentation: http://localhost:4567/docs/api
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec:
   servedBy:
     technologyComponents:

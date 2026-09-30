@@ -18,7 +18,7 @@ metadata:
       | `instance_count` | integer | Yes | Number of instances of this kind |
     generated/variants: Kind, KindList
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -42,7 +42,7 @@ metadata:
       | `references` | object | No | Incoming references grouped by kind and verb (detail view only) |
     generated/variants: Instance, InstanceList
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -65,7 +65,7 @@ metadata:
       | `values` | array | Yes | Available values for the filter |
     generated/variants: Filter
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -90,7 +90,7 @@ metadata:
       | `error_backtrace` | array | No | Error backtrace lines (only present on failure) |
     generated/variants: AnalysisResult
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -117,7 +117,7 @@ metadata:
       | `lang` | string | No | Code language (code type) |
     generated/variants: AnalysisSection
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -143,7 +143,7 @@ metadata:
       | `code_language` | string | No | Code language hint (for code input type) |
     generated/variants: EditorField
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -164,7 +164,7 @@ metadata:
       | `target_kind` | string | Yes | Target resource kind |
     generated/variants: RelationOption
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -186,7 +186,7 @@ metadata:
       | `content_hash` | string | No | Content hash for edit mode (passed through to response) |
     generated/variants: GenerateRequest, GenerateResponse
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}
 
 ---
@@ -206,5 +206,5 @@ metadata:
       | `content_hash` | string | Yes | Content hash from the generate response (for conflict detection) |
     generated/variants: SaveRequest, SaveResponse
     generated/script: Import:API:archsight
-    generated/at: '2026-07-02T11:39:01Z'
+    generated/at: '2026-09-30T09:11:54Z'
 spec: {}

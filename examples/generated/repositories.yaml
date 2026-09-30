@@ -7,42 +7,42 @@ metadata:
     artifact/type: repo
     repository/git: git@github.com:ionos-cloud/archsight.git
     repository/visibility: open-source
-    scc/languages: BASH,CSS,CloudFormation (YAML),Docker ignore,Dockerfile,Gemfile,HTML,JSON,JavaScript,Markdown,Plain
-      Text,Rakefile,Ruby,Ruby HTML,Smarty Template,Vue,YAML
-    scc/estimatedCost: '1155452.15'
-    scc/estimatedScheduleMonths: '14.53'
-    scc/estimatedPeople: '7.06'
+    scc/languages: BASH,C,CSS,CloudFormation (YAML),Docker ignore,Dockerfile,Gemfile,HTML,JSON,JavaScript,Markdown,Rakefile,Ruby,Ruby
+      HTML,Smarty Template,Vue,YAML
+    scc/estimatedCost: '1576227.64'
+    scc/estimatedScheduleMonths: '16.35'
+    scc/estimatedPeople: '8.56'
     scc/language/BASH/loc: '4'
-    scc/language/CSS/loc: '406'
-    scc/language/CloudFormation (YAML)/loc: '65'
+    scc/language/C/loc: '603'
+    scc/language/CSS/loc: '425'
+    scc/language/CloudFormation (YAML)/loc: '69'
     scc/language/Docker ignore/loc: '5'
     scc/language/Dockerfile/loc: '21'
     scc/language/Gemfile/loc: '15'
     scc/language/HTML/loc: '13'
     scc/language/JSON/loc: '33'
     scc/language/JavaScript/loc: '471'
-    scc/language/Markdown/loc: '2327'
-    scc/language/Plain Text/loc: '191'
-    scc/language/Rakefile/loc: '47'
-    scc/language/Ruby/loc: '23349'
-    scc/language/Ruby HTML/loc: '51'
+    scc/language/Markdown/loc: '2640'
+    scc/language/Rakefile/loc: '69'
+    scc/language/Ruby/loc: '34170'
+    scc/language/Ruby HTML/loc: '52'
     scc/language/Smarty Template/loc: '57'
-    scc/language/Vue/loc: '5654'
-    scc/language/YAML/loc: '3058'
+    scc/language/Vue/loc: '5689'
+    scc/language/YAML/loc: '3735'
     activity/status: active
-    activity/commits: '41,3,7,3,0,25,0'
-    activity/contributors: '4,2,1,2,0,2,0'
-    activity/contributors/6m: '3'
+    activity/commits: '41,3,7,3,0,25,10,4,21'
+    activity/contributors: '4,2,1,2,0,2,1,1,1'
+    activity/contributors/6m: '2'
     activity/contributors/total: '5'
     activity/busFactor: high
     agentic/tools: none
     activity/createdAt: '2026-01-07T15:34:50+01:00'
-    activity/lastHumanCommit: '2026-06-30T09:15:28+02:00'
-    repository/recentTags: v0.2.4,v0.2.3,v0.2.2,v0.2.1,v0.2.0,v0.1.5,v0.1.4,v0.1.3,v0.1.2,v0.1.1
+    activity/lastHumanCommit: '2026-09-30T09:19:40+02:00'
+    repository/recentTags: v0.2.9,v0.2.8,v0.2.7,v0.2.6,v0.2.5,v0.2.4,v0.2.3,v0.2.2,v0.2.1,v0.2.0
     repository/artifacts: container
     workflow/platforms: github-actions
     workflow/types: build,test,deploy,lint,security-scan,dependency-update
-    deployment/images: ghcr.io/ionos-cloud/archsight
+    deployment/images: ghcr.io/ionos-cloud/archsight-clone
     architecture/description: |-
       *Bringing enterprise architecture into focus.*
 
@@ -56,26 +56,18 @@ metadata:
     license/spdx: Apache-2.0
     license/file: LICENSE.txt
     license/category: permissive
-    license/dependencies/count: '94'
+    license/dependencies/count: '93'
     license/dependencies/ecosystems: ruby
-    license/dependencies/licenses: Apache-2.0,BSD-2-Clause,BSD-3-Clause,GPL-3.0,MIT,Ruby
-    license/dependencies/copyleft: 'true'
+    license/dependencies/licenses: unknown
+    license/dependencies/copyleft: unknown
     license/dependencies/risk: copyleft
-    license/dependencies/Apache-2.0/count: '2'
-    license/dependencies/MIT/count: '65'
-    license/dependencies/BSD-2-Clause/count: '21'
-    license/dependencies/GPL-3.0/count: '1'
-    license/dependencies/BSD-3-Clause/count: '2'
-    license/dependencies/Ruby/count: '3'
+    license/dependencies/unknown/count: '93'
     generated/script: Import:Repo:archsight
-    generated/at: '2026-07-02T11:35:16Z'
+    generated/at: '2026-09-30T09:11:53Z'
 spec:
   suppliedBy:
     technologyComponents:
     - Git:Github
-  maintainedBy:
-    businessActors:
-    - Archsight:Maintainers
 ---
 apiVersion: architecture/v1alpha1
 kind: Import
@@ -84,7 +76,7 @@ metadata:
   annotations:
     import/handler: javascript-grapher
     generated/script: Import:Repo:archsight
-    import/config/path: "~/.cache/archsight/git/github/ionos-cloud/archsight"
+    import/config/path: "/private/tmp/claude-502/-Users-vlandgraf-IONOS-github-com-ionos-cloud-archsight/08535643-dd11-40a7-9abd-c8d335fbf98b/scratchpad/archsight-clone"
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
@@ -94,7 +86,7 @@ metadata:
   annotations:
     import/handler: ruby-grapher
     generated/script: Import:Repo:archsight
-    import/config/path: "~/.cache/archsight/git/github/ionos-cloud/archsight"
+    import/config/path: "/private/tmp/claude-502/-Users-vlandgraf-IONOS-github-com-ionos-cloud-archsight/08535643-dd11-40a7-9abd-c8d335fbf98b/scratchpad/archsight-clone"
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
@@ -102,8 +94,8 @@ kind: Import
 metadata:
   name: Import:Repo:archsight
   annotations:
-    generated/at: '2026-07-02T11:35:16Z'
-    generated/configHash: 6cc08da45e93aaa0
+    generated/at: '2026-09-30T09:11:53Z'
+    generated/configHash: 9bfa5e5e05b6a142
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
