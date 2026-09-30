@@ -34,6 +34,22 @@ class HandlerTest < Minitest::Test
     assert_equal "value2", handler.config("key2")
   end
 
+  def test_config_path_expands_the_home_directory_but_leaves_the_setting_as_written
+    import = create_mock_import(@import_raw.merge("metadata" => { "name" => "Import:Test", "annotations" => {
+                                                    "import/handler" => "test",
+                                                    "import/config/home" => "~/.cache/archsight/repo",
+                                                    "import/config/abs" => "/srv/repo",
+                                                    "import/config/rel" => "cache/repo"
+                                                  } }))
+    handler = TestHandler.new(import, database: nil, resources_dir: @resources_dir)
+
+    assert_equal File.join(Dir.home, ".cache/archsight/repo"), handler.config_path("home")
+    assert_equal "~/.cache/archsight/repo", handler.config("home")
+    assert_equal "/srv/repo", handler.config_path("abs")
+    assert_equal File.expand_path("cache/repo"), handler.config_path("rel")
+    assert_nil handler.config_path("missing")
+  end
+
   def test_config_returns_default
     handler = TestHandler.new(@import_resource, database: nil, resources_dir: @resources_dir)
 

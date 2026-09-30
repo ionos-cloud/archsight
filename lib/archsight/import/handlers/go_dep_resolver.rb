@@ -24,7 +24,7 @@ class Archsight::Import::Handlers::GoDepResolver < Archsight::Import::Handler
   include Archsight::Import::Handlers::GoModuleParser
 
   def execute
-    @path = config("path")
+    @path = config_path("path")
     raise "Missing required config: path" unless @path
     raise "Directory not found: #{@path}" unless File.directory?(@path)
 

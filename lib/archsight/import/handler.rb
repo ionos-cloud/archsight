@@ -42,6 +42,16 @@ class Archsight::Import::Handler
     import_resource.annotations["import/config/#{key}"] || default
   end
 
+  # Get a path setting with `~` expanded, so `~/.cache/archsight/...` is a path in the home directory
+  # and not a directory named `~` below the working directory. The value in the Import resource stays
+  # as written (generated files keep the portable form), only the handler works with the expanded path.
+  # @param key [String] Configuration key (without the import/config/ prefix)
+  # @return [String, nil] The absolute path, nil if the setting is missing
+  def config_path(key)
+    value = config(key)
+    value && File.expand_path(value)
+  end
+
   # Get all configuration values as a hash
   # @return [Hash] Configuration key-value pairs
   def config_all

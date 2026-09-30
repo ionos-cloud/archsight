@@ -49,7 +49,7 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   ].freeze
 
   def execute
-    @path = config("path")
+    @path = config_path("path")
     raise "Missing required config: path" unless @path
     raise "Directory not found: #{@path}" unless File.directory?(@path)
 
