@@ -59,7 +59,7 @@ metadata:
     architecture/encoding: json
     architecture/documentation: http://localhost:4567/docs/api
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec:
   servedBy:
     technologyComponents:
@@ -75,3 +75,10 @@ spec:
     - Archsight:RelationOption
     - Archsight:Generate
     - Archsight:Save
+    - Archsight:PageTree
+    - Archsight:PageTreeNode
+    - Archsight:PageTag
+    - Archsight:PageLink
+    - Archsight:Page
+    - Archsight:PageTocEntry
+    - Archsight:EmailRecipient

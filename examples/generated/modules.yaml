@@ -31,7 +31,7 @@ metadata:
         "router" -> "components" [ "color" = "#cc8800" "style" = "solid" ];
       }
     generated/script: Import:JavascriptGrapher:ionos-cloud:archsight
-    generated/at: '2026-09-30T09:11:53Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
@@ -39,8 +39,8 @@ kind: Import
 metadata:
   name: Import:JavascriptGrapher:ionos-cloud:archsight
   annotations:
-    generated/at: '2026-09-30T09:11:53Z'
-    generated/configHash: 5b0c19fe668f9d44
+    generated/at: '2026-09-30T15:04:39Z'
+    generated/configHash: 9e4ae8bf377c6c55
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
@@ -89,6 +89,8 @@ metadata:
         "import" [ "label" = "import" ];
         "linter" [ "label" = "linter" ];
         "mcp" [ "label" = "mcp" ];
+        "page_loader" [ "label" = "page_loader" ];
+        "page_tree" [ "label" = "page_tree" ];
         "query" [ "label" = "query" ];
         "renderer" [ "label" = "renderer" ];
         "resources" [ "label" = "resources" ];
@@ -109,31 +111,35 @@ metadata:
         "cli" -> "version" [ "color" = "#cc8800" "style" = "solid" ];
         "cli" -> "web" [ "color" = "#cc8800" "style" = "solid" ];
         "database" -> "graph" [ "color" = "#8822cc" "style" = "solid" ];
+        "database" -> "page_loader" [ "color" = "#8822cc" "style" = "solid" ];
         "database" -> "query" [ "color" = "#8822cc" "style" = "solid" ];
         "database" -> "resources" [ "color" = "#8822cc" "style" = "solid" ];
         "documentation" -> "resources" [ "color" = "#228888" "style" = "solid" ];
         "documentation" -> "template" [ "color" = "#228888" "style" = "solid" ];
+        "editor" -> "database" [ "color" = "#995500" "style" = "solid" ];
+        "editor" -> "page_loader" [ "color" = "#995500" "style" = "solid" ];
         "editor" -> "resources" [ "color" = "#995500" "style" = "solid" ];
         "linter" -> "helpers" [ "color" = "#2a8a1e" "style" = "solid" ];
         "mcp" -> "analysis" [ "color" = "#cc8800" "style" = "solid" ];
         "mcp" -> "database" [ "color" = "#cc8800" "style" = "solid" ];
         "mcp" -> "resources" [ "color" = "#cc8800" "style" = "solid" ];
-        "resources" -> "annotations" [ "color" = "#cc6600" "style" = "solid" ];
-        "resources" -> "helpers" [ "color" = "#cc6600" "style" = "solid" ];
-        "template" -> "resources" [ "color" = "#228888" "style" = "solid" ];
-        "web" -> "analysis" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "database" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "documentation" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "editor" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "graph" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "helpers" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "mcp" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "query" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "renderer" [ "color" = "#4444aa" "style" = "solid" ];
-        "web" -> "resources" [ "color" = "#4444aa" "style" = "solid" ];
+        "resources" -> "annotations" [ "color" = "#995500" "style" = "solid" ];
+        "resources" -> "helpers" [ "color" = "#995500" "style" = "solid" ];
+        "template" -> "resources" [ "color" = "#4444aa" "style" = "solid" ];
+        "web" -> "analysis" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "database" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "documentation" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "editor" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "graph" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "helpers" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "mcp" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "page_tree" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "query" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "renderer" [ "color" = "#2266cc" "style" = "solid" ];
+        "web" -> "resources" [ "color" = "#2266cc" "style" = "solid" ];
       }
     generated/script: Import:RubyGrapher:ionos-cloud:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
@@ -141,8 +147,8 @@ kind: Import
 metadata:
   name: Import:RubyGrapher:ionos-cloud:archsight
   annotations:
-    generated/at: '2026-09-30T09:11:54Z'
-    generated/configHash: a5a4198d5851f019
+    generated/at: '2026-09-30T15:04:39Z'
+    generated/configHash: d8007a10df1f8672
 spec: {}
 ---
 apiVersion: architecture/v1alpha1

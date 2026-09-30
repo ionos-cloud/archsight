@@ -15,5 +15,12 @@ spec:
     - Archsight:RelationOption
     - Archsight:Generate
     - Archsight:Save
+    - Archsight:PageTree
+    - Archsight:PageTreeNode
+    - Archsight:PageTag
+    - Archsight:PageLink
+    - Archsight:Page
+    - Archsight:PageTocEntry
+    - Archsight:EmailRecipient
     applicationInterfaces:
     - Public:Archsight:v1:RestAPI
