@@ -104,6 +104,13 @@ class FormBuilderTest < Minitest::Test
     assert_equal :markdown, input_type
   end
 
+  def test_determine_input_type_for_diagram_annotation
+    annotation = Archsight::Resources["BusinessProduct"].annotations.find { |a| a.key == "architecture/diagram" }
+
+    assert annotation
+    assert_equal :textarea, Archsight::Web::Editor::FormBuilder.determine_input_type(annotation)
+  end
+
   def test_determine_step_for_integer_annotation
     annotation = Archsight::Resources["TechnologyArtifact"].annotations.find { |a| a.key == "activity/contributors/6m" }
     step = Archsight::Web::Editor::FormBuilder.determine_step(annotation)

@@ -13,6 +13,10 @@ module Archsight::Annotations::Architecture
                  description: "Textual description of the resource",
                  title: "Description",
                  format: :markdown
+      annotation "architecture/diagram",
+                 description: "Diagram (.asd DSL), shown on the detail page next to the generated dependency graph",
+                 title: "Diagram",
+                 format: :asd
       annotation "architecture/documentation",
                  description: "Documentation URL or reference",
                  title: "Documentation",

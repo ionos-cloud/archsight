@@ -112,6 +112,25 @@ spec:
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
 metadata:
+  name: Archsight:Render:Diagram
+  annotations:
+    architecture/abbr: DIAG
+    architecture/description: |
+      Diagram renderer turning `.asd` diagram sources (nested DSL with
+      graphviz-style connections) into SVG with automatic compound
+      force-directed layout and edge routing. Hot loops have an optional
+      C extension with a pure-Ruby fallback.
+    architecture/tags: diagram,svg,dsl,layout
+    architecture/kind: hexagonal
+    architecture/size: microservice
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
   name: Archsight:Util:Linter
   annotations:
     architecture/abbr: LINT

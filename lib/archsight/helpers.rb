@@ -2,6 +2,8 @@
 
 require_relative "helpers/formatting"
 require_relative "helpers/analysis_renderer"
+require_relative "helpers/diagram_blocks"
+require_relative "helpers/resource_resolver"
 
 module Archsight
   # Helpers provides utility functions for the architecture tool

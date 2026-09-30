@@ -5,7 +5,12 @@
 lib_path = File.expand_path("../lib", __dir__)
 $LOAD_PATH.unshift(lib_path) if File.directory?(File.join(lib_path, "archsight"))
 
-require "archsight"
+# The resource library (database, resources, linter, web app...) takes ~90 ms
+# to load and is only needed by the commands that work on resources. Rendering
+# a diagram, `version` and `help` don't touch it, so they skip it; anything
+# else (including a leading option such as `-r PATH`) loads it as before.
+LIGHT_COMMANDS = %w[diagram version help --help -h --version -v].freeze
+require "archsight" unless ARGV.empty? || LIGHT_COMMANDS.include?(ARGV.first)
 require "archsight/cli"
 
 Archsight::CLI.start(ARGV)

@@ -479,4 +479,14 @@ class ApplicationHelpersTest < Minitest::Test
 
     assert_includes html, 'href="https://example.com"'
   end
+
+  def test_markdown_renders_asd_blocks_without_touching_their_labels
+    md = "See https://example.com\n\n```asd\ncomponent \"a\" { label \"[[Nope]] https://x.example\" }\n```\n"
+    html = Archsight::Web::Application.new!.markdown(md)
+
+    assert_includes html, '<figure class="asd-diagram"><svg'
+    assert_includes html, "[[Nope]] https://x.example"
+    assert_includes html, '<a href="https://example.com">'
+    refute_includes html, 'class="broken-link"'
+  end
 end

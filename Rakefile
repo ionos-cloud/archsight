@@ -19,11 +19,37 @@ if ENV["CI"]
   Rake::Task["release:source_control_push"].clear
 end
 
+require "rbconfig"
 require "minitest/test_task"
 
 Minitest::TestTask.create do |t|
   # Ensure test_helper is loaded first for proper SimpleCov initialization
   t.test_prelude = 'require "test_helper"'
+end
+
+EXT_DIR = File.expand_path("ext/archsight_diagram_native", __dir__)
+EXT_BUILD_DIR = File.expand_path("tmp/archsight_diagram_native", __dir__)
+EXT_LIB = "archsight_diagram_native.#{RbConfig::CONFIG["DLEXT"]}".freeze
+
+desc "Build the optional native diagram routing kernels into lib/archsight/diagram/ (pure Ruby is used without them)"
+task :compile do
+  mkdir_p EXT_BUILD_DIR
+  Dir.chdir(EXT_BUILD_DIR) do
+    ruby File.join(EXT_DIR, "extconf.rb")
+    sh "make"
+  end
+  cp File.join(EXT_BUILD_DIR, EXT_LIB), "lib/archsight/diagram/#{EXT_LIB}" if File.exist?(File.join(EXT_BUILD_DIR, EXT_LIB))
+end
+
+desc "Remove the native diagram build (falls back to pure Ruby)"
+task :clean_ext do
+  rm_rf EXT_BUILD_DIR
+  rm_f "lib/archsight/diagram/#{EXT_LIB}"
+end
+
+desc "Time rendering synthetic diagrams (ARCHSIGHT_DIAGRAM_NATIVE=0 for the pure-Ruby path)"
+task :bench do
+  ruby "bench/run.rb"
 end
 
 # Clean coverage folder before running tests to ensure accurate results
@@ -33,7 +59,7 @@ task :clean_coverage do
   FileUtils.rm_rf("coverage")
 end
 
-Rake::Task["test"].enhance([:clean_coverage])
+Rake::Task["test"].enhance(%i[clean_coverage compile])
 
 require "rubocop/rake_task"
 

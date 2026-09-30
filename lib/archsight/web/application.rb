@@ -132,6 +132,8 @@ class Archsight::Web::Application < Sinatra::Base
     # @param git_url [String, nil] Git URL for resolving relative paths (e.g., for README images)
     def markdown(data, git_url: nil)
       html = Kramdown::Document.new(data, input: "GFM").to_html
+      # ```asd blocks become placeholders until the text passes below are done (see DiagramBlocks)
+      html, diagrams = Archsight::Helpers::DiagramBlocks.extract(html, resolver: Archsight::Helpers::ResourceResolver.new(db))
 
       # Resolve relative URLs if we have a git URL (for repository READMEs)
       if git_url && (base_url = github_raw_base_url(git_url))
@@ -146,7 +148,7 @@ class Archsight::Web::Application < Sinatra::Base
         %(<a href="#{url}">#{url}</a>#{trailing})
       end
       # Convert [[ResourceName]] wiki-style links to resource links
-      html.gsub(/\[\[([^\]]+)\]\]/) do |_match|
+      html = html.gsub(/\[\[([^\]]+)\]\]/) do |_match|
         name = ::Regexp.last_match(1)
         resource = db.query("name =~ \"#{name}\"").first
         if resource
@@ -155,6 +157,7 @@ class Archsight::Web::Application < Sinatra::Base
           %(<span class="broken-link" title="Resource not found">#{name}</span>)
         end
       end
+      Archsight::Helpers::DiagramBlocks.restore(html, diagrams)
     end
 
     # Generate asset path with cache-busting query string based on file mtime

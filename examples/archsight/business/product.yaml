@@ -18,6 +18,159 @@ metadata:
       - Web UI with search and filtering
       - MCP server for AI integration
       - Linting and validation
+    architecture/diagram: |
+      # Archsight's own architecture, as an .asd diagram.
+      #   archsight diagram examples/diagrams/archsight.asd
+      #
+      # A boundary (the archsight process) holding a stack of layers: frontends
+      # run on top of APIs, which run on top of the features, which run on the core. The import system
+      # is a stack of its own inside the features layer; the web subsystem puts its
+      # web server in front of its components.
+
+      theme "compact"
+
+      layer {
+        application "sources" { label "GitHub / GitLab / Jira" }
+
+        stack {
+          gap "500%"
+          layer {
+            gap "700"
+            actor "maintainer" { label "Maintainer" }
+            actor "browser" { label "Browser" }
+          }
+
+          boundary "archsight" {
+            label "Archsight"
+
+            stack {
+              gap "500%"
+              layer "frontends" {
+                extend "true"
+                stack {
+                  extend "height"
+                  application "cli" { label "CLI (Thor)"; resource "Archsight:CLI" }
+                }
+
+                stack {
+                  gap "500%"
+                  application "assistant" { label "AI assistant" }
+                  api "mcp" { label "MCP server (SSE)"; resource "Archsight:Query:MCP" }
+                }
+
+                stack {
+                  gap "500%"
+                  application "spa" { label "Web UI (Vue SPA)"; resource "Archsight:Web:Frontend" }
+                  api "api" { label "REST API"; resource "Archsight:Web:API" }
+                }
+              }
+
+              layer "features" {
+                layer "cli_subsystem" {
+                  extend "height"
+                  label "CLI subsystem"
+                  resource "Archsight:CLI:Commands"
+                  component "linter" { label "Linter"; resource "Archsight:Util:Linter" }
+                  component "template" { label "Template generator"; resource "Archsight:Util:Template" }
+                  component "diagram" { label "Diagram renderer (.asd)"; resource "Archsight:Render:Diagram" }
+                }
+
+                stack "import" {
+                  extend "height"
+                  gap "500%"
+                  label "Import system"
+                  layer {
+                    extend "true"
+                    component "executor" { label "Import executor" }
+                    component "contract" { label "Handler contract" }
+                  }
+                  layer {
+                    component "handlers" { label "**Handlers**\n(GitHub, GitLab, Jira, REST API)" }
+                    component "graphers" { label "**Language graphers**\n(Go, Ruby, Python, ...)" }
+                  }
+                  component "writer" { label "Shared file writer" }
+                }
+
+                stack "web_subsystem" {
+                  extend "height"
+                  gap "500%"
+                  label "Web subsystem"
+                  component "webserver" { label "Web server (Puma + Sinatra)"; resource "Archsight:Web" }
+                  layer {
+                    component "editor" { label "Resource editor" }
+                    component "query" { label "Query engine"; resource "Archsight:Query:Engine" }
+                    component "analysis" { label "Analysis executor" }
+                    component "graphviz" { label "GraphViz DOT"; resource "Archsight:Render:GraphViz" }
+                    component "docs" { label "Documentation" }
+                  }
+                }
+              }
+
+              layer "storage" {
+                component "database" { label "Database"; resource "Archsight:Core:Database" }
+              }
+
+              layer "model" {
+                gap "450"
+                component "resources" { label "Resources (ArchiMate kinds)"; resource "Archsight:Core:Resources" }
+                component "annotations" { label "Annotations + computed values"; resource "Archsight:Annotations:Computed" }
+              }
+            }
+          }
+
+          layer {
+            gap "150"
+            file "yaml" { label "YAML resources" }
+            file "generated" { label "Generated YAML resources" }
+          }
+        }
+      }
+
+      maintainer -> cli
+      browser -> spa
+      assistant -> mcp
+
+      spa -> api { label "HTTPS / JSON" }
+      api -> webserver
+      mcp -> webserver { style "orthogonal" }
+      webserver -> editor
+      webserver -> query
+      webserver -> analysis
+      webserver -> graphviz
+      webserver -> docs
+
+      cli -> linter
+      cli -> template
+      cli -> diagram
+      cli -> executor { style "orthogonal" }
+
+      executor -> handlers
+      executor -> graphers
+      handlers -> contract { relation "implements" }
+      graphers -> contract { relation "implements" }
+      handlers -> writer
+      graphers -> writer
+
+      query -> database
+      analysis -> database
+      graphviz -> database
+      linter -> database
+      editor -> database
+      template -> resources { style "orthogonal" }
+      database -> resources
+      database -> annotations
+      database -> yaml { label "loads" }
+      database -> generated { label "loads" }
+      writer -> generated { label "write"; style "orthogonal" }
+
+      dataflow "import" {
+        hop "sources"
+        hop "handlers"
+        hop "writer"
+        hop "generated"
+        color "#1a56db"
+        label "import"
+      }
     architecture/tags: ruby,architecture,visualization,archiMate,enterprise
     architecture/documentation: https://github.com/ionos-cloud/archsight
 spec:

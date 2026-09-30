@@ -50,6 +50,7 @@ archsight lint               # Validate YAML and relations
 archsight import             # Execute pending imports
 archsight analyze            # Execute analysis scripts
 archsight template KIND      # Generate YAML template for a resource type
+archsight diagram FILE.asd   # Render a diagram DSL file to SVG
 archsight console            # Interactive Ruby console
 archsight version            # Show version
 ```
@@ -108,6 +109,7 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 
 - Interactive GraphViz diagrams showing relationships
 - Zoom/pan controls for large diagrams
+- Hand-drawn `.asd` diagrams via the `architecture/diagram` annotation or ```` ```asd ```` blocks in markdown
 - Dark mode support
 - Layer-based color scheme (Business, Application, Technology, Data)
 
@@ -164,6 +166,7 @@ Detailed documentation is available in the web interface under the Help menu:
 | [Computed Annotations](docs/computed_annotations.md) | Aggregating values across relations |
 | [ArchiMate Reference](docs/archimate.md) | ArchiMate concepts and mapping |
 | [TOGAF Reference](docs/togaf.md) | TOGAF alignment and concepts |
+| [Diagrams](docs/diagram.md) | `.asd` diagram DSL and the `archsight diagram` command |
 | [Architecture](docs/architecture.md) | Technology stack and directory structure |
 | [Docker](docs/docker.md) | Running Archsight in Docker |
 | [Kubernetes](docs/kubernetes.md) | Helm chart deployment guide |

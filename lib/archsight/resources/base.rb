@@ -44,7 +44,7 @@ module Archsight
       # @param description [String, nil] Human-readable description
       # @param filter [Symbol, nil] Filter type (:word, :list, or nil)
       # @param title [String, nil] Display title
-      # @param format [Symbol, nil] Rendering format (:markdown, :tag_word, :tag_list)
+      # @param format [Symbol, nil] Rendering format (:markdown, :asd, :tag_word, :tag_list)
       # @param enum [Array, nil] Allowed values
       # @param sidebar [Boolean] Show in sidebar (default false for computed)
       # @param type [Class, nil] Type for value coercion (Integer, Float, String)

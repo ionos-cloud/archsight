@@ -39,3 +39,9 @@
 frontend/node_modules/
 lib/archsight/web/public/vue/
 lib/archsight/web/public/vue.html
+
+# Diagram native extension build
+/lib/archsight/diagram/*.bundle
+/lib/archsight/diagram/*.so
+/lib/archsight/diagram/*.dll
+/examples/diagrams/*.svg

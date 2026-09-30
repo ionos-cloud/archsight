@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "thor"
+require_relative "version"
 
 module Archsight
   class ModuleCLI < Thor
@@ -243,6 +244,39 @@ module Archsight
     desc "version", "Show version"
     def version
       puts "archsight #{Archsight::VERSION}"
+    end
+
+    desc "diagram INPUT...", "Render .asd diagram files to SVG"
+    long_desc "Renders each INPUT.asd to an SVG next to it (or to --output for a single input)."
+    option :output, aliases: "-o", type: :string, desc: "SVG output path (single input file only)"
+    option :watch, aliases: "-w", type: :boolean, desc: "Re-render whenever an input file changes"
+    option :relation, type: :string, desc: "Edge relations to draw: comma-separated list, or 'all' (default: dependency,implements)"
+    option :style, type: :string, desc: "Generated <style> block: embed it (default), 'none' to omit it, or a URL to link a stylesheet"
+    option :theme, type: :string, desc: "Spacing/font-size theme (default: the file's own `theme` statement)"
+    option :legend, type: :string, desc: "Legend placement (default: the file's own `legend` statement, else auto)"
+    option :profile, aliases: "-p", type: :boolean, desc: "Print stage timing stats after each render"
+    def diagram(*inputs)
+      require "archsight/diagram/cli"
+
+      diagram = Archsight::Diagram
+      relation = options[:relation]
+      { theme: [options[:theme], diagram::Theme.names], legend: [options[:legend], diagram::Legend::MODES] }.each do |name, (value, allowed)|
+        next if value.nil? || allowed.include?(value)
+
+        warn "Error: invalid --#{name} #{value.inspect} (expected one of: #{allowed.join(", ")})"
+        exit 1
+      end
+
+      status = diagram::CLI.new.run_with(
+        inputs: inputs, output: options[:output], watch: options[:watch], profile: options[:profile],
+        style: options[:style], theme: options[:theme], legend: options[:legend],
+        relation_filter: if relation.nil?
+                           diagram::Relations::DEFAULT_FILTER
+                         else
+                           (relation == "all" ? diagram::Relations.names : relation.split(","))
+                         end
+      )
+      exit status unless status.zero?
     end
 
     desc "module SUBCOMMAND", "Module analysis commands (e.g. module graph PATH)"

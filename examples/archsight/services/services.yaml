@@ -6,8 +6,8 @@ metadata:
     architecture/abbr: CLI
     architecture/description: |
       Command-line interface for archsight providing commands for
-      linting resources, generating templates, starting the web server,
-      and opening an interactive console.
+      linting resources, generating templates, rendering diagrams,
+      starting the web server, and opening an interactive console.
     architecture/tags: cli,thor
     architecture/plane: control
 spec:
@@ -16,6 +16,7 @@ spec:
       - Archsight:Core:Database
       - Archsight:Util:Linter
       - Archsight:Util:Template
+      - Archsight:Render:Diagram
       - Archsight:CLI:Commands
   servedBy:
     businessActors:

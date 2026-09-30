@@ -23,6 +23,31 @@
   text-decoration: none;
 }
 
+/* ```asd blocks rendered to inline SVG. The diagram's canvas is always white, so
+   it gets a frame to read as a deliberate card in dark mode. */
+.asd-diagram {
+  margin: 0 0 1rem;
+  overflow: auto;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+}
+
+.asd-diagram svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.asd-diagram-error {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-left: 4px solid var(--pico-del-color);
+}
+
+.asd-diagram-error pre {
+  margin-bottom: 0;
+}
+
 details.dropdown>summary+ul {
   width: auto;
 }

@@ -3,7 +3,10 @@
 require "test_helper"
 require "archsight/cli"
 require "stringio"
+require "open3"
+require "rbconfig"
 require "tempfile"
+require "tmpdir"
 
 class CLITest < Minitest::Test
   def setup
@@ -177,7 +180,79 @@ class CLITest < Minitest::Test
     end
   end
 
+  def test_diagram_renders_asd_files_to_svg
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "a.asd")
+      File.write(input, %(component "x" { label "X" }\n))
+
+      output = capture_stdout { Archsight::CLI.start(["diagram", input]) }
+
+      assert_includes output, "a.svg"
+      assert_includes File.read(File.join(dir, "a.svg")), "<svg"
+    end
+  end
+
+  def test_diagram_accepts_relation_all_and_explicit_output
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "a.asd")
+      out = File.join(dir, "custom.svg")
+      File.write(input, %(component "a" { }\ncomponent "b" { }\na -> b\n))
+
+      capture_stdout { Archsight::CLI.start(["diagram", input, "-o", out, "--relation=all", "--theme=compact"]) }
+
+      assert_path_exists out
+    end
+  end
+
+  def test_diagram_exits_non_zero_for_invalid_source
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "bad.asd")
+      File.write(input, "not valid diagram source\n")
+
+      status = nil
+      capture_stdout do
+        Archsight::CLI.start(["diagram", input])
+      rescue SystemExit => e
+        status = e.status
+      end
+
+      assert_equal 1, status
+    end
+  end
+
+  def test_the_executable_renders_a_diagram_without_loading_the_resource_library
+    Dir.mktmpdir do |dir|
+      input = File.join(dir, "a.asd")
+      File.write(input, %(component "x" { label "X" }\n))
+      script = %(ARGV.replace(["diagram", #{input.inspect}]); load "exe/archsight"; puts "database=\#{defined?(Archsight::Database).inspect}")
+
+      stdout, stderr, status = run_exe(script)
+
+      assert_predicate status, :success?, stderr
+      assert_includes stdout, "database=nil" # the ~90 ms library load is skipped for `diagram`
+      assert_includes File.read(File.join(dir, "a.svg")), "<svg"
+    end
+  end
+
+  def test_the_executable_still_loads_the_library_for_the_commands_that_need_it
+    stdout, stderr, status = run_exe(%(ARGV.replace(["lint", "-r", #{@resources_dir.inspect}]); load "exe/archsight"))
+
+    assert_predicate status, :success?, stderr
+    assert_includes stdout, "All validations passed!"
+
+    stdout, = run_exe(%(ARGV.replace(["version"]); load "exe/archsight"; puts "database=\#{defined?(Archsight::Database).inspect}"))
+
+    assert_includes stdout, "archsight #{Archsight::VERSION}"
+    assert_includes stdout, "database=nil"
+  end
+
   private
+
+  # Runs `script` in a fresh Ruby from the repo root, so `exe/archsight` decides
+  # for itself what to load (this process already has everything loaded).
+  def run_exe(script)
+    Open3.capture3(RbConfig.ruby, "-I", File.expand_path("../lib", __dir__), "-e", script, chdir: File.expand_path("..", __dir__))
+  end
 
   def capture_stdout
     original_stdout = $stdout

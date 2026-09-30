@@ -106,8 +106,13 @@ class Archsight::Annotations::Annotation
     @format == :ruby
   end
 
+  # An `.asd` diagram definition (see Archsight::Diagram)
+  def diagram?
+    @format == :asd
+  end
+
   def multiline?
-    @format == :multiline
+    @format == :multiline || diagram?
   end
 
   def code_language

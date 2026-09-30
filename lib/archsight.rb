@@ -13,5 +13,10 @@ require_relative "archsight/query"
 require_relative "archsight/resources"
 
 module Archsight
+  # Loaded on first use: the DSL-to-SVG diagram renderer is only needed by `archsight diagram`
+  autoload :Diagram, "archsight/diagram"
+end
+
+module Archsight
   class Error < StandardError; end
 end

@@ -1,0 +1,111 @@
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Repo:ionos-cloud:archsight
+  annotations:
+    artifact/type: repo
+    repository/git: git@github.com:ionos-cloud/archsight.git
+    repository/visibility: open-source
+    scc/languages: BASH,C,CSS,CloudFormation (YAML),Docker ignore,Dockerfile,Gemfile,HTML,JSON,JavaScript,Markdown,Rakefile,Ruby,Ruby
+      HTML,Smarty Template,Vue,YAML
+    scc/estimatedCost: '1576227.64'
+    scc/estimatedScheduleMonths: '16.35'
+    scc/estimatedPeople: '8.56'
+    scc/language/BASH/loc: '4'
+    scc/language/C/loc: '603'
+    scc/language/CSS/loc: '425'
+    scc/language/CloudFormation (YAML)/loc: '69'
+    scc/language/Docker ignore/loc: '5'
+    scc/language/Dockerfile/loc: '21'
+    scc/language/Gemfile/loc: '15'
+    scc/language/HTML/loc: '13'
+    scc/language/JSON/loc: '33'
+    scc/language/JavaScript/loc: '471'
+    scc/language/Markdown/loc: '2640'
+    scc/language/Rakefile/loc: '69'
+    scc/language/Ruby/loc: '34170'
+    scc/language/Ruby HTML/loc: '52'
+    scc/language/Smarty Template/loc: '57'
+    scc/language/Vue/loc: '5689'
+    scc/language/YAML/loc: '3735'
+    activity/status: active
+    activity/commits: '41,3,7,3,0,25,10,4,21'
+    activity/contributors: '4,2,1,2,0,2,1,1,1'
+    activity/contributors/6m: '2'
+    activity/contributors/total: '5'
+    activity/busFactor: high
+    agentic/tools: none
+    activity/createdAt: '2026-01-07T15:34:50+01:00'
+    activity/lastHumanCommit: '2026-09-30T09:19:40+02:00'
+    repository/recentTags: v0.2.9,v0.2.8,v0.2.7,v0.2.6,v0.2.5,v0.2.4,v0.2.3,v0.2.2,v0.2.1,v0.2.0
+    repository/artifacts: container
+    workflow/platforms: github-actions
+    workflow/types: build,test,deploy,lint,security-scan,dependency-update
+    deployment/images: ghcr.io/ionos-cloud/archsight-clone
+    architecture/description: |-
+      *Bringing enterprise architecture into focus.*
+
+      Ruby gem for visualizing and managing enterprise architecture documentation using YAML resources with GraphViz visualization. Inspired by ArchiMate 3.2.
+
+      | Service view | Artifact view |
+      |:---:|:---:|
+      | ![Service detail with graph and relations](media/service.jpg) | ![Artifact detail with metadata](media/artifact.jpg) |
+    link/localhost:4567: http://localhost:4567
+    link/localhost:4567-2: http://localhost:4567/mcp/sse
+    license/spdx: Apache-2.0
+    license/file: LICENSE.txt
+    license/category: permissive
+    license/dependencies/count: '93'
+    license/dependencies/ecosystems: ruby
+    license/dependencies/licenses: unknown
+    license/dependencies/copyleft: unknown
+    license/dependencies/risk: copyleft
+    license/dependencies/unknown/count: '93'
+    generated/script: Import:Repo:archsight
+    generated/at: '2026-09-30T09:11:53Z'
+spec:
+  suppliedBy:
+    technologyComponents:
+    - Git:Github
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:JavascriptGrapher:ionos-cloud:archsight
+  annotations:
+    import/handler: javascript-grapher
+    generated/script: Import:Repo:archsight
+    import/config/path: "/private/tmp/claude-502/-Users-vlandgraf-IONOS-github-com-ionos-cloud-archsight/08535643-dd11-40a7-9abd-c8d335fbf98b/scratchpad/archsight-clone"
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:RubyGrapher:ionos-cloud:archsight
+  annotations:
+    import/handler: ruby-grapher
+    generated/script: Import:Repo:archsight
+    import/config/path: "/private/tmp/claude-502/-Users-vlandgraf-IONOS-github-com-ionos-cloud-archsight/08535643-dd11-40a7-9abd-c8d335fbf98b/scratchpad/archsight-clone"
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:Repo:archsight
+  annotations:
+    generated/at: '2026-09-30T09:11:53Z'
+    generated/configHash: 9bfa5e5e05b6a142
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:Repo:archsight
+spec:
+  generates:
+    technologyArtifacts:
+    - Repo:ionos-cloud:archsight
+    imports:
+    - Import:JavascriptGrapher:ionos-cloud:archsight
+    - Import:RubyGrapher:ionos-cloud:archsight

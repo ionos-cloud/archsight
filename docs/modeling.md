@@ -155,6 +155,8 @@ Use annotations to capture metadata:
 - `repository/artifacts` - Container, chart, binary, etc.
 - `architecture/plane` - Control plane vs data plane
 - `requirement/reference` - Link to compliance standards (C5, GDPR, etc.)
+- `architecture/diagram` - A hand-drawn [`.asd` diagram](diagram.md#the-architecturediagram-annotation), shown next to the generated dependency graph
+  (`.asd` code blocks also render inside `architecture/description` markdown). Nodes can link to resources with `resource "Name"`.
 
 ## Common Patterns
 
