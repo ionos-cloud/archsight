@@ -70,9 +70,12 @@ module Archsight::Web::API::Routes
     json_response(build_instance_response(kind, instance))
   end
 
-  # GET /api/v1/pages - Page tree built from PageMenu resources
+  # GET /api/v1/pages - Page tree built from PageMenu resources, page tags and the home page
+  # (shown at `/`; it is not in the tree unless a menu contains it)
   get "/api/v1/pages" do
-    json_response({ pages: Archsight::PageTree.new(db).tree, tags: page_tag_counts })
+    tree = Archsight::PageTree.new(db)
+    home = tree.home_page
+    json_response({ pages: tree.tree, tags: page_tag_counts, home: home && { name: home.name, title: home.title } })
   end
 
   # GET /api/v1/pages/:name - Rendered page with metadata, toc, breadcrumb and backlinks

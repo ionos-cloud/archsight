@@ -35,9 +35,16 @@ module Archsight
       trail
     end
 
-    # Pages that are not contained in any menu
+    # Pages that are not contained in any menu. The home page is not one of them: it is shown
+    # at `/` and does not need a menu.
     def unsorted_pages
-      pages.values.reject { |p| parent_menu(p) }.sort_by { |p| p.title.to_s.downcase }
+      pages.values.reject { |p| parent_menu(p) || p.home? }.sort_by { |p| p.title.to_s.downcase }
+    end
+
+    # The page shown at `/` instead of the overview: a page named "Home" wins over one that is
+    # only titled "Home" (then by name), so the choice does not depend on load order.
+    def home_page
+      pages.values.select(&:home?).min_by { |p| [p.name.casecmp?("home") ? 0 : 1, p.name] }
     end
 
     # Flat table of contents [{level:, id:, text:}] of a markdown body

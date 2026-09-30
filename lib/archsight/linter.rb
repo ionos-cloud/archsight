@@ -31,7 +31,7 @@ module Archsight
     # Pages need exactly one menu and their [[links]] must resolve
     def validate_page(page)
       menus = page.references.map { |r| r[:instance] }.select { |i| i.klass == "PageMenu" }.uniq
-      @errors << "#{page.path_ref}: Page '#{page.name}' is not contained in any PageMenu" if menus.empty?
+      @errors << "#{page.path_ref}: Page '#{page.name}' is not contained in any PageMenu" if menus.empty? && !page.home?
       @errors << "#{page.path_ref}: Page '#{page.name}' is contained in several PageMenus (#{menus.map(&:name).join(", ")})" if menus.length > 1
 
       links = Archsight::Helpers::WikiLinks.new(@database)

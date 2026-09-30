@@ -159,6 +159,71 @@ class PageDatabaseTest < Minitest::Test
     end
   end
 
+  def test_home_page_is_not_unsorted_but_others_still_are
+    Dir.mktmpdir do |dir|
+      write(dir, "home.md", "---\ntitle: Welcome\n---\nx")
+      write(dir, "titled.md", "---\ntitle: HOME\n---\nx")
+      write(dir, "other.md", "---\ntitle: Other\n---\nx")
+      db = Archsight::Database.new(dir)
+      db.reload!
+      tree = Archsight::PageTree.new(db)
+
+      assert_equal(%w[Other], tree.unsorted_pages.map(&:title))
+      assert_equal(["unsorted"], tree.tree.map { |n| n["name"] })
+      assert_equal(%w[Other], tree.tree.first["children"].map { |n| n["title"] })
+    end
+  end
+
+  def test_home_page_in_a_menu_stays_in_the_tree
+    Dir.mktmpdir do |dir|
+      write(dir, "home.md", "---\ntitle: Home\n---\nx")
+      write(dir, "menus.yaml", MENUS.sub("pages: [language-strategy]", "pages: [home]"))
+      db = Archsight::Database.new(dir)
+      db.reload!
+      strategy = Archsight::PageTree.new(db).tree.first["children"].first
+
+      assert_equal(%w[home], strategy["children"].map { |n| n["name"] })
+    end
+  end
+
+  def test_home_page_prefers_the_name_over_the_title_and_is_nil_without_one
+    Dir.mktmpdir do |dir|
+      write(dir, "welcome.md", "---\ntitle: Home\n---\nx")
+      db = Archsight::Database.new(dir)
+      db.reload!
+
+      assert_equal "welcome", Archsight::PageTree.new(db).home_page.name
+
+      write(dir, "home.md", "---\ntitle: Start\n---\nx")
+      db.reload!
+
+      assert_equal "home", Archsight::PageTree.new(db).home_page.name
+    end
+    Dir.mktmpdir do |dir|
+      write(dir, "a.md", "---\ntitle: A\n---\nx")
+      db = Archsight::Database.new(dir)
+      db.reload!
+
+      assert_nil Archsight::PageTree.new(db).home_page
+    end
+  end
+
+  def test_api_reports_the_home_page
+    Dir.mktmpdir do |dir|
+      write(dir, "home.md", "---\ntitle: Start here\n---\nx")
+      write(dir, "a.md", "---\ntitle: A\n---\nx")
+      previous = app.instance_variable_get(:@database)
+      app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
+      get "/api/v1/pages"
+      body = JSON.parse(last_response.body)
+
+      assert_equal({ "name" => "home", "title" => "Start here" }, body["home"])
+      assert_equal(["A"], body["pages"].flat_map { |n| n["children"].map { |c| c["title"] } })
+    ensure
+      app.instance_variable_set(:@database, previous)
+    end
+  end
+
   def test_toc
     toc = Archsight::PageTree.toc("# A\n\n## B\n\n```\n# not a heading\n```\n")
 
@@ -257,6 +322,81 @@ class PageDatabaseTest < Minitest::Test
     end
   end
 
+  # Just enough of JSON Schema for the page schemas: objects (required + declared keys only), arrays,
+  # $ref, oneOf and null. Fails on undeclared keys, so the documented API cannot drift from the real one.
+  def assert_matches_schema(schema, data, spec, path = "response")
+    schema = spec.dig("components", "schemas", schema["$ref"].split("/").last) if schema["$ref"]
+    if schema["oneOf"]
+      matching = schema["oneOf"].any? do |option|
+        assert_matches_schema(option, data, spec, path)
+        true
+      rescue Minitest::Assertion
+        false
+      end
+
+      assert matching, "#{path} matches none of the oneOf schemas"
+    elsif Array(schema["type"]).include?("null") && data.nil?
+      nil
+    elsif schema["type"] == "object"
+      assert_kind_of Hash, data, path
+      Array(schema["required"]).each { |key| assert data.key?(key), "#{path} lacks required key #{key}" }
+      extra = data.keys - schema.fetch("properties", {}).keys
+
+      assert_empty extra, "#{path} has keys the spec does not declare"
+      data.each { |key, value| assert_matches_schema(schema["properties"][key], value, spec, "#{path}.#{key}") }
+    elsif schema["type"] == "array"
+      assert_kind_of Array, data, path
+      data.each_with_index { |item, i| assert_matches_schema(schema["items"], item, spec, "#{path}[#{i}]") }
+    elsif schema["type"] == "integer"
+      assert_kind_of Integer, data, path
+    elsif Array(schema["type"]).include?("string")
+      assert_kind_of String, data, path
+    end
+  end
+
+  def test_openapi_schemas_describe_the_page_responses
+    spec = YAML.load_file(File.expand_path("../lib/archsight/web/api/openapi/spec.yaml", __dir__))
+    schema = ->(path, status) { spec.dig("paths", path, "get", "responses", status, "content", "application/json", "schema") }
+    with_application_db do
+      get "/api/v1/pages"
+
+      assert_matches_schema(schema.call("/api/v1/pages", "200"), JSON.parse(last_response.body), spec, "GET /api/v1/pages")
+
+      get "/api/v1/pages/language-strategy"
+
+      assert_matches_schema(schema.call("/api/v1/pages/{name}", "200"), JSON.parse(last_response.body), spec, "GET /api/v1/pages/{name}")
+
+      get "/api/v1/pages/missing"
+
+      assert_matches_schema(schema.call("/api/v1/pages/{name}", "404"), JSON.parse(last_response.body), spec, "404")
+    end
+  end
+
+  def test_openapi_page_schemas_accept_a_home_page_and_a_page_without_metadata
+    spec = YAML.load_file(File.expand_path("../lib/archsight/web/api/openapi/spec.yaml", __dir__))
+    Dir.mktmpdir do |dir|
+      write(dir, "home.md", "---\ntitle: Home\n---\nx")
+      write(dir, "bare.md", "---\ntags: a\n---\n[[home]]")
+      previous = app.instance_variable_get(:@database)
+      app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
+      get "/api/v1/pages"
+      tree = JSON.parse(last_response.body)
+
+      assert_matches_schema({ "$ref" => "#/components/schemas/PageTreeResponse" }, tree, spec)
+      assert_equal "home", tree["home"]["name"]
+
+      get "/api/v1/pages/bare"
+      page = JSON.parse(last_response.body)
+
+      assert_matches_schema({ "$ref" => "#/components/schemas/PageResponse" }, page, spec)
+      assert_nil page["author"]
+      assert_nil page["status"]
+      assert_empty page["toc"]
+    ensure
+      app.instance_variable_set(:@database, previous)
+    end
+  end
+
   def test_pages_route_serves_spa
     get "/pages/some-page"
 
@@ -306,6 +446,15 @@ class PageLinterTest < Minitest::Test
     assert(errors.any? { |e| e.include?("not contained in any PageMenu") })
     assert(errors.any? { |e| e.include?("several PageMenus") })
     assert(errors.any? { |e| e.include?("[[Nowhere]]") })
+  end
+
+  def test_home_page_needs_no_menu_but_not_two
+    assert_empty lint("home.md" => "---\ntitle: Home\n---\nx")
+
+    errors = lint("home.md" => "---\ntitle: Home\n---\nx", "m1.yaml" => menu("M1", pages: ["home"]), "m2.yaml" => menu("M2", pages: ["home"]))
+
+    assert(errors.any? { |e| e.include?("several PageMenus") })
+    assert(lint("other.md" => "---\ntitle: Other\n---\nx").any? { |e| e.include?("not contained in any PageMenu") })
   end
 
   def test_menu_cycle

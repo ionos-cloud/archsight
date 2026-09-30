@@ -66,4 +66,10 @@ class Archsight::Resources::Page < Archsight::Resources::Base
   def title
     annotations["page/title"] || name
   end
+
+  # The start page: shown at `/` instead of the generated overview, so it needs no menu.
+  # A page is the home page when its name or its title is "Home" (any case).
+  def home?
+    [name, title].any? { |value| value.to_s.casecmp?("home") }
+  end
 end

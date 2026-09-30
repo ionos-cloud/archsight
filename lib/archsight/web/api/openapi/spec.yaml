@@ -179,33 +179,106 @@ paths:
 
   /api/v1/pages:
     get:
-      summary: Get the page tree
+      summary: Get the page tree, page tags and the home page
       description: |
-        Returns the wiki page tree built from PageMenu resources. Pages that are not in any menu
-        are collected in a trailing "unsorted" menu.
+        Pages are markdown files with frontmatter (see the Wiki Pages documentation), arranged by
+        `PageMenu` resources. This returns everything the sidebar needs in one request.
+
+        **Tree** (`pages`)
+        - The roots are the menus that no other menu contains, sorted by name.
+        - Inside a menu the pages come first, then the sub-menus, each in the order the menu declares them.
+          A menu that would contain itself is cut off where the cycle closes (`archsight lint` reports it).
+        - Pages that no menu contains are collected in a trailing menu with `name` `unsorted` and title
+          `Unsorted` (sorted by title, no `icon`). The home page is never in it.
+        - A page that several menus contain appears in each of them.
+
+        **Tags** (`tags`): every value of the `page/tags` annotation with the number of pages using it,
+        sorted by tag. Pages with a tag can be listed with the query `Page: page/tags == "howto"` on
+        `/api/v1/search`.
+
+        **Home** (`home`): the page shown at `/` instead of the generated architecture overview, or `null`.
+        A page is the home page when its name or its title is `Home` (any case). If several pages qualify,
+        the one named `home` wins, then the first by name. It needs no menu and is only in the tree when a
+        menu contains it.
+
+        The response is built from the in-memory database on every request; it changes after a reload
+        (`/reload`, or saving a page in the editor). No `Cache-Control`/`ETag` headers are sent.
       operationId: getPages
       tags:
         - Pages
       responses:
         '200':
-          description: Nested menus and pages
+          description: The page tree, the page tags and the home page
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  pages:
-                    type: array
-                    items:
-                      type: object
+                $ref: '#/components/schemas/PageTreeResponse'
+              example:
+                pages:
+                  - type: menu
+                    name: Handbook
+                    title: Handbook
+                    icon: null
+                    children:
+                      - type: page
+                        name: core-concepts
+                        title: Core Concepts
+                      - type: menu
+                        name: Modeling
+                        title: Modeling
+                        icon: null
+                        children:
+                          - type: page
+                            name: modeling-guide
+                            title: Modeling Guide
+                  - type: menu
+                    name: unsorted
+                    title: Unsorted
+                    children:
+                      - type: page
+                        name: loose-notes
+                        title: Loose Notes
+                tags:
+                  - tag: concept
+                    count: 3
+                  - tag: howto
+                    count: 8
+                home:
+                  name: home
+                  title: Home
 
   /api/v1/pages/{name}:
     get:
       summary: Get a rendered page
       description: |
-        Returns the page metadata (title, status, author, owner, tags, Confluence URL), the body
-        rendered to HTML, the table of contents (when `toc: yes`), the menu breadcrumb and the
-        pages linking to it.
+        Returns one page with its metadata and its body rendered to HTML.
+
+        **Metadata** comes from the frontmatter: `title` (falls back to the name), `status`, `author` and
+        `owner` (`Name <email>`, split into `name` and `email`), `tags` and the `confluence` URL.
+
+        **`html`** is the markdown body rendered once per request:
+        - GitHub-flavoured markdown (tables, fenced code, task lists).
+        - A leading `# Heading` that repeats the title or the name is dropped, because clients show the title
+          themselves.
+        - ` ```asd ` blocks become inline SVG diagrams (`<figure class="asd-diagram">`), or an
+          `asd-diagram-error` box with the message and the source when a diagram does not render. Diagram
+          nodes with `resource "Name"` link to the resource, a name that does not resolve renders as a dashed
+          `asd-broken-link` node.
+        - `[[Target]]`, `[[Target|label]]` and `[[Kind/Name]]` become links to pages (`/pages/<name>`) or
+          resources (`/kinds/<Kind>/instances/<name>`). A target that does not exist or is ambiguous renders as
+          `<span class="broken-link">`.
+        - Bare `http(s)://` URLs are turned into links.
+
+        **`toc`** lists the headings of the body (after the dropped title) and is only filled when the
+        frontmatter has `toc: yes`; otherwise it is an empty array.
+
+        **`breadcrumb`** is the chain of menus above the page, outermost first (empty when no menu contains
+        it, e.g. for the home page). **`backlinks`** are the other pages that link to this one with
+        `[[name]]` or `[[title]]`, sorted by name.
+
+        The source is read from the in-memory database (state of the last load/reload), the HTML is not cached
+        and no `Cache-Control`/`ETag` headers are sent. The raw source (markdown body in the annotation
+        `page/content`) is available as the resource `GET /api/v1/kinds/Page/instances/{name}`.
       operationId: getPage
       tags:
         - Pages
@@ -213,21 +286,55 @@ paths:
         - name: name
           in: path
           required: true
+          description: |
+            Page name: the file name without `.md`, or the `name:` set in the frontmatter. Case-sensitive.
+            Names are unique across all folders; a name that contains `/` cannot be addressed here.
           schema:
             type: string
+          example: writing-pages
       responses:
         '200':
           description: The rendered page
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/PageResponse'
+              example:
+                name: writing-pages
+                title: Writing Pages
+                status: approved
+                author:
+                  name: Jane Doe
+                  email: jane.doe@example.com
+                owner:
+                  name: Jane Doe
+                  email: jane.doe@example.com
+                confluence: null
+                tags:
+                  - howto
+                  - wiki
+                toc:
+                  - level: 2
+                    id: create-a-page
+                    text: Create a page
+                breadcrumb:
+                  - name: Handbook
+                    title: Handbook
+                  - name: Working with Archsight
+                    title: Working with Archsight
+                backlinks:
+                  - name: home
+                    title: Home
+                html: '<p>Pages are how a team documents <em>why</em> next to the model that says <em>what</em>.</p>'
         '404':
-          description: Page not found
+          description: No page with that name
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                error: NotFound
+                message: Page 'nope' not found
 
   /api/v1/diagrams/render:
     post:
@@ -1255,6 +1362,146 @@ components:
           type: string
           description: Surrounding lines for context
 
+    PageTreeResponse:
+      type: object
+      required: [pages, tags, home]
+      properties:
+        pages:
+          type: array
+          description: Root menus with their pages and sub-menus, plus the trailing `unsorted` menu if there are pages without a menu
+          items:
+            $ref: '#/components/schemas/PageTreeNode'
+        tags:
+          type: array
+          description: Page tags with the number of pages using them, sorted by tag
+          items:
+            $ref: '#/components/schemas/PageTag'
+        home:
+          description: The page shown at `/`, or null when there is none
+          oneOf:
+            - $ref: '#/components/schemas/PageLink'
+            - type: 'null'
+
+    PageTreeNode:
+      type: object
+      description: A menu (with children) or a page (a leaf) of the page tree
+      required: [type, name, title]
+      properties:
+        type:
+          type: string
+          enum: [menu, page]
+        name:
+          type: string
+          description: |
+            Menu name (`PageMenu` resource name, or `unsorted`) or page name. Page names are used in
+            `/api/v1/pages/{name}` and `/pages/{name}`.
+        title:
+          type: string
+          description: Menu title (`menu/title`, defaults to the name) or page title
+        icon:
+          type: [string, 'null']
+          description: Menu icon (`menu/icon`). Only on menus, absent on the `unsorted` menu.
+        children:
+          type: array
+          description: Only on menus. Pages first, then sub-menus, in declaration order.
+          items:
+            $ref: '#/components/schemas/PageTreeNode'
+
+    PageTag:
+      type: object
+      required: [tag, count]
+      properties:
+        tag:
+          type: string
+        count:
+          type: integer
+          description: Number of pages with this tag
+
+    PageLink:
+      type: object
+      description: Reference to a page
+      required: [name, title]
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+
+    PageResponse:
+      type: object
+      required: [name, title, status, author, owner, confluence, tags, toc, breadcrumb, html, backlinks]
+      properties:
+        name:
+          type: string
+          description: File name without `.md`, or the `name:` from the frontmatter
+        title:
+          type: string
+          description: Frontmatter `title`, the name if there is none
+        status:
+          type: [string, 'null']
+          description: Free text lifecycle status, e.g. `rfc`, `wip`, `approved`
+        author:
+          oneOf:
+            - $ref: '#/components/schemas/EmailRecipient'
+            - type: 'null'
+        owner:
+          oneOf:
+            - $ref: '#/components/schemas/EmailRecipient'
+            - type: 'null'
+        confluence:
+          type: [string, 'null']
+          format: uri
+          description: URL of the corresponding Confluence page
+        tags:
+          type: array
+          items:
+            type: string
+        toc:
+          type: array
+          description: Headings of the body; empty unless the frontmatter has `toc` `yes`
+          items:
+            $ref: '#/components/schemas/PageTocEntry'
+        breadcrumb:
+          type: array
+          description: Menus above the page, outermost first; empty when no menu contains the page
+          items:
+            $ref: '#/components/schemas/PageLink'
+        html:
+          type: string
+          description: The body rendered to HTML (see the endpoint description for what is rendered)
+        backlinks:
+          type: array
+          description: Other pages linking to this page with `[[name]]` or `[[title]]`, sorted by name
+          items:
+            $ref: '#/components/schemas/PageLink'
+
+    PageTocEntry:
+      type: object
+      required: [level, id, text]
+      properties:
+        level:
+          type: integer
+          minimum: 1
+          maximum: 6
+          description: Heading level (`h1` is 1)
+        id:
+          type: string
+          description: Anchor id of the heading in `html`
+        text:
+          type: string
+
+    EmailRecipient:
+      type: object
+      description: |
+        A person from `Name <email>`. A bare email address uses itself as the name; a value that is not an
+        email address is returned as `name` only (`archsight lint` rejects those for page authors).
+      required: [name, email]
+      properties:
+        name:
+          type: string
+        email:
+          type: [string, 'null']
+
     Error:
       type: object
       required:
@@ -1292,6 +1539,8 @@ tags:
     description: Instance operations
   - name: Search
     description: Search and query operations
+  - name: Pages
+    description: Wiki pages (markdown with frontmatter), the page tree and the home page
   - name: Diagrams
     description: Diagram rendering
   - name: Graph

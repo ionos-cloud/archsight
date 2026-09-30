@@ -7,7 +7,6 @@ metadata:
 spec:
   contains:
     pages:
-      - home
       - core-concepts
     menus:
       - Modeling

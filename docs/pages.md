@@ -57,7 +57,9 @@ spec:
 ## Home page
 
 A page whose name or title is `Home` (any case) is shown at `/` instead of the generated architecture
-overview. It stays a normal page: it is also listed in the tree and reachable at `/pages/home`.
+overview. It stays a normal page, reachable at `/pages/home`, and needs no menu: it is not listed under
+"Unsorted" and `archsight lint` does not ask for one. Put it in a menu if you also want it in the sidebar tree.
+If several pages qualify, a page named `home` wins over one that is only titled Home.
 
 ## Content
 

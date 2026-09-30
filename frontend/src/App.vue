@@ -23,12 +23,14 @@ loadKinds()
 
 const pages = ref(null)
 const pageTags = ref([])
+const pageHome = ref(null) // { name, title } of the page shown at /, if there is one
 
 async function loadPages() {
   try {
     const data = await getPages()
     pages.value = data.pages
     pageTags.value = data.tags || []
+    pageHome.value = data.home || null
   } catch {
     pages.value = []
   }
@@ -45,11 +47,14 @@ const pageTitles = computed(() => {
     else walk(node.children)
   })
   walk(pages.value)
+  // the home page needs no menu, so it may not be in the tree
+  if (pageHome.value) titles[pageHome.value.name] ??= pageHome.value.title
   return titles
 })
 
 provide('kinds', kinds)
 provide('pages', pages)
+provide('pageHome', pageHome)
 provide('pageTitles', pageTitles)
 provide('reloadKinds', loadKinds)
 provide('reloadPages', loadPages)
