@@ -1,18 +1,33 @@
 <script>
-// Expanded menus are shared by all tree levels and remembered per browser
-const STORAGE_KEY = 'archsight.pageTree.open'
+import { reactive } from 'vue'
 
-function loadOpen() {
+// What the user opened or closed by hand, per menu name: one state for all tree levels (the
+// recursive component instances must not keep their own copies), remembered per browser.
+// Menus without a choice follow the default in `isOpen`.
+const STORAGE_KEY = 'archsight.pageTree.state'
+
+function loadChoices() {
   try {
-    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'))
+    const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
   } catch {
-    return new Set()
+    return {}
+  }
+}
+
+const choices = reactive(loadChoices())
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(choices))
+  } catch {
+    // storage unavailable, keep the state in memory only
   }
 }
 </script>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import '../../css/page.css'
 
@@ -22,7 +37,6 @@ const props = defineProps({
 })
 
 const route = useRoute()
-const open = reactive(loadOpen())
 
 const activeName = computed(() => (route.name === 'page' ? route.params.name : null))
 
@@ -32,20 +46,30 @@ function contains(node, name) {
   )
 }
 
-// A menu is open when the user opened it or when it holds the page being read
+// By default the top level is open (so the tree is never a single closed row) and so is the path
+// to the page being read; everything else is closed. What the user chose by hand wins.
 function isOpen(node) {
-  return open.has(node.name) || (activeName.value !== null && contains(node, activeName.value))
+  if (node.name in choices) return choices[node.name]
+  return props.root || (activeName.value !== null && contains(node, activeName.value))
 }
 
 function toggle(node) {
-  if (open.has(node.name)) open.delete(node.name)
-  else open.add(node.name)
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([...open]))
-  } catch {
-    // storage unavailable, keep the state in memory only
-  }
+  choices[node.name] = !isOpen(node)
+  persist()
 }
+
+// Arriving on a page shows it: menus on its path that were closed by hand open again
+watch(activeName, (name) => {
+  if (name === null) return
+  let changed = false
+  for (const node of props.nodes) {
+    if (node.type === 'menu' && choices[node.name] === false && contains(node, name)) {
+      delete choices[node.name]
+      changed = true
+    }
+  }
+  if (changed) persist()
+}, { immediate: true })
 </script>
 
 <template>
