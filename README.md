@@ -97,6 +97,10 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 - `analyze_resource` - Get detailed resource information and impact analysis
 - `resource_doc` - Get documentation for resource kinds
 
+**Wiki pages** are resources of the kind `Page`, so the same tools reach them, for example `Page: page/tags == "howto"`
+or, for full-text search, `Page: page/content =~ "kubernetes"` (a bare word only matches names). See
+[Pages and AI assistants](docs/pages.md#pages-and-ai-assistants-mcp).
+
 ### Web Interface
 
 **Browse & Search:**

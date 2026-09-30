@@ -39,6 +39,19 @@ Unmaintained repositories that are still active:
 TechnologyArtifact: activity/status == "active" & -{maintainedBy}> none
 ```
 
+Pages that mention a word anywhere, not only in their name (a bare word matches names only):
+
+```text
+Page: name =~ "diagram" | page/title =~ "diagram" | page/content =~ "diagram"
+```
+
+Approved pages with a diagram, and the pages that have no menu:
+
+```text
+Page: page/content =~ "```asd" & page/status == "approved"
+Page: <- none
+```
+
 Everything that ends up serving a compliance requirement:
 
 ```text

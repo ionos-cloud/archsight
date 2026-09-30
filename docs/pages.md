@@ -71,7 +71,7 @@ If several pages qualify, a page named `home` wins over one that is only titled 
 
 With `archsight web --inline-edit`, a page can be edited in the UI (**Edit** on `/kinds/Page/instances/<name>`).
 The form has the frontmatter keys as fields and the body as a markdown field (rich editor or plain text).
-**Generate Markdown** shows the whole file, **Save to File** replaces it on disk. Saving fails with a
+**Generate MD** shows the whole file, **Save to File** replaces it on disk. Saving fails with a
 conflict if the file changed since the form was opened, and a file with broken frontmatter, without
 frontmatter or with a changed name is rejected before it is written.
 
@@ -79,3 +79,32 @@ The saved frontmatter is rewritten in the order `title, tags, author, owner, sta
 `name` and keys the form does not know are kept; YAML comments inside the frontmatter are not.
 
 Inside the rich editor, an ` ```asd ` block shows a live [diagram preview](/doc/diagram#preview-in-the-editor).
+
+## Pages and AI assistants (MCP)
+
+`archsight web` serves an MCP server (see the [README](https://github.com/ionos-cloud/archsight#mcp-server)).
+It has no page-specific tools: pages are ordinary resources of the kinds `Page` and `PageMenu`, so the generic
+tools reach them. It is read-only, pages cannot be created or edited through MCP.
+
+**Finding pages**
+
+1. Ask for totals or names first, this is cheap: `query` with `Page:` and `output: "count"` or `"brief"`.
+   `brief` returns the page names (file names) only, not titles, tags or status.
+2. Narrow down with the [query language](/doc/search#searching-wiki-pages), for example
+   `Page: page/tags == "howto"`, or search the text with `Page: page/content =~ "asd"`. A bare word matches the
+   name only, so full-text search always goes through `page/content`.
+3. Read one page with `analyze_resource` (`kind: "Page"`, `name: "<page name>"`): the result has the
+   metadata (`page/title`, `page/tags`, `page/status`, ...) and the raw markdown in `page/content`.
+
+**Reading the tree**: `PageMenu: <- none` returns the root menus. `analyze_resource` with `kind: "PageMenu"`
+returns `relations.contains` with the names of its pages and sub-menus. The `spec` field of that response lists
+the same targets as `#<Archsight::Resources::...>` strings, use `relations`. The home page is
+`Page: name == "home"`. The [REST API](/docs/api) returns the whole tree in one call (`GET /api/v1/pages`).
+
+**Keep responses small.** `output: "complete"` and `"annotations"` include the whole markdown of every match,
+and the default limit is 50: for the 11 pages of the example handbook that is more than 25 KB, against well under 1 KB with `brief`. Use `limit`, or find the page
+names with `brief` and read pages one at a time.
+
+**Escaping.** Tool arguments are JSON, so the doubled backslash of a regex (`\\[`, see
+[search](/doc/search#searching-wiki-pages)) is written `\\\\[` inside the JSON string.
+

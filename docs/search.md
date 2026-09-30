@@ -195,6 +195,44 @@ Examples:
 
 Sub-queries support the full query syntax including kind filters and logical operators.
 
+## Searching Wiki Pages
+
+[Wiki pages](/doc/pages) are resources of the kind `Page`, so everything above applies. Use the `Page:` prefix
+to search pages only.
+
+| Annotation | Content |
+|------------|---------|
+| `page/title` | Title (the name is the file name, so it is often less readable) |
+| `page/tags` | Comma-separated tags |
+| `page/status` | Free text such as `rfc`, `wip`, `approved` |
+| `page/author`, `page/owner` | `Name <email>` |
+| `page/content` | The markdown body, without the frontmatter |
+
+A bare word (`kubernetes`) only matches the **name**. To search the text of pages, match `page/content`:
+
+    Page: page/content =~ "asd"                                   # pages that mention "asd"
+    Page: name =~ "query" | page/title =~ "query" | page/content =~ "query"
+                                                                  # name, title or text (what the Pages tab does)
+    Page: page/content =~ "asd" & page/status == "approved"       # text search plus a filter
+    Page: page/tags == "howto"                                    # by tag
+    Page: page/content =~ "```asd"                                # pages that contain a diagram
+
+Regular expressions are case-insensitive. Inside a quoted string a backslash escapes the next character and is
+dropped, so a regex backslash has to be written twice. That is how a literal `[` is matched, for example to
+find the pages that link to a page (backlinks):
+
+    Page: page/content =~ "\\[\\[Writing Pages"                      # pages containing a link to "Writing Pages"
+
+More ways to find pages:
+
+    Page: name == "home"          # the home page
+    PageMenu: <- none             # root menus (menus no other menu contains)
+    Page: <- none                 # pages that are in no menu (the home page usually is)
+    PageMenu: -> Page             # menus that contain pages
+
+Over MCP the same queries work with the `query` tool, see
+[Pages and AI assistants](/doc/pages#pages-and-ai-assistants-mcp).
+
 ## Examples
 
 Active containerized services:
