@@ -64,32 +64,56 @@
   line-height: 1.2;
 }
 
-/* ---------- properties: label / value rows separated by hairlines ---------- */
+/* ---------- properties ----------
+   Narrow: label / value rows separated by hairlines. Wide (there is room to the right of a
+   short list): one row under the title, label and value side by side, wrapping if needed. */
 .wiki-page .page-properties {
-  width: 100%;
   max-width: 34rem;
   margin: 0 0 24px;
-  border-collapse: collapse;
   border-top: 1px solid var(--wiki-line);
   font-size: 0.93em;
 }
 
-.wiki-page .page-properties th,
-.wiki-page .page-properties td {
+.wiki-page .page-properties .prop {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  align-items: center;
   padding: 6px 0;
-  border: 0;
   border-bottom: 1px solid var(--wiki-line);
-  background: transparent;
-  text-align: left;
-  vertical-align: middle;
 }
 
-.wiki-page .page-properties th {
-  width: 7.5rem;
+.wiki-page .page-properties dt {
   padding-right: 12px;
   font-weight: 400;
   color: var(--pico-muted-color);
   white-space: nowrap;
+}
+
+.wiki-page .page-properties dd {
+  margin: 0;
+}
+
+@media (min-width: 1100px) {
+  .wiki-page .page-properties {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.25rem;
+    max-width: none;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--wiki-line);
+  }
+
+  .wiki-page .page-properties .prop {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 2px 0;
+    border-bottom: 0;
+  }
+
+  .wiki-page .page-properties dt {
+    padding-right: 0;
+  }
 }
 
 /* ---------- contents rail ---------- */

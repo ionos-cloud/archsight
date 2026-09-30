@@ -97,44 +97,42 @@ function scrollTo(id) {
         <span v-for="crumb in page.breadcrumb" :key="crumb.name">{{ crumb.title }}</span>
       </div>
       <h1>{{ page.title }}</h1>
-      <table v-if="hasProperties" class="page-properties">
-        <tbody>
-          <tr v-if="page.status">
-            <th>Status</th>
-            <td><span :class="['status-pill', statusClass(page.status)]">{{ page.status }}</span></td>
-          </tr>
-          <tr v-if="page.author">
-            <th>Author</th>
-            <td>
-              <a v-if="page.author.email" :href="`mailto:${page.author.email}`">{{ page.author.name }}</a>
-              <template v-else>{{ page.author.name }}</template>
-            </td>
-          </tr>
-          <tr v-if="page.owner">
-            <th>Owner</th>
-            <td>
-              <a v-if="page.owner.email" :href="`mailto:${page.owner.email}`">{{ page.owner.name }}</a>
-              <template v-else>{{ page.owner.name }}</template>
-            </td>
-          </tr>
-          <tr v-if="page.tags.length">
-            <th>Tags</th>
-            <td>
-              <template v-for="(tag, i) in page.tags" :key="tag">
-                <router-link :to="tagQuery(tag)">{{ tag }}</router-link><template v-if="i < page.tags.length - 1">, </template>
-              </template>
-            </td>
-          </tr>
-          <tr v-if="page.confluence">
-            <th>Confluence</th>
-            <td>
-              <a :href="page.confluence" target="_blank" rel="noopener">
-                <i class="iconoir-open-new-window"></i> Open in Confluence
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <dl v-if="hasProperties" class="page-properties">
+        <div v-if="page.status" class="prop">
+          <dt>Status</dt>
+          <dd><span :class="['status-pill', statusClass(page.status)]">{{ page.status }}</span></dd>
+        </div>
+        <div v-if="page.author" class="prop">
+          <dt>Author</dt>
+          <dd>
+            <a v-if="page.author.email" :href="`mailto:${page.author.email}`">{{ page.author.name }}</a>
+            <template v-else>{{ page.author.name }}</template>
+          </dd>
+        </div>
+        <div v-if="page.owner" class="prop">
+          <dt>Owner</dt>
+          <dd>
+            <a v-if="page.owner.email" :href="`mailto:${page.owner.email}`">{{ page.owner.name }}</a>
+            <template v-else>{{ page.owner.name }}</template>
+          </dd>
+        </div>
+        <div v-if="page.tags.length" class="prop">
+          <dt>Tags</dt>
+          <dd>
+            <template v-for="(tag, i) in page.tags" :key="tag">
+              <router-link :to="tagQuery(tag)">{{ tag }}</router-link><template v-if="i < page.tags.length - 1">, </template>
+            </template>
+          </dd>
+        </div>
+        <div v-if="page.confluence" class="prop">
+          <dt>Confluence</dt>
+          <dd>
+            <a :href="page.confluence" target="_blank" rel="noopener">
+              <i class="iconoir-open-new-window"></i> Open in Confluence
+            </a>
+          </dd>
+        </div>
+      </dl>
     </div>
 
     <aside v-if="page.toc.length" class="page-toc" aria-label="On this page">
