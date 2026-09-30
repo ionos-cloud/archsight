@@ -332,7 +332,7 @@ class DiagramGraphTest < Minitest::Test
   def test_rejects_an_unknown_attribute_on_a_leaf_with_a_suggestion
     message = build_error(%(component "a" { lable "x" }\n))
 
-    assert_equal 'unknown attribute "lable" on component "a" (line 1); expected one of label, tint, link, extend, shape -- did you mean "label"?', message
+    assert_equal 'unknown attribute "lable" on component "a" (line 1); expected one of label, tint, link, resource, extend, shape -- did you mean "label"?', message
   end
 
   def test_rejects_an_attribute_that_does_not_apply_to_a_leaf_or_to_a_container

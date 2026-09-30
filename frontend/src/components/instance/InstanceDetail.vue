@@ -30,9 +30,13 @@ const props = defineProps({
 
 const svgHtml = ref('')
 const graphEl = ref(null)
+let graphLoaded = false
 let panZoom = null
 const descEl = ref(null)
 useInternalLinks(descEl)
+// `resource` and /kinds/... links inside the diagram navigate in-app like description links
+const diagramEl = ref(null)
+useInternalLinks(diagramEl)
 const annotations = computed(() => props.data.metadata?.annotations || {})
 const hasOutgoingRelations = computed(() => Object.keys(props.data.relations || {}).length > 0)
 const hasRelations = computed(() => {
@@ -43,6 +47,10 @@ const hasRelations = computed(() => {
 const generatedScript = computed(() => annotations.value['generated/script'])
 const generatedAt = computed(() => annotations.value['generated/at'])
 const description = computed(() => annotations.value['architecture/description'])
+// The architecture/diagram annotation, rendered to SVG by the server. When present it is
+// shown first, with a pager to swap to the generated dependency graph.
+const diagramHtml = computed(() => props.data.diagram || '')
+const view = ref(props.data.diagram ? 'diagram' : 'graph')
 
 const LANG_LABELS = [
   ['go', 'Go'], ['python', 'Python'], ['java', 'Java'],
@@ -64,7 +72,7 @@ const SKIP_PREFIXES = [
   'scc/language/', 'repository/artifacts/', 'link/', 'team/', 'jira/', 'generated/', 'license/',
 ]
 const SKIP_KEYS = new Set([
-  'scc/languages', 'architecture/description', 'architecture/modules',
+  'scc/languages', 'architecture/description', 'architecture/diagram', 'architecture/modules',
   'workflow/platforms', 'workflow/types',
   'agentic/tools', 'repository/artifacts', 'repository/git', 'repository/visibility',
 ])
@@ -85,13 +93,24 @@ const customAnnotations = computed(() => {
   })
 })
 
+// The graph is only fetched and laid out once it is visible: svg-pan-zoom measures the
+// container, which is 0x0 while the diagram view is showing.
+async function loadGraph() {
+  if (graphLoaded || !hasOutgoingRelations.value) return
+  graphLoaded = true
+  const dot = await getInstanceDot(props.kind, props.data.name)
+  svgHtml.value = dot ? await renderDot(dot) : ''
+  await nextTick()
+  initPanZoomOnGraph()
+}
+
+async function showView(name) {
+  view.value = name
+  if (name === 'graph') await loadGraph()
+}
+
 onMounted(async () => {
-  if (hasOutgoingRelations.value) {
-    const dot = await getInstanceDot(props.kind, props.data.name)
-    svgHtml.value = dot ? await renderDot(dot) : ''
-    await nextTick()
-    initPanZoomOnGraph()
-  }
+  if (view.value === 'graph') await loadGraph()
   await nextTick()
   if (descEl.value) renderMermaidIn(descEl.value)
 })
@@ -142,10 +161,22 @@ function initPanZoomOnGraph() {
       </router-link>
     </header>
 
-    <div v-if="hasOutgoingRelations && svgHtml" class="graph-container">
+    <div v-if="diagramHtml && hasOutgoingRelations" class="view-pager" role="group" aria-label="Diagram view">
+      <button type="button" class="outline" :class="{ secondary: view !== 'diagram' }"
+              :aria-pressed="view === 'diagram'" @click="showView('diagram')">
+        <i class="iconoir-developer"></i> Diagram
+      </button>
+      <button type="button" class="outline" :class="{ secondary: view !== 'graph' }"
+              :aria-pressed="view === 'graph'" @click="showView('graph')">
+        <i class="iconoir-graph-up"></i> Dependencies
+      </button>
+    </div>
+    <div v-if="diagramHtml" v-show="view === 'diagram'" ref="diagramEl" class="asd-diagram-wrap" v-html="diagramHtml"></div>
+
+    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" class="graph-container">
       <div id="graphviz" ref="graphEl" class="canvas" v-html="svgHtml"></div>
     </div>
-    <p v-else-if="hasRelations && !hasOutgoingRelations" class="graph-too-large">
+    <p v-else-if="hasRelations && !hasOutgoingRelations && !diagramHtml" class="graph-too-large">
       <i class="iconoir-graph-up"></i> No outgoing dependencies — graph omitted
     </p>
 
@@ -204,6 +235,20 @@ function initPanZoomOnGraph() {
   color: var(--muted-color);
   opacity: 0.7;
   margin-top: 0.1em;
+}
+
+.view-pager[role="group"] {
+  display: inline-flex;
+  width: fit-content;
+  margin-bottom: 0.5rem;
+}
+
+.view-pager[role="group"] button {
+  flex: 0 0 auto;
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
 }
 
 .graph-container {

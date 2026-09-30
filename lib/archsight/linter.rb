@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "kramdown"
+require_relative "helpers"
 
 module Archsight
   class Linter
@@ -35,16 +36,17 @@ module Archsight
           next
         end
 
-        # Skip validation if annotation has no constraints (enum or type)
+        # Content checks don't depend on enum/type constraints
+        validate_markdown(instance, key, value) if annotation.markdown?
+        validate_diagram(instance, key, value) if annotation.diagram?
+
+        # Skip schema validation if annotation has no constraints (enum or type)
         next unless annotation.has_validation?
 
         # Validate value against annotation schema (type and enum constraints)
         annotation.validate(value).each do |error|
           @errors << "#{instance.path_ref}: Annotation '#{key}' #{error}"
         end
-
-        # Check markdown syntax
-        validate_markdown(instance, key, value) if annotation.markdown?
       end
     end
 
@@ -57,6 +59,32 @@ module Archsight
       rescue StandardError => e
         @errors << "#{instance.path_ref}: Markdown syntax error in annotation '#{key}': #{e.message}"
       end
+      validate_diagram_blocks(instance, key, value)
+    end
+
+    # A diagram annotation must render, or the page shows an error box instead of the diagram
+    def validate_diagram(instance, key, value)
+      return if instance.annotations.key?("generated/script")
+
+      render_diagram_source(instance, "annotation '#{key}'", value.to_s)
+    end
+
+    # Every ```asd block must render, or the page shows an error box instead of the diagram
+    def validate_diagram_blocks(instance, key, value)
+      Helpers::DiagramBlocks.sources(value).each_with_index do |source, index|
+        render_diagram_source(instance, "annotation '#{key}' (asd block #{index + 1})", source)
+      end
+    end
+
+    # Renders with the same resolver the web UI uses, so a `resource` reference that would show as a broken link there is reported here
+    def render_diagram_source(instance, where, source)
+      unresolved = []
+      Archsight::Diagram.render(source, resolver: Helpers::ResourceResolver.new(@database), unresolved: unresolved)
+      unresolved.each do |u|
+        @errors << "#{instance.path_ref}: Diagram resource link #{u[:reference].inspect} #{u[:reason]} in #{where} (node #{u[:node].inspect}, line #{u[:line]})"
+      end
+    rescue Archsight::Diagram::Error => e
+      @errors << "#{instance.path_ref}: Diagram error in #{where}: #{e.message}"
     end
 
     def validate_view_fields(instance)

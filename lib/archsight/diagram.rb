@@ -6,6 +6,7 @@ require_relative "diagram/parser/lexer"
 require_relative "diagram/parser"
 require_relative "diagram/parser/ast"
 require_relative "diagram/graph"
+require_relative "diagram/resource_links"
 require_relative "diagram/layout"
 require_relative "diagram/routing/edge_router"
 require_relative "diagram/renderer"
@@ -26,12 +27,21 @@ module Archsight
     # treated as a URL to link instead.
     # `legend` (one of `Legend::MODES`) overrides the source's own
     # `legend "..."` statement; with neither, it's placed automatically.
-    def self.render(source, relation_filter: Relations::DEFAULT_FILTER, profile: nil, style: nil, theme: nil, legend: nil)
+    # `id_prefix` namespaces every element id in the SVG (see
+    # `Renderer::IdNamespace`), for inlining several diagrams into one HTML
+    # page; unset (the default) leaves the ids as generated.
+    # `resolver` turns a node's `resource "..."` reference into a link (see
+    # `ResourceLinks`); `unresolved`, if an Array, collects the references it
+    # couldn't resolve.
+    def self.render(source, relation_filter: Relations::DEFAULT_FILTER, profile: nil, style: nil, theme: nil, legend: nil, id_prefix: nil,
+                    resolver: nil, unresolved: nil)
       statements = time(profile, :parse) { Parser.parse(source) }
-      graph = time(profile, :graph) { Graph.build(statements) }
+      graph = time(profile, :graph) do
+        Graph.build(statements).tap { |g| ResourceLinks.apply(g, resolver, unresolved) }
+      end
       resolved_theme = Theme.fetch(theme || graph.theme_name || Theme::DEFAULT.name)
       layout = time(profile, :layout) { Layout.compute(graph, theme: resolved_theme, legend: legend, relation_filter: relation_filter) }
-      time(profile, :render) { Renderer.render(graph, layout, relation_filter: relation_filter, style: style) }
+      time(profile, :render) { Renderer.render(graph, layout, relation_filter: relation_filter, style: style, id_prefix: id_prefix) }
     end
 
     def self.time(profile, key)

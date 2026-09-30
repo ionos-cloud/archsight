@@ -146,3 +146,27 @@ class IncludeAnnotationsTest < Minitest::Test
     assert_match(/Unknown annotation module :nonexistent/, error.message)
   end
 end
+
+class AnnotationFormatTest < Minitest::Test
+  def annotation(format)
+    Archsight::Annotations::Annotation.new("test/key", format: format)
+  end
+
+  def test_asd_format_is_a_multiline_diagram
+    assert_predicate annotation(:asd), :diagram?
+    assert_predicate annotation(:asd), :multiline?
+    refute_predicate annotation(:asd), :code?
+    refute_predicate annotation(:asd), :markdown?
+  end
+
+  def test_other_formats_are_not_diagrams
+    refute_predicate annotation(:markdown), :diagram?
+    refute_predicate annotation(nil), :diagram?
+  end
+
+  def test_architecture_diagram_is_declared_on_architecture_kinds
+    annotation = Archsight::Resources["BusinessProduct"].annotations.find { |a| a.key == "architecture/diagram" }
+
+    assert_predicate annotation, :diagram?
+  end
+end

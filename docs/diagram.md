@@ -133,6 +133,7 @@ hint for near misses), never silently ignored.
 | `label` | everything | any text (see *Label text*) |
 | `tint` | nodes, containers, edges | `gray`, `blue`, `indigo`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `brown` |
 | `link` | nodes, containers | `http(s)://…`, `mailto:…` or a relative URL |
+| `resource` | nodes, containers | a resource name (`Archsight:Web`) or `Kind/Name` (`ApplicationService/Archsight:Web`); see *Linking to resources* |
 | `extend` | nodes, containers | `true`, `false`; containers also `height` |
 | `shape` | leaves | `rectangle`, `circle`, `cylinder`, `pipe`, `actor`, `file`, `module` |
 | `gap` | containers | pixels (`40`), a percentage (`150%`) or a signed one (`+20%`, `-50%`) |
@@ -259,6 +260,72 @@ it.
 ```
 legend "right"
 ```
+
+## Linking to resources
+
+`resource` links a node to an archsight resource, so a diagram is a map of
+the model you can click through:
+
+```
+component "web" { label "Web server"; resource "Archsight:Web" }
+layer "cli" { label "CLI subsystem"; resource "ApplicationService/Archsight:CLI" }
+```
+
+Inside the web UI the reference is looked up in the resource database and
+the node becomes a link to `/kinds/<Kind>/instances/<Name>` (clicking it
+navigates in-app). A bare name is searched in every kind; when the same
+name exists in several, write `Kind/Name`. `link` and `resource` can't share
+a node -- use `link` for external URLs.
+
+A reference that doesn't resolve never breaks the diagram: the node is drawn
+dashed and dimmed with a "Resource … not found" tooltip, and `archsight lint`
+reports it with the node and line (a rename or typo is caught the same way
+a broken `[[Name]]` link would be). Standalone `archsight diagram` has no
+resource database, so there `resource` is accepted but inert -- no link and
+no broken styling. Library users pass a `resolver:` to `Diagram.render`
+(any `call(reference)` returning a URL, `:missing` or `:ambiguous`, see
+`Archsight::Helpers::ResourceResolver`) and, to collect failures, `unresolved: []`.
+
+## Diagrams in markdown
+
+A fenced code block tagged `asd` in any markdown the web UI renders (docs,
+the `architecture/description` annotation, analysis text) is drawn as an
+inline SVG instead of shown as source:
+
+````
+```asd
+component "web" { label "Web" }
+component "db" { label "DB" }
+web -> db { relation "data" }
+```
+````
+
+Each diagram's element ids are prefixed with a hash of its source
+(`Archsight::Diagram.render(src, id_prefix: "...")`), so any number of
+diagrams can share a page without colliding. A block that fails to parse
+shows the error above its source rather than breaking the page, and
+`archsight lint` reports it as an error. Other renderers (GitHub, the
+terminal) still show the block as plain code.
+
+### The `architecture/diagram` annotation
+
+For a diagram that belongs to a resource as a whole, put the `.asd` source in
+the `architecture/diagram` annotation (no fence needed):
+
+```yaml
+metadata:
+  name: Archsight
+  annotations:
+    architecture/diagram: |
+      component "web" { label "Web" }
+      component "db" { label "DB" }
+      web -> db { relation "data" }
+```
+
+The instance page shows it first, with a **Diagram / Dependencies** toggle to
+swap to the auto-generated dependency graph (resources without the annotation
+show the graph as before). `archsight lint` reports a definition that doesn't
+render, and the editor offers it as a multi-line field.
 
 ## SVG element ids
 

@@ -34,7 +34,9 @@ module Archsight
           end
 
           leaf_hover = HOVER_SOURCE_CLASS if node.leaf? && hover_source?(node)
-          body.element("g", **@ids.group_attrs(node), class: leaf_hover) do
+          classes = [leaf_hover, (BROKEN_LINK_CLASS if node.broken_link)].compact
+          body.element("g", **@ids.group_attrs(node), class: (classes unless classes.empty?)) do
+            body.raw(Markup.tag("title", escape(node.broken_link))) if node.broken_link
             if node.leaf?
               render_shape(body, node, @boxes[node.id])
             else
@@ -45,6 +47,8 @@ module Archsight
         end
 
         HOVER_SOURCE_CLASS = "asd-hover-source"
+        # A node whose `resource` reference didn't resolve (see `ResourceLinks`)
+        BROKEN_LINK_CLASS = "asd-broken-link"
 
         private
 

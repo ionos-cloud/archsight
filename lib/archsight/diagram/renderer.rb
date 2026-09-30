@@ -11,6 +11,7 @@ require_relative "style/tints"
 require_relative "renderer/svg_format"
 require_relative "renderer/markup"
 require_relative "renderer/element_ids"
+require_relative "renderer/id_namespace"
 require_relative "renderer/path_geometry"
 require_relative "renderer/text_renderer"
 require_relative "renderer/drawn_edges"
@@ -49,11 +50,12 @@ module Archsight
       # arrowhead, so nothing is clipped at the canvas edge.
       EDGE_CANVAS_OVERHANG = 4.0
 
-      def self.render(graph, layout, relation_filter: Relations::DEFAULT_FILTER, style: nil)
-        new(graph, layout, relation_filter: relation_filter, style: style).render
+      def self.render(graph, layout, relation_filter: Relations::DEFAULT_FILTER, style: nil, id_prefix: nil)
+        new(graph, layout, relation_filter: relation_filter, style: style, id_prefix: id_prefix).render
       end
 
-      def initialize(graph, layout, relation_filter: Relations::DEFAULT_FILTER, style: nil)
+      def initialize(graph, layout, relation_filter: Relations::DEFAULT_FILTER, style: nil, id_prefix: nil)
+        @id_prefix = id_prefix
         @graph = graph
         @layout = layout
         @boxes = layout.boxes
@@ -144,7 +146,9 @@ module Archsight
           svg.raw(text_layer)
         end
 
-        %(<?xml version="1.0" encoding="UTF-8"?>\n#{stylesheet_pi}) + svg.to_s
+        markup = svg.to_s
+        markup = IdNamespace.apply(markup, @id_prefix) if @id_prefix
+        %(<?xml version="1.0" encoding="UTF-8"?>\n#{stylesheet_pi}) + markup
       end
 
       private

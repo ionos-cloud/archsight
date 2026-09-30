@@ -139,6 +139,12 @@ module Archsight
           attrs["link"]
         end
 
+        # Why this node's `resource` reference couldn't be resolved (see
+        # `ResourceLinks`), or `nil` when it has none or it resolved.
+        def broken_link
+          attrs["broken"]
+        end
+
         # The padding and title band `Layout` reserves inside a container's
         # box -- none for an anonymous `layer`/`stack`, which never draws a
         # box of its own; `Legend::Frame` has its own fixed ones.

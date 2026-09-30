@@ -24,7 +24,7 @@ module Archsight
       # container. Keep these tables in step with the readers in
       # `Graph::Node`/`Graph::Edge`/`Graph::DataFlow` and with `docs/diagram.md`.
       module Attributes
-        NODE = %w[label tint link extend].freeze
+        NODE = %w[label tint link resource extend].freeze
         LEAF_KINDS = %i[component application api database queue actor file].freeze
         LEAF = (NODE + %w[shape]).freeze
         CONTAINER = (NODE + %w[gap ranks columns]).freeze
@@ -40,6 +40,8 @@ module Archsight
         GAP_FORMAT = /\A(\d+(\.\d+)?%?|[+-]\d+(\.\d+)?%)\z/
         COLOR_FORMAT = /\A#(\h{3}|\h{4}|\h{6}|\h{8})\z/
         LINK_SCHEMES = %w[http https mailto].freeze
+        # `Name` or `Kind/Name`; resource names contain `:` but never `/` or whitespace
+        RESOURCE_FORMAT = %r{\A([A-Za-z][A-Za-z0-9]*/)?[^/[:space:][:cntrl:]]+\z}
 
         module_function
 
@@ -116,6 +118,7 @@ module Archsight
           when "extend" then check_value!(key, value, leaf?(block) ? LEAF_EXTEND : CONTAINER_EXTEND, where, line)
           when "gap" then check_format!(key, value, GAP_FORMAT, "a pixel count (40), a percentage (150%) or a signed one (+20%, -50%)", where, line)
           when "link" then check_link!(value, where, line)
+          when "resource" then check_resource!(value, block, where, line)
           end
         end
 
@@ -154,6 +157,16 @@ module Archsight
 
           raise GraphError, "invalid link #{value.inspect} on #{where} (line #{line}); expected an " \
                             "#{LINK_SCHEMES.join("/")} URL or a relative one, without whitespace"
+        end
+
+        # Resolved against the resource database when rendering (see
+        # `ResourceLinks`), which turns it into the node's `link`, so it
+        # can't share a node with an explicit one.
+        def check_resource!(value, block, where, line)
+          check_format!("resource", value, RESOURCE_FORMAT, "a resource name (Archsight:Web) or Kind/Name (ApplicationService/Archsight:Web)", where, line)
+          return unless block.attrs.key?("link")
+
+          raise GraphError, "#{where} (line #{line}) has both `link` and `resource`; a resource reference already provides the link"
         end
 
         def suggestion(given, allowed)

@@ -272,6 +272,7 @@ module Archsight
             .asd-shape-file { stroke-linejoin: round; }
             .asd-container { stroke-dasharray: 4 3; }
             .asd-container-boundary { stroke-dasharray: 8 4; }
+            .asd-broken-link > :is(rect, path, ellipse, polygon, polyline, circle, line) { stroke-dasharray: 4 3; opacity: 0.6; }
           CSS
         end
 

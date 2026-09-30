@@ -1,0 +1,51 @@
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Repo:ionos-cloud:archsight
+  annotations:
+    architecture/javascript/modules: |
+      digraph G {
+       "rankdir" = "LR";
+       "compound" = "true";
+       "splines" = "curved";
+       "concentrate" = "true";
+       "ranksep" = "0.6";
+       "nodesep" = "0.15";
+       "fontname" = "Helvetica";
+       "fontsize" = "10";
+        node [ "fontname" = "Helvetica" "fontsize" = "8" "shape" = "box" "style" = "rounded,filled" "fillcolor" = "white" "height" = "0.2" "width" = "0.4" ];
+        edge [ "fontname" = "Helvetica" "fontsize" = "8" ];
+        subgraph "cluster_frontend" {
+       "label" = "frontend";
+       "style" = "rounded,filled";
+       "fillcolor" = "#ddeeff";
+       "fontname" = "Helvetica Bold";
+       "fontsize" = "13";
+        "frontend" [ "label" = "" "style" = "invis" "width" = "0" "height" = "0" ];
+        "api" [ "label" = "api" ];
+        "composables" [ "label" = "composables" ];
+        "router" [ "label" = "router" ];
+        }
+      }
+    generated/script: Import:JavascriptGrapher:ionos-cloud:archsight
+    generated/at: '2026-07-02T11:39:01Z'
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:JavascriptGrapher:ionos-cloud:archsight
+  annotations:
+    generated/at: '2026-07-02T11:39:01Z'
+    generated/configHash: 9e4ae8bf377c6c55
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Import
+metadata:
+  name: Import:JavascriptGrapher:ionos-cloud:archsight
+spec:
+  generates:
+    technologyArtifacts:
+    - Repo:ionos-cloud:archsight

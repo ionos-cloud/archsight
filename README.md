@@ -109,6 +109,7 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 
 - Interactive GraphViz diagrams showing relationships
 - Zoom/pan controls for large diagrams
+- Hand-drawn `.asd` diagrams via the `architecture/diagram` annotation or ```` ```asd ```` blocks in markdown
 - Dark mode support
 - Layer-based color scheme (Business, Application, Technology, Data)
 

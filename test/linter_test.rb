@@ -92,7 +92,61 @@ class LinterTest < Minitest::Test
     assert_empty errors
   end
 
+  def test_validate_markdown_reports_a_broken_asd_block
+    good = "```asd\ncomponent \"a\" { label \"A\" }\n```\n"
+    bad = "intro\n\n```asd\nnot valid ((\n```\n"
+
+    assert_empty lint("architecture/description" => good)
+    errors = lint("architecture/description" => bad)
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "Diagram error in annotation 'architecture/description' (asd block 1)"
+  end
+
+  def test_validate_diagram_annotation
+    assert_empty lint("architecture/diagram" => "component \"a\" { label \"A\" }\n")
+
+    errors = lint("architecture/diagram" => "not valid ((\n")
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "Diagram error in annotation 'architecture/diagram':"
+  end
+
+  def test_validate_reports_diagram_resource_links_that_do_not_resolve
+    source = %(component "a" { resource "Nope" }\ncomponent "b" { resource "Dup" }\n)
+    errors = lint("architecture/diagram" => source)
+
+    assert_equal 2, errors.length
+    assert_includes errors.first, %(Diagram resource link "Nope" not found in annotation 'architecture/diagram' (node "a", line 1))
+    assert_includes errors.last, %(Diagram resource link "Dup" is ambiguous, use Kind/Name)
+  end
+
+  def test_validate_reports_resource_links_in_markdown_asd_blocks
+    errors = lint("architecture/description" => "x\n\n```asd\ncomponent \"a\" { resource \"Nope\" }\n```\n")
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "in annotation 'architecture/description' (asd block 1) (node \"a\", line 1)"
+  end
+
+  def test_validate_accepts_resource_links_that_resolve
+    assert_empty lint("architecture/diagram" => %(component "a" { resource "Test:Exists" }\n))
+  end
+
+  def test_validate_diagram_annotation_skips_generated_resources
+    assert_empty lint("architecture/diagram" => "not valid ((\n", "generated/script" => "x")
+  end
+
   private
+
+  def lint(annotations)
+    formats = { "architecture/description" => :markdown, "architecture/diagram" => :asd, "generated/script" => nil }
+    instance = MockInstance.new("Test", annotations, formats: formats)
+    other = ->(kind) { MockInstance.new(kind, {}) }
+    # "Test:Exists" resolves to one resource, "Dup" exists in two kinds
+    instances = { "Test" => { "test" => instance, "Test:Exists" => other.call("Test") },
+                  "Other" => { "Dup" => other.call("Other") }, "Third" => { "Dup" => other.call("Third") } }
+    Archsight::Linter.new(create_mock_db(instances)).validate
+  end
 
   def create_mock_instance(klass, annotations)
     MockInstance.new(klass, annotations)
@@ -109,10 +163,11 @@ class LinterTest < Minitest::Test
     # Known annotations that should not trigger "unknown" errors
     KNOWN_ANNOTATIONS = %w[view/fields].freeze
 
-    def initialize(klass, annotations, return_nil_for_all: false)
+    def initialize(klass, annotations, return_nil_for_all: false, formats: {})
       @klass = klass
       @annotations = annotations
       @return_nil_for_all = return_nil_for_all
+      @formats = formats
     end
 
     def path_ref
@@ -125,6 +180,7 @@ class LinterTest < Minitest::Test
 
     def annotation_matching(key)
       return nil if @return_nil_for_all
+      return MockAnnotation.new(@formats[key]) if @formats.key?(key)
       return MockAnnotation.new if KNOWN_ANNOTATIONS.include?(key)
 
       nil
@@ -133,12 +189,20 @@ class LinterTest < Minitest::Test
 
   # Mock annotation that has no validation
   class MockAnnotation
+    def initialize(format = nil)
+      @format = format
+    end
+
     def has_validation?
       false
     end
 
     def markdown?
-      false
+      @format == :markdown
+    end
+
+    def diagram?
+      @format == :asd
     end
   end
 

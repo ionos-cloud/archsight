@@ -15,7 +15,8 @@ export function highlightCodeBlocks(container) {
   })
 
   // Highlight all code blocks with a language class (both standard markdown and rouge-converted)
-  container.querySelectorAll('pre code[class*="language-"]').forEach(el => {
+  // asd blocks that failed to render stay plain source (highlight.js has no grammar for the DSL)
+  container.querySelectorAll('pre code[class*="language-"]:not(.language-asd)').forEach(el => {
     hljs.highlightElement(el)
   })
 }

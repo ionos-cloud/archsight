@@ -175,6 +175,39 @@ class APITest < Minitest::Test
     assert data["references"]
   end
 
+  def test_get_instance_renders_the_diagram_annotation
+    get "/api/v1/kinds/BusinessProduct/instances/Archsight"
+
+    assert_predicate last_response, :ok?
+    data = json_response
+
+    assert_includes data["diagram"], '<figure class="asd-diagram"><svg'
+    assert_includes data["diagram"], 'href="/kinds/ApplicationService/instances/Archsight:Web"'
+    refute_includes data["diagram"], 'class="asd-broken-link"'
+    # the raw source stays available (the editor and MCP read it)
+    assert_includes data["metadata"]["annotations"]["architecture/diagram"], 'theme "compact"'
+  end
+
+  def test_get_instance_without_a_diagram_annotation_has_no_diagram
+    name = Archsight::Web::Application.database.instances_by_kind("TechnologyArtifact").values.first.name
+    get "/api/v1/kinds/TechnologyArtifact/instances/#{name}"
+
+    assert_predicate last_response, :ok?
+    assert_nil json_response["diagram"]
+  end
+
+  def test_get_instance_with_a_broken_diagram_shows_the_error_box
+    instance = Archsight::Web::Application.database.instance_by_kind("BusinessProduct", "Archsight")
+    original = instance.annotations["architecture/diagram"]
+    instance.annotations["architecture/diagram"] = "not valid ((\n"
+    get "/api/v1/kinds/BusinessProduct/instances/Archsight"
+
+    assert_predicate last_response, :ok?
+    assert_includes json_response["diagram"], "asd-diagram-error"
+  ensure
+    instance.annotations["architecture/diagram"] = original
+  end
+
   def test_get_api_instance_kind_not_found
     get "/api/v1/kinds/NonExistentKind/instances/test"
 

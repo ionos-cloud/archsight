@@ -84,6 +84,7 @@ module Archsight::Web::API::JsonHelpers
   end
 
   MARKDOWN_ANNOTATION_KEYS = Set["architecture/description"].freeze
+  DIAGRAM_ANNOTATION_KEY = "architecture/diagram"
 
   def build_instance_response(kind, instance)
     {
@@ -92,8 +93,17 @@ module Archsight::Web::API::JsonHelpers
       metadata: { annotations: render_annotations(instance.annotations) },
       spec: serialize_spec(instance.spec),
       relations: extract_relations(instance),
-      references: extract_references(instance)
+      references: extract_references(instance),
+      diagram: render_diagram_annotation(instance.annotations)
     }
+  end
+
+  # The `architecture/diagram` annotation as inline SVG (the raw source stays in the annotations)
+  def render_diagram_annotation(annotations)
+    source = annotations[DIAGRAM_ANNOTATION_KEY]
+    return unless source.is_a?(String) && !source.strip.empty?
+
+    Archsight::Helpers::DiagramBlocks.render_diagram(source, resolver: Archsight::Helpers::ResourceResolver.new(db))
   end
 
   def render_annotations(annotations)

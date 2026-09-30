@@ -27,6 +27,7 @@ module Archsight
       def valid?: (untyped) -> bool
       def markdown?: () -> bool
       def code?: () -> bool
+      def diagram?: () -> bool
       def multiline?: () -> bool
       def code_language: () -> Symbol?
       def example_value: () -> untyped
