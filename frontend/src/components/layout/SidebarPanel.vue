@@ -1,16 +1,42 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { getKindFilters } from '../../api/client.js'
+import PageTree from '../page/PageTree.vue'
+import { useSidebarTab } from '../../composables/useSidebarTab.js'
+import { searchParams } from '../../composables/useSearchScope.js'
 
 const props = defineProps({
   kinds: Object,
+  pages: Array,
+  pageTags: { type: Array, default: () => [] },
 })
 
 const route = useRoute()
 
 const currentKind = computed(() => route.params.kind)
 const filters = ref([])
+
+// Pages and Kinds are tabs; the route picks the one that matches what is being viewed
+// (see useSidebarTab), and search follows the tab
+const { chosenTab, selectTab: chooseTab, TABS } = useSidebarTab()
+
+const hasPages = computed(() => !!(props.pages && props.pages.length))
+// without pages there is nothing to switch to
+const activeTab = computed(() => (hasPages.value ? chosenTab.value : 'kinds'))
+
+function selectTab(id, { focus = false } = {}) {
+  chooseTab(id)
+  if (focus) nextTick(() => document.getElementById(`sidebar-tab-${id}`)?.focus())
+}
+
+function onTabKeydown(event) {
+  const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
+  if (!step) return
+  event.preventDefault()
+  const index = TABS.findIndex((t) => t.id === activeTab.value)
+  selectTab(TABS[(index + step + TABS.length) % TABS.length].id, { focus: true })
+}
 
 function isCurrentKind(kindName) {
   return currentKind.value === kindName
@@ -25,6 +51,11 @@ watch(currentKind, async (kind) => {
   }
 }, { immediate: true })
 
+// tags are page tags: the search stays in the Pages scope (results link to the pages)
+function tagQuery(tag) {
+  return { name: 'search', query: searchParams(`Page: page/tags == "${tag}"`, 'pages') }
+}
+
 function filterQuery(key, value) {
   const q = `${currentKind.value}: ${key} == "${value}"`
   return `/search?q=${encodeURIComponent(q)}`
@@ -33,11 +64,52 @@ function filterQuery(key, value) {
 
 <template>
   <aside class="sidebar">
+    <div v-if="hasPages" class="sidebar-tabs" role="tablist" aria-label="Browse" @keydown="onTabKeydown">
+      <button
+        v-for="tab in TABS"
+        :id="`sidebar-tab-${tab.id}`"
+        :key="tab.id"
+        type="button"
+        role="tab"
+        class="sidebar-tab"
+        :aria-selected="activeTab === tab.id"
+        :aria-controls="`sidebar-panel-${tab.id}`"
+        :tabindex="activeTab === tab.id ? 0 : -1"
+        @click="selectTab(tab.id)"
+      >
+        <i :class="tab.icon" aria-hidden="true"></i>
+        <span>{{ tab.title }}</span>
+      </button>
+    </div>
+
+    <div
+      v-if="activeTab === 'pages'"
+      id="sidebar-panel-pages"
+      role="tabpanel"
+      aria-labelledby="sidebar-tab-pages"
+    >
+      <div class="sidebar-section">
+        <PageTree :nodes="pages" />
+      </div>
+      <div v-if="pageTags.length" class="sidebar-section">
+        <div class="sidebar-label"><i class="iconoir-label" aria-hidden="true"></i> Tags</div>
+        <nav class="annotation-filter">
+          <div class="filter-chips">
+            <router-link v-for="t in pageTags" :key="t.tag" class="filter-chip" :to="tagQuery(t.tag)">
+              {{ t.tag }} <span class="kind-count">{{ t.count }}</span>
+            </router-link>
+          </div>
+        </nav>
+      </div>
+    </div>
+
+    <div
+      v-else
+      id="sidebar-panel-kinds"
+      role="tabpanel"
+      aria-labelledby="sidebar-tab-kinds"
+    >
     <div class="sidebar-section">
-      <h4 class="sidebar-heading">
-        <i class="iconoir-folder"></i>
-        Kinds
-      </h4>
       <nav class="kind-filter">
         <ul>
           <template v-if="kinds">
@@ -58,10 +130,7 @@ function filterQuery(key, value) {
       </nav>
     </div>
     <div v-if="filters.length" class="sidebar-section">
-      <h4 class="sidebar-heading">
-        <i class="iconoir-filter"></i>
-        Filters
-      </h4>
+      <div class="sidebar-label"><i class="iconoir-filter" aria-hidden="true"></i> Filters</div>
       <nav class="annotation-filter">
         <div v-for="f in filters" :key="f.key" class="filter-group">
           <div class="filter-label" :title="f.description">{{ f.title }}</div>
@@ -77,6 +146,7 @@ function filterQuery(key, value) {
           </div>
         </div>
       </nav>
+    </div>
     </div>
   </aside>
 </template>
@@ -97,8 +167,65 @@ function filterQuery(key, value) {
   border-bottom: 1px solid var(--muted-border-color);
 }
 
-.sidebar-heading {
+/* Pages / Kinds tabs: compact, icon and label on one centre line */
+.sidebar-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--muted-border-color);
+}
+
+.sidebar-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+  margin: 0 0 -1px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted-color);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.sidebar-tab i {
+  flex-shrink: 0;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.sidebar-tab:hover,
+.sidebar-tab:focus-visible {
+  color: var(--color);
+}
+
+.sidebar-tab[aria-selected='true'] {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+/* small label above Tags / Filters (they are not headings of their own any more) */
+.sidebar-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   margin-bottom: 8px;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted-color);
+  text-transform: uppercase;
+}
+
+.sidebar-label i {
+  flex-shrink: 0;
+  font-size: 1.1em;
+  line-height: 1;
 }
 
 .kind-filter ul,

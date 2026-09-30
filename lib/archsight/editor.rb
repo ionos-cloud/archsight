@@ -4,6 +4,7 @@ require "yaml"
 require_relative "resources"
 require_relative "editor/file_writer"
 require_relative "editor/content_hasher"
+require_relative "editor/page_source"
 
 module Archsight
   # Editor handles building and validating resources for the web editor
@@ -78,6 +79,12 @@ module Archsight
       apply_block_scalar_style(ast)
 
       ast.yaml(nil, line_width: 80)
+    end
+
+    # Whether resources of this kind are stored as markdown files with frontmatter (not YAML)
+    # @param kind [String] Resource kind
+    def markdown_source?(kind)
+      kind == "Page"
     end
 
     # Recursively apply literal block style for multiline strings in YAML AST

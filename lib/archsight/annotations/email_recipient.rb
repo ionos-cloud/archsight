@@ -32,4 +32,16 @@ class Archsight::Annotations::EmailRecipient
       str
     end
   end
+
+  # Split "Name <email>" into its parts. A bare email uses itself as the name,
+  # an invalid value is returned as name only.
+  # @return [Hash{Symbol => String, nil}, nil]
+  def self.parse(value)
+    return nil if value.nil? || value.to_s.strip.empty?
+
+    str = value.to_s.strip
+    email = extract_email(str)
+    name = str.match(RECIPIENT_PATTERN) ? str.sub(/\s*<[^>]*>\z/, "") : str
+    { name: name, email: email }
+  end
 end

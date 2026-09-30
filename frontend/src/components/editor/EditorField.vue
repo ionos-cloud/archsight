@@ -1,5 +1,7 @@
 <script setup>
 import { computed } from 'vue'
+import DiagramPreview from './DiagramPreview.vue'
+import { useDiagramPreviewLayout } from '../../composables/useDiagramPreviewLayout.js'
 
 const props = defineProps({
   field: Object,
@@ -17,6 +19,20 @@ const value = computed({
 const isFullWidth = computed(() =>
   ['textarea', 'markdown', 'code'].includes(props.field.input_type)
 )
+
+// A page body is the whole document, give it room
+const isPageBody = computed(() => props.field.key === 'page/content')
+
+// Diagram source (architecture/diagram) is previewed while typing
+const isDiagram = computed(() => props.field.code_language === 'asd')
+
+const { layout: previewLayout } = useDiagramPreviewLayout()
+
+const CODE_LABELS = { asd: 'Archsight Diagram' }
+const codeLabel = computed(() => {
+  const lang = props.field.code_language || ''
+  return CODE_LABELS[lang] || lang.charAt(0).toUpperCase() + lang.slice(1)
+})
 
 const hasError = computed(() => props.error && props.error.length > 0)
 </script>
@@ -51,7 +67,10 @@ const hasError = computed(() => props.error && props.error.length > 0)
     </select>
 
     <!-- Textarea / Markdown -->
-    <div v-else-if="field.input_type === 'textarea' || field.input_type === 'markdown'" class="markdown-field">
+    <div
+      v-else-if="field.input_type === 'textarea' || field.input_type === 'markdown'"
+      :class="['markdown-field', { 'page-body': isPageBody }]"
+    >
       <textarea
         :id="field.key"
         v-model="value"
@@ -59,22 +78,28 @@ const hasError = computed(() => props.error && props.error.length > 0)
         :placeholder="field.input_type === 'markdown' ? 'Enter markdown content...' : 'One entry per line...'"
       ></textarea>
       <small v-if="field.input_type === 'markdown'" class="future-hint">
-        <i class="iconoir-info-circle"></i> Supports Markdown formatting
+        <i class="iconoir-info-circle"></i> Markdown, <code>[[links]]</code> and <code>```asd</code> diagrams. Use Edit for the rich text editor
       </small>
     </div>
 
     <!-- Code -->
-    <div v-else-if="field.input_type === 'code'" class="code-field">
-      <textarea
-        :id="field.key"
-        v-model="value"
-        :aria-invalid="hasError ? 'true' : undefined"
-        :placeholder="`Enter ${field.code_language || ''} code...`"
-        spellcheck="false"
-      ></textarea>
-      <small class="future-hint">
-        <i class="iconoir-code"></i> {{ (field.code_language || '').charAt(0).toUpperCase() + (field.code_language || '').slice(1) }} code
-      </small>
+    <div
+      v-else-if="field.input_type === 'code'"
+      :class="['code-field', isDiagram && ['with-preview', `layout-${previewLayout}`]]"
+    >
+      <div class="code-source">
+        <textarea
+          :id="field.key"
+          v-model="value"
+          :aria-invalid="hasError ? 'true' : undefined"
+          :placeholder="`Enter ${field.code_language || ''} code...`"
+          spellcheck="false"
+        ></textarea>
+        <small class="future-hint">
+          <i class="iconoir-code"></i> {{ codeLabel }} code
+        </small>
+      </div>
+      <DiagramPreview v-if="isDiagram" class="field-diagram-preview" :source="String(value)" />
     </div>
 
     <!-- Number -->
@@ -162,9 +187,16 @@ const hasError = computed(() => props.error && props.error.length > 0)
 }
 
 .markdown-field textarea {
-  font-family: var(--font-family-monospace);
-  min-height: 200px;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.65rem;
+  line-height: 1.5;
+  min-height: 24rem;
   resize: vertical;
+  tab-size: 2;
+}
+
+.markdown-field.page-body textarea {
+  min-height: 65vh;
 }
 
 .code-field textarea {
@@ -177,6 +209,34 @@ const hasError = computed(() => props.error && props.error.length > 0)
   white-space: pre;
   overflow-wrap: normal;
   overflow-x: auto;
+}
+
+.field-diagram-preview {
+  margin-top: 0.75rem;
+}
+
+/* source on the left, preview on the right */
+.code-field.with-preview.layout-right {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.code-field.with-preview.layout-right .field-diagram-preview {
+  position: sticky;
+  top: 1rem;
+  margin-top: 0;
+  max-height: calc(100vh - 2rem);
+}
+
+/* the preview only: the textarea keeps its value, it is just out of sight */
+.code-field.with-preview.layout-full .code-source {
+  display: none;
+}
+
+.code-field.with-preview.layout-full .field-diagram-preview {
+  margin-top: 0;
 }
 
 .future-hint {

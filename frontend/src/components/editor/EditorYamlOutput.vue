@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { saveYaml } from '../../api/client.js'
 import { highlightCodeBlocks } from '../../composables/useHighlight.js'
 
 const props = defineProps({
   yaml: String,
+  format: { type: String, default: 'yaml' }, // 'yaml' or 'markdown' (pages)
   kind: String,
   name: String,
   contentHash: String,
@@ -18,6 +19,10 @@ const codeEl = ref(null)
 const copyState = ref('idle')
 const saveState = ref('idle')
 const conflictError = ref(null)
+
+const isMarkdown = computed(() => props.format === 'markdown')
+const label = computed(() => isMarkdown.value ? 'Markdown' : 'YAML')
+const extension = computed(() => isMarkdown.value ? '.md' : '.yaml')
 
 onMounted(() => { if (codeEl.value) highlightCodeBlocks(codeEl.value) })
 watch(() => props.yaml, async () => {
@@ -76,11 +81,11 @@ async function saveToFile() {
     </div>
 
     <p class="yaml-success">
-      <i class="iconoir-check-circle"></i> Generated YAML
+      <i class="iconoir-check-circle"></i> Generated {{ label }}
     </p>
 
     <div ref="codeEl">
-      <pre id="yaml-content"><code class="language-yaml">{{ yaml }}</code></pre>
+      <pre id="yaml-content"><code :class="`language-${format}`">{{ yaml }}</code></pre>
     </div>
 
     <footer>
@@ -91,7 +96,7 @@ async function saveToFile() {
       <p v-else class="yaml-instructions">
         <i class="iconoir-info-circle"></i>
         <span>
-          Copy this YAML and save it to a <code>.yaml</code> file in your resources directory,
+          Copy this {{ label }} and save it to a <code>{{ extension }}</code> file in your resources directory<template v-if="isMarkdown"> (named <code>{{ name }}.md</code>)</template>,
           <br/>then reload the application.
         </span>
       </p>

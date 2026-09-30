@@ -159,6 +159,12 @@ class AnnotationFormatTest < Minitest::Test
     refute_predicate annotation(:asd), :markdown?
   end
 
+  def test_diagram_source_has_a_code_language_but_is_not_code
+    assert_equal :asd, annotation(:asd).code_language
+    assert_equal :ruby, annotation(:ruby).code_language
+    assert_nil annotation(:markdown).code_language
+  end
+
   def test_other_formats_are_not_diagrams
     refute_predicate annotation(:markdown), :diagram?
     refute_predicate annotation(nil), :diagram?

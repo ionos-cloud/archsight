@@ -1,7 +1,8 @@
 <script setup>
 import { ref, provide, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { getKinds } from './api/client.js'
+import { getKinds, getPages } from './api/client.js'
+import { useSidebarTabFollowsRoute } from './composables/useSidebarTab.js'
 import NavigationBar from './components/layout/NavigationBar.vue'
 import SidebarPanel from './components/layout/SidebarPanel.vue'
 
@@ -20,8 +21,38 @@ async function loadKinds() {
 }
 loadKinds()
 
+const pages = ref(null)
+const pageTags = ref([])
+
+async function loadPages() {
+  try {
+    const data = await getPages()
+    pages.value = data.pages
+    pageTags.value = data.tags || []
+  } catch {
+    pages.value = []
+  }
+}
+loadPages()
+
+useSidebarTabFollowsRoute(route)
+
+// name -> title of every page in the tree (menus included), for views that list pages by name
+const pageTitles = computed(() => {
+  const titles = {}
+  const walk = (nodes) => (nodes || []).forEach((node) => {
+    if (node.type === 'page') titles[node.name] = node.title
+    else walk(node.children)
+  })
+  walk(pages.value)
+  return titles
+})
+
 provide('kinds', kinds)
+provide('pages', pages)
+provide('pageTitles', pageTitles)
 provide('reloadKinds', loadKinds)
+provide('reloadPages', loadPages)
 </script>
 
 <template>
@@ -31,7 +62,7 @@ provide('reloadKinds', loadKinds)
   <template v-else>
     <NavigationBar />
     <main class="container-fluid">
-      <SidebarPanel :kinds="kinds" />
+      <SidebarPanel :kinds="kinds" :pages="pages" :page-tags="pageTags" />
       <div class="content">
         <router-view />
       </div>

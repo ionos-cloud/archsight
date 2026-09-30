@@ -4,7 +4,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('../components/instance/GraphView.vue'),
+    component: () => import('../components/page/HomePage.vue'),
   },
   {
     path: '/kinds/:kind',
@@ -16,6 +16,12 @@ const routes = [
     path: '/kinds/:kind/instances/:instance',
     name: 'instance',
     component: () => import('../components/instance/InstanceRouter.vue'),
+    props: true,
+  },
+  {
+    path: '/pages/:name(.*)',
+    name: 'page',
+    component: () => import('../components/page/PageView.vue'),
     props: true,
   },
   {

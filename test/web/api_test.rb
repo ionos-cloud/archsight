@@ -196,6 +196,49 @@ class APITest < Minitest::Test
     assert_nil json_response["diagram"]
   end
 
+  def render_diagram(source)
+    post "/api/v1/diagrams/render", JSON.generate({ source: source }), "CONTENT_TYPE" => "application/json"
+  end
+
+  def test_render_diagram_returns_the_svg
+    render_diagram(%(component "a" { label "A" }\n))
+
+    assert_predicate last_response, :ok?
+    assert_nil json_response["error"]
+    assert_includes json_response["html"], "<svg"
+  end
+
+  def test_render_diagram_resolves_resource_references_against_the_database
+    render_diagram(%(component "web" { resource "ApplicationComponent/Archsight:Web:API" }\n))
+
+    assert_includes json_response["html"], 'href="/kinds/ApplicationComponent/instances/Archsight:Web:API"'
+  end
+
+  def test_render_diagram_reports_a_broken_diagram_as_data_not_as_an_http_error
+    render_diagram("not valid ((\n")
+
+    assert_predicate last_response, :ok?
+    assert_nil json_response["html"]
+    assert_match(/line 1/, json_response["error"])
+  end
+
+  def test_render_diagram_rejects_a_body_without_a_source
+    post "/api/v1/diagrams/render", "not json", "CONTENT_TYPE" => "application/json"
+
+    assert_equal 400, last_response.status
+
+    post "/api/v1/diagrams/render", JSON.generate({ source: 1 }), "CONTENT_TYPE" => "application/json"
+
+    assert_equal 400, last_response.status
+    assert_equal "BadRequest", json_response["error"]
+  end
+
+  def test_render_diagram_rejects_an_oversized_source
+    render_diagram("#" * 100_001)
+
+    assert_equal 413, last_response.status
+  end
+
   def test_get_instance_with_a_broken_diagram_shows_the_error_box
     instance = Archsight::Web::Application.database.instance_by_kind("BusinessProduct", "Archsight")
     original = instance.annotations["architecture/diagram"]

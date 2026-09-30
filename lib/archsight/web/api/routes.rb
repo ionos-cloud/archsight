@@ -3,6 +3,7 @@
 require "sinatra/base"
 require "sinatra/extension"
 require_relative "json_helpers"
+require_relative "page_helpers"
 
 module Archsight; end
 module Archsight::Web; end
@@ -13,6 +14,10 @@ module Archsight::Web::API::Routes
   extend Sinatra::Extension
 
   helpers Archsight::Web::API::JsonHelpers
+  helpers Archsight::Web::API::PageHelpers
+
+  # Rendering is CPU work, previews are typed, not pasted
+  MAX_DIAGRAM_SOURCE = 100_000
 
   # GET /api/v1/kinds - List all resource kinds with counts
   get "/api/v1/kinds" do
@@ -65,6 +70,19 @@ module Archsight::Web::API::Routes
     json_response(build_instance_response(kind, instance))
   end
 
+  # GET /api/v1/pages - Page tree built from PageMenu resources
+  get "/api/v1/pages" do
+    json_response({ pages: Archsight::PageTree.new(db).tree, tags: page_tag_counts })
+  end
+
+  # GET /api/v1/pages/:name - Rendered page with metadata, toc, breadcrumb and backlinks
+  get "/api/v1/pages/:name" do
+    page = db.instance_by_kind("Page", params[:name])
+    json_error("Page '#{params[:name]}' not found", status: 404, error_type: "NotFound") unless page
+
+    json_response(build_page_response(page))
+  end
+
   # GET /api/v1/search - Search with query language
   get "/api/v1/search" do
     query = params[:q]
@@ -86,6 +104,23 @@ module Archsight::Web::API::Routes
     rescue Archsight::Query::QueryError => e
       json_error(e.message, status: 400, error_type: "QueryError", query: query)
     end
+  end
+
+  # POST /api/v1/diagrams/render - Render .asd source for the editor preview. A diagram that does not
+  # parse is a normal outcome while typing, so it is a 200 with `error` set.
+  post "/api/v1/diagrams/render" do
+    body = request.body.read(MAX_DIAGRAM_SOURCE + 1).to_s
+    json_error("Diagram source is too large", status: 413, error_type: "PayloadTooLarge") if body.bytesize > MAX_DIAGRAM_SOURCE
+
+    source = begin
+      JSON.parse(body)["source"]
+    rescue JSON::ParserError, TypeError
+      nil
+    end
+    json_error("A JSON body with a 'source' string is required", status: 400, error_type: "BadRequest") unless source.is_a?(String)
+
+    resolver = Archsight::Helpers::ResourceResolver.new(db)
+    json_response(Archsight::Helpers::DiagramBlocks.preview(source, resolver: resolver))
   end
 
   # POST /api/v1/kinds/Analysis/instances/:name/execute - Execute an analysis

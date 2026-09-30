@@ -99,6 +99,33 @@ class DiagramBlocksTest < Minitest::Test
     assert_includes gone, "asd-broken-link"
   end
 
+  def test_preview_returns_the_figure_and_no_error
+    result = DiagramBlocks.preview("component \"a\" { label \"A\" }\n")
+
+    assert_nil result[:error]
+    assert_includes result[:html], '<figure class="asd-diagram"><svg'
+  end
+
+  def test_preview_shares_the_render_with_pages
+    source = "component \"shared\" { label \"S\" }\n"
+
+    assert_equal DiagramBlocks.render_diagram(source), DiagramBlocks.preview(source)[:html]
+  end
+
+  def test_preview_of_a_broken_definition_is_just_the_message_with_its_line
+    result = DiagramBlocks.preview("component \"a\" {}\nnot valid ((\n")
+
+    assert_nil result[:html]
+    assert_match(/line 2/, result[:error])
+    refute_includes result[:error], "<"
+  end
+
+  def test_preview_resolves_resource_references
+    result = DiagramBlocks.preview(%(component "web" { resource "N" }\n), resolver: ->(_) { "/kinds/K/instances/N" })
+
+    assert_includes result[:html], 'href="/kinds/K/instances/N"'
+  end
+
   def test_extract_passes_the_resolver_to_each_block
     resolver = ->(_) { "/kinds/K/instances/N" }
     replaced, diagrams = DiagramBlocks.extract(html("```asd\ncomponent \"a\" { resource \"N\" }\n```\n"), resolver: resolver)

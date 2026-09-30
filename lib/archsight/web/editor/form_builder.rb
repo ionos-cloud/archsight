@@ -75,6 +75,7 @@ module Archsight
             :url
           else
             return :markdown if annotation.markdown?
+            return :code if annotation.diagram?
             return :textarea if annotation.multiline?
             return :code if annotation.code?
             return :list if annotation.list?

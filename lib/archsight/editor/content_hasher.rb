@@ -32,6 +32,17 @@ module Archsight
 
         { conflict: true, error: "Conflict: The resource has been modified. Please reload the page and try again." }
       end
+
+      # Same as validate, for sources that are replaced as a whole file (markdown pages)
+      # @param path [String] File path
+      # @param expected_hash [String, nil] Expected content hash
+      # @return [Hash, nil] Error hash with :conflict and :error keys, or nil if valid
+      def validate_file(path:, expected_hash:)
+        return nil unless expected_hash
+        return nil if hash(FileWriter.read_file(path: path)) == expected_hash
+
+        { conflict: true, error: "Conflict: The page has been modified. Please reload the page and try again." }
+      end
     end
   end
 end

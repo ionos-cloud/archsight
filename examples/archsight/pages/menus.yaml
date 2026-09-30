@@ -1,0 +1,76 @@
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Handbook
+  annotations:
+    menu/title: Handbook
+spec:
+  contains:
+    pages:
+      - home
+      - core-concepts
+    menus:
+      - Modeling
+      - Working with Archsight
+      - Operations
+      - Reference
+      - Strategy
+---
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Modeling
+  annotations:
+    menu/title: Modeling
+spec:
+  contains:
+    pages:
+      - modeling-guide
+      - searching-and-queries
+---
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Working with Archsight
+  annotations:
+    menu/title: Working with Archsight
+spec:
+  contains:
+    pages:
+      - writing-pages
+      - diagrams-in-pages
+      - importing-data
+---
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Operations
+  annotations:
+    menu/title: Operations
+spec:
+  contains:
+    pages:
+      - running-archsight
+---
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Reference
+  annotations:
+    menu/title: Reference
+spec:
+  contains:
+    pages:
+      - archsight-architecture
+      - mcp-and-rest-api
+---
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Strategy
+  annotations:
+    menu/title: Strategy
+spec:
+  contains:
+    pages:
+      - language-strategy

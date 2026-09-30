@@ -8,6 +8,9 @@ import { ListNode, ListItemNode, registerList, INSERT_ORDERED_LIST_COMMAND, INSE
 import { CodeNode, CodeHighlightNode, registerCodeHighlighting, $createCodeNode, $isCodeNode } from '@lexical/code'
 import { LinkNode, $createLinkNode, $isLinkNode } from '@lexical/link'
 import { $setBlocksType } from '@lexical/selection'
+import '../../composables/useAsdLanguage.js'
+import DiagramPreview from './DiagramPreview.vue'
+import { useDiagramPreviewLayout } from '../../composables/useDiagramPreviewLayout.js'
 
 const props = defineProps({
   modelValue: String,
@@ -19,11 +22,21 @@ const emit = defineEmits(['update:modelValue', 'close'])
 const editorRoot = ref(null)
 let editor = null
 const codeLang = ref(null)
+// source of the asd block the cursor is in, previewed below the editor
+const asdSource = ref(null)
+const { layout: previewLayout } = useDiagramPreviewLayout()
 
 const CODE_LANGUAGES = [
   'javascript', 'typescript', 'ruby', 'python', 'html', 'css', 'json', 'yaml',
-  'bash', 'sql', 'go', 'rust', 'java', 'mermaid', 'markdown', 'text',
+  'bash', 'sql', 'go', 'rust', 'java', 'mermaid', 'asd', 'markdown', 'text',
 ]
+
+// The fence keeps the short name (```asd), the dropdown shows a readable one
+const LANGUAGE_LABELS = { asd: 'Archsight Diagram' }
+
+function languageLabel(lang) {
+  return LANGUAGE_LABELS[lang] || lang.charAt(0).toUpperCase() + lang.slice(1)
+}
 
 function initEditor() {
   if (editor || !editorRoot.value) return
@@ -72,17 +85,24 @@ function initEditor() {
         const nodes = selection.getNodes()
         for (const node of nodes) {
           const parent = node.getParent()
-          if ($isCodeNode(parent)) { codeLang.value = parent.getLanguage() || ''; return }
-          if ($isCodeNode(node)) { codeLang.value = node.getLanguage() || ''; return }
+          const code = $isCodeNode(parent) ? parent : $isCodeNode(node) ? node : null
+          if (code) {
+            codeLang.value = code.getLanguage() || ''
+            asdSource.value = codeLang.value === 'asd' ? code.getTextContent() : null
+            return
+          }
         }
       }
       codeLang.value = null
+      // preview only mode hides the editor, which must not make the preview go away
+      if (previewLayout.value !== 'full') asdSource.value = null
     })
   })
 }
 
 watch(() => props.visible, (v) => {
   if (v) {
+    asdSource.value = null
     // Use nextTick-like delay to ensure DOM is ready after v-if renders
     setTimeout(() => {
       // v-if destroys the DOM on close, so dispose old editor and create fresh
@@ -236,15 +256,18 @@ onUnmounted(() => {
         >
           <option value="">Language...</option>
           <option v-for="lang in CODE_LANGUAGES" :key="lang" :value="lang">
-            {{ lang.charAt(0).toUpperCase() + lang.slice(1) }}
+            {{ languageLabel(lang) }}
           </option>
         </select>
         <div class="toolbar-spacer"></div>
         <button class="secondary toolbar-action" type="button" @click="$emit('close')">Cancel</button>
         <button class="toolbar-action" type="button" @click="save">Save</button>
       </div>
-      <div class="lexical-editor-container">
-        <div ref="editorRoot" id="lexical-editor-root" contenteditable="true"></div>
+      <div :class="['editor-split', `layout-${previewLayout}`]">
+        <div class="lexical-editor-container">
+          <div ref="editorRoot" id="lexical-editor-root" contenteditable="true"></div>
+        </div>
+        <DiagramPreview v-if="asdSource !== null" class="editor-diagram-preview" :source="asdSource" />
       </div>
     </div>
   </div>
@@ -347,8 +370,8 @@ onUnmounted(() => {
 .toolbar-select {
   height: 2rem;
   width: auto;
-  min-width: 130px;
-  max-width: 180px;
+  min-width: 11rem;
+  max-width: 15rem;
   padding: 0 0.75rem;
   margin: 0;
   font-size: 0.85rem;
@@ -369,6 +392,56 @@ onUnmounted(() => {
   border-color: var(--pico-primary, #1e88e5);
 }
 
+.editor-split {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.editor-diagram-preview {
+  flex: 0 1 45%;
+  padding: 0.5rem 1.5rem 1rem;
+  border-top: 1px solid var(--pico-muted-border-color, #e4e4e7);
+  overflow: hidden;
+}
+
+/* the preview to the right of the editor */
+.editor-split.layout-right {
+  flex-direction: row;
+}
+
+.editor-split.layout-right .lexical-editor-container {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.editor-split.layout-right .editor-diagram-preview {
+  flex: 1 1 50%;
+  min-width: 0;
+  border-top: none;
+  border-left: 1px solid var(--pico-muted-border-color, #e4e4e7);
+  padding: 1rem 1.5rem;
+  overflow-y: auto;
+}
+
+/* the preview only: the editor stays mounted, just out of sight */
+.editor-split.layout-full .lexical-editor-container {
+  display: none;
+}
+
+.editor-split.layout-full .editor-diagram-preview {
+  flex: 1 1 auto;
+  border-top: none;
+  overflow-y: auto;
+}
+
+/* hidden: just the bar to bring it back */
+.editor-split.layout-hidden .editor-diagram-preview {
+  flex: 0 0 auto;
+  padding-bottom: 0.5rem;
+}
+
 .lexical-editor-container {
   flex: 1;
   display: flex;
@@ -382,7 +455,8 @@ onUnmounted(() => {
   min-height: 0;
   padding: 1rem 1.5rem;
   font-family: var(--font-family);
-  line-height: 1.6;
+  font-size: 0.7rem;
+  line-height: 1.55;
   overflow-y: auto;
   position: relative;
 }
@@ -406,6 +480,11 @@ onUnmounted(() => {
   margin: 1rem 0 0.5rem 0;
   font-weight: 600;
 }
+
+#lexical-editor-root :deep(h1) { font-size: 1.7em; }
+#lexical-editor-root :deep(h2) { font-size: 1.4em; }
+#lexical-editor-root :deep(h3) { font-size: 1.15em; }
+#lexical-editor-root :deep(h4) { font-size: 1em; }
 
 #lexical-editor-root :deep(h1:first-child),
 #lexical-editor-root :deep(h2:first-child),

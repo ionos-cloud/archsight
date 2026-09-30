@@ -1,9 +1,12 @@
 <script setup>
-import { ref, inject } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, inject, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { reload as apiReload } from '../../api/client.js'
+import { useSearchScope, searchParams } from '../../composables/useSearchScope.js'
 
 const router = useRouter()
+const route = useRoute()
+const { scope, placeholder } = useSearchScope()
 const reloadKinds = inject('reloadKinds')
 const query = ref('')
 const searching = ref(false)
@@ -13,7 +16,7 @@ function onInput() {
   clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
     if (query.value.trim()) {
-      router.push({ name: 'search', query: { q: query.value } })
+      router.push({ name: 'search', query: searchParams(query.value, scope.value) })
     }
   }, 300)
 }
@@ -21,9 +24,16 @@ function onInput() {
 function onSubmit() {
   clearTimeout(debounceTimer)
   if (query.value.trim()) {
-    router.push({ name: 'search', query: { q: query.value } })
+    router.push({ name: 'search', query: searchParams(query.value, scope.value) })
   }
 }
+
+// Switching the sidebar tab while looking at results runs the same search in the other scope
+watch(scope, (value) => {
+  if (route.name === 'search' && route.query.q) {
+    router.replace({ name: 'search', query: searchParams(route.query.q, value) })
+  }
+})
 
 async function reload() {
   searching.value = true
@@ -46,14 +56,14 @@ async function reload() {
     <ul>
       <li>
         <strong>
-          <router-link to="/">
+          <router-link class="nav-link" to="/">
             <i class="iconoir-home"></i>
             Archsight
           </router-link>
         </strong>
       </li>
       <li>
-        <a href="#" @click.prevent="reload">
+        <a class="nav-link" href="#" @click.prevent="reload">
           <i class="iconoir-reload-window"></i>
           Reload
         </a>
@@ -68,7 +78,7 @@ async function reload() {
           id="search-input"
           v-model="query"
           class="search"
-          placeholder='Query: kubernetes, activity/status == "active"'
+          :placeholder="placeholder"
           @input="onInput"
           @keydown.enter.prevent="onSubmit"
         />
@@ -81,6 +91,18 @@ async function reload() {
 </template>
 
 <style scoped>
+/* icon and label share one centre line (an inline icon sits on the text baseline, a bit too high) */
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.nav-link i {
+  flex-shrink: 0;
+  line-height: 1;
+}
+
 .search-container {
   display: flex;
   align-items: center;

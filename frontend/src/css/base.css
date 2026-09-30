@@ -264,3 +264,10 @@ main .canvas a {
   margin-right: 0.25rem;
   opacity: 0.7;
 }
+
+/* Inline icons sit on the text's centre line instead of its baseline */
+[class^='iconoir-'],
+[class*=' iconoir-'] {
+  vertical-align: -0.125em;
+  line-height: 1;
+}
