@@ -100,8 +100,8 @@ class GoGrapherTest < Minitest::Test
     with_repo do |repo|
       write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
       write(repo, "main.go", "package main\n")
-      write(repo, "legacy/dcd-blueprint-rest/go.mod", "module github.com/ionos-cloud/dcd-blueprint-rest\n\ngo 1.21\n")
-      write(repo, "legacy/dcd-blueprint-rest/main.go", "package main\n")
+      write(repo, "legacy/legacy-service/go.mod", "module github.com/other-org/legacy-service\n\ngo 1.21\n")
+      write(repo, "legacy/legacy-service/main.go", "package main\n")
 
       resources = run_full_handler(repo)
       components = resources.select { |r| r["kind"] == "ApplicationComponent" }

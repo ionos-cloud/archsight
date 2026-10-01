@@ -36,7 +36,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     '-> ApplicationInterface & repository/artifacts == "container"' - containerized services exposing APIs
     '<- none' - resources not referenced by anything (potential orphans)
     '-> none & <- none' - true orphans with no relations at all
-    '~> $(dcd-mf-dcxpress)' - transitively reaches instance matching "dcd-mf-dcxpress"
+    '~> $(web-checkout)' - transitively reaches instance matching "web-checkout"
     '<- $(TechnologyArtifact: activity/status == "active")' - referenced by active artifacts
   DESC
   arguments do

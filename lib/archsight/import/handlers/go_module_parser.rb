@@ -121,7 +121,7 @@ module Archsight::Import::Handlers::GoModuleParser
     mod_name == root_mod_name || mod_name.start_with?("#{root_mod_name}/")
   end
 
-  # Return the SCM host+org prefix shared by modules in the same org, e.g. "github.com/ionos-cloud/".
+  # Return the SCM host+org prefix shared by modules in the same org, e.g. "github.com/example-org/".
   # @return [String, nil] Prefix with trailing slash, or nil for single-segment names
   def same_origin_prefix(mod_name)
     parts = mod_name.split("/")
@@ -132,7 +132,7 @@ module Archsight::Import::Handlers::GoModuleParser
 
   # Convert a Go module path to an ApplicationComponent name.
   # Strips the SCM host segment and joins remaining path segments with ":".
-  # "github.com/ionos-cloud/event-gateway/pkg" → "ionos-cloud:event-gateway:pkg"
+  # "github.com/example-org/billing-service/pkg" → "example-org:billing-service:pkg"
   def component_name(mod_name)
     parts = mod_name.split("/")
     parts.shift
