@@ -49,6 +49,17 @@ module Archsight
         render_block(source, %(<pre><code class="language-asd">#{escaped}</code></pre>), resolver: resolver)
       end
 
+      # A diagram for the editor preview: the same SVG (and cache) as a rendered page, but a diagram that
+      # does not render answers with just the error message (it carries the line) instead of the error box
+      # that repeats the source, which the editor already shows.
+      #
+      # @return [Hash] `{ html: "<figure ...>", error: nil }` or `{ html: nil, error: "message" }`
+      def preview(source, resolver: nil)
+        { html: render_svg(source, resolver: resolver), error: nil }
+      rescue Archsight::Diagram::Error => e
+        { html: nil, error: e.message }
+      end
+
       # Source of every ```asd block in `markdown` (for the linter).
       def sources(markdown)
         markdown.scan(/^[ \t]*(?:```|~~~)asd[ \t]*\n(.*?)^[ \t]*(?:```|~~~)[ \t]*$/m).flatten
@@ -63,14 +74,19 @@ module Archsight
       # change under a cached render (a reload, an edit), so the outcome of
       # each reference is part of the key.
       def render_block(source, original, resolver: nil)
+        render_svg(source, resolver: resolver)
+      rescue Archsight::Diagram::Error => e
+        message = ::Rack::Utils.escape_html(e.message)
+        %(<div class="asd-diagram-error"><p><strong>Diagram error:</strong> #{message}</p>#{original}</div>)
+      end
+
+      # @raise [Archsight::Diagram::Error] if the source does not render
+      def render_svg(source, resolver: nil)
         key = ::Digest::SHA256.hexdigest([source, resolutions(source, resolver)].inspect)[0, 12]
         cached(key) do
           svg = Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver)
           %(<figure class="asd-diagram">#{svg.sub(/\A<\?xml[^>]*\?>\s*/, "")}</figure>)
         end
-      rescue Archsight::Diagram::Error => e
-        message = ::Rack::Utils.escape_html(e.message)
-        %(<div class="asd-diagram-error"><p><strong>Diagram error:</strong> #{message}</p>#{original}</div>)
       end
 
       def resolutions(source, resolver)

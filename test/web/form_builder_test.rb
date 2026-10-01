@@ -72,6 +72,13 @@ class FormBuilderTest < Minitest::Test
     assert artifact_type_field.description
   end
 
+  def test_diagram_source_is_edited_as_code_in_its_language
+    field = Archsight::Web::Editor::FormBuilder.fields_for("BusinessProduct").find { |f| f.key == "architecture/diagram" }
+
+    assert_equal :code, field.input_type
+    assert_equal :asd, field.code_language
+  end
+
   def test_determine_input_type_for_enum_annotation
     # Use a real annotation from TechnologyArtifact that has enum
     annotation = Archsight::Resources["TechnologyArtifact"].annotations.find { |a| a.key == "artifact/type" }
@@ -108,7 +115,7 @@ class FormBuilderTest < Minitest::Test
     annotation = Archsight::Resources["BusinessProduct"].annotations.find { |a| a.key == "architecture/diagram" }
 
     assert annotation
-    assert_equal :textarea, Archsight::Web::Editor::FormBuilder.determine_input_type(annotation)
+    assert_equal :code, Archsight::Web::Editor::FormBuilder.determine_input_type(annotation)
   end
 
   def test_determine_step_for_integer_annotation

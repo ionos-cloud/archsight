@@ -22,6 +22,7 @@
     "iconoir": "^7.11.0",
     "lexical": "^0.41.0",
     "mermaid": "^11.12.3",
+    "prismjs": "^1.30.0",
     "svg-pan-zoom": "^3.6.2",
     "vue": "^3.5.25",
     "vue-router": "^4.6.4"

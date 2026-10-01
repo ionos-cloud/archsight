@@ -41,10 +41,43 @@ module Archsight
 
         # Validate content hash for optimistic locking
         def validate_content_hash(instance, expected_hash)
+          return Archsight::Editor::ContentHasher.validate_file(path: instance.path_ref.path, expected_hash: expected_hash) if Archsight::Editor.markdown_source?(instance.kind)
+
           Archsight::Editor::ContentHasher.validate(
             path: instance.path_ref.path,
             start_line: instance.path_ref.line_no,
             expected_hash: expected_hash
+          )
+        end
+
+        # Hash of the source an instance is replaced in (its YAML document, or the whole markdown file)
+        def source_content_hash(instance)
+          ref = instance.path_ref
+          content = if Archsight::Editor.markdown_source?(instance.kind)
+                      Archsight::Editor::FileWriter.read_file(path: ref.path)
+                    else
+                      Archsight::Editor::FileWriter.read_document(path: ref.path, start_line: ref.line_no)
+                    end
+          Archsight::Editor::ContentHasher.hash(content)
+        end
+
+        # Where an instance is stored, shown in the editor ("file" for markdown, "file:line" for YAML)
+        def source_ref(instance)
+          return unless instance&.path_ref
+
+          markdown = Archsight::Editor.markdown_source?(instance.kind)
+          markdown ? instance.path_ref.path : instance.path_ref.to_s
+        end
+
+        # Text to write to the source file: markdown with frontmatter for pages, a YAML document otherwise
+        def render_source(kind:, name:, annotations:, relations:, instance: nil)
+          if Archsight::Editor.markdown_source?(kind)
+            existing = instance && Archsight::Editor::FileWriter.read_file(path: instance.path_ref.path)
+            return Archsight::Editor::PageSource.render(annotations: annotations, existing_source: existing)
+          end
+
+          Archsight::Editor.to_yaml(
+            Archsight::Editor.build_resource(kind: kind, name: name, annotations: annotations, relations: relations)
           )
         end
 
@@ -57,6 +90,7 @@ module Archsight
             fields: serialize_fields(kind),
             relation_options: build_relation_options(kind),
             instances_by_kind: build_instances_by_kind(kind),
+            format: Archsight::Editor.markdown_source?(kind) ? "markdown" : "yaml",
             inline_edit_enabled: settings.inline_edit_enabled
           }
         end

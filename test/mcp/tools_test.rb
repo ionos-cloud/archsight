@@ -144,6 +144,14 @@ class McpToolsTest < Minitest::Test
     assert_equal "invalid ==", result["query"]
   end
 
+  def test_query_tool_invalid_regex_is_a_query_error
+    result = call_tool(Archsight::MCP::QueryTool, query: 'name =~ "["')
+
+    assert_equal "Query error", result["error"]
+    assert_includes result["message"], "Invalid regular expression"
+    assert_equal 'name =~ "["', result["query"]
+  end
+
   def test_query_tool_syntax_error_shows_position
     result = call_tool(Archsight::MCP::QueryTool, query: 'name == "test" &&& invalid')
 

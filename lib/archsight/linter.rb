@@ -18,6 +18,8 @@ module Archsight
         instances_hash.each_value do |instance|
           validate_instance_annotations(instance)
           validate_view_fields(instance) if instance.klass == "View"
+          validate_page(instance) if instance.klass == "Page"
+          validate_menu_cycle(instance) if instance.klass == "PageMenu"
         end
       end
 
@@ -25,6 +27,38 @@ module Archsight
     end
 
     private
+
+    # Pages need exactly one menu and their [[links]] must resolve
+    def validate_page(page)
+      menus = page.references.map { |r| r[:instance] }.select { |i| i.klass == "PageMenu" }.uniq
+      @errors << "#{page.path_ref}: Page '#{page.name}' is not contained in any PageMenu" if menus.empty? && !page.home?
+      @errors << "#{page.path_ref}: Page '#{page.name}' is contained in several PageMenus (#{menus.map(&:name).join(", ")})" if menus.length > 1
+
+      links = Archsight::Helpers::WikiLinks.new(@database)
+      page.annotations["page/content"].to_s.scan(Archsight::Helpers::WikiLinks::PATTERN).map { |match| match.first.strip }.each do |target|
+        next if links.resolve(target).is_a?(String)
+
+        @errors << "#{page.path_ref}: Page '#{page.name}' links to unknown or ambiguous [[#{target}]]"
+      end
+    end
+
+    # A PageMenu must not (transitively) contain itself
+    def validate_menu_cycle(menu)
+      cycle = find_menu_cycle(menu, menu, [menu.name], [])
+      @errors << "#{menu.path_ref}: PageMenu '#{menu.name}' forms a cycle (#{cycle.join(" -> ")})" if cycle
+    end
+
+    def find_menu_cycle(origin, current, path, visited)
+      current.relations(:contains, :menus).each do |child|
+        return path + [child.name] if child.equal?(origin)
+        next if visited.include?(child.name)
+
+        visited << child.name
+        found = find_menu_cycle(origin, child, path + [child.name], visited)
+        return found if found
+      end
+      nil
+    end
 
     def validate_instance_annotations(instance)
       instance.annotations.each do |key, value|

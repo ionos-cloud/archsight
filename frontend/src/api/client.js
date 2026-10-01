@@ -13,6 +13,14 @@ export function getKinds() {
   return fetchJson(`${BASE}/kinds`)
 }
 
+export function getPages() {
+  return fetchJson(`${BASE}/pages`)
+}
+
+export function getPage(name) {
+  return fetchJson(`${BASE}/pages/${encodeURIComponent(name)}`)
+}
+
 export function getKindInstances(kind, { limit = 50, offset = 0, output = 'complete' } = {}) {
   const params = new URLSearchParams({ limit, offset, output })
   return fetchJson(`${BASE}/kinds/${kind}?${params}`)
@@ -72,22 +80,33 @@ export function getEditorEditForm(kind, name) {
   return fetchJson(`${BASE}/editor/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/form`)
 }
 
-export async function generateYaml(kind, data) {
-  const res = await fetch(`${BASE}/editor/kinds/${encodeURIComponent(kind)}/generate`, {
+export function generateYaml(kind, data) {
+  return postJson(`${BASE}/editor/kinds/${encodeURIComponent(kind)}/generate`, data)
+}
+
+export function generateEditYaml(kind, name, data) {
+  return postJson(`${BASE}/editor/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/generate`, data)
+}
+
+// Validation errors come back as 200 with `errors`; anything else that is not ok is a real failure
+async function postJson(url, data, { signal } = {}) {
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
+    signal,
   })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new Error(body?.message || body?.error || res.statusText)
+  }
   return res.json()
 }
 
-export async function generateEditYaml(kind, name, data) {
-  const res = await fetch(`${BASE}/editor/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/generate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  return res.json()
+// Render .asd source for the editor preview: { html, error }. A diagram that does not render is
+// data (`error` set), a rejected request throws. Pass an AbortSignal to drop a superseded request.
+export function renderDiagram(source, options) {
+  return postJson(`${BASE}/diagrams/render`, { source }, options)
 }
 
 export async function reload() {

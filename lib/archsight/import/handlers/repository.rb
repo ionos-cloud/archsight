@@ -23,7 +23,7 @@ require_relative "../team_matcher"
 #   import/config/grapherOutputPath - Optional output path for language-grapher child imports
 class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
   def execute
-    @path = config("path")
+    @path = config_path("path")
     @git_url = config("gitUrl")
     raise "Missing required config: path" unless @path
 
@@ -483,7 +483,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     import_yaml(
       name: child_name,
       handler: handler_name,
-      config: { "path" => @path },
+      config: { "path" => config("path") }, # as written, the generated file stays portable
       annotations: child_annotations
     )
   end

@@ -24,6 +24,7 @@ const annotations = ref({})
 const relations = ref([])
 const errors = ref({})
 const yamlOutput = ref(null)
+const outputFormat = ref('yaml')
 const yamlPathRef = ref(null)
 const yamlContentHash = ref(null)
 
@@ -79,14 +80,21 @@ async function submit() {
     content_hash: yamlContentHash.value,
   }
 
-  const result = isEdit.value
-    ? await generateEditYaml(props.kind, props.instance, payload)
-    : await generateYaml(props.kind, payload)
+  let result
+  try {
+    result = isEdit.value
+      ? await generateEditYaml(props.kind, props.instance, payload)
+      : await generateYaml(props.kind, payload)
+  } catch (e) {
+    alert(`Generate failed: ${e.message}`)
+    return
+  }
 
   if (result.errors) {
     errors.value = result.errors
   } else {
     yamlOutput.value = result.yaml
+    outputFormat.value = result.format || 'yaml'
     if (result.path_ref) yamlPathRef.value = result.path_ref
     if (result.content_hash) yamlContentHash.value = result.content_hash
   }
@@ -133,6 +141,7 @@ function closeMarkdown() {
     </header>
     <EditorYamlOutput
       :yaml="yamlOutput"
+      :format="outputFormat"
       :kind="kind"
       :name="name"
       :content-hash="yamlContentHash"
@@ -194,7 +203,7 @@ function closeMarkdown() {
       </article>
 
       <!-- Relations -->
-      <article>
+      <article v-if="formMeta.relation_options.length">
         <header><h3>Relations</h3></header>
         <EditorRelations
           :relations="relations"
@@ -207,7 +216,7 @@ function closeMarkdown() {
       <!-- Submit -->
       <div class="form-actions">
         <button type="submit">
-          <i class="iconoir-code"></i> Generate YAML
+          <i class="iconoir-code"></i> Generate {{ formMeta.format === 'markdown' ? 'MD' : 'YAML' }}
         </button>
         <button type="button" class="secondary" @click="router.push(backUrl)">
           Cancel

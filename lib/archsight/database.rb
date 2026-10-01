@@ -3,6 +3,7 @@
 require "yaml"
 require_relative "graph"
 require_relative "resources"
+require_relative "page_loader"
 require_relative "query"
 
 module Archsight
@@ -58,10 +59,10 @@ module Archsight
       @instances = {}
 
       # load all resources
-      Dir.glob(File.join(@path, "**/*.yaml")).each do |path|
+      Dir.glob(File.join(@path, "**/*.{yaml,md}")).each do |path|
         @current_ref = LineReference.new(path, 0)
         puts "parsing #{path}..." if @verbose
-        load_file(path)
+        File.extname(path) == ".md" ? load_page(path) : load_file(path)
       end
 
       verify! if @verify
@@ -134,6 +135,22 @@ module Archsight
           self << create_valid_instance(obj)
         end
       end
+    end
+
+    # Load a markdown page; files without frontmatter are not pages and are ignored
+    def load_page(path)
+      return if @only_kinds && !@only_kinds.include?("Page")
+
+      @current_ref = LineReference.new(path, 1)
+      obj = PageLoader.build(path: path, source: File.read(path), ref: @current_ref)
+      return unless obj
+
+      inst = create_valid_instance(obj)
+      if (existing = @instances.dig(inst.class, inst.name))
+        raise("page name '#{inst.name}' is already used by #{existing.path_ref.path}; set a unique `name:` in the frontmatter")
+      end
+
+      self << inst
     end
 
     def <<(inst)

@@ -115,8 +115,9 @@ class Archsight::Annotations::Annotation
     @format == :multiline || diagram?
   end
 
+  # Language of a code-like field (source code, or `.asd` diagram source)
   def code_language
-    @format if code?
+    @format if code? || diagram?
   end
 
   # Example value for templates

@@ -382,3 +382,12 @@ The routing and label-placement hot loops have an optional C implementation
 from about 25 s to about 0.3 s. It produces byte-identical output to the
 pure-Ruby code, which is still used whenever the extension isn't built. Set
 `ARCHSIGHT_DIAGRAM_NATIVE=0` to force pure Ruby.
+
+## Preview in the editor
+
+The web editor renders a diagram while you type: about 300 ms after the last keystroke the source is sent to
+`POST /api/v1/diagrams/render` and shown next to it. This works for the `architecture/diagram` annotation and for
+` ```asd ` blocks in the rich markdown editor (place the cursor in the block). On wide screens (1400px and up) the
+preview sits to the right of the source, otherwise below it. A diagram that does not render shows the parser
+message with its line and keeps the last good picture dimmed. Links in the preview are disabled so a click
+cannot lose unsaved changes.

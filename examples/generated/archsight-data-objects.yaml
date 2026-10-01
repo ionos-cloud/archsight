@@ -18,7 +18,7 @@ metadata:
       | `instance_count` | integer | Yes | Number of instances of this kind |
     generated/variants: Kind, KindList
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -42,7 +42,7 @@ metadata:
       | `references` | object | No | Incoming references grouped by kind and verb (detail view only) |
     generated/variants: Instance, InstanceList
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -65,7 +65,7 @@ metadata:
       | `values` | array | Yes | Available values for the filter |
     generated/variants: Filter
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -90,7 +90,7 @@ metadata:
       | `error_backtrace` | array | No | Error backtrace lines (only present on failure) |
     generated/variants: AnalysisResult
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -117,7 +117,7 @@ metadata:
       | `lang` | string | No | Code language (code type) |
     generated/variants: AnalysisSection
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -143,7 +143,7 @@ metadata:
       | `code_language` | string | No | Code language hint (for code input type) |
     generated/variants: EditorField
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -164,7 +164,7 @@ metadata:
       | `target_kind` | string | Yes | Target resource kind |
     generated/variants: RelationOption
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -186,7 +186,7 @@ metadata:
       | `content_hash` | string | No | Content hash for edit mode (passed through to response) |
     generated/variants: GenerateRequest, GenerateResponse
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}
 
 ---
@@ -206,5 +206,167 @@ metadata:
       | `content_hash` | string | Yes | Content hash from the generate response (for conflict detection) |
     generated/variants: SaveRequest, SaveResponse
     generated/script: Import:API:archsight
-    generated/at: '2026-09-30T09:11:54Z'
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:PageTree
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `pages` | array (PageTreeNode) | Yes | Root menus with their pages and sub-menus, plus the trailing `unsorted` menu if ... |
+      | `tags` | array (PageTag) | Yes | Page tags with the number of pages using them, sorted by tag |
+      | `home` | string | Yes | The page shown at `/`, or null when there is none |
+    generated/variants: PageTreeResponse
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:PageTreeNode
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      A menu (with children) or a page (a leaf) of the page tree
+
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `type` | string | Yes |  |
+      | `name` | string | Yes | Menu name (`PageMenu` resource name, or `unsorted`) or page name. Page names are... |
+      | `title` | string | Yes | Menu title (`menu/title`, defaults to the name) or page title |
+      | `icon` | ["string", "null"] | No | Menu icon (`menu/icon`). Only on menus, absent on the `unsorted` menu. |
+      | `children` | array (PageTreeNode) | No | Only on menus. Pages first, then sub-menus, in declaration order. |
+    generated/variants: PageTreeNode
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:PageTag
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `tag` | string | Yes |  |
+      | `count` | integer | Yes | Number of pages with this tag |
+    generated/variants: PageTag
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:PageLink
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      Reference to a page
+
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `name` | string | Yes |  |
+      | `title` | string | Yes |  |
+    generated/variants: PageLink
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:Page
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `name` | string | Yes | File name without `.md`, or the `name:` from the frontmatter |
+      | `title` | string | Yes | Frontmatter `title`, the name if there is none |
+      | `status` | ["string", "null"] | Yes | Free text lifecycle status, e.g. `rfc`, `wip`, `approved` |
+      | `author` | string | Yes |  |
+      | `owner` | string | Yes |  |
+      | `confluence` | ["string", "null"] (uri) | Yes | URL of the corresponding Confluence page |
+      | `tags` | array | Yes |  |
+      | `toc` | array (PageTocEntry) | Yes | Headings of the body; empty unless the frontmatter has `toc` `yes` |
+      | `breadcrumb` | array (PageLink) | Yes | Menus above the page, outermost first; empty when no menu contains the page |
+      | `html` | string | Yes | The body rendered to HTML (see the endpoint description for what is rendered) |
+      | `backlinks` | array (PageLink) | Yes | Other pages linking to this page with `[[name]]` or `[[title]]`, sorted by name |
+    generated/variants: PageResponse
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:PageTocEntry
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `level` | integer | Yes | Heading level (`h1` is 1) |
+      | `id` | string | Yes | Anchor id of the heading in `html` |
+      | `text` | string | Yes |  |
+    generated/variants: PageTocEntry
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
+spec: {}
+
+---
+apiVersion: architecture/v1alpha1
+kind: DataObject
+metadata:
+  name: Archsight:EmailRecipient
+  annotations:
+    data/application: Archsight
+    data/visibility: public
+    architecture/description: |-
+      A person from `Name <email>`. A bare email address uses itself as the name; a value that is not an
+      email address is returned as `name` only (`archsight lint` rejects those for page authors).
+
+
+      ## Fields
+
+      | Field | Type | Required | Description |
+      |-------|------|----------|-------------|
+      | `name` | string | Yes |  |
+      | `email` | ["string", "null"] | Yes |  |
+    generated/variants: EmailRecipient
+    generated/script: Import:API:archsight
+    generated/at: '2026-09-30T15:04:39Z'
 spec: {}

@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { search } from '../../api/client.js'
+import { scopedQuery } from '../../composables/useSearchScope.js'
 import ResourceList from './ResourceList.vue'
 
 const PAGE_SIZE = 100
@@ -11,6 +12,8 @@ const results = ref([])
 const total = ref(0)
 const queryTime = ref(0)
 const queryStr = ref('')
+const effectiveQuery = ref('')
+const scope = ref('kinds')
 const kindFilter = ref(null)
 const loading = ref(false)
 const loadingMore = ref(false)
@@ -20,13 +23,15 @@ let offset = 0
 async function doSearch() {
   const q = route.query.q
   kindFilter.value = route.query.kind || null
+  scope.value = route.query.scope === 'pages' ? 'pages' : 'kinds'
   if (!q) { results.value = []; total.value = 0; return }
   queryStr.value = q
+  effectiveQuery.value = scopedQuery(q, scope.value)
   loading.value = true
   error.value = null
   offset = 0
   try {
-    const data = await search(q, { limit: PAGE_SIZE, offset: 0, output: 'brief' })
+    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset: 0, output: 'brief' })
     results.value = data.instances || []
     total.value = data.total || 0
     queryTime.value = data.query_time_ms || 0
@@ -45,7 +50,7 @@ async function loadMore() {
   if (!q) return
   loadingMore.value = true
   try {
-    const data = await search(q, { limit: PAGE_SIZE, offset, output: 'brief' })
+    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset, output: 'brief' })
     const items = data.instances || []
     results.value = [...results.value, ...items]
     offset += items.length
@@ -53,7 +58,7 @@ async function loadMore() {
   loadingMore.value = false
 }
 
-watch(() => route.query.q, doSearch, { immediate: true })
+watch(() => [route.query.q, route.query.scope], doSearch, { immediate: true })
 </script>
 
 <template>
@@ -63,7 +68,7 @@ watch(() => route.query.q, doSearch, { immediate: true })
       Query Syntax Error
     </div>
     <div class="search-error-message">{{ error }}</div>
-    <div class="search-error-query">Query: <code>{{ queryStr }}</code></div>
+    <div class="search-error-query">Query: <code>{{ effectiveQuery }}</code></div>
   </div>
 
   <article class="search-context">
@@ -72,6 +77,14 @@ watch(() => route.query.q, doSearch, { immediate: true })
       <p class="query-item">
         <span class="label">Query:</span>
         <code class="query-value">{{ queryStr }}</code>
+      </p>
+      <p v-if="scope === 'pages'" class="query-item">
+        <span class="label">Scope:</span>
+        <span class="scope-value">Pages</span>
+      </p>
+      <p v-if="scope === 'pages' && effectiveQuery !== queryStr" class="query-item">
+        <span class="label">Searched:</span>
+        <code class="query-value">{{ effectiveQuery }}</code>
       </p>
       <p v-if="kindFilter" class="query-item">
         <span class="label">Kind:</span>
@@ -91,7 +104,7 @@ watch(() => route.query.q, doSearch, { immediate: true })
   <article v-if="!error && !loading" class="search-results">
     <header><h3>Results</h3></header>
     <p v-if="!results.length"><em>No results found</em></p>
-    <ResourceList v-else :instances="results" :omit-kind="!!kindFilter" :total="total" :loading-more="loadingMore" @load-more="loadMore" />
+    <ResourceList v-else :instances="results" :omit-kind="!!kindFilter" :page-links="scope === 'pages'" :total="total" :loading-more="loadingMore" @load-more="loadMore" />
   </article>
 
   <article v-if="loading"><p>Searching...</p></article>
@@ -137,6 +150,10 @@ watch(() => route.query.q, doSearch, { immediate: true })
 
 .kind-value {
   text-transform: capitalize;
+}
+
+.scope-value {
+  font-weight: 600;
 }
 
 .result-count {

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 module Archsight
   module Editor
     # FileWriter handles reading and writing YAML documents in multi-document files
@@ -54,6 +56,32 @@ module Archsight
 
         # Write atomically by writing to temp file then renaming
         File.write(path, new_lines.join)
+      end
+
+      # Read a whole file (sources that are not multi-document YAML, e.g. markdown pages)
+      # @param path [String] File path
+      # @return [String] File content
+      # @raise [WriteError] if the file does not exist
+      def read_file(path:)
+        raise WriteError, "File not found: #{path}" unless File.exist?(path)
+
+        File.read(path)
+      end
+
+      # Replace a whole file atomically (temp file in the same directory, then rename)
+      # @param path [String] File path
+      # @param content [String] New file content
+      # @raise [WriteError] if the file does not exist or cannot be written
+      def replace_file(path:, content:)
+        raise WriteError, "File not found: #{path}" unless File.exist?(path)
+        raise WriteError, "File not writable: #{path}" unless File.writable?(path)
+
+        temp = "#{path}.#{Process.pid}.tmp"
+        File.write(temp, content)
+        File.chmod(File.stat(path).mode & 0o7777, temp)
+        File.rename(temp, path)
+      ensure
+        FileUtils.rm_f(temp) if temp && File.exist?(temp)
       end
 
       # Find the end index of a document (the line index of the next --- or EOF)

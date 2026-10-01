@@ -307,7 +307,9 @@ class Archsight::Query::Parser
     advance
 
     # Parse value
+    value_token = current_token
     value = parse_value
+    check_value(operator, value, value_token)
 
     Archsight::Query::AST::KindCondition.new(operator, value)
   end
@@ -316,11 +318,11 @@ class Archsight::Query::Parser
     expect(:LPAREN)
 
     values = []
-    values << parse_value
+    values << parse_in_value
 
     while current_token.type == :COMMA
       advance # consume comma
-      values << parse_value
+      values << parse_in_value
     end
 
     expect(:RPAREN)
@@ -349,6 +351,7 @@ class Archsight::Query::Parser
     advance
 
     # Parse value
+    value_token = current_token
     value = parse_value
 
     operator = case op_token.type
@@ -356,6 +359,7 @@ class Archsight::Query::Parser
                when :NEQ then "!="
                when :MATCH then "=~"
                end
+    check_value(operator, value, value_token)
 
     Archsight::Query::AST::NameCondition.new(operator, value)
   end
@@ -364,11 +368,11 @@ class Archsight::Query::Parser
     expect(:LPAREN)
 
     values = []
-    values << parse_value
+    values << parse_in_value
 
     while current_token.type == :COMMA
       advance # consume comma
-      values << parse_value
+      values << parse_in_value
     end
 
     expect(:RPAREN)
@@ -426,6 +430,7 @@ class Archsight::Query::Parser
     return parse_in_condition(path) if op_token.type == :IN
 
     # Parse value
+    value_token = current_token
     value = parse_value
 
     operator = case op_token.type
@@ -437,6 +442,7 @@ class Archsight::Query::Parser
                when :GTE then ">="
                when :LTE then "<="
                end
+    check_value(operator, value, value_token)
 
     Archsight::Query::AST::AnnotationCondition.new(path, operator, value)
   end
@@ -445,11 +451,11 @@ class Archsight::Query::Parser
     expect(:LPAREN)
 
     values = []
-    values << parse_value
+    values << parse_in_value
 
     while current_token.type == :COMMA
       advance # consume comma
-      values << parse_value
+      values << parse_in_value
     end
 
     expect(:RPAREN)
@@ -479,6 +485,27 @@ class Archsight::Query::Parser
         source: nil
       )
     end
+  end
+
+  # A `=~` pattern must compile: report a broken one with the query (and where it starts) instead of
+  # when the first resource is checked, which may never happen. A /regex/ literal only means something
+  # with `=~`; anywhere else it would silently compare against its pattern text.
+  def check_value(operator, value, token)
+    if operator == "=~"
+      Archsight::Query::AST.regexp_for(value)
+    elsif value.is_a?(Archsight::Query::AST::RegexValue)
+      raise Archsight::Query::ParseError.new("A /regex/ can only be used with =~, not #{operator}", position: token.position, source: nil)
+    end
+  rescue Archsight::Query::InvalidRegexError => e
+    raise Archsight::Query::InvalidRegexError.new(e.message, position: token.position, source: nil)
+  end
+
+  # One value of an `in (...)` list
+  def parse_in_value
+    token = current_token
+    value = parse_value
+    check_value("in", value, token)
+    value
   end
 
   def current_token

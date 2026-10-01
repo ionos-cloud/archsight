@@ -59,12 +59,8 @@ module Archsight
           data[:name] = instance.name
           data[:annotations] = instance.annotations.dup
           data[:relations] = extract_instance_relations(instance)
-          data[:path_ref] = "#{instance.path_ref.path}:#{instance.path_ref.line_no}"
-
-          original_content = Archsight::Editor::FileWriter.read_document(
-            path: instance.path_ref.path, start_line: instance.path_ref.line_no
-          )
-          data[:content_hash] = Archsight::Editor::ContentHasher.hash(original_content)
+          data[:path_ref] = source_ref(instance)
+          data[:content_hash] = source_content_hash(instance)
           JSON.generate(data)
         end
 
@@ -81,10 +77,8 @@ module Archsight
           validation = Archsight::Editor.validate(kind, name: name, annotations: annotations)
           return JSON.generate({ yaml: nil, errors: validation[:errors] }) unless validation[:valid]
 
-          resource = Archsight::Editor.build_resource(
-            kind: kind, name: name, annotations: annotations, relations: relations
-          )
-          JSON.generate({ yaml: Archsight::Editor.to_yaml(resource), errors: nil })
+          source = render_source(kind: kind, name: name, annotations: annotations, relations: relations)
+          JSON.generate({ yaml: source, format: form_format(kind), errors: nil })
         end
 
         post "/api/v1/editor/kinds/:kind/instances/:name/generate" do
@@ -101,16 +95,12 @@ module Archsight
           validation = Archsight::Editor.validate(kind, name: name, annotations: annotations)
           return JSON.generate({ yaml: nil, errors: validation[:errors] }) unless validation[:valid]
 
-          resource = Archsight::Editor.build_resource(
-            kind: kind, name: name, annotations: annotations, relations: relations
-          )
-
           original = db.instance_by_kind(kind, instance_name)
-          path_ref = original&.path_ref ? "#{original.path_ref.path}:#{original.path_ref.line_no}" : nil
+          source = render_source(kind: kind, name: name, annotations: annotations, relations: relations, instance: original)
 
           JSON.generate({
-                          yaml: Archsight::Editor.to_yaml(resource), errors: nil,
-                          path_ref: path_ref, content_hash: body["content_hash"]
+                          yaml: source, format: form_format(kind), errors: nil,
+                          path_ref: source_ref(original), content_hash: body["content_hash"]
                         })
         end
 
@@ -128,15 +118,15 @@ module Archsight
           end
 
           begin
-            Archsight::Editor::FileWriter.replace_document(
-              path: instance.path_ref.path, start_line: instance.path_ref.line_no,
-              new_yaml: body["yaml"]
-            )
+            write_source(instance, body["yaml"])
             db.reload!
-            JSON.generate({ success: true, message: "Saved to #{instance.path_ref}" })
+            JSON.generate({ success: true, message: "Saved to #{source_ref(instance)}" })
           rescue Archsight::Editor::FileWriter::WriteError => e
             status 400
             JSON.generate({ success: false, error: e.message })
+          rescue Archsight::ResourceError => e
+            status 400
+            JSON.generate({ success: false, error: "Saved, but reloading failed: #{e.message}" })
           end
         end
 
@@ -154,6 +144,22 @@ module Archsight
         end
 
         helpers do
+          def form_format(kind)
+            Archsight::Editor.markdown_source?(kind) ? "markdown" : "yaml"
+          end
+
+          # Replace the instance's source: the whole file for markdown pages (checked first, so a
+          # broken frontmatter never reaches the disk), its YAML document otherwise
+          def write_source(instance, text)
+            ref = instance.path_ref
+            if Archsight::Editor.markdown_source?(instance.kind)
+              Archsight::Editor::PageSource.validate!(text.to_s, path: ref.path, name: instance.name)
+              Archsight::Editor::FileWriter.replace_file(path: ref.path, content: text)
+            else
+              Archsight::Editor::FileWriter.replace_document(path: ref.path, start_line: ref.line_no, new_yaml: text)
+            end
+          end
+
           def parse_json_body
             JSON.parse(request.body.read)
           rescue JSON::ParserError

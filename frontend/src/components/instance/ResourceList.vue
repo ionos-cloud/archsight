@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { computed, ref, inject, onMounted, onBeforeUnmount, watch } from 'vue'
 import { timeAgo } from '../../composables/useFormatting.js'
 
 const props = defineProps({
@@ -8,9 +8,32 @@ const props = defineProps({
   fields: { type: Array, default: null },
   total: { type: Number, default: 0 },
   loadingMore: { type: Boolean, default: false },
+  // page search: pages link to the wiki page (/pages/<name>) and show their title
+  pageLinks: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['load-more'])
+
+const pageTitles = inject('pageTitles', null)
+
+function isPageLink(inst) {
+  return props.pageLinks && inst.kind === 'Page'
+}
+
+function linkTo(inst) {
+  return isPageLink(inst)
+    ? { name: 'page', params: { name: inst.name } }
+    : { name: 'instance', params: { kind: inst.kind, instance: inst.name } }
+}
+
+function labelOf(inst) {
+  return (isPageLink(inst) && pageTitles?.value?.[inst.name]) || inst.name
+}
+
+// the file/page name, when it differs from the title shown
+function subLabelOf(inst) {
+  return isPageLink(inst) && labelOf(inst) !== inst.name ? inst.name : null
+}
 
 const sentinel = ref(null)
 let observer = null
@@ -73,16 +96,14 @@ function isTimeField(key) {
     <tbody>
       <tr v-for="inst in instances" :key="inst.name" class="resource-list-row">
         <td class="col-name">
-          <router-link
-            class="instance-name"
-            :to="{ name: 'instance', params: { kind: inst.kind, instance: inst.name } }"
-          >
+          <router-link class="instance-name" :to="linkTo(inst)">
             <i v-if="inst.icon" :class="`iconoir-${inst.icon} icon-${inst.layer}`"></i>
-            {{ inst.name }}
+            {{ labelOf(inst) }}
           </router-link>
+          <span v-if="subLabelOf(inst)" class="instance-sub">{{ subLabelOf(inst) }}</span>
         </td>
         <td v-if="!omitKind" class="col-kind">
-          <span class="instance-kind">{{ inst.kind }}</span>
+          <span v-if="!isPageLink(inst)" class="instance-kind">{{ inst.kind }}</span>
         </td>
         <td v-for="col in fieldColumns" :key="col.key" class="col-annotation">
           <template v-if="annotationValue(inst, col.key) != null">
@@ -100,14 +121,12 @@ function isTimeField(key) {
   <ul v-else class="search-instance-list">
     <li v-for="inst in instances" :key="inst.name" class="search-instance-item">
       <div class="instance-main">
-        <router-link
-          class="instance-name"
-          :to="{ name: 'instance', params: { kind: inst.kind, instance: inst.name } }"
-        >
+        <router-link class="instance-name" :to="linkTo(inst)">
           <i v-if="inst.icon" :class="`iconoir-${inst.icon} icon-${inst.layer}`"></i>
-          {{ inst.name }}
+          {{ labelOf(inst) }}
         </router-link>
-        <span v-if="!omitKind" class="instance-kind">{{ inst.kind }}</span>
+        <span v-if="subLabelOf(inst)" class="instance-sub">{{ subLabelOf(inst) }}</span>
+        <span v-if="!omitKind && !isPageLink(inst)" class="instance-kind">{{ inst.kind }}</span>
       </div>
     </li>
   </ul>
@@ -118,6 +137,12 @@ function isTimeField(key) {
 </template>
 
 <style scoped>
+.instance-sub {
+  margin-left: 0.5rem;
+  color: var(--muted-color);
+  font-size: 0.8em;
+}
+
 .search-instance-list {
   list-style: none;
   padding: 0;

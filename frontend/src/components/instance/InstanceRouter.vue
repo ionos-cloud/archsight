@@ -5,6 +5,7 @@ import InstanceDetail from './InstanceDetail.vue'
 import ViewDetail from './ViewDetail.vue'
 import AnalysisDetail from './AnalysisDetail.vue'
 import ImportDetail from './ImportDetail.vue'
+import PageDetail from './PageDetail.vue'
 
 const props = defineProps({
   kind: String,
@@ -46,6 +47,7 @@ function kindMeta() {
     <ViewDetail v-if="kind === 'View'" :data="data" :kind-meta="kindMeta()" />
     <AnalysisDetail v-else-if="kind === 'Analysis'" :data="data" :kind-meta="kindMeta()" />
     <ImportDetail v-else-if="kind === 'Import'" :data="data" :kind-meta="kindMeta()" />
+    <PageDetail v-else-if="kind === 'Page'" :data="data" :kind-meta="kindMeta()" />
     <InstanceDetail v-else :data="data" :kind="kind" :kind-meta="kindMeta()" />
   </template>
 </template>

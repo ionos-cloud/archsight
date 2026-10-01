@@ -35,5 +35,9 @@ class Archsight::Query::LexerError < Archsight::Query::QueryError; end
 # Error during parsing
 class Archsight::Query::ParseError < Archsight::Query::QueryError; end
 
+# A `=~` pattern that is not a valid regular expression. The parser reports it with the query, so a
+# broken pattern fails even when no resource is checked; the evaluator raises it for hand-built queries.
+class Archsight::Query::InvalidRegexError < Archsight::Query::QueryError; end
+
 # Error during query evaluation
 class Archsight::Query::EvaluationError < Archsight::Query::QueryError; end

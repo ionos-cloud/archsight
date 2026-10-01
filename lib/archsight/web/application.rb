@@ -147,16 +147,8 @@ class Archsight::Web::Application < Sinatra::Base
         trailing = match[url.length..]
         %(<a href="#{url}">#{url}</a>#{trailing})
       end
-      # Convert [[ResourceName]] wiki-style links to resource links
-      html = html.gsub(/\[\[([^\]]+)\]\]/) do |_match|
-        name = ::Regexp.last_match(1)
-        resource = db.query("name =~ \"#{name}\"").first
-        if resource
-          %(<a href="/kinds/#{resource.kind}/instances/#{resource.name}">#{name}</a>)
-        else
-          %(<span class="broken-link" title="Resource not found">#{name}</span>)
-        end
-      end
+      # Convert [[Target]] / [[Target|label]] wiki-style links to page and resource links
+      html = Archsight::Helpers::WikiLinks.new(db).render(html)
       Archsight::Helpers::DiagramBlocks.restore(html, diagrams)
     end
 
@@ -246,6 +238,15 @@ class Archsight::Web::Application < Sinatra::Base
   end
 
   get "/doc/:filename" do
+    serve_vue
+  end
+
+  # GET /pages, /pages/:name - for direct URL access, Vue SPA handles rendering
+  get "/pages" do
+    serve_vue
+  end
+
+  get "/pages/*" do
     serve_vue
   end
 

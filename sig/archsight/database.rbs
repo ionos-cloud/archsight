@@ -38,6 +38,7 @@ module Archsight
 
     def create_valid_instance: (Hash[String, untyped]) -> Resources::Base
     def load_file: (String) -> void
+    def load_page: (String) -> void
     def <<: (Resources::Base) -> void
     def raise: (String) -> bot
     def raise_for: (Resources::Base, String) -> bot
