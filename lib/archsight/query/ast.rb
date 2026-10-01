@@ -275,5 +275,23 @@ module Archsight::Query::AST
       options = @flags.include?("i") ? Regexp::IGNORECASE : 0
       Regexp.new(@pattern, options)
     end
+
+    # Where a plain value is expected (`==`, `in`, ...) a regex literal stands for its pattern text
+    def value
+      @pattern
+    end
+  end
+
+  # The Regexp a `=~` value stands for: a /regex/ literal with its flags, or a string as a
+  # case-insensitive pattern.
+  # @raise [Archsight::Query::InvalidRegexError] if the pattern does not compile
+  def self.regexp_for(value_node)
+    if value_node.is_a?(RegexValue)
+      value_node.to_regexp
+    else
+      Regexp.new(value_node.value.to_s, Regexp::IGNORECASE)
+    end
+  rescue RegexpError => e
+    raise Archsight::Query::InvalidRegexError, "Invalid regular expression: #{e.message}"
   end
 end

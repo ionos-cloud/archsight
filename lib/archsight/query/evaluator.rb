@@ -264,11 +264,7 @@ class Archsight::Query::Evaluator
   end
 
   def build_regex_from_value(value_node)
-    if value_node.is_a?(Archsight::Query::AST::RegexValue)
-      value_node.to_regexp
-    else
-      Regexp.new(value_node.value.to_s, Regexp::IGNORECASE)
-    end
+    Archsight::Query::AST.regexp_for(value_node)
   end
 
   def compare_numeric_fallback(annotation_value, query_value, operator)
@@ -321,12 +317,7 @@ class Archsight::Query::Evaluator
     when "!="
       name != node.value.value.to_s
     when "=~"
-      re = if node.value.is_a?(Archsight::Query::AST::RegexValue)
-             node.value.to_regexp
-           else
-             Regexp.new(node.value.value.to_s, Regexp::IGNORECASE)
-           end
-      !!(name =~ re)
+      !!(name =~ build_regex_from_value(node.value))
     else
       false
     end

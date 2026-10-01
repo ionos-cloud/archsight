@@ -54,7 +54,7 @@ module Archsight
         tokens = lexer.tokenize
         parser = Parser.new(tokens)
         parser.parse
-      rescue LexerError, ParseError => e
+      rescue LexerError, ParseError, InvalidRegexError => e
         # Re-raise with source context
         raise QueryError.new(e.message, position: e.position, source: source)
       end

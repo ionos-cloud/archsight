@@ -130,6 +130,59 @@ class EvaluatorTest < Minitest::Test
     refute_includes names, "repo-chart"
   end
 
+  # Regex literals (/pattern/flags) work wherever a "pattern" string does
+  def test_regex_literal_on_annotation
+    names = Archsight::Query.parse("repository/artifacts =~ /cont.*/").filter(@db).map(&:name)
+
+    assert_includes names, "repo-active"
+    refute_includes names, "repo-chart"
+  end
+
+  def test_regex_literal_flags_are_honoured
+    sensitive = Archsight::Query.parse("repository/artifacts =~ /CONT.*/").filter(@db)
+    insensitive = Archsight::Query.parse("repository/artifacts =~ /CONT.*/i").filter(@db)
+
+    assert_empty sensitive
+    assert_includes insensitive.map(&:name), "repo-active"
+  end
+
+  def test_regex_literal_on_name_and_kind
+    assert_equal %w[repo-active repo-chart], Archsight::Query.parse("name =~ /^repo-(active|chart)$/").filter(@db).map(&:name).sort
+    assert_includes Archsight::Query.parse("kind =~ /^Technology/").filter(@db).map(&:name), "repo-active"
+  end
+
+  def test_regex_literal_is_only_allowed_with_the_match_operator
+    ["name == /x/", "repository/artifacts != /container/", "kind == /Technology/",
+     'name in (/a/, "b")', "repository/artifacts in (/c.*/)", "scc/language/Go/loc > /1/"].each do |source|
+      error = assert_raises(Archsight::Query::QueryError, source) { Archsight::Query.parse(source) }
+
+      assert_includes error.message, "A /regex/ can only be used with =~", source
+    end
+  end
+
+  # A pattern that does not compile is a query error, found when the query is parsed
+  def test_invalid_regex_is_a_query_error_naming_the_problem
+    ['repository/artifacts =~ "["', 'name =~ "(unclosed"', 'kind =~ "*oops"', "repository/artifacts =~ /[/"].each do |source|
+      error = assert_raises(Archsight::Query::QueryError, source) { Archsight::Query.parse(source) }
+
+      assert_includes error.message, "Invalid regular expression", source
+    end
+  end
+
+  def test_invalid_regex_error_points_at_the_pattern
+    error = assert_raises(Archsight::Query::QueryError) { Archsight::Query.parse('name == "a" & name =~ "["') }
+
+    assert_includes error.message, 'name == "a" & name =~ "["'
+    assert_includes error.message, "#{" " * 2}#{" " * 20}^", "caret under the pattern"
+  end
+
+  def test_regexp_for_raises_the_invalid_regex_error_for_hand_built_values
+    assert_raises(Archsight::Query::InvalidRegexError) { Archsight::Query::AST.regexp_for(Archsight::Query::AST::StringValue.new("[")) }
+    assert_raises(Archsight::Query::InvalidRegexError) { Archsight::Query::AST.regexp_for(Archsight::Query::AST::RegexValue.new("(", "")) }
+    assert_match(/abc/i, "xABCx", "valid strings stay case-insensitive patterns")
+    assert_predicate Archsight::Query::AST.regexp_for(Archsight::Query::AST::StringValue.new("abc")), :casefold?
+  end
+
   # Annotation existence tests
   def test_annotation_exists_match
     query = Archsight::Query.parse("activity/status?")

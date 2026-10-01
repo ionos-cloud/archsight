@@ -315,6 +315,23 @@ class APITest < Minitest::Test
     assert data["query"]
   end
 
+  def test_get_api_search_invalid_regex_is_a_bad_request_not_a_server_error
+    ['name =~ "["', 'Page: page/content =~ "(unclosed"'].each do |query|
+      get "/api/v1/search", q: query
+
+      assert_equal 400, last_response.status, query
+      assert_equal "QueryError", json_response["error"]
+      assert_includes json_response["message"], "Invalid regular expression"
+    end
+  end
+
+  def test_get_api_search_regex_literal
+    get "/api/v1/search", q: "name =~ /^archsight$/i"
+
+    assert_predicate last_response, :ok?
+    assert_includes json_response["instances"].map { |i| i["name"] }, "Archsight"
+  end
+
   def test_get_api_search_pagination
     get "/api/v1/search", q: 'name =~ ".*"', limit: 10, offset: 5
 
