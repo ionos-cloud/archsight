@@ -315,3 +315,18 @@ main .canvas a {
   vertical-align: -0.125em;
   line-height: 1;
 }
+
+/* a view or analysis embedded in markdown (![[View/Name]]), filled in by the frontend. No box and no
+   indent: the content sits in the text column like a markdown table does. */
+.kind-embed {
+  margin: 1.25rem 0;
+  overflow-x: auto;
+}
+
+.kind-embed article {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}

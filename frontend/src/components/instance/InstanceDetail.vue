@@ -7,6 +7,8 @@ import { timeAgo } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { renderMermaidIn } from '../../composables/useMermaid.js'
 import { renderDrawioIn } from '../../composables/useDrawio.js'
+import { useEmbeds } from '../../composables/useEmbeds.js'
+import EmbeddedKind from '../page/EmbeddedKind.vue'
 import RelationsGrid from './RelationsGrid.vue'
 import ModuleGraph from './ModuleGraph.vue'
 import RequirementsSection from './RequirementsSection.vue'
@@ -35,6 +37,7 @@ let graphLoaded = false
 let panZoom = null
 const descEl = ref(null)
 useInternalLinks(descEl)
+const { embeds, scanEmbeds } = useEmbeds()
 // `resource` and /kinds/... links inside the diagram navigate in-app like description links
 const diagramEl = ref(null)
 useInternalLinks(diagramEl)
@@ -116,6 +119,7 @@ onMounted(async () => {
   if (descEl.value) {
     renderMermaidIn(descEl.value)
     renderDrawioIn(descEl.value)
+    scanEmbeds(descEl.value)
   }
 })
 
@@ -124,6 +128,7 @@ watch(description, async () => {
   if (descEl.value) {
     renderMermaidIn(descEl.value)
     renderDrawioIn(descEl.value)
+    scanEmbeds(descEl.value)
   }
 })
 
@@ -188,6 +193,9 @@ function initPanZoomOnGraph() {
     </p>
 
     <div ref="descEl" v-if="description" v-html="description" :class="{ footer: hasRelations }"></div>
+    <Teleport v-for="embed in embeds" :key="`${embed.kind}/${embed.name}`" :to="embed.el">
+      <EmbeddedKind :kind="embed.kind" :name="embed.name" />
+    </Teleport>
   </article>
 
   <ModuleGraph v-for="g in moduleGraphs" :key="g.label" :dot="g.dot" :label="g.label" />

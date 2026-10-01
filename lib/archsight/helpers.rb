@@ -4,6 +4,7 @@ require_relative "helpers/formatting"
 require_relative "helpers/analysis_renderer"
 require_relative "helpers/diagram_blocks"
 require_relative "helpers/resource_resolver"
+require_relative "helpers/embeds"
 require_relative "helpers/wiki_links"
 require_relative "helpers/asset_images"
 

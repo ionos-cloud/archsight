@@ -100,6 +100,24 @@ is served:
   such requests, so an image embedded in a diagram from an `https://` URL is not shown. Formulas are not typeset.
 - **Kubernetes**: binary files do not fit a ConfigMap (1 MB limit), provide the resources with git-sync or a volume.
 
+## Embedding views and analyses
+
+`![[View/Name]]` and `![[Analysis/Name]]` show the live content of a view (its result list) or an analysis (its
+result) inside a page, or in the description of any resource:
+
+```markdown
+![[View/View:ServiceDependencies]]
+![[Analysis/Analysis:Service:Count]]
+```
+
+The page is shown immediately. Each embed loads on its own, with a spinner, and an analysis runs when the page opens
+(it can be run again from the embed), so a slow query or script never delays the text around it. The embed
+links to the view or analysis page. The server only writes a placeholder: rendering a page (`GET /api/v1/pages/{name}`)
+never runs a query or a script, and API or MCP consumers get `<div class="kind-embed" data-kind data-name>` with a plain
+link to the resource. Other kinds are not embeddable; an unknown name, another kind or an embed written inline in
+a sentence (instead of on its own line) is shown as a marker or a link, and `archsight lint` reports embeds that do not
+resolve. Code blocks and inline code are left alone.
+
 ## Home page
 
 A page whose name or title is `Home` (any case) is shown at `/` instead of the generated architecture

@@ -97,6 +97,8 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 - `analyze_resource` - Get detailed resource information and impact analysis
 - `resource_doc` - Get documentation for resource kinds
 
+**Views and analyses** can be embedded in pages with `![[View/Name]]` / `![[Analysis/Name]]` ([Wiki pages](docs/pages.md#embedding-views-and-analyses)).
+
 **Images and draw.io diagrams** are plain files in the resources directory and are embedded in markdown with relative
 paths (`![](../img/a.png)`, `![](../../fop/flow.drawio)`); only files of image, draw.io and `.asd` diagram types inside the resources
 directory are served, through `/api/v1/assets/`. The draw.io viewer (Apache-2.0) ships with Archsight and loads nothing
