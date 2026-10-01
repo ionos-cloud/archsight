@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { search } from '../../api/client.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
+import { fieldValue } from '../../composables/useFormatting.js'
 import ResourceList from './ResourceList.vue'
 
 const props = defineProps({
@@ -43,8 +44,8 @@ function sortInstances(instances, sortFields) {
     for (const field of sortFields) {
       const desc = field.startsWith('-')
       const key = desc ? field.slice(1) : field
-      const aVal = a.annotations?.[key] ?? ''
-      const bVal = b.annotations?.[key] ?? ''
+      const aVal = fieldValue(a, key) ?? ''
+      const bVal = fieldValue(b, key) ?? ''
       const cmp = String(aVal).localeCompare(String(bVal), undefined, { numeric: true })
       if (cmp !== 0) return desc ? -cmp : cmp
     }

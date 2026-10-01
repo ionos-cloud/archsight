@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, inject, onMounted, onBeforeUnmount, watch } from 'vue'
-import { timeAgo } from '../../composables/useFormatting.js'
+import { timeAgo, fieldValue, isIdentityField } from '../../composables/useFormatting.js'
 
 const props = defineProps({
   instances: { type: Array, required: true },
@@ -59,7 +59,7 @@ const useTable = computed(() => props.fields && props.fields.length > 0)
 
 const fieldColumns = computed(() => {
   if (!props.fields) return []
-  return props.fields.map(f => {
+  return props.fields.filter(f => !isIdentityField(f)).map(f => {
     const segments = f.split('/')
     let title
     if (segments.length >= 2) {
@@ -73,8 +73,7 @@ const fieldColumns = computed(() => {
 })
 
 function annotationValue(inst, key) {
-  const annotations = inst.annotations || {}
-  return annotations[key] ?? null
+  return fieldValue(inst, key)
 }
 
 function isTimeField(key) {

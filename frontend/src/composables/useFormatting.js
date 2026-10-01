@@ -74,3 +74,18 @@ export function categoryForUrl(url) {
   if (/docs\./.test(url)) return 'Documentation'
   return 'Other'
 }
+
+// Fixed columns of a resource list; they are not annotations
+const IDENTITY_FIELDS = new Set(['name', 'kind'])
+
+export function isIdentityField(key) {
+  return IDENTITY_FIELDS.has(key)
+}
+
+// The value of a `view/fields` / `view/sort` key for an instance of an API list (search, kind): `name` and
+// `kind` are properties of the instance, everything else is an annotation, which the API nests under
+// `metadata.annotations`.
+export function fieldValue(inst, key) {
+  if (isIdentityField(key)) return inst[key] ?? null
+  return inst.metadata?.annotations?.[key] ?? null
+}
