@@ -4,9 +4,9 @@ layer {
   stack {
     gap "150"
     component "auth_service" { label "Auth Service\nREST API" }
-    component "resource_checker_ext" { label "Resource Checker\nGRPC" }
-    component "vdc_pe" { label "VDC/PE\nREST DCM API" }
-    component "iam_access" { label "IAM Access\nREST API" }
+    component "checker_ext" { label "Resource Checker\nGRPC" }
+    component "inventory" { label "Inventory\nREST API" }
+    component "policy_service" { label "Policy Service\nREST API" }
     component "event_gateway" { label "Event Gateway\nGRPC" }
   }
   
@@ -18,7 +18,7 @@ layer {
       extend "true"
         
       actor "customer" { label "Customer" }
-      component "jwt" { label "JWT\nSub: User\nContract No" }
+      component "jwt" { label "JWT\nSub: User\nTenant Id" }
     }
   
     group "product_api_server" {
@@ -65,8 +65,8 @@ layer {
             }
 
             layer {
-              component "ic_api_config" { label "IC API\nConfig"; shape "file" }
-              component "ic_api_definition" { label "IC API\nDefinition"; shape "file" }
+              component "api_config" { label "Core API\nConfig"; shape "file" }
+              component "api_definition" { label "Core API\nDefinition"; shape "file" }
             }
           }
         }
@@ -100,7 +100,7 @@ layer {
     }
 
     layer {
-      component "ic_api_server_compiler" { label "IC API Server Compiler" }
+      component "api_compiler" { label "API Server Compiler" }
       component "config" { label "Config"; shape "file" }
     }
   }
@@ -113,11 +113,11 @@ loki -> logging { label "scraped by k8s" }
 ratelimit -> feature_flags_ext
 feature_flags -> feature_flags_ext
 authentication -> auth_service { label "check if token\nstill valid" }
-authorization -> iam_access { label "check\npolicy" }
+authorization -> policy_service { label "check\npolicy" }
 quota -> quota_system { label "create\nreservation" }
 
-validation_semantic -> resource_checker_ext { label "check if resource\nexists" }
-resource_checker_ext -> vdc_pe { label "checks" }
+validation_semantic -> checker_ext { label "check if resource\nexists" }
+checker_ext -> inventory { label "checks" }
 
 activity_log_publisher -> event_gateway
 lifecycle_event_publisher -> event_gateway { label "emit" }
@@ -126,7 +126,7 @@ core -> datastore { label "store/load" }
 
 backup_velero -> datastore
 backup_velero -> config
-ic_api_server_compiler -> config
-ic_api_server_compiler -> ic_api_definition
+api_compiler -> config
+api_compiler -> api_definition
 
 prometheus -> http_server_bottom { label "scraped" }
