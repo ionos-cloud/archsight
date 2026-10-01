@@ -90,7 +90,7 @@ module Archsight::Web::API::JsonHelpers
     {
       kind: kind,
       name: instance.name,
-      metadata: { annotations: render_annotations(instance.annotations) },
+      metadata: { annotations: render_annotations(instance.annotations, base: Archsight::Assets.base_dir_for(instance, resources_dir: Archsight.resources_dir)) },
       spec: serialize_spec(instance.spec),
       relations: extract_relations(instance),
       references: extract_references(instance),
@@ -106,10 +106,11 @@ module Archsight::Web::API::JsonHelpers
     Archsight::Helpers::DiagramBlocks.render_diagram(source, resolver: Archsight::Helpers::ResourceResolver.new(db))
   end
 
-  def render_annotations(annotations)
+  # @param base [String, nil] directory of the file the resource comes from, for the images of its markdown
+  def render_annotations(annotations, base: nil)
     annotations.each_with_object({}) do |(key, value), result|
       result[key] = if MARKDOWN_ANNOTATION_KEYS.include?(key) && value.is_a?(String)
-                      markdown(value)
+                      markdown(value, base: base)
                     else
                       value
                     end

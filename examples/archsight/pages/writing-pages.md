@@ -40,6 +40,19 @@ Markdown without frontmatter is ignored, so READMEs next to your resources stay 
 
 Append `|` and a text inside the brackets to change the link text. Prefer links over pasted facts. A description copied into a page is out of date the day after.
 
+## Images and diagrams
+
+Images and draw.io diagrams are plain files in the resources directory, usually next to the page that shows them. A page refers to them with a relative path:
+
+![A page file: frontmatter above the markdown body](frontmatter.svg)
+
+```markdown
+![A page file](frontmatter.svg)
+![Components](archsight-components.drawio)
+```
+
+Both files sit in the same folder as this page (`pages/`). `..` works too (`../diagrams/overview.drawio`), but a path can never leave the resources directory. Files of type png, jpg, gif, webp, avif, svg and drawio are served, through `/api/v1/assets/`, and `archsight lint` reports references that do not resolve.
+
 ## Lifecycle with `status`
 
 `status` is free text, this handbook uses `rfc` (open for comments), `wip` and `approved`. Filter with

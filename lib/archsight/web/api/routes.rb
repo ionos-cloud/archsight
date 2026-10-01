@@ -4,6 +4,7 @@ require "sinatra/base"
 require "sinatra/extension"
 require_relative "json_helpers"
 require_relative "page_helpers"
+require_relative "../../assets"
 
 module Archsight; end
 module Archsight::Web; end
@@ -106,6 +107,43 @@ module Archsight::Web::API::Routes
       end
     rescue Archsight::Query::QueryError => e
       json_error(e.message, status: 400, error_type: "QueryError", query: query)
+    end
+  end
+
+  # GET /api/v1/assets/*path - Images and draw.io diagrams that markdown embeds. The path is relative to the
+  # resources directory; only files of the allowed types inside it are ever served, never anything outside of
+  # it and never resource definitions (see Archsight::Assets). Outside, missing and not-served-type all
+  # answer the same 404.
+  get "/api/v1/assets/*" do
+    file = Archsight::Assets.file_for(params["splat"].first, resources_dir: Archsight.resources_dir)
+    json_error("Asset not found", status: 404, error_type: "NotFound") unless file
+    json_error("Asset is too large", status: 413, error_type: "PayloadTooLarge") if File.size(file) > Archsight::Assets::MAX_BYTES
+
+    type = Archsight::Assets.content_type(file)
+    headers "X-Content-Type-Options" => "nosniff"
+    return serve_diagram_asset(file) if Archsight::Assets.asd?(file)
+
+    # an SVG opened directly (not as <img>) must not be able to run script
+    headers "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; sandbox" if type == "image/svg+xml"
+    cache_control :public, :must_revalidate, max_age: 0
+    etag "#{File.mtime(file).to_i}-#{File.size(file)}"
+    send_file file, type: type, disposition: :inline
+  end
+
+  helpers do
+    # An .asd asset is served as what it stands for, the rendered SVG, not as its source. The ETag is the
+    # fingerprint of the source and of how its `resource` links resolve, so clients and the server's render
+    # cache keep it for as long as neither the file nor the linked resources changed.
+    def serve_diagram_asset(file)
+      source = File.read(file, encoding: "UTF-8")
+      resolver = Archsight::Helpers::ResourceResolver.new(db)
+      headers "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+      cache_control :public, :must_revalidate, max_age: 0
+      etag Archsight::Helpers::DiagramBlocks.fingerprint(source, resolver: resolver)
+      content_type "image/svg+xml"
+      Archsight::Helpers::DiagramBlocks.standalone_svg(source, resolver: resolver)
+    rescue Archsight::Diagram::Error => e
+      json_error("Diagram does not render: #{e.message}", status: 422, error_type: "DiagramError")
     end
   end
 

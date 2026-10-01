@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- Nothing may leave this server: the draw.io viewer knows URLs of viewer.diagrams.net, app.diagrams.net and
+       Google Fonts. This policy is what makes "fully self-hosted" a guarantee. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Diagram</title>
+  <style>
+    /* The page that embeds this one sets the height from what the viewer reports, so this document never
+       scrolls: a scrollbar here would only appear from rounding and take 15px of width. */
+    html, body { margin: 0; overflow: hidden; background: #fff; font: 14px/1.4 system-ui, sans-serif; color: #1f2933; }
+    /* the viewer sizes this container to the drawing, which can be a few pixels wider than the frame */
+    #diagram { width: 100% !important; max-width: 100%; }
+    #error { margin: 0; padding: 12px 16px; border-left: 4px solid #c62828; background: #fdecea; }
+    /* The bar the viewer adds (tagged by viewer-host.js): as wide as the frame, whose card already has a border,
+       with a single line below it instead of a box of its own. */
+    .archsight-toolbar {
+      left: 0 !important; right: 0 !important; width: auto !important;
+      box-sizing: border-box !important; border: 0 !important; border-bottom: 1px solid #d6d6d6 !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="diagram"></div>
+  <p id="error" role="alert" hidden></p>
+  <script src="viewer-config.js"></script>
+  <script src="viewer-static.min.js"></script>
+  <script src="viewer-host.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="170" viewBox="0 0 560 170" role="img" aria-label="A page file: frontmatter block above the markdown body">
+  <rect x="1" y="1" width="558" height="168" rx="8" fill="#fff" stroke="#9aa5b1"/>
+  <rect x="1" y="1" width="558" height="86" rx="8" fill="#e8f0fe"/>
+  <rect x="1" y="50" width="558" height="37" fill="#e8f0fe"/>
+  <g font-family="ui-monospace, Menlo, monospace" font-size="14" fill="#1f2933">
+    <text x="20" y="28">---</text>
+    <text x="20" y="48">title: Home</text>
+    <text x="20" y="68">status: approved</text>
+    <text x="20" y="88">---</text>
+    <text x="20" y="116"># Welcome</text>
+    <text x="20" y="140">Markdown, [[links]], diagrams and images.</text>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="12" fill="#3b5ba5">
+    <text x="440" y="30">frontmatter</text>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="12" fill="#52606d">
+    <text x="440" y="118">body</text>
+  </g>
+</svg>

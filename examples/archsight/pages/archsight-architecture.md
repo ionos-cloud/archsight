@@ -10,23 +10,15 @@ toc: yes
 # Archsight Architecture
 
 Archsight is modelled in Archsight. The components below are real resources in this example, click through
-to see their relations.
+to see their relations. The diagram is a plain `.asd` file next to this page, embedded like an image.
 
-```asd
-component "cli" { label "CLI"; resource "Archsight:CLI:Commands" }
-api "rest" { label "REST API"; resource "Archsight:Web:API" }
-api "mcp" { label "MCP server"; resource "Archsight:Query:MCP" }
-application "spa" { label "Web UI"; resource "Archsight:Web:Frontend" }
-component "query" { label "Query engine"; resource "Archsight:Query:Engine" }
-component "db" { label "Database"; resource "Archsight:Core:Database" }
-component "res" { label "Resources"; resource "Archsight:Core:Resources" }
-spa -> rest
-rest -> query
-mcp -> query
-cli -> db
-query -> db
-db -> res
-```
+![Archsight components](archsight-overview.asd)
+
+## Components and deployment
+
+A draw.io diagram with two pages, shown by the draw.io viewer that Archsight serves itself. Use the page selector in its toolbar for the second page:
+
+![Archsight components and deployment](archsight-components.drawio)
 
 ## Building blocks
 

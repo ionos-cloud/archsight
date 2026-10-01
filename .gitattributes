@@ -1,0 +1,8 @@
+
+# The vendored draw.io viewer (script/vendor_drawio) is upstream code: keep it out of language statistics and diffs
+lib/archsight/web/public/vendor/drawio/** linguist-vendored -diff
+lib/archsight/web/public/vendor/drawio/viewer.html -linguist-vendored diff
+lib/archsight/web/public/vendor/drawio/viewer-config.js -linguist-vendored diff
+lib/archsight/web/public/vendor/drawio/viewer-host.js -linguist-vendored diff
+lib/archsight/web/public/vendor/drawio/math-disabled/** -linguist-vendored diff
+lib/archsight/web/public/vendor/drawio/README.md -linguist-vendored diff

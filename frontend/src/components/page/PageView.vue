@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import '../../css/page.css'
 import { getPage } from '../../api/client.js'
 import { renderMermaidIn } from '../../composables/useMermaid.js'
+import { renderDrawioIn } from '../../composables/useDrawio.js'
 import { highlightCodeBlocks } from '../../composables/useHighlight.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { searchParams } from '../../composables/useSearchScope.js'
@@ -36,6 +37,7 @@ async function load() {
   if (bodyEl.value) {
     highlightCodeBlocks(bodyEl.value)
     renderMermaidIn(bodyEl.value)
+    renderDrawioIn(bodyEl.value)
   }
   updateActive()
 }

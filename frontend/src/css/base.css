@@ -179,6 +179,50 @@ article>header h2 {
   cursor: help;
 }
 
+/* Assets embedded in markdown (images, draw.io diagrams, see Archsight::Assets) */
+.content img {
+  max-width: 100%;
+  height: auto;
+}
+
+.broken-asset {
+  color: #dc2626;
+  text-decoration: underline wavy;
+  cursor: help;
+}
+
+/* draw.io diagrams are authored on white, so they get a frame like the asd diagrams */
+.drawio-diagram {
+  display: block;
+  margin: 0 0 1rem;
+  overflow: hidden;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  background: #fff;
+}
+
+.drawio-frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.drawio-open {
+  display: block;
+  padding: 2px 10px;
+  background: #fff;
+  font-size: 0.8em;
+  text-align: right;
+}
+
+.drawio-error {
+  padding: 0.5rem 1rem;
+  border-left: 4px solid #dc2626;
+  background: #fff;
+  color: #991b1b;
+}
+
 /* ===== Layer-based Icon Colors ===== */
 
 /* Strategy Layer - Orange */

@@ -29,7 +29,7 @@ module Archsight::Web::API::PageHelpers
       tags: Archsight::Resources::Page.annotation_matching("page/tags")&.value_for(page) || [],
       toc: annotations["page/toc"] == "yes" ? Archsight::PageTree.toc(body) : [],
       breadcrumb: tree.breadcrumb(page),
-      html: markdown(body),
+      html: markdown(body, base: Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir)),
       backlinks: page_backlinks(page)
     }
   end

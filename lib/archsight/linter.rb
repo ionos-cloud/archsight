@@ -94,6 +94,35 @@ module Archsight
         @errors << "#{instance.path_ref}: Markdown syntax error in annotation '#{key}': #{e.message}"
       end
       validate_diagram_blocks(instance, key, value)
+      validate_asset_images(instance, key, value)
+    end
+
+    # Every relative image must resolve to an asset that is served (see Archsight::Assets)
+    def validate_asset_images(instance, key, value)
+      resources_dir = @database.path if @database.respond_to?(:path)
+      base = resources_dir && Archsight::Assets.base_dir_for(instance, resources_dir: resources_dir)
+      return unless base
+
+      Helpers::AssetImages.audit(value, base_dir: base, resources_dir: resources_dir).each do |problem|
+        @errors << "#{instance.path_ref}: #{instance.klass} '#{instance.name}' #{asset_problem(problem)} in annotation '#{key}'"
+      end
+      validate_asd_assets(instance, key, value, base, resources_dir)
+    end
+
+    # An embedded .asd file must render like an ```asd block does
+    def validate_asd_assets(instance, key, value, base, resources_dir)
+      Helpers::AssetImages.asd_files(value, base_dir: base, resources_dir: resources_dir).each do |path, file|
+        render_diagram_source(instance, "#{path} (annotation '#{key}')", File.read(file, encoding: "UTF-8"))
+      end
+    end
+
+    def asset_problem(problem)
+      ref = problem[:reference].inspect
+      case problem[:status]
+      when :outside then "references asset #{ref} outside the resources directory"
+      when :type then "references #{ref}, a file type that is not served (#{Archsight::Assets::TYPES.keys.join(" ")})"
+      else "references asset #{ref} that does not exist (#{problem[:path]})"
+      end
     end
 
     # A diagram annotation must render, or the page shows an error box instead of the diagram
