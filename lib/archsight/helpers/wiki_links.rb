@@ -38,6 +38,11 @@ module Archsight
         partial ? kind_path(*partial) : :missing
       end
 
+      # The page a `[[Target]]` names (by name or title), nil if there is none
+      def page_for(target)
+        find_page(target)
+      end
+
       # Page path for a page name, nil if there is no such page
       def page_path(page)
         "/pages/#{ERB::Util.url_encode(page.name)}"

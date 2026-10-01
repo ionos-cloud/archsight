@@ -33,6 +33,13 @@ class ResourceResolverTest < Minitest::Test
     assert_equal :missing, @resolver.call("NoSuchKind/Dup")
   end
 
+  def test_find_answers_with_the_kind_and_name_or_why_not
+    assert_equal %w[ApplicationService Archsight:Web], @resolver.find("Archsight:Web")
+    assert_equal %w[ApplicationComponent Dup], @resolver.find("ApplicationComponent/Dup")
+    assert_equal :ambiguous, @resolver.find("Dup")
+    assert_equal :missing, @resolver.find("Nope")
+  end
+
   def test_the_path_is_escaped_but_keeps_colons
     assert_equal "/kinds/ApplicationService/instances/With%20Space%2Fx", @resolver.send(:path, "ApplicationService", "With Space/x")
     assert_includes @resolver.call("Archsight:Web"), "Archsight:Web"

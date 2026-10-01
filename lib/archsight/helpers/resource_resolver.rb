@@ -17,12 +17,19 @@ module Archsight
       end
 
       def call(reference)
+        found = find(reference)
+        found.is_a?(Array) ? path(*found) : found
+      end
+
+      # The resource a reference names.
+      # @return [Array(String, String), Symbol] `[kind, name]`, or `:missing` / `:ambiguous`
+      def find(reference)
         kind, name = reference.include?("/") ? reference.split("/", 2) : [nil, reference]
         matches = kind ? in_kind(kind, name) : in_any_kind(name)
         return :missing if matches.empty?
         return :ambiguous if matches.length > 1
 
-        path(*matches.first)
+        matches.first
       end
 
       private

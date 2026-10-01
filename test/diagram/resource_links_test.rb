@@ -58,6 +58,14 @@ class DiagramResourceLinksTest < Minitest::Test
     assert_equal Archsight::Diagram.render(source), Archsight::Diagram.render(source, resolver: RESOLVER)
   end
 
+  def test_a_resolver_may_answer_nil_for_a_resource_that_has_nowhere_to_link_to
+    unresolved = []
+    svg = Archsight::Diagram.render(SOURCE, resolver: ->(reference) { reference == "Archsight:Web" ? nil : RESOLVER.call(reference) }, unresolved: unresolved)
+
+    assert_equal %w[Nope Dup], unresolved.map { |u| u[:reference] }, "nil is neither a link nor a problem"
+    assert_equal 2, svg.scan('<a href="/kinds/ApplicationService/instances/Archsight:Web" class="asd-link">').length, "only the group still links"
+  end
+
   def test_a_resolver_returning_something_unexpected_is_an_error
     assert_raises(ArgumentError) { Archsight::Diagram.render(SOURCE, resolver: ->(_) { :oops }) }
   end

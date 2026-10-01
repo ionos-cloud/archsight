@@ -6,10 +6,11 @@ module Archsight
     # resolver the caller supplies -- the diagram renderer itself knows
     # nothing about the resource database.
     #
-    # `resolver.call(reference)` returns the link's URL, or `:missing` /
-    # `:ambiguous`. A resolved node gets a plain `link` (so it renders like
-    # any other linked node); an unresolved one is marked `broken` instead of
-    # failing the whole diagram, and reported to `unresolved` when given.
+    # `resolver.call(reference)` returns the link's URL, `nil` for a resource
+    # that exists but has nowhere to link to (the node stays as it is), or
+    # `:missing` / `:ambiguous`. A resolved node gets a plain `link` (so it
+    # renders like any other linked node); an unresolved one is marked `broken`
+    # instead of failing the whole diagram, and reported to `unresolved` when given.
     # Without a resolver (the standalone `archsight diagram`) a `resource`
     # attribute is valid but inert.
     module ResourceLinks
@@ -25,6 +26,8 @@ module Archsight
           next unless reference
 
           outcome = resolver.call(reference)
+          next if outcome.nil?
+
           if outcome.is_a?(String)
             node.attrs["link"] = outcome
           else
