@@ -52,3 +52,7 @@ comp -> art { relation "implements" }
 - Use a [[Searching and Queries|query]] as a health check, for example unowned artifacts:
   `TechnologyArtifact: -{maintainedBy}> none`.
 - Save such checks as `View` resources so they show up in the sidebar.
+- Write checks that need logic as an `Analysis`. This one lists components that nothing refers to, and it runs
+  every time this page opens:
+
+![[Analysis/Analysis:Component:Relations]]

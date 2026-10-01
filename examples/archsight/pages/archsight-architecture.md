@@ -35,6 +35,12 @@ A draw.io diagram with two pages, shown by the draw.io viewer that Archsight ser
 | [[ApplicationComponent/Archsight:Util:Linter]] | Model validation |
 | [[ApplicationComponent/Archsight:CLI:Commands]] | Thor commands |
 
+## Services
+
+The application services that bundle these blocks, straight from the model (a saved `View`, so the list is always current):
+
+![[View/View:ServiceDependencies]]
+
 ## Design decisions
 
 - **Files are the database.** Everything is loaded into memory on start and on reload. This keeps review,

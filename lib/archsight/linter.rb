@@ -35,7 +35,7 @@ module Archsight
       @errors << "#{page.path_ref}: Page '#{page.name}' is contained in several PageMenus (#{menus.map(&:name).join(", ")})" if menus.length > 1
 
       links = Archsight::Helpers::WikiLinks.new(@database)
-      page.annotations["page/content"].to_s.scan(Archsight::Helpers::WikiLinks::PATTERN).map { |match| match.first.strip }.each do |target|
+      page.annotations["page/content"].to_s.gsub(Archsight::Helpers::Embeds::PATTERN, "").scan(Archsight::Helpers::WikiLinks::PATTERN).map { |match| match.first.strip }.each do |target|
         next if links.resolve(target).is_a?(String)
 
         @errors << "#{page.path_ref}: Page '#{page.name}' links to unknown or ambiguous [[#{target}]]"
@@ -95,6 +95,15 @@ module Archsight
       end
       validate_diagram_blocks(instance, key, value)
       validate_asset_images(instance, key, value)
+      validate_embeds(instance, key, value)
+    end
+
+    # ![[View/Name]] and ![[Analysis/Name]] must name an existing view or analysis
+    def validate_embeds(instance, key, value)
+      Helpers::Embeds.new(@database).audit(value).each do |problem|
+        reason = Helpers::Embeds::REASONS.fetch(problem[:problem])
+        @errors << "#{instance.path_ref}: #{instance.klass} '#{instance.name}' embeds ![[#{problem[:reference]}]] in annotation '#{key}': #{reason}"
+      end
     end
 
     # Every relative image must resolve to an asset that is served (see Archsight::Assets)

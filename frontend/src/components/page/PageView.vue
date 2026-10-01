@@ -7,6 +7,8 @@ import { renderDrawioIn } from '../../composables/useDrawio.js'
 import { highlightCodeBlocks } from '../../composables/useHighlight.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { searchParams } from '../../composables/useSearchScope.js'
+import { useEmbeds } from '../../composables/useEmbeds.js'
+import EmbeddedKind from './EmbeddedKind.vue'
 
 const props = defineProps({
   name: String,
@@ -22,6 +24,7 @@ const hasProperties = computed(() => {
 })
 const minLevel = computed(() => Math.min(...(page.value?.toc.map((e) => e.level) || [1])))
 useInternalLinks(bodyEl)
+const { embeds, scanEmbeds } = useEmbeds()
 
 async function load() {
   error.value = null
@@ -39,6 +42,8 @@ async function load() {
     renderMermaidIn(bodyEl.value)
     renderDrawioIn(bodyEl.value)
   }
+  // views and analyses load on their own: the page is shown before they are done
+  scanEmbeds(bodyEl.value)
   updateActive()
 }
 
@@ -152,6 +157,9 @@ function scrollTo(id) {
     </aside>
 
     <div ref="bodyEl" class="page-body" v-html="page.html"></div>
+    <Teleport v-for="embed in embeds" :key="`${embed.kind}/${embed.name}`" :to="embed.el">
+      <EmbeddedKind :kind="embed.kind" :name="embed.name" />
+    </Teleport>
 
     <div v-if="page.backlinks.length" class="page-foot">
       <strong>Linked from</strong>

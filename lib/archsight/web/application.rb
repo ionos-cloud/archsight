@@ -153,7 +153,9 @@ class Archsight::Web::Application < Sinatra::Base
         trailing = match[url.length..]
         %(<a href="#{url}">#{url}</a>#{trailing})
       end
+      # ![[View/Name]] / ![[Analysis/Name]] become placeholders the frontend fills with the live content
       # Convert [[Target]] / [[Target|label]] wiki-style links to page and resource links
+      html = Archsight::Helpers::Embeds.new(db).render(html)
       html = Archsight::Helpers::WikiLinks.new(db).render(html)
       Archsight::Helpers::DiagramBlocks.restore(html, diagrams)
     end

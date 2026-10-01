@@ -17,19 +17,11 @@ module Archsight
         @resolver = resolver
       end
 
+      CODE = %r{(<pre\b.*?</pre>|<code\b.*?</code>)}m
+
+      # Code is shown as written, and `![[...]]` is an embed (see Embeds), not a link
       def render(html)
-        html.gsub(PATTERN) do
-          target = ::Regexp.last_match(1).strip
-          explicit_label = ::Regexp.last_match(2)&.strip
-          href = resolve(target)
-          label = explicit_label || default_label(target)
-          text = ERB::Util.html_escape(label)
-          if href.is_a?(String)
-            %(<a href="#{ERB::Util.html_escape(href)}">#{text}</a>)
-          else
-            %(<span class="broken-link" title="#{href == :ambiguous ? "Ambiguous reference" : "Resource not found"}">#{text}</span>)
-          end
-        end
+        html.split(CODE).each_with_index.map { |part, index| index.odd? ? part : render_links(part) }.join
       end
 
       # @return [String, Symbol] link path, or :missing / :ambiguous
@@ -52,6 +44,21 @@ module Archsight
       end
 
       private
+
+      def render_links(html)
+        html.gsub(/(?<!!)#{PATTERN.source}/) do
+          target = ::Regexp.last_match(1).strip
+          explicit_label = ::Regexp.last_match(2)&.strip
+          href = resolve(target)
+          label = explicit_label || default_label(target)
+          text = ERB::Util.html_escape(label)
+          if href.is_a?(String)
+            %(<a href="#{ERB::Util.html_escape(href)}">#{text}</a>)
+          else
+            %(<span class="broken-link" title="#{href == :ambiguous ? "Ambiguous reference" : "Resource not found"}">#{text}</span>)
+          end
+        end
+      end
 
       # Pages are shown by title, everything else by the text as written
       def default_label(target)

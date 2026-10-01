@@ -77,3 +77,11 @@ metadata:
     view/fields: activity/status,repository/artifacts
     view/sort: -name
 ```
+
+A view can be shown inside a page with `![[View/Name]]`. The page appears at once and the list loads in its own box:
+
+![[View/View:ServiceDependencies]]
+
+An analysis is embedded the same way and runs when the page opens:
+
+![[Analysis/Analysis:Service:Count]]
