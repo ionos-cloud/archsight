@@ -1466,10 +1466,10 @@ class DiagramRendererTest < Minitest::Test
     assert_includes REXML::XPath.first(doc, "//path[@id='asd-tree-c__trunk']").attributes["class"].split, "asd-tree-line"
   end
 
-  def test_keeps_the_dp_cp_view_and_ic_api_server_labels_off_their_neighbours_lines
+  def test_keeps_the_layered_planes_and_service_internals_labels_off_their_neighbours_lines
     {
-      "dp_cp_view" => %w[asd-edge-saas_cp__slim_cp asd-edge-customer__saas_api],
-      "ic_api_server" => %w[asd-edge-quota__quota_system asd-edge-prometheus__http_server_bottom]
+      "layered_planes" => %w[asd-edge-cp_a__cp_base asd-edge-consumer__api_a],
+      "service_internals" => %w[asd-edge-quota__quota_system asd-edge-prometheus__http_server_bottom]
     }.each do |example, owners|
       source = File.read(File.expand_path("fixtures/#{example}.asd", __dir__))
       doc = REXML::Document.new(Archsight::Diagram.render(source, relation_filter: Archsight::Diagram::Relations.names))
@@ -1696,8 +1696,8 @@ class DiagramRendererTest < Minitest::Test
     assert_operator (start_y - end_y).abs, :>=, Archsight::Diagram::EdgeRouting::PORT_MIN_GAP
   end
 
-  def test_routes_the_dp_cp_view_example_s_edges_outside_their_own_boxes_on_ports_of_their_own
-    source = File.read(File.expand_path("fixtures/dp_cp_view.asd", __dir__))
+  def test_routes_the_layered_planes_example_s_edges_outside_their_own_boxes_on_ports_of_their_own
+    source = File.read(File.expand_path("fixtures/layered_planes.asd", __dir__))
     graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
     renderer = Archsight::Diagram::Renderer.new(graph, Archsight::Diagram::Layout.compute(graph))
     routing = renderer.instance_variable_get(:@edge_routing)
@@ -1707,17 +1707,17 @@ class DiagramRendererTest < Minitest::Test
     routing.assign_ports!(paths)
     metrics = Archsight::Diagram::EdgeRouter::PathMetrics
 
-    paas_to_iaas = paths.find { |ep| ep.edge.from.id == "paas_cp" && ep.edge.to.id == "iaas_cp" }
+    tier_b_to_c = paths.find { |ep| ep.edge.from.id == "cp_b" && ep.edge.to.id == "cp_c" }
 
-    refute metrics.enters_interior?(paas_to_iaas.points, paas_to_iaas.from_box)
-    refute metrics.enters_interior?(paas_to_iaas.points, paas_to_iaas.to_box)
+    refute metrics.enters_interior?(tier_b_to_c.points, tier_b_to_c.from_box)
+    refute metrics.enters_interior?(tier_b_to_c.points, tier_b_to_c.to_box)
 
-    # The undercloud (slim_cp's boundary) is declared last, so it sits to
+    # The base boundary (cp_base's) is declared last, so it sits to
     # the right of the other layers and their edges share its left side.
-    into_slim_cp = paths.select { |ep| ep.edge.to.id == "slim_cp" && ep.to_box.side_of(ep.points.last) == :left }.map { |ep| ep.points.last[1] }
+    into_cp_base = paths.select { |ep| ep.edge.to.id == "cp_base" && ep.to_box.side_of(ep.points.last) == :left }.map { |ep| ep.points.last[1] }
 
-    assert_operator into_slim_cp.length, :>=, 2
-    into_slim_cp.combination(2).each do |y1, y2|
+    assert_operator into_cp_base.length, :>=, 2
+    into_cp_base.combination(2).each do |y1, y2|
       assert_operator (y1 - y2).abs, :>=, Archsight::Diagram::EdgeRouting::PORT_MIN_GAP
     end
   end

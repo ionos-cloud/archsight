@@ -108,7 +108,7 @@ class DiagramLegendTest < Minitest::Test
   end
 
   def test_keeps_every_line_out_of_the_legend
-    source = File.read(File.expand_path("fixtures/dp_cp_view.asd", __dir__))
+    source = File.read(File.expand_path("fixtures/layered_planes.asd", __dir__))
     doc = REXML::Document.new(Archsight::Diagram.render(source, relation_filter: Archsight::Diagram::Relations.names))
     bg = REXML::XPath.first(doc, "//rect[@id='asd-legend__bg']")
     x, y, w, h = %w[x y width height].map { |a| bg.attributes[a].to_f }
