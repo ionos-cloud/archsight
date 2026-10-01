@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Vendors the draw.io viewer (https://github.com/jgraph/drawio, Apache-2.0) into
+# lib/archsight/web/public/vendor/drawio so Archsight serves it itself and never loads anything
+# from viewer.diagrams.net.
+#
+#   script/vendor_drawio            # the version in vendor/drawio/VERSION (v31.5.3 if there is none)
+#   script/vendor_drawio v31.5.3    # a specific upstream tag (then commit the result)
+#
+# Only the files the static viewer needs are copied: the viewer script, styles, shapes, ALL stencils,
+# the icon images, the mxGraph images and the English strings. The files we wrote ourselves in that
+# directory (viewer.html, viewer-host.js, README.md) are left alone.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+target="$root/lib/archsight/web/public/vendor/drawio"
+default_tag="v31.5.3"
+tag="${1:-$(cat "$target/VERSION" 2>/dev/null || echo "$default_tag")}"
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+
+echo "Cloning jgraph/drawio $tag (sparse, only the viewer files)..."
+git clone --quiet --depth 1 --branch "$tag" --filter=blob:none --no-checkout \
+  https://github.com/jgraph/drawio.git "$work/drawio"
+cd "$work/drawio"
+webapp=src/main/webapp
+git sparse-checkout set --no-cone \
+  "/LICENSE" \
+  "/$webapp/js/viewer-static.min.js" \
+  "/$webapp/styles/" "/$webapp/shapes/" "/$webapp/stencils/" "/$webapp/img/" \
+  "/$webapp/mxgraph/images/" "/$webapp/resources/dia.txt"
+git checkout --quiet "$tag"
+
+echo "Copying into ${target#"$root"/}..."
+mkdir -p "$target"
+for path in styles shapes stencils img mxgraph resources viewer-static.min.js LICENSE; do
+  rm -rf "${target:?}/$path"
+done
+cp "$webapp/js/viewer-static.min.js" "$target/viewer-static.min.js"
+for dir in styles shapes stencils img; do cp -R "$webapp/$dir" "$target/$dir"; done
+mkdir -p "$target/mxgraph" "$target/resources"
+cp -R "$webapp/mxgraph/images" "$target/mxgraph/images"
+cp "$webapp/resources/dia.txt" "$target/resources/dia.txt"
+cp LICENSE "$target/LICENSE"
+printf '%s\n' "$tag" > "$target/VERSION"
+
+echo "Done: $(find "$target" -type f | wc -l | tr -d ' ') files, $(du -sh "$target" | cut -f1)."
