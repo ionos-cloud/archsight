@@ -279,12 +279,70 @@ module Archsight
       exit status unless status.zero?
     end
 
+    desc "export [PAGE...]", "Export wiki pages to another system"
+    long_desc <<~DESC
+      Publishes wiki pages to the system named by --to. With no PAGE, every page that links to a target
+      page (for confluence: `confluence: <page URL>` in its frontmatter) is exported.
+
+      confluence: a page is only overwritten when Confluence still holds what the last export wrote. Pages
+      never exported before, or edited in Confluence since, are reported as blocked and not exported until
+      --force. The token is read from CONFLUENCE_TOKEN or the `token:` field of
+      ~/.config/architecture/confluence.yaml (see --credentials); `drawio: true` there (or --drawio) says the
+      Confluence has the draw.io app, then diagrams become draw.io macros instead of images. Exits with 1 if a page
+      was blocked or failed.
+    DESC
+    option :to, type: :string, required: true, desc: "Export target: confluence"
+    option :force, type: :boolean, default: false, desc: "Overwrite pages that were edited in the target since the last export"
+    option :lock, type: :boolean, default: true, desc: "Restrict editing of exported pages to the exporting user (--no-lock to skip)"
+    option :dry_run, type: :boolean, default: false, desc: "Show what would be exported without writing anything"
+    option :credentials, type: :string, desc: "Credentials file (default: ~/.config/architecture/confluence.yaml)"
+    option :drawio, type: :boolean, desc: "The target has the draw.io app: export diagrams as draw.io macros, else as images (default: `drawio:` in the credentials file)"
+    def export(*names)
+      configure_resources
+      require "archsight/database"
+      require "archsight/export"
+
+      db = Archsight::Database.new(Archsight.resources_dir, compute_annotations: false)
+      begin
+        db.reload!
+      rescue Archsight::ResourceError => e
+        display_error_with_context(e.to_s)
+        exit 1
+      end
+
+      settings = nil
+      if options[:credentials]
+        require "archsight/export/confluence/credentials"
+        settings = Archsight::Export::Confluence::Credentials.load(path: options[:credentials])
+      end
+      exporter = Archsight::Export.exporter_for(options[:to]).new(
+        database: db, resources_dir: Archsight.resources_dir, force: options[:force], lock: options[:lock],
+        dry_run: options[:dry_run], settings: settings, drawio: options[:drawio]
+      )
+      results = exporter.run(names)
+      print_export_results(results)
+      exit 1 if results.any? { |r| %i[blocked failed].include?(r.status) }
+    rescue Archsight::Export::Error => e
+      warn "Error: #{e.message}"
+      exit 1
+    end
+
     desc "module SUBCOMMAND", "Module analysis commands (e.g. module graph PATH)"
     subcommand "module", ModuleCLI
 
     default_task :version
 
     private
+
+    def print_export_results(results)
+      labels = { exported: "exported", would_export: "would export", unchanged: "unchanged", blocked: "NOT EXPORTED (blocked)",
+                 skipped: "skipped", failed: "NOT EXPORTED (failed)" }
+      width = results.map { |r| labels.fetch(r.status).length }.max.to_i
+      results.each { |r| puts "#{labels.fetch(r.status).ljust(width)}  #{r.page}: #{r.message}" }
+      counts = results.group_by(&:status).transform_values(&:count)
+      puts counts.map { |status, count| "#{count} #{labels.fetch(status)}" }.join(", ") unless results.empty?
+      puts "Nothing to export: no page has a `confluence:` link." if results.empty?
+    end
 
     def configure_resources
       Archsight.resources_dir = options[:resources] if options[:resources]

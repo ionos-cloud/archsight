@@ -283,7 +283,7 @@ reports it with the node and line (a rename or typo is caught the same way
 a broken `[[Name]]` link would be). Standalone `archsight diagram` has no
 resource database, so there `resource` is accepted but inert -- no link and
 no broken styling. Library users pass a `resolver:` to `Diagram.render`
-(any `call(reference)` returning a URL, `:missing` or `:ambiguous`, see
+(any `call(reference)` returning a URL, `nil` for a resource that exists but has nowhere to link to (the node stays as it is), `:missing` or `:ambiguous`, see
 `Archsight::Helpers::ResourceResolver`) and, to collect failures, `unresolved: []`.
 
 ## Diagrams in markdown
