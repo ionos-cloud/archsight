@@ -349,7 +349,7 @@ paths:
         resources directory is `/api/v1/assets/pages/img/a.png`.
 
         **Only these files are ever served**: regular files inside the resources directory with one of the types
-        `png`, `jpg`, `jpeg`, `gif`, `webp`, `avif`, `svg` and `drawio`, at most 25 MB. Resource definitions
+        `png`, `jpg`, `jpeg`, `gif`, `webp`, `avif`, `svg`, `drawio` and `asd` (Archsight diagram source, served as the rendered `image/svg+xml`; `422` if it does not render), at most 25 MB. Resource definitions
         (`.yaml`, `.md`), sources and any other type are never served. The path is normalized (`.` and `..` are
         resolved) and rejected if it would leave the resources directory, is absolute, has a backslash, a control
         character or a segment that starts with a dot (`.git`, `.env`). Symlinks that point outside of the resources
@@ -357,7 +357,8 @@ paths:
         response does not reveal which files exist.
 
         Responses carry `X-Content-Type-Options: nosniff` and `ETag` (conditional requests answer `304`). An SVG also
-        gets a `Content-Security-Policy` that forbids script when it is opened directly.
+        gets a `Content-Security-Policy` that forbids script when it is opened directly. `Range` requests are
+        supported (`206`), `HEAD` answers like `GET` without a body.
       operationId: getAsset
       tags:
         - Assets
@@ -365,14 +366,84 @@ paths:
         - name: path
           in: path
           required: true
-          allowReserved: true
-          description: Path relative to the resources directory, with `/` between the segments
+          description: Path relative to the resources directory, with a literal `/` between the segments (not `%2F`)
           schema:
             type: string
           example: pages/img/overview.png
+        - name: If-None-Match
+          in: header
+          required: false
+          description: The `ETag` of a copy the client has; a match answers `304`
+          schema:
+            type: string
+        - name: Range
+          in: header
+          required: false
+          description: A byte range, e.g. `bytes=0-99`; answered with `206`
+          schema:
+            type: string
       responses:
         '200':
           description: The file
+          headers:
+            ETag:
+              description: '`"<mtime>-<size>"`; send it back as `If-None-Match`'
+              schema:
+                type: string
+            Last-Modified:
+              schema:
+                type: string
+            Cache-Control:
+              description: Always `public, must-revalidate, max-age=0`, so clients revalidate with the `ETag`
+              schema:
+                type: string
+            Content-Disposition:
+              description: '`inline; filename="..."`'
+              schema:
+                type: string
+            X-Content-Type-Options:
+              description: Always `nosniff`
+              schema:
+                type: string
+            Content-Security-Policy:
+              description: "Only on SVG: `default-src 'none'; style-src 'unsafe-inline'; sandbox` (no script when opened directly)"
+              schema:
+                type: string
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            image/avif:
+              schema:
+                type: string
+                format: binary
+            image/svg+xml:
+              schema:
+                type: string
+                format: binary
+            application/xml:
+              schema:
+                type: string
+                description: A draw.io file (`.drawio`)
+        '206':
+          description: The requested byte range of the file
+          headers:
+            Content-Range:
+              schema:
+                type: string
           content:
             image/png:
               schema:
@@ -405,7 +476,10 @@ paths:
         '304':
           description: Not modified (the `ETag` matched)
         '404':
-          description: No such servable asset (outside of the resources directory, missing or a type that is not served)
+          description: |
+            No such servable asset (outside of the resources directory, missing or a type that is not served), also
+            for methods other than `GET`/`HEAD`. Paths that the web server rejects before routing (for example
+            `..%2f` traversal) get its plain `text/html` 404 instead of the JSON error.
           content:
             application/json:
               schema:
@@ -413,12 +487,73 @@ paths:
               example:
                 error: NotFound
                 message: Asset not found
+            text/html:
+              schema:
+                type: string
+              example: <h1>Not Found</h1>
+        '422':
+          description: An `.asd` file that does not render (the message has the line)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: DiagramError
+                message: 'Diagram does not render: unexpected token on line 1'
         '413':
           description: The file is larger than 25 MB
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                error: PayloadTooLarge
+                message: Asset is too large
+
+    head:
+      summary: Headers of an asset
+      description: Same as `GET` without the body (type, size, `ETag`, ...).
+      operationId: headAsset
+      tags:
+        - Assets
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Path relative to the resources directory
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The file exists and is served
+          headers:
+            ETag:
+              description: '`"<mtime>-<size>"`; send it back as `If-None-Match`'
+              schema:
+                type: string
+            Last-Modified:
+              schema:
+                type: string
+            Cache-Control:
+              description: Always `public, must-revalidate, max-age=0`, so clients revalidate with the `ETag`
+              schema:
+                type: string
+            Content-Disposition:
+              description: '`inline; filename="..."`'
+              schema:
+                type: string
+            X-Content-Type-Options:
+              description: Always `nosniff`
+              schema:
+                type: string
+            Content-Security-Policy:
+              description: "Only on SVG: `default-src 'none'; style-src 'unsafe-inline'; sandbox` (no script when opened directly)"
+              schema:
+                type: string
+        '304':
+          description: Not modified
+        '404':
+          description: No such servable asset
 
   /api/v1/diagrams/render:
     post:

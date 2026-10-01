@@ -82,11 +82,25 @@ module Archsight
 
       # @raise [Archsight::Diagram::Error] if the source does not render
       def render_svg(source, resolver: nil)
-        key = ::Digest::SHA256.hexdigest([source, resolutions(source, resolver)].inspect)[0, 12]
+        key = fingerprint(source, resolver: resolver)
         cached(key) do
           svg = Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver)
           %(<figure class="asd-diagram">#{svg.sub(/\A<\?xml[^>]*\?>\s*/, "")}</figure>)
         end
+      end
+
+      # The cache key of a diagram: its source plus how each `resource` reference resolves right now. It
+      # changes exactly when the rendered diagram would, so it is also a good ETag.
+      def fingerprint(source, resolver: nil)
+        ::Digest::SHA256.hexdigest([source, resolutions(source, resolver)].inspect)[0, 12]
+      end
+
+      # A diagram as a standalone SVG document (what the assets API serves for an .asd file), cached by
+      # fingerprint like the inline diagrams.
+      # @raise [Archsight::Diagram::Error] if the source does not render
+      def standalone_svg(source, resolver: nil)
+        key = fingerprint(source, resolver: resolver)
+        cached("svg-#{key}") { Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver) }
       end
 
       def resolutions(source, resolver)

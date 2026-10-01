@@ -106,6 +106,14 @@ module Archsight
       Helpers::AssetImages.audit(value, base_dir: base, resources_dir: resources_dir).each do |problem|
         @errors << "#{instance.path_ref}: #{instance.klass} '#{instance.name}' #{asset_problem(problem)} in annotation '#{key}'"
       end
+      validate_asd_assets(instance, key, value, base, resources_dir)
+    end
+
+    # An embedded .asd file must render like an ```asd block does
+    def validate_asd_assets(instance, key, value, base, resources_dir)
+      Helpers::AssetImages.asd_files(value, base_dir: base, resources_dir: resources_dir).each do |path, file|
+        render_diagram_source(instance, "#{path} (annotation '#{key}')", File.read(file, encoding: "UTF-8"))
+      end
     end
 
     def asset_problem(problem)

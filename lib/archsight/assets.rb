@@ -4,7 +4,7 @@ require "erb"
 require "pathname"
 
 module Archsight
-  # Assets are the files that markdown can embed: images and draw.io diagrams. "assets" is the name of
+  # Assets are the files that markdown can embed: images, draw.io diagrams and Archsight diagrams (.asd). "assets" is the name of
   # the one door to them, the API (`/api/v1/assets/<path>`); on disk they are ordinary files of the
   # resources directory, wherever they belong, typically next to the markdown that uses them:
   #
@@ -31,9 +31,11 @@ module Archsight
       ".webp" => "image/webp",
       ".avif" => "image/avif",
       ".svg" => "image/svg+xml",
-      ".drawio" => "application/xml"
+      ".drawio" => "application/xml",
+      ".asd" => "image/svg+xml" # served rendered, see the assets route
     }.freeze
     DRAWIO = ".drawio"
+    ASD = ".asd"
 
     SCHEME = /\A[A-Za-z][A-Za-z0-9+.-]*:/
     UNSAFE_CHARS = /[\x00-\x1f\x7f\\]/
@@ -119,6 +121,10 @@ module Archsight
 
     def drawio?(path)
       File.extname(path).casecmp?(DRAWIO)
+    end
+
+    def asd?(path)
+      File.extname(path).casecmp?(ASD)
     end
 
     # URL under which the API serves a normalized asset path

@@ -217,6 +217,27 @@ class AssetImagesTest < Minitest::Test
     end
   end
 
+  def test_an_asd_file_becomes_an_asd_code_block_with_escaped_source
+    with_tree do |dir|
+      File.write(File.join(dir, "pages/flow.asd"), %(component "a" { label "A & <B>" }\n))
+      out = rewrite('<p><img src="../flow.asd" alt="Flow" /></p>', dir)
+
+      assert_includes out, '<pre><code class="language-asd">component &quot;a&quot; { label &quot;A &amp; &lt;B&gt;&quot; }'
+      refute_includes out, "<img"
+    end
+  end
+
+  def test_an_oversize_or_binary_asd_file_is_a_broken_marker
+    with_tree do |dir|
+      File.write(File.join(dir, "pages/big.asd"), "x" * (Images::MAX_ASD + 1))
+      File.binwrite(File.join(dir, "pages/bin.asd"), "\xff\xfe")
+
+      assert_includes rewrite('<img src="../big.asd" alt="" />', dir), 'class="broken-asset"'
+      assert_includes rewrite('<img src="../bin.asd" alt="" />', dir), 'class="broken-asset"'
+      assert_includes rewrite('<img src="../nope.asd" alt="" />', dir), "no such file: pages/nope.asd"
+    end
+  end
+
   def test_a_drawio_file_becomes_a_placeholder_for_the_viewer
     with_tree do |dir|
       out = rewrite('<img src="../../fop/bar.drawio" alt="Flow &lt;1&gt;" />', dir)
@@ -324,6 +345,126 @@ class AssetsApiTest < Minitest::Test
     Archsight.resources_dir = @previous_dir
     app.instance_variable_set(:@database, @previous_db)
     FileUtils.rm_rf(@outer)
+  end
+
+  def spec_operation(verb)
+    spec = YAML.load_file(File.expand_path("../lib/archsight/web/api/openapi/spec.yaml", __dir__))
+    spec.dig("paths", "/api/v1/assets/{path}", verb)
+  end
+
+  def test_openapi_declares_the_headers_and_statuses_the_endpoint_answers_with
+    get "/api/v1/assets/pages/img/logo.svg"
+    declared = spec_operation("get").dig("responses", "200", "headers").keys
+
+    served = last_response.headers.keys.map(&:downcase)
+    undeclared = %w[etag last-modified cache-control content-disposition x-content-type-options content-security-policy]
+                 .select { |h| served.include?(h) } - declared.map(&:downcase)
+
+    assert_empty undeclared
+    assert_includes spec_operation("get").dig("responses", "200", "content").keys, last_response.content_type.split(";").first
+
+    get "/api/v1/assets/pages/img/a.png", {}, { "HTTP_RANGE" => "bytes=0-3" }
+
+    assert_equal 206, last_response.status
+    assert_includes spec_operation("get")["responses"], "206"
+    assert_includes spec_operation("get")["responses"].dig("206", "headers"), "Content-Range"
+
+    head "/api/v1/assets/pages/img/a.png"
+
+    assert_predicate last_response, :ok?
+    refute_nil spec_operation("head")
+  end
+
+  def test_an_asd_file_is_served_as_the_rendered_svg
+    File.write(File.join(@dir, "pages/flow.asd"), %(component "a" { label "Hello" }\n))
+    get "/api/v1/assets/pages/flow.asd"
+
+    assert_predicate last_response, :ok?
+    assert_equal "image/svg+xml", last_response.content_type.split(";").first
+    assert_includes last_response.body, "<svg"
+    assert_includes last_response.body, "Hello"
+    refute_includes last_response.body, %(label "Hello")
+    assert_equal "nosniff", last_response.headers["X-Content-Type-Options"]
+    assert_includes last_response.headers["Content-Security-Policy"], "sandbox"
+  end
+
+  def test_a_rendered_asd_file_is_cached_until_it_changes
+    path = File.join(@dir, "pages/flow.asd")
+    File.write(path, %(component "a" { label "One" }\n))
+    get "/api/v1/assets/pages/flow.asd"
+    etag = last_response.headers["ETag"]
+    get "/api/v1/assets/pages/flow.asd", {}, { "HTTP_IF_NONE_MATCH" => etag }
+
+    assert_equal 304, last_response.status
+
+    renders = 0
+    original = Archsight::Diagram.method(:render)
+    Archsight::Diagram.define_singleton_method(:render) { |*args, **kw| renders += original.call(*args, **kw) }
+    begin
+      get "/api/v1/assets/pages/flow.asd"
+      get "/api/v1/assets/pages/flow.asd"
+    ensure
+      Archsight::Diagram.define_singleton_method(:render, original)
+    end
+
+    assert_equal 0, renders, "unchanged file: served from the render cache"
+
+    File.write(path, %(component "a" { label "Two" }\n))
+    get "/api/v1/assets/pages/flow.asd", {}, { "HTTP_IF_NONE_MATCH" => etag }
+
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "Two"
+    refute_equal etag, last_response.headers["ETag"]
+  end
+
+  def test_an_asd_file_that_does_not_render_is_422_as_documented
+    File.write(File.join(@dir, "pages/bad.asd"), "component {{{")
+    get "/api/v1/assets/pages/bad.asd"
+
+    assert_equal 422, last_response.status
+    assert_equal "DiagramError", JSON.parse(last_response.body)["error"]
+    assert_includes spec_operation("get")["responses"], "422"
+  end
+
+  def test_an_embedded_asd_file_renders_as_a_diagram_in_the_page
+    File.write(File.join(@dir, "pages/flow.asd"), %(component "a" { label "Hello" }\n))
+    File.write(File.join(@dir, "pages/handbook/home.md"), "---\ntitle: Home\n---\n\n![Flow](../flow.asd)\n")
+    app.instance_variable_set(:@database, Archsight::Database.new(@dir).tap(&:reload!))
+    get "/api/v1/pages/home"
+
+    assert_predicate last_response, :ok?
+    html = JSON.parse(last_response.body)["html"]
+
+    assert_includes html, '<figure class="asd-diagram">'
+    assert_includes html, "Hello"
+  end
+
+  def test_openapi_404_shapes_match_the_responses
+    get "/api/v1/assets/nope.png"
+    json = spec_operation("get").dig("responses", "404", "content")
+
+    assert_equal "NotFound", JSON.parse(last_response.body)["error"]
+    assert_equal json.dig("application/json", "example"), JSON.parse(last_response.body)
+    assert_includes json.keys, "text/html"
+  end
+
+  def with_max_bytes(limit)
+    original = Archsight::Assets::MAX_BYTES
+    Archsight::Assets.send(:remove_const, :MAX_BYTES)
+    Archsight::Assets.const_set(:MAX_BYTES, limit)
+    yield
+  ensure
+    Archsight::Assets.send(:remove_const, :MAX_BYTES)
+    Archsight::Assets.const_set(:MAX_BYTES, original)
+  end
+
+  def test_a_file_over_the_size_cap_is_413_as_documented
+    File.binwrite(File.join(@dir, "pages/img/huge.png"), "x")
+    with_max_bytes(0) { get "/api/v1/assets/pages/img/huge.png" }
+
+    assert_equal 413, last_response.status
+    assert_equal spec_operation("get").dig("responses", "413", "content", "application/json", "example"),
+                 JSON.parse(last_response.body).slice("error", "message")
   end
 
   def test_serves_an_image_with_safe_headers_and_revalidation
@@ -451,6 +592,15 @@ class AssetsLintTest < Minitest::Test
     assert(errors.any? { |e| e.include?(%(references asset "../../../etc/passwd.png" outside the resources directory)) })
     assert(errors.any? { |e| e.include?('references "../doc.pdf", a file type that is not served (.png') })
     refute(errors.any? { |e| e.include?("https://x.y/a.png") })
+  end
+
+  def test_embedded_asd_files_must_render
+    page = "---\ntitle: Home\n---\n\n![ok](../ok.asd)\n![bad](../bad.asd)\n![gone](../gone.asd)\n"
+    errors = lint("pages/handbook/home.md" => page, "pages/ok.asd" => %(component "a" { label "A" }\n), "pages/bad.asd" => "component {{{")
+
+    assert(errors.any? { |e| e.include?("Diagram error") && e.include?("pages/bad.asd") })
+    assert(errors.any? { |e| e.include?("that does not exist (pages/gone.asd)") })
+    refute(errors.any? { |e| e.include?("ok.asd") })
   end
 
   def test_existing_images_pass

@@ -121,11 +121,30 @@ module Archsight::Web::API::Routes
 
     type = Archsight::Assets.content_type(file)
     headers "X-Content-Type-Options" => "nosniff"
+    return serve_diagram_asset(file) if Archsight::Assets.asd?(file)
+
     # an SVG opened directly (not as <img>) must not be able to run script
     headers "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; sandbox" if type == "image/svg+xml"
     cache_control :public, :must_revalidate, max_age: 0
     etag "#{File.mtime(file).to_i}-#{File.size(file)}"
     send_file file, type: type, disposition: :inline
+  end
+
+  helpers do
+    # An .asd asset is served as what it stands for, the rendered SVG, not as its source. The ETag is the
+    # fingerprint of the source and of how its `resource` links resolve, so clients and the server's render
+    # cache keep it for as long as neither the file nor the linked resources changed.
+    def serve_diagram_asset(file)
+      source = File.read(file, encoding: "UTF-8")
+      resolver = Archsight::Helpers::ResourceResolver.new(db)
+      headers "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+      cache_control :public, :must_revalidate, max_age: 0
+      etag Archsight::Helpers::DiagramBlocks.fingerprint(source, resolver: resolver)
+      content_type "image/svg+xml"
+      Archsight::Helpers::DiagramBlocks.standalone_svg(source, resolver: resolver)
+    rescue Archsight::Diagram::Error => e
+      json_error("Diagram does not render: #{e.message}", status: 422, error_type: "DiagramError")
+    end
   end
 
   # POST /api/v1/diagrams/render - Render .asd source for the editor preview. A diagram that does not

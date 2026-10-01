@@ -63,6 +63,7 @@ and a relative path:
 ```markdown
 ![Overview](overview.png)
 ![Deployment](../fop/deployment.drawio)
+![Flow](flow.asd)
 ```
 
 A reference is resolved against the folder of the file that contains it, and the result is a path relative to the
@@ -76,13 +77,15 @@ resources directory:
 
 This works in pages and in the `architecture/description` of any resource (relative to the YAML file that defines
 it). Images are shown inline; a `.drawio` file is shown by the draw.io viewer, read-only, with its page selector,
-zoom and layer controls and a link to the file.
+zoom and layer controls and a link to the file. An `.asd` file ([Archsight diagram](/doc/diagram)) is rendered like an
+```` ```asd ```` block, with links to your resources, and the lint reports it if it does not render. The API serves the rendered SVG
+for it, not the source.
 
 "Assets" is the name of the only way to them: the browser never reads these files directly, it asks
 `/api/v1/assets/<path>` (the path of the file relative to the resources directory), and that endpoint decides what
 is served:
 
-- **Types**: png, jpg, gif, webp, avif, svg and drawio, up to 25 MB. Everything else is not served, in particular
+- **Types**: png, jpg, gif, webp, avif, svg, drawio and asd, up to 25 MB. Everything else is not served, in particular
   the resource definitions themselves (`.yaml`, `.md`), sources and anything with an unknown type.
 - **Nothing outside the resources directory.** `..` is resolved first and a path that would leave the directory is
   rejected, as are absolute paths, backslashes, hidden files and folders (`.git`, `.env`) and symlinks that point

@@ -38,6 +38,7 @@ spec:
     pages:
       - writing-pages
       - diagrams-in-pages
+      - linux-io-stack
       - importing-data
 ---
 apiVersion: architecture/v1alpha1
