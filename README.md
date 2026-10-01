@@ -97,6 +97,11 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 - `analyze_resource` - Get detailed resource information and impact analysis
 - `resource_doc` - Get documentation for resource kinds
 
+**Images and draw.io diagrams** are plain files in the resources directory and are embedded in markdown with relative
+paths (`![](../img/a.png)`, `![](../../fop/flow.drawio)`); only files of image and draw.io types inside the resources
+directory are served, through `/api/v1/assets/`. The draw.io viewer (Apache-2.0) ships with Archsight and loads nothing
+from other hosts, see [Wiki pages](docs/pages.md#images-and-drawio-diagrams).
+
 **Wiki pages** are resources of the kind `Page`, so the same tools reach them, for example `Page: page/tags == "howto"`
 or, for full-text search, `Page: page/content =~ "kubernetes"` (a bare word only matches names). See
 [Pages and AI assistants](docs/pages.md#pages-and-ai-assistants-mcp).

@@ -62,6 +62,9 @@ class Archsight::Web::Application < Sinatra::Base
 
   configure do
     set :public_folder, File.join(__dir__, "public")
+
+    # The self-hosted draw.io viewer is a 4 MB script plus XML stencils: compress them, nothing else
+    use Rack::Deflater, if: ->(env, _status, _headers, _body) { env["PATH_INFO"].to_s.start_with?("/vendor/drawio/") }
     set :server, :puma
     set :reload_enabled, true
     set :inline_edit_enabled, false
@@ -130,8 +133,11 @@ class Archsight::Web::Application < Sinatra::Base
     # Render markdown to HTML with optional URL resolution for repository content
     # @param data [String] Markdown content
     # @param git_url [String, nil] Git URL for resolving relative paths (e.g., for README images)
-    def markdown(data, git_url: nil)
+    # @param base [String, nil] directory of the file the markdown comes from, relative to the resources
+    #   directory ("" for the root): its relative images become assets (see Archsight::Assets)
+    def markdown(data, git_url: nil, base: nil)
       html = Kramdown::Document.new(data, input: "GFM").to_html
+      html = Archsight::Helpers::AssetImages.rewrite(html, base_dir: base, resources_dir: Archsight.resources_dir) if base
       # ```asd blocks become placeholders until the text passes below are done (see DiagramBlocks)
       html, diagrams = Archsight::Helpers::DiagramBlocks.extract(html, resolver: Archsight::Helpers::ResourceResolver.new(db))
 

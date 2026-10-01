@@ -18,6 +18,7 @@ module Archsight
 
   class Database
     attr_accessor instances: Hash[untyped, Hash[String, Resources::Base]]
+    attr_reader path: String
 
     @path: String
     @verbose: bool

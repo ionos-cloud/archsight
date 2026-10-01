@@ -45,6 +45,7 @@ module Archsight
   # if invalid data is passed.
   class Database
     attr_accessor :instances, :verbose, :verify, :compute_annotations, :only_kinds
+    attr_reader :path
 
     def initialize(path, verbose: false, verify: true, compute_annotations: true, only_kinds: nil)
       @path = path

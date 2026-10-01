@@ -6,6 +6,7 @@ import { initSvgPanZoom } from '../../composables/usePanZoom.js'
 import { timeAgo } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { renderMermaidIn } from '../../composables/useMermaid.js'
+import { renderDrawioIn } from '../../composables/useDrawio.js'
 import RelationsGrid from './RelationsGrid.vue'
 import ModuleGraph from './ModuleGraph.vue'
 import RequirementsSection from './RequirementsSection.vue'
@@ -112,12 +113,18 @@ async function showView(name) {
 onMounted(async () => {
   if (view.value === 'graph') await loadGraph()
   await nextTick()
-  if (descEl.value) renderMermaidIn(descEl.value)
+  if (descEl.value) {
+    renderMermaidIn(descEl.value)
+    renderDrawioIn(descEl.value)
+  }
 })
 
 watch(description, async () => {
   await nextTick()
-  if (descEl.value) renderMermaidIn(descEl.value)
+  if (descEl.value) {
+    renderMermaidIn(descEl.value)
+    renderDrawioIn(descEl.value)
+  }
 })
 
 onUnmounted(() => { panZoom?.destroy() })

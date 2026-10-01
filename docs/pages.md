@@ -54,6 +54,49 @@ spec:
 
 `archsight lint` reports pages that are in no menu or several menus, menu cycles and broken links.
 
+## Images and draw.io diagrams
+
+Images and [draw.io](https://www.drawio.com) diagrams are plain files in the resources directory, usually right next
+to the page that shows them (add them to the repository like pages). Markdown embeds them with the usual image syntax
+and a relative path:
+
+```markdown
+![Overview](overview.png)
+![Deployment](../fop/deployment.drawio)
+```
+
+A reference is resolved against the folder of the file that contains it, and the result is a path relative to the
+resources directory:
+
+| Markdown file | Reference | File |
+|---------------|-----------|------|
+| `pages/handbook/home.md` | `../img/a.png` | `pages/img/a.png` |
+| `pages/handbook/home.md` | `../../fop/bar.drawio` | `fop/bar.drawio` |
+| `pages/handbook/home.md` | `../../../x.png` | not allowed, it would leave the resources directory |
+
+This works in pages and in the `architecture/description` of any resource (relative to the YAML file that defines
+it). Images are shown inline; a `.drawio` file is shown by the draw.io viewer, read-only, with its page selector,
+zoom and layer controls and a link to the file.
+
+"Assets" is the name of the only way to them: the browser never reads these files directly, it asks
+`/api/v1/assets/<path>` (the path of the file relative to the resources directory), and that endpoint decides what
+is served:
+
+- **Types**: png, jpg, gif, webp, avif, svg and drawio, up to 25 MB. Everything else is not served, in particular
+  the resource definitions themselves (`.yaml`, `.md`), sources and anything with an unknown type.
+- **Nothing outside the resources directory.** `..` is resolved first and a path that would leave the directory is
+  rejected, as are absolute paths, backslashes, hidden files and folders (`.git`, `.env`) and symlinks that point
+  out. A file that is outside, missing or of another type gets the same 404.
+- **Keep the resources directory dedicated.** Every file of an allowed type below it can be fetched, and the default
+  resources directory is the working directory (`ARCHSIGHT_RESOURCES_DIR`). Do not point Archsight at a directory
+  that also holds images you do not want to publish.
+- **Broken references** are shown as a red, wavy marker (with the reason as tooltip) and reported by
+  `archsight lint`: outside the resources directory, no such file, type not served.
+- **Self-hosted viewer**: the official draw.io viewer ships with Archsight (`lib/archsight/web/public/vendor/drawio`,
+  Apache-2.0, upgrade with `script/vendor_drawio`). It loads nothing from other hosts, a policy on its page blocks
+  such requests, so an image embedded in a diagram from an `https://` URL is not shown. Formulas are not typeset.
+- **Kubernetes**: binary files do not fit a ConfigMap (1 MB limit), provide the resources with git-sync or a volume.
+
 ## Home page
 
 A page whose name or title is `Home` (any case) is shown at `/` instead of the generated architecture

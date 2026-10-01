@@ -28,6 +28,12 @@ query -> db
 db -> res
 ```
 
+## Components and deployment
+
+A draw.io diagram with two pages, shown by the draw.io viewer that Archsight serves itself. Use the page selector in its toolbar for the second page:
+
+![Archsight components and deployment](archsight-components.drawio)
+
 ## Building blocks
 
 | Block | Responsibility |

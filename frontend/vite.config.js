@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
-import { rename } from 'fs/promises'
+import { rename, rm } from 'fs/promises'
 import vue from '@vitejs/plugin-vue'
 
 // Rename index.html to vue.html after build so it doesn't shadow Sinatra's / route
@@ -14,11 +14,24 @@ function renameIndexPlugin() {
   }
 }
 
+// The output directory is the static directory of the app. It also holds files that are not build output
+// (vendor/drawio, the favicon), so a build must not empty it: it removes only what a build creates.
+function cleanBuildOutputPlugin() {
+  return {
+    name: 'clean-build-output',
+    buildStart: async () => {
+      const outDir = resolve(__dirname, '../lib/archsight/web/public')
+      await rm(resolve(outDir, 'vue'), { recursive: true, force: true })
+      await rm(resolve(outDir, 'vue.html'), { force: true })
+    }
+  }
+}
+
 export default defineConfig({
-  plugins: [vue(), renameIndexPlugin()],
+  plugins: [vue(), renameIndexPlugin(), cleanBuildOutputPlugin()],
   build: {
     outDir: '../lib/archsight/web/public',
-    emptyOutDir: true,
+    emptyOutDir: false,
     rollupOptions: {
       input: resolve(__dirname, 'index.html'),
       output: {
