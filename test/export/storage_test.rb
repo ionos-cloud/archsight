@@ -9,8 +9,11 @@ require "archsight/database"
 require "archsight/helpers"
 require "archsight/export"
 require "archsight/export/confluence/storage"
+require_relative "fake_drawio_cli"
 
 class ConfluenceStorageTest < Minitest::Test
+  include FakeDrawioCli
+
   Storage = Archsight::Export::Confluence::Storage
 
   def setup
@@ -119,16 +122,6 @@ class ConfluenceStorageTest < Minitest::Test
     well_formed!(fenced.body + file.body)
   end
 
-  def with_fake_drawio_cli
-    script = File.join(@dir, "fake-drawio")
-    File.write(script, "#!/bin/sh\nwhile [ $# -gt 0 ]; do [ \"$1\" = \"--output\" ] && out=\"$2\"; shift; done\nprintf 'PNGDATA' > \"$out\"\n")
-    File.chmod(0o755, script)
-    ENV["ARCHSIGHT_DRAWIO_CLI"] = script
-    yield
-  ensure
-    ENV.delete("ARCHSIGHT_DRAWIO_CLI")
-  end
-
   def test_asd_goes_through_drawio_as_a_wrapped_svg_when_the_confluence_has_it
     with_fake_drawio_cli do
       result = convert("![Flow](flow.asd)\n\n```asd\ncomponent \"b\" { }\n```\n", drawio: true)
@@ -217,11 +210,8 @@ class ConfluenceStorageTest < Minitest::Test
 
   def test_drawio_becomes_a_macro_with_the_diagram_and_a_preview_attached
     File.write(File.join(@dir, "pages/flow.drawio"), "<mxfile><diagram/></mxfile>")
-    script = File.join(@dir, "fake-drawio")
-    File.write(script, "#!/bin/sh\nwhile [ $# -gt 0 ]; do [ \"$1\" = \"--output\" ] && out=\"$2\"; shift; done\nprintf 'PNGDATA' > \"$out\"\n")
-    File.chmod(0o755, script)
-    ENV["ARCHSIGHT_DRAWIO_CLI"] = script
-    result = convert("![Diagram](flow.drawio)\n", drawio: true)
+    result = nil
+    with_fake_drawio_cli { result = convert("![Diagram](flow.drawio)\n", drawio: true) }
     well_formed!(result.body)
 
     assert_empty result.problems

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "uri"
-require "cgi"
 
 module Archsight
   module Export
@@ -29,11 +28,11 @@ module Archsight
 
         def self.from_path(origin, path, query)
           if (m = path.match(%r{\A(?<ctx>.*?)/spaces/(?<space>[^/]+)/pages/(?<id>\d+)}))
-            new(base: origin + m[:ctx], page_id: m[:id], space: CGI.unescape(m[:space]))
-          elsif (m = path.match(%r{\A(?<ctx>.*?)/pages/viewpage\.action\z})) && (id = CGI.parse(query.to_s)["pageId"].first)&.match?(/\A\d+\z/)
+            new(base: origin + m[:ctx], page_id: m[:id], space: URI.decode_www_form_component(m[:space]))
+          elsif (m = path.match(%r{\A(?<ctx>.*?)/pages/viewpage\.action\z})) && (id = URI.decode_www_form(query.to_s).to_h["pageId"])&.match?(/\A\d+\z/)
             new(base: origin + m[:ctx], page_id: id)
           elsif (m = path.match(%r{\A(?<ctx>.*?)/display/(?<space>[^/]+)/(?<title>[^/]+)\z}))
-            new(base: origin + m[:ctx], space: CGI.unescape(m[:space]), title: CGI.unescape(m[:title]))
+            new(base: origin + m[:ctx], space: URI.decode_www_form_component(m[:space]), title: URI.decode_www_form_component(m[:title]))
           end
         end
 

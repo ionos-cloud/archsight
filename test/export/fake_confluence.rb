@@ -2,7 +2,6 @@
 
 require "json"
 require "uri"
-require "cgi"
 
 # An in-memory stand-in for the Confluence REST calls the export makes, used as the Client's transport.
 class FakeConfluence
@@ -45,7 +44,7 @@ class FakeConfluence
   private
 
   def route(verb, uri, headers, body)
-    query = CGI.parse(uri.query.to_s).transform_values(&:first)
+    query = URI.decode_www_form(uri.query.to_s).to_h
     case [verb, uri.path]
     in ["GET", "/rest/api/user/current"] then ok(username: "exporter", displayName: "Exporter")
     in ["GET", "/rest/api/content"] then find(query)

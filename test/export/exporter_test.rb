@@ -7,8 +7,11 @@ require "archsight/database"
 require "archsight/export"
 require "archsight/export/confluence/exporter"
 require_relative "fake_confluence"
+require_relative "fake_drawio_cli"
 
 class ConfluenceExporterTest < Minitest::Test
+  include FakeDrawioCli
+
   TOKEN = "secret-token"
   URL = "https://wiki.example.com/spaces/SP/pages/42/Test"
 
@@ -181,19 +184,21 @@ class ConfluenceExporterTest < Minitest::Test
     FileUtils.cp(File.join(__dir__, "../diagram/fixtures/dag.asd"), File.join(@dir, "pages/flow.asd"))
     write_page("guide", "![Flow](flow.asd)\n", confluence: URL)
 
-    run_export(force: true, settings_drawio: true)
+    with_fake_drawio_cli do
+      run_export(force: true, settings_drawio: true)
 
-    assert_includes @fake.pages["42"].body, 'ac:name="drawio"'
-    assert_includes @fake.pages["42"].attachments.keys, "flow.png"
+      assert_includes @fake.pages["42"].body, 'ac:name="drawio"'
+      assert_includes @fake.pages["42"].attachments.keys, "flow.png"
 
-    run_export(force: true, settings_drawio: true, drawio: false)
+      run_export(force: true, settings_drawio: true, drawio: false)
 
-    refute_includes @fake.pages["42"].body, 'ac:name="drawio"'
-    assert_includes @fake.pages["42"].body, "<ac:image>"
+      refute_includes @fake.pages["42"].body, 'ac:name="drawio"'
+      assert_includes @fake.pages["42"].body, "<ac:image>"
 
-    run_export(force: true, settings_drawio: false, drawio: true)
+      run_export(force: true, settings_drawio: false, drawio: true)
 
-    assert_includes @fake.pages["42"].body, 'ac:name="drawio"'
+      assert_includes @fake.pages["42"].body, 'ac:name="drawio"'
+    end
   end
 
   def test_attachments_an_earlier_export_added_and_the_page_no_longer_uses_are_removed_but_foreign_ones_stay

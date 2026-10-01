@@ -2,7 +2,6 @@
 
 require "erb"
 require "digest"
-require "cgi"
 require "kramdown"
 require "kramdown-parser-gfm"
 require_relative "../../assets"
