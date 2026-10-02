@@ -126,8 +126,10 @@ class ChildrenMacroTest < Minitest::Test
   def test_confluence_pagetree_macro
     xml = ->(text) { Macros.replace(text) { |m, v| m.confluence(v, context("top")) } }
 
-    assert_equal %(<ac:structured-macro ac:name="pagetree"><ac:parameter ac:name="root">@self</ac:parameter></ac:structured-macro>), xml.call("{pagetree}")
-    assert_includes xml.call("{pagetree:root=inner sort=title reverse}"),
-                    %(<ac:parameter ac:name="root">Inner page</ac:parameter><ac:parameter ac:name="sort">title</ac:parameter><ac:parameter ac:name="reverse">true</ac:parameter>)
+    assert_equal %(<ac:structured-macro ac:name="pagetree"><ac:parameter ac:name="root"><ac:link /></ac:parameter></ac:structured-macro>), xml.call("{pagetree}")
+    root = %(<ac:parameter ac:name="root"><ac:link><ri:page ri:content-title="Inner page" /></ac:link></ac:parameter>)
+    rest = %(<ac:parameter ac:name="sort">title</ac:parameter><ac:parameter ac:name="reverse">true</ac:parameter>)
+
+    assert_includes xml.call("{pagetree:root=inner sort=title reverse}"), root + rest
   end
 end

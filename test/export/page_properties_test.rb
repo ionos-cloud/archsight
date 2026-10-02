@@ -73,4 +73,21 @@ class ConfluencePagePropertiesTest < Minitest::Test
 
     assert_includes PageProperties.xml(page("odd")), %(<ac:parameter ac:name="colour">Grey</ac:parameter>)
   end
+
+  def test_property_values_are_inline_markdown
+    File.write(File.join(@dir, "md.md"), "---\ntitle: Md\nproperties:\n  Notes: \"**bold**, *it*, `code` and [a link](https://git.example.com/x) and https://git.example.com/y\"\n---\n\nx\n")
+    @db.reload!
+    xml = PageProperties.xml(page("md"))
+    REXML::Document.new(%(<root xmlns:ac="a">#{xml}</root>))
+
+    assert_includes xml, "<strong>bold</strong>, <em>it</em>, <code>code</code>"
+    assert_includes xml, '<a href="https://git.example.com/x">a link</a>'
+    assert_includes xml, '<a href="https://git.example.com/y">https://git.example.com/y</a>'
+  end
+
+  def test_raw_html_in_a_property_is_escaped
+    xml = PageProperties.xml(page("props"))
+
+    assert_includes xml, "and &lt;b&gt;"
+  end
 end

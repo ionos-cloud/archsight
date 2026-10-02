@@ -242,4 +242,47 @@ class ConfluenceStorageTest < Minitest::Test
     assert_includes result.body, %(<td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">Red</ac:parameter><ac:parameter ac:name="title">R&amp;D</ac:parameter>)
     assert_includes result.body, "<code>{status:red x}</code>"
   end
+
+  ALL_MACROS = <<~MD
+    # Heading with {status:grey NEW}
+
+    Text {status:yellow WIP} {emoticon:2705 check mark button} {emoticon:minus} {jira:PROJ-1} and `{status:red code}`.
+
+    | A | B |
+    |---|---|
+    | {status:green OK} | {emoticon:274c cross mark} {jira:PROJ-2} |
+
+    - item {status:blue INFO}
+    - item {jira:PROJ-3}
+
+    {children}
+
+    {children:all sort=title reverse}
+
+    {pagetree}
+
+    A link [with {jira:PROJ-4} inside](https://example.com/x) and [a {status:red X} lozenge](https://example.com/y).
+  MD
+
+  def test_every_macro_in_every_position_gives_well_formed_storage_xml
+    result = convert(ALL_MACROS)
+    well_formed!(result.body)
+
+    assert_operator result.body.scan('<ac:structured-macro ac:name="status">').length, :>=, 5
+    assert_includes result.body, "<h1>Heading with <ac:structured-macro ac:name=\"status\">"
+    assert_includes result.body, '<ac:emoticon ac:name="minus"/>'
+    assert_includes result.body, '<ac:emoticon ac:emoji-id="2705" ac:name="check mark button"'
+    assert_includes result.body, "<code>{status:red code}</code>"
+    assert_includes result.body, '<td><ac:structured-macro ac:name="status">'
+    assert_includes result.body, '<ac:structured-macro ac:name="children"></ac:structured-macro>'
+    assert_includes result.body, '<ac:parameter ac:name="root"><ac:link /></ac:parameter>'
+    assert_empty result.problems
+  end
+
+  def test_a_jira_macro_inside_a_link_is_plain_text_so_the_link_does_not_nest
+    body = convert(ALL_MACROS).body
+
+    assert_includes body, '<a href="https://example.com/x">with PROJ-4 inside</a>'
+    assert_includes body, '<a href="https://example.com/y">a <ac:structured-macro ac:name="status">'
+  end
 end

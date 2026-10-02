@@ -86,4 +86,19 @@ class JiraMacroTest < Minitest::Test
   def test_the_linter_reports_a_bad_key
     assert_equal ["{jira:oops}: expected an issue key such as PROJ-123"], Macros.problems("{jira:oops} {jira:OK-1}")
   end
+
+  def test_the_confluence_macro_names_the_jira_server_when_it_is_configured
+    ENV["ARCHSIGHT_JIRA_SERVER"] = "Example-Jira"
+    ENV["ARCHSIGHT_JIRA_SERVER_ID"] = "00000000-aaaa-bbbb-cccc-000000000000"
+    Settings.reset!
+    xml = Macros.replace("{jira:PROJ-1}") { |m, v| m.confluence(v) }
+
+    server = %(<ac:parameter ac:name="server">Example-Jira</ac:parameter><ac:parameter ac:name="serverId">00000000-aaaa-bbbb-cccc-000000000000</ac:parameter>)
+
+    assert_equal %(<ac:structured-macro ac:name="jira">#{server}<ac:parameter ac:name="key">PROJ-1</ac:parameter></ac:structured-macro>), xml
+  ensure
+    ENV.delete("ARCHSIGHT_JIRA_SERVER")
+    ENV.delete("ARCHSIGHT_JIRA_SERVER_ID")
+    Settings.reset!
+  end
 end

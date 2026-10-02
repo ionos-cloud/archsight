@@ -29,8 +29,14 @@ module Archsight
             %(<a class="macro-jira" href="#{h(url)}" target="_blank" rel="noopener">#{h(key)}</a>)
           end
 
+          # What stands in for the macro where a link of its own is not allowed (inside a link)
+          def plain(key) = h(key)
+
+          # The Jira macro of Confluence names its Jira server (`server`, `serverId`); they are added when configured
           def confluence(key, _context = nil)
-            %(<ac:structured-macro ac:name="jira"><ac:parameter ac:name="key">#{h(key)}</ac:parameter></ac:structured-macro>)
+            parameters = { "server" => JiraSettings.server, "serverId" => JiraSettings.server_id, "key" => key }.compact
+            body = parameters.map { |name, value| %(<ac:parameter ac:name="#{name}">#{h(value)}</ac:parameter>) }.join
+            %(<ac:structured-macro ac:name="jira">#{body}</ac:structured-macro>)
           end
 
           private

@@ -34,6 +34,8 @@ that is set but empty counts as not set.
 | `confluence.token` | `ARCHSIGHT_CONFLUENCE_TOKEN` (also `CONFLUENCE_TOKEN`) | Personal access token of the Confluence that `archsight export --to confluence` writes to, see [Exporting to Confluence](/doc/pages#exporting-to-confluence) |
 | `confluence.drawio` | `ARCHSIGHT_CONFLUENCE_DRAWIO` (also `CONFLUENCE_DRAWIO`) | `true` if that Confluence has the draw.io app: diagrams are then exported as draw.io macros instead of images. Default `false` (`--drawio` / `--no-drawio` decide per run) |
 | `jira.issue_url` | `ARCHSIGHT_JIRA_ISSUE_URL` | Where the issues live, with `{issue}` in place of the key: `{jira:PROJ-123}` in a page becomes a link, see [Macros](/doc/pages#macros). Only `http(s)` URLs are used |
+| `jira.server` | `ARCHSIGHT_JIRA_SERVER` | Name of the Jira server as Confluence knows it (the `server` parameter of its Jira macro). Needed by the Confluence export when Confluence has more than one Jira server: without it the exported `{jira:KEY}` macros have no server and Confluence shows an error |
+| `jira.server_id` | `ARCHSIGHT_JIRA_SERVER_ID` | Id of that server (the `serverId` parameter). Copy both from the storage format of a Jira macro that already works in Confluence (page "Edit in storage format") |
 | `jira.token` | `ARCHSIGHT_JIRA_TOKEN` | Reserved, nothing uses it yet |
 
 ## Command line
