@@ -336,6 +336,44 @@ paths:
                 error: NotFound
                 message: Page 'nope' not found
 
+  /api/v1/status/{colour}/{text}:
+    get:
+      summary: Get the lozenge of a status macro
+      description: |
+        The SVG that `{status:colour text}` in markdown shows, generated on the fly. The URL fully determines the image,
+        so it is served with `Cache-Control: public, max-age=31536000, immutable` and an `ETag` (a matching
+        `If-None-Match` answers `304`). The text is shown upper-case; a trailing `.svg` is optional.
+      operationId: getStatusLozenge
+      tags:
+        - Macros
+      parameters:
+        - name: colour
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [grey, red, yellow, green, blue, purple]
+        - name: text
+          in: path
+          required: true
+          description: 1 to 40 characters without braces, percent-encoded (`/` as `%2F` or literally)
+          schema:
+            type: string
+          example: WIP.svg
+      responses:
+        "200":
+          description: The lozenge
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        "304":
+          description: Not modified
+        "400":
+          description: The text is empty, too long or has braces
+        "404":
+          description: Unknown colour
+
   /api/v1/assets/{path}:
     get:
       summary: Get an asset (image or draw.io diagram)
@@ -1583,7 +1621,7 @@ components:
 
     PageTreeResponse:
       type: object
-      required: [pages, tags, home]
+      required: [pages, tags, filters, home]
       properties:
         pages:
           type: array
@@ -1595,6 +1633,14 @@ components:
           description: Page tags with the number of pages using them, sorted by tag
           items:
             $ref: '#/components/schemas/PageTag'
+        filters:
+          type: array
+          description: |
+            The filters of the pages sidebar: every `Page` annotation that has a `filter` and is not `sidebar: false`
+            (today `page/status` and `page/tags`), the same rule as `GET /api/v1/kinds/{kind}/filters`, with the
+            number of pages per value.
+          items:
+            $ref: '#/components/schemas/PageFilter'
         home:
           description: The page shown at `/`, or null when there is none
           oneOf:
@@ -1620,11 +1666,39 @@ components:
         icon:
           type: [string, 'null']
           description: Menu icon (`menu/icon`). Only on menus, absent on the `unsorted` menu.
+        page:
+          type: [string, 'null']
+          description: Only on menus. Name of the page the menu opens (`spec.opens.pages`); the menu title links to it. Null for a menu that only groups.
         children:
           type: array
           description: Only on menus. Pages first, then sub-menus, in declaration order.
           items:
             $ref: '#/components/schemas/PageTreeNode'
+
+    PageFilter:
+      type: object
+      required: [key, title, filter_type, values]
+      properties:
+        key:
+          type: string
+          description: 'Annotation key, usable in a query as `Page: page/status == "rfc"`'
+          example: page/status
+        title:
+          type: string
+        filter_type:
+          type: string
+          enum: [word, list]
+        values:
+          type: array
+          items:
+            type: object
+            required: [value, count]
+            properties:
+              value:
+                type: string
+              count:
+                type: integer
+                description: Number of pages with this value
 
     PageTag:
       type: object
@@ -1646,9 +1720,23 @@ components:
         title:
           type: string
 
+    PageCrumb:
+      type: object
+      description: A menu above a page
+      required: [name, title]
+      properties:
+        name:
+          type: string
+          description: Menu name
+        title:
+          type: string
+        page:
+          type: string
+          description: Name of the page the menu opens, present when it opens one; the crumb links to it
+
     PageResponse:
       type: object
-      required: [name, title, status, author, owner, confluence, tags, toc, breadcrumb, html, backlinks]
+      required: [name, title, status, author, owner, created, updated, properties, confluence, tags, toc, breadcrumb, html, backlinks]
       properties:
         name:
           type: string
@@ -1667,6 +1755,23 @@ components:
           oneOf:
             - $ref: '#/components/schemas/EmailRecipient'
             - type: 'null'
+        created:
+          type: [string, 'null']
+          description: Frontmatter `created`, an ISO 8601 date or time
+        updated:
+          type: [string, 'null']
+          description: Frontmatter `updated`, an ISO 8601 date or time
+        properties:
+          type: array
+          description: 'Frontmatter `properties`: further key/value pairs (e.g. the page properties imported from Confluence), in order'
+          items:
+            type: object
+            required: [key, value]
+            properties:
+              key:
+                type: string
+              value:
+                type: string
         confluence:
           type: [string, 'null']
           format: uri
@@ -1684,7 +1789,7 @@ components:
           type: array
           description: Menus above the page, outermost first; empty when no menu contains the page
           items:
-            $ref: '#/components/schemas/PageLink'
+            $ref: '#/components/schemas/PageCrumb'
         html:
           type: string
           description: The body rendered to HTML (see the endpoint description for what is rendered)
@@ -1713,7 +1818,7 @@ components:
       type: object
       description: |
         A person from `Name <email>`. A bare email address uses itself as the name; a value that is not an
-        email address is returned as `name` only (`archsight lint` rejects those for page authors).
+        email address is returned as `name` only (a name without email is fine for page authors and owners).
       required: [name, email]
       properties:
         name:
@@ -1762,6 +1867,8 @@ tags:
     description: Wiki pages (markdown with frontmatter), the page tree and the home page
   - name: Assets
     description: Images and draw.io diagrams that markdown embeds
+  - name: Macros
+    description: Images generated for inline macros of markdown
   - name: Diagrams
     description: Diagram rendering
   - name: Graph

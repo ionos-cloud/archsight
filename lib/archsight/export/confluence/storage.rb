@@ -6,6 +6,7 @@ require "kramdown"
 require "kramdown-parser-gfm"
 require_relative "../../assets"
 require_relative "../../diagram"
+require_relative "../../helpers/macros"
 require_relative "diagram_links"
 require_relative "drawio"
 require_relative "page_url"
@@ -73,9 +74,11 @@ module Archsight
         # @param wiki [Archsight::Helpers::WikiLinks] resolves [[Targets]]
         # @param page_id [String, nil] id of the Confluence page, for the draw.io macro
         # @param base [String, nil] Confluence base URL, for the draw.io macro
+        # @param database [Archsight::Database, nil] lets macros that name pages (pagetree) find them
         # @param diagram_links [#call, nil] resolves a diagram's `resource` references (DiagramLinks); none leaves them inert
         # @param drawio [Boolean] the Confluence has the draw.io app: diagrams go in as draw.io macros, else as images
-        def initialize(page_name:, source:, base_dir:, resources_dir:, wiki:, page_id: nil, base: nil, drawio: false, diagram_links: nil)
+        def initialize(page_name:, source:, base_dir:, resources_dir:, wiki:, page_id: nil, base: nil, drawio: false, diagram_links: nil, database: nil)
+          @database = database
           @page_name = page_name
           @source = source
           @base_dir = base_dir
@@ -93,11 +96,12 @@ module Archsight
 
         # @param markdown [String] body of the page
         # @param toc [Boolean] add a table of contents
+        # @param header [String] storage format put between the banner and the body (the page properties)
         # @return [Converted]
-        def convert(markdown, toc: false)
+        def convert(markdown, toc: false, header: "")
           document = Kramdown::Document.new(protect(markdown), input: "GFM", auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot])
           html, = Converter.convert(document.root, document.options.merge(storage: self))
-          body = banner + (toc ? %(<ac:structured-macro ac:name="toc" />\n) : "") + html
+          body = banner + header + (toc ? %(<ac:structured-macro ac:name="toc" />\n) : "") + html
           Converted.new(body: body, attachments: @attachments, problems: @problems)
         end
 
@@ -148,13 +152,17 @@ module Archsight
           %(<ac:structured-macro ac:name="info"><ac:rich-text-body><p>#{format(BANNER, source: h(@source))}</p></ac:rich-text-body></ac:structured-macro>\n)
         end
 
-        # [[Target|label]] and ![[View/Name]] become placeholders before kramdown sees them (it would split the
+        # {macros}, [[Target|label]] and ![[View/Name]] become placeholders before kramdown sees them (it would split the
         # brackets), except in code.
         def protect(markdown)
           markdown.split(CODE).each_with_index.map { |part, i| i.odd? ? part : protect_text(part) }.join
         end
 
         def protect_text(text)
+          text = Archsight::Helpers::Macros.replace(text) do |macro, value|
+            xml = macro.confluence(value, Archsight::Helpers::Macros::Context.new(@database, nil))
+            xml && placeholder("LINK", xml)
+          end
           text = text.gsub(/!\[\[([^\]|]+)\]\]/) { placeholder("EMBED", embed_note(Regexp.last_match(1).strip)) }
           text.gsub(Archsight::Helpers::WikiLinks::PATTERN) do
             placeholder("LINK", wiki_link(Regexp.last_match(1).strip, Regexp.last_match(2)&.strip))

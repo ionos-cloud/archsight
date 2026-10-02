@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "email_recipient"
+require_relative "person"
 
 # Annotation represents a single annotation definition with its schema and behavior
 class Archsight::Annotations::Annotation
@@ -141,6 +142,7 @@ class Archsight::Annotations::Annotation
     when "Integer" then "Expected an integer value"
     when "Float" then "Expected a float value"
     when "Archsight::Annotations::EmailRecipient" then 'Expected email format: "Name <email@domain.com>" or "email@domain.com"'
+    when "Archsight::Annotations::Person" then 'Expected "Name", "Name <email@domain.com>" or "email@domain.com"'
     else "Invalid value for type #{@type}"
     end
   end
@@ -180,6 +182,7 @@ class Archsight::Annotations::Annotation
     when "Float" then string_value.match?(/\A-?\d+(\.\d+)?\z/)
     when "URI" then valid_uri?(string_value)
     when "Archsight::Annotations::EmailRecipient" then Archsight::Annotations::EmailRecipient.valid?(string_value)
+    when "Archsight::Annotations::Person" then Archsight::Annotations::Person.valid?(string_value)
     else true
     end
   end

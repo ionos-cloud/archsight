@@ -39,6 +39,25 @@ class PageLoaderTest < Minitest::Test
     assert_equal "# Body\n", annotations["page/content"]
   end
 
+  def test_dates_become_iso_and_properties_become_key_value_lines
+    page = build(<<~MD)
+      ---
+      created: 2024-01-05 10:00:00 +0100
+      updated: 2024-02-01
+      owner: Jane Doe
+      properties:
+        Git Repository: https://git.example.com/a
+        Teams: Core
+      ---
+      x
+    MD
+    annotations = page["metadata"]["annotations"]
+
+    assert_equal "2024-01-05T09:00:00Z", annotations["page/created"]
+    assert_equal "2024-02-01", annotations["page/updated"]
+    assert_equal "Git Repository: https://git.example.com/a\nTeams: Core", annotations["page/properties"]
+  end
+
   def test_name_and_list_tags
     page = build("---\nname: custom\ntags: [a, b]\n---\nx")
 
@@ -156,6 +175,115 @@ class PageDatabaseTest < Minitest::Test
       assert_equal "The Child", root["children"].last["title"]
       assert_equal(["Orphan"], nodes.last["children"].map { |n| n["title"] })
       assert_equal(%w[Root Child], tree.breadcrumb(db.instance_by_kind("Page", "b")).map { |b| b["name"] })
+    end
+  end
+
+  SECTIONS = <<~YAML
+    apiVersion: architecture/v1alpha1
+    kind: PageMenu
+    metadata:
+      name: Top
+      annotations:
+        menu/title: Top section
+    spec:
+      opens:
+        pages: [top]
+      contains:
+        pages: [leaf-b, leaf-a]
+        menus: [Inner, Plain]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: PageMenu
+    metadata:
+      name: Inner
+    spec:
+      opens:
+        pages: [inner]
+      contains:
+        pages: [deep]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: PageMenu
+    metadata:
+      name: Plain
+    spec:
+      contains:
+        pages: [plain-page]
+  YAML
+
+  def with_sections
+    Dir.mktmpdir do |dir|
+      %w[top leaf-a leaf-b inner deep plain-page].each { |n| write(dir, "#{n}.md", "---\ntitle: #{n.capitalize}\n---\nx") }
+      write(dir, "menus.yaml", SECTIONS)
+      db = Archsight::Database.new(dir)
+      db.reload!
+      yield db, Archsight::PageTree.new(db)
+    end
+  end
+
+  def test_a_menu_that_opens_a_page_links_to_it_and_does_not_list_it_twice
+    with_sections do |_db, tree|
+      top = tree.tree.first
+
+      assert_equal "top", top["page"]
+      assert_equal "Top section", top["title"]
+      assert_equal(%w[leaf-b leaf-a Inner Plain], top["children"].map { |n| n["name"] })
+      assert_nil top["children"].last["page"]
+      assert_equal "inner", top["children"][2]["page"]
+      assert_equal(["top"], tree.tree.map { |n| n["page"] } - [nil, "unsorted"])
+    end
+  end
+
+  def test_pages_opened_by_a_menu_are_not_unsorted_and_their_trail_skips_their_own_menu
+    with_sections do |db, tree|
+      assert_empty tree.unsorted_pages
+      page = ->(name) { db.instance_by_kind("Page", name) }
+
+      assert_empty tree.breadcrumb(page.call("top"))
+      assert_equal([{ "name" => "Top", "title" => "Top section", "page" => "top" }], tree.breadcrumb(page.call("inner")))
+      assert_equal(%w[Top Inner], tree.breadcrumb(page.call("deep")).map { |b| b["name"] })
+      assert_equal("inner", tree.breadcrumb(page.call("deep")).last["page"])
+    end
+  end
+
+  def test_children_are_the_contents_of_the_menu_that_opens_the_page
+    with_sections do |db, tree|
+      top = db.instance_by_kind("Page", "top")
+
+      assert_equal(%w[leaf-b leaf-a inner nil], tree.children(top).map { |c| c["name"] || "nil" })
+      assert_equal(%w[Leaf-b Leaf-a Inner Plain], tree.children(top).map { |c| c["title"] })
+      assert_empty(tree.children(top).flat_map { |c| c["children"] })
+
+      deep = tree.children(top, depth: 2)
+
+      assert_equal(["deep"], deep[2]["children"].map { |c| c["name"] })
+      assert_equal(["plain-page"], deep[3]["children"].map { |c| c["name"] })
+      assert_equal deep, tree.children(top, depth: Float::INFINITY)
+    end
+  end
+
+  def test_children_can_be_sorted_by_title_and_reversed
+    with_sections do |db, tree|
+      top = db.instance_by_kind("Page", "top")
+      titles = ->(**options) { tree.children(top, **options).map { |c| c["title"] } }
+
+      assert_equal %w[Inner Leaf-a Leaf-b Plain], titles.call(sort: "title")
+      assert_equal %w[Plain Leaf-b Leaf-a Inner], titles.call(sort: "title", reverse: true)
+      assert_equal %w[Plain Inner Leaf-a Leaf-b], titles.call(reverse: true)
+    end
+  end
+
+  def test_a_page_that_no_menu_opens_has_no_children
+    with_sections do |db, tree|
+      assert_empty tree.children(db.instance_by_kind("Page", "leaf-a"))
+    end
+  end
+
+  def test_an_unknown_page_in_opens_fails_like_one_in_contains
+    Dir.mktmpdir do |dir|
+      write(dir, "m.yaml", "apiVersion: architecture/v1alpha1\nkind: PageMenu\nmetadata:\n  name: M\nspec:\n  opens:\n    pages: [missing]\n")
+
+      assert_raises(Archsight::ResourceError) { Archsight::Database.new(dir).reload! }
     end
   end
 
@@ -294,6 +422,67 @@ class PageDatabaseTest < Minitest::Test
     end
   end
 
+  def test_api_page_shows_macros_as_inline_images_and_emoji
+    Dir.mktmpdir do |dir|
+      write(dir, "m.md", "---\ntitle: M\n---\n\nNow {status:yellow WIP} {emoticon:2705 done} `{status:red x}`\n")
+      write(dir, "menus.yaml", MENUS.sub("pages: [language-strategy]", "pages: [m]"))
+      previous = app.instance_variable_get(:@database)
+      app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
+      get "/api/v1/pages/m"
+      html = JSON.parse(last_response.body)["html"]
+
+      assert_includes html, '<img class="macro-status" src="/api/v1/status/yellow/WIP.svg" alt="WIP" loading="lazy" />'
+      assert_includes html, "\u2705</span>"
+      assert_includes html, "<code>{status:red x}</code>"
+    ensure
+      app.instance_variable_set(:@database, previous)
+    end
+  end
+
+  def test_api_tree_and_breadcrumb_carry_the_page_a_menu_opens
+    Dir.mktmpdir do |dir|
+      write(dir, "top.md", "---\ntitle: Top\n---\n{children}\n")
+      write(dir, "kid.md", "---\ntitle: Kid\n---\nx")
+      write(dir, "menus.yaml", "apiVersion: architecture/v1alpha1\nkind: PageMenu\nmetadata:\n  name: Top\nspec:\n  opens:\n    pages: [top]\n  contains:\n    pages: [kid]\n")
+      previous = app.instance_variable_get(:@database)
+      app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
+      get "/api/v1/pages"
+
+      assert_equal "top", JSON.parse(last_response.body)["pages"].first["page"]
+
+      get "/api/v1/pages/kid"
+
+      assert_equal [{ "name" => "Top", "title" => "Top", "page" => "top" }], JSON.parse(last_response.body)["breadcrumb"]
+
+      get "/api/v1/pages/top"
+      html = JSON.parse(last_response.body)["html"]
+
+      assert_includes html, '<ul class="macro-children macro-block"><li><a href="/pages/kid">Kid</a></li></ul>'
+      refute_includes html, "<p><ul"
+    ensure
+      app.instance_variable_set(:@database, previous)
+    end
+  end
+
+  def test_api_page_has_people_dates_and_properties
+    Dir.mktmpdir do |dir|
+      write(dir, "m.md", "---\ntitle: M\nowner: Jane Doe\nauthor: Jo <jo@example.com>\ncreated: 2024-01-05T10:00:00Z\nproperties:\n  Repo: https://git.example.com/a\n---\n\nx\n")
+      write(dir, "menus.yaml", MENUS.sub("pages: [language-strategy]", "pages: [m]"))
+      previous = app.instance_variable_get(:@database)
+      app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
+      get "/api/v1/pages/m"
+      data = JSON.parse(last_response.body)
+
+      assert_equal({ "name" => "Jane Doe", "email" => nil }, data["owner"])
+      assert_equal({ "name" => "Jo", "email" => "jo@example.com" }, data["author"])
+      assert_equal "2024-01-05T10:00:00Z", data["created"]
+      assert_nil data["updated"]
+      assert_equal [{ "key" => "Repo", "value" => "https://git.example.com/a" }], data["properties"]
+    ensure
+      app.instance_variable_set(:@database, previous)
+    end
+  end
+
   def test_api_tree_and_page
     with_application_db do
       get "/api/v1/pages"
@@ -303,6 +492,13 @@ class PageDatabaseTest < Minitest::Test
 
       assert_equal "Handbook", body["pages"].first["name"]
       assert_includes body["tags"], { "tag" => "concept", "count" => 1 }
+
+      filters = body["filters"].to_h { |f| [f["key"], f] }
+
+      assert_equal %w[page/status page/tags], filters.keys.sort
+      assert_equal [{ "value" => "rfc", "count" => 1 }], filters["page/status"]["values"]
+      assert_equal "Status", filters["page/status"]["title"]
+      assert_includes filters["page/tags"]["values"], { "value" => "concept", "count" => 1 }
 
       get "/api/v1/pages/language-strategy"
       data = JSON.parse(last_response.body)
@@ -405,6 +601,17 @@ class PageDatabaseTest < Minitest::Test
 end
 
 class PageLinterTest < Minitest::Test
+  def test_owner_may_be_a_name_but_not_a_malformed_address_and_timestamps_are_checked
+    clean = lint("a.md" => "---\nowner: Jane Doe\nauthor: Jo <jo@example.com>\ncreated: 2024-01-05T10:00:00Z\nupdated: 2024-02-01\n---\nx", "m.yaml" => menu("M", pages: ["a"]))
+
+    assert_empty clean
+
+    errors = lint("a.md" => "---\nowner: Jane (jane@example.com)\ncreated: yesterday\n---\nx", "m.yaml" => menu("M", pages: ["a"]))
+
+    assert(errors.any? { |e| e.include?("page/owner") })
+    assert(errors.any? { |e| e.include?("page/created") })
+  end
+
   def test_author_must_use_email_schema
     errors = lint("a.md" => "---\nauthor: John Smith (john@example.com)\n---\nx", "m.yaml" => menu("M", pages: ["a"]))
 
@@ -446,6 +653,37 @@ class PageLinterTest < Minitest::Test
     assert(errors.any? { |e| e.include?("not contained in any PageMenu") })
     assert(errors.any? { |e| e.include?("several PageMenus") })
     assert(errors.any? { |e| e.include?("[[Nowhere]]") })
+  end
+
+  def test_macros_with_bad_arguments_are_reported_but_unknown_braces_and_code_are_not
+    body = "{status:green OK} {emoticon:2705} {status:pink Nope} {emoticon:zz} {other:x} `{status:pink code}`"
+    errors = lint("a.md" => "---\ntitle: A\n---\n#{body}", "m.yaml" => menu("M", pages: ["a"]))
+
+    assert_equal 2, errors.length
+    assert(errors.any? { |e| e.include?("{status:pink Nope}") })
+    assert(errors.any? { |e| e.include?("{emoticon:zz}") })
+  end
+
+  def opening_menu(name, opens:, pages: [])
+    "apiVersion: architecture/v1alpha1\nkind: PageMenu\nmetadata:\n  name: #{name}\nspec:\n  opens:\n    pages: #{opens}\n  contains:\n    pages: #{pages}\n"
+  end
+
+  def test_a_page_opened_by_a_menu_needs_no_other_menu
+    assert_empty lint("a.md" => "---\ntitle: A\n---\nx", "m.yaml" => opening_menu("M", opens: ["a"]))
+  end
+
+  def test_a_menu_opens_one_page_and_not_one_it_contains_or_another_menu_has
+    two = lint("a.md" => "---\ntitle: A\n---\nx", "b.md" => "---\ntitle: B\n---\nx", "m.yaml" => opening_menu("M", opens: %w[a b]))
+
+    assert(two.any? { |e| e.include?("opens several pages") })
+
+    both = lint("a.md" => "---\ntitle: A\n---\nx", "m.yaml" => opening_menu("M", opens: ["a"], pages: ["a"]))
+
+    assert(both.any? { |e| e.include?("opens and also contains page 'a'") })
+
+    twice = lint("a.md" => "---\ntitle: A\n---\nx", "m1.yaml" => opening_menu("M1", opens: ["a"]), "m2.yaml" => menu("M2", pages: ["a"]))
+
+    assert(twice.any? { |e| e.include?("several PageMenus") })
   end
 
   def test_home_page_needs_no_menu_but_not_two

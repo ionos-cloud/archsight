@@ -330,3 +330,28 @@ main .canvas a {
   box-shadow: none;
   background: transparent;
 }
+
+/* Inline macros of markdown ({status:...}, {emoticon:...}): they sit in the line like a word, not like an image */
+.content img.macro-status {
+  display: inline-block;
+  height: 1.25em;
+  width: auto;
+  max-width: none;
+  margin: 0 0.1em;
+  vertical-align: -0.25em;
+}
+
+.macro-emoticon {
+  font-style: normal;
+}
+
+/* {children}: the child pages as a plain list */
+.content ul.macro-children,
+.content ul.macro-children ul {
+  margin-bottom: 0.5rem;
+}
+
+.content .macro-children-empty {
+  color: var(--pico-muted-color);
+  font-style: italic;
+}

@@ -73,7 +73,7 @@ module Archsight
         def render_source(kind:, name:, annotations:, relations:, instance: nil)
           if Archsight::Editor.markdown_source?(kind)
             existing = instance && Archsight::Editor::FileWriter.read_file(path: instance.path_ref.path)
-            return Archsight::Editor::PageSource.render(annotations: annotations, existing_source: existing)
+            return Archsight::Editor::PageSource.render(annotations: annotations, existing_source: existing, now: Time.now)
           end
 
           Archsight::Editor.to_yaml(

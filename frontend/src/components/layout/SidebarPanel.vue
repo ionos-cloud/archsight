@@ -9,7 +9,7 @@ import { searchParams } from '../../composables/useSearchScope.js'
 const props = defineProps({
   kinds: Object,
   pages: Array,
-  pageTags: { type: Array, default: () => [] },
+  pageFilters: { type: Array, default: () => [] }, // [{ key, title, values: [{ value, count }] }]
 })
 
 const route = useRoute()
@@ -51,9 +51,9 @@ watch(currentKind, async (kind) => {
   }
 }, { immediate: true })
 
-// tags are page tags: the search stays in the Pages scope (results link to the pages)
-function tagQuery(tag) {
-  return { name: 'search', query: searchParams(`Page: page/tags == "${tag}"`, 'pages') }
+// page filters (status, tags, ...) search the pages: the search stays in the Pages scope (results link to the pages)
+function pageFilterQuery(key, value) {
+  return { name: 'search', query: searchParams(`Page: ${key} == "${value}"`, 'pages') }
 }
 
 function filterQuery(key, value) {
@@ -91,12 +91,14 @@ function filterQuery(key, value) {
       <div class="sidebar-section">
         <PageTree :nodes="pages" />
       </div>
-      <div v-if="pageTags.length" class="sidebar-section">
-        <div class="sidebar-label"><i class="iconoir-label" aria-hidden="true"></i> Tags</div>
+      <div v-for="f in pageFilters" :key="f.key" class="sidebar-section">
+        <div class="sidebar-label">
+          <i :class="f.key === 'page/tags' ? 'iconoir-label' : 'iconoir-filter'" aria-hidden="true"></i> {{ f.title }}
+        </div>
         <nav class="annotation-filter">
           <div class="filter-chips">
-            <router-link v-for="t in pageTags" :key="t.tag" class="filter-chip" :to="tagQuery(t.tag)">
-              {{ t.tag }} <span class="kind-count">{{ t.count }}</span>
+            <router-link v-for="v in f.values" :key="v.value" class="filter-chip" :to="pageFilterQuery(f.key, v.value)">
+              {{ v.value }} <span class="kind-count">{{ v.count }}</span>
             </router-link>
           </div>
         </nav>

@@ -19,7 +19,7 @@ module Archsight
           validate_instance_annotations(instance)
           validate_view_fields(instance) if instance.klass == "View"
           validate_page(instance) if instance.klass == "Page"
-          validate_menu_cycle(instance) if instance.klass == "PageMenu"
+          validate_menu(instance) if instance.klass == "PageMenu"
         end
       end
 
@@ -39,6 +39,19 @@ module Archsight
         next if links.resolve(target).is_a?(String)
 
         @errors << "#{page.path_ref}: Page '#{page.name}' links to unknown or ambiguous [[#{target}]]"
+      end
+
+      Helpers::Macros.problems(page.annotations["page/content"].to_s, context: Helpers::Macros::Context.new(@database, page)).each do |problem|
+        @errors << "#{page.path_ref}: Page '#{page.name}' has a macro #{problem}"
+      end
+    end
+
+    def validate_menu(menu)
+      validate_menu_cycle(menu)
+      opened = menu.relations(:opens, :pages)
+      @errors << "#{menu.path_ref}: PageMenu '#{menu.name}' opens several pages (#{opened.map(&:name).join(", ")}), it can open one" if opened.length > 1
+      (opened & menu.relations(:contains, :pages)).each do |page|
+        @errors << "#{menu.path_ref}: PageMenu '#{menu.name}' opens and also contains page '#{page.name}'"
       end
     end
 

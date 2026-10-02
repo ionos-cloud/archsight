@@ -11,6 +11,7 @@ require_relative "client"
 require_relative "credentials"
 require_relative "page_url"
 require_relative "storage"
+require_relative "page_properties"
 
 module Archsight
   module Export
@@ -105,8 +106,8 @@ module Archsight
           storage = Storage.new(page_name: page.name, source: relative_source(page),
                                 base_dir: Assets.base_dir_for(page, resources_dir: @resources_dir).to_s,
                                 resources_dir: @resources_dir, wiki: Helpers::WikiLinks.new(@database), page_id: id, base: url.base,
-                                drawio: drawio?, diagram_links: DiagramLinks.new(@database))
-          storage.convert(body_of(page), toc: page.annotations["page/toc"] == "yes")
+                                drawio: drawio?, diagram_links: DiagramLinks.new(@database), database: @database)
+          storage.convert(body_of(page), toc: page.annotations["page/toc"] == "yes", header: PageProperties.xml(page))
         end
 
         # The Confluence title is shown above the body, so a leading "# Title" that repeats it is dropped

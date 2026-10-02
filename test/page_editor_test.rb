@@ -57,6 +57,42 @@ class PageSourceTest < Minitest::Test
     assert_equal "no", YAML.safe_load(out.split("---\n")[1])["status"]
   end
 
+  PROPERTIES = <<~MD
+    ---
+    title: Alpha
+    owner: Jane Doe
+    created: 2024-01-05T10:00:00Z
+    updated: 2024-02-01
+    properties:
+      Git Repository: https://git.example.com/a
+      Note: 'a: b'
+    ---
+
+    Body
+  MD
+
+  def test_properties_and_timestamps_round_trip_byte_for_byte
+    assert_equal PROPERTIES, PageSource.render(annotations: annotations_of(PROPERTIES), existing_source: PROPERTIES)
+  end
+
+  def test_properties_are_edited_as_key_value_lines
+    annotations = annotations_of(PROPERTIES).merge("page/properties" => "Team: Core\nRepo: https://git.example.com/b")
+    meta = YAML.safe_load(PageSource.render(annotations: annotations, existing_source: PROPERTIES).split("---\n")[1], permitted_classes: [Time, Date])
+
+    assert_equal({ "Team" => "Core", "Repo" => "https://git.example.com/b" }, meta["properties"])
+  end
+
+  def test_updated_is_set_when_the_page_changes_and_only_then
+    now = Time.utc(2026, 10, 2, 9, 30)
+
+    assert_equal PROPERTIES, PageSource.render(annotations: annotations_of(PROPERTIES), existing_source: PROPERTIES, now: now)
+
+    out = PageSource.render(annotations: annotations_of(PROPERTIES).merge("page/title" => "Beta"), existing_source: PROPERTIES, now: now)
+
+    assert_includes out, "updated: 2026-10-02T09:30:00Z\n"
+    assert_includes out, "created: 2024-01-05T10:00:00Z\n"
+  end
+
   def test_validate_rejects_broken_frontmatter_missing_frontmatter_and_renames
     assert_raises(Archsight::Editor::FileWriter::WriteError) { PageSource.validate!("no frontmatter", path: "alpha.md", name: "alpha") }
     assert_raises(Archsight::Editor::FileWriter::WriteError) { PageSource.validate!("---\ntitle: x\n", path: "alpha.md", name: "alpha") }
@@ -160,7 +196,7 @@ class PageEditorRoutesTest < Minitest::Test
     result = generate(edit_form, "page/content" => "# Alpha\n\nChanged")
 
     assert_equal "markdown", result["format"]
-    assert_equal "---\ntitle: Alpha\nstatus: rfc\n---\n\n# Alpha\n\nChanged\n", result["yaml"]
+    assert_match(/\A---\ntitle: Alpha\nstatus: rfc\nupdated: \d{4}-\d\d-\d\dT[\d:]+Z\n---\n\n# Alpha\n\nChanged\n\z/, result["yaml"])
   end
 
   def test_generate_without_changes_reproduces_the_file
