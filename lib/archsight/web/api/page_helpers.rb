@@ -40,7 +40,7 @@ module Archsight::Web::API::PageHelpers
       owner: Archsight::Annotations::EmailRecipient.parse(annotations["page/owner"]),
       created: annotations["page/created"],
       updated: annotations["page/updated"],
-      properties: page.properties.map { |key, value| { key: key, value: value } },
+      properties: page.properties.map { |key, value| { key: key, value: value, html: inline_markdown(value, page) } },
       confluence: annotations["page/confluence"],
       tags: Archsight::Resources::Page.annotation_matching("page/tags")&.value_for(page) || [],
       toc: annotations["page/toc"] == "yes" ? Archsight::PageTree.toc(body) : [],
@@ -48,6 +48,13 @@ module Archsight::Web::API::PageHelpers
       html: markdown(body, base: Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir), page: page),
       backlinks: page_backlinks(page)
     }
+  end
+
+  # A short text (a page property) rendered as inline markdown: links, emphasis, `{macros}`, [[wiki links]], without the
+  # paragraph around it
+  def inline_markdown(text, page)
+    html = markdown(text.to_s, base: Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir), page: page)
+    html.strip.sub(%r{\A<p>(.*)</p>\z}m, '\1')
   end
 
   # The header already shows the title, so a leading "# Title" that repeats it is dropped

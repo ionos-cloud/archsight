@@ -466,7 +466,9 @@ class PageDatabaseTest < Minitest::Test
 
   def test_api_page_has_people_dates_and_properties
     Dir.mktmpdir do |dir|
-      write(dir, "m.md", "---\ntitle: M\nowner: Jane Doe\nauthor: Jo <jo@example.com>\ncreated: 2024-01-05T10:00:00Z\nproperties:\n  Repo: https://git.example.com/a\n---\n\nx\n")
+      front = "---\ntitle: M\nowner: Jane Doe\nauthor: Jo <jo@example.com>\ncreated: 2024-01-05T10:00:00Z\nproperties:\n"
+      front += "  Repo: https://git.example.com/a\n  Notes: \"**bold** and {status:green OK} and [[Other]]\"\n  Plain: a < b\n---\n\nx\n"
+      write(dir, "m.md", front)
       write(dir, "menus.yaml", MENUS.sub("pages: [language-strategy]", "pages: [m]"))
       previous = app.instance_variable_get(:@database)
       app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
@@ -477,7 +479,14 @@ class PageDatabaseTest < Minitest::Test
       assert_equal({ "name" => "Jo", "email" => "jo@example.com" }, data["author"])
       assert_equal "2024-01-05T10:00:00Z", data["created"]
       assert_nil data["updated"]
-      assert_equal [{ "key" => "Repo", "value" => "https://git.example.com/a" }], data["properties"]
+      repo, notes, plain = data["properties"]
+
+      assert_equal({ "key" => "Repo", "value" => "https://git.example.com/a", "html" => '<a href="https://git.example.com/a">https://git.example.com/a</a>' }, repo)
+      assert_includes notes["html"], "<strong>bold</strong> and "
+      assert_includes notes["html"], 'class="macro-status"'
+      refute_includes notes["html"], "<p>"
+      assert_equal "**bold** and {status:green OK} and [[Other]]", notes["value"]
+      assert_equal "a &lt; b", plain["html"]
     ensure
       app.instance_variable_set(:@database, previous)
     end
