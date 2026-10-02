@@ -34,6 +34,9 @@ The following table lists the configurable parameters of the Archsight chart and
 | `ingress.enabled` | Enable Ingress resource | `false` |
 | `app.resourcesDir` | Directory where app looks for resources | `/resources` |
 
+Settings for integrations (access tokens, the Jira URL) are not chart parameters: give them to the pod as environment
+variables, tokens from a Secret, see [Configuration](/doc/configuration#containers).
+
 ### Resource Management Strategies
 
 The most important configuration is how you provide your architecture YAML files to the application. This is controlled by the `content.type` parameter.

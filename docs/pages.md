@@ -166,14 +166,15 @@ the import of a Confluence page does the same the other way round.
 | `children` | `{children}`, `{children:all sort=title}` | the child pages of the page it is on: the contents of the menu that opens the page |
 | `pagetree` | `{pagetree}`, `{pagetree:root=handbook sort=title}` | the page tree below a page, all levels, the page itself on top |
 
-The Jira link is built from the `issue_url` setting, a URL with `{issue}` in it, in `~/.config/architecture/jira.yaml`
-(`ARCHSIGHT_JIRA_CONFIG` names another file, `ARCHSIGHT_JIRA_ISSUE_URL` overrides the file):
+The Jira link is built from the `jira.issue_url` setting, a URL with `{issue}` in it (`ARCHSIGHT_JIRA_ISSUE_URL`), see
+[Configuration](/doc/configuration):
 
 ```yaml
-issue_url: https://jira.example.com/browse/{issue}
+jira:
+  issue_url: https://jira.example.com/browse/{issue}
 ```
 
-Only that field is read. Without it the key is shown as code, without a link.
+Without it the key is shown as code, without a link.
 
 `children` takes options separated by spaces: `depth=N` (levels, default 1), `all` (every level), `sort=title` (default: the
 order of the menu) and `reverse`. A sub-menu is one entry, linked to the page it opens; a page that no menu opens has no
@@ -228,14 +229,15 @@ keeps its property reports working: Document status (a status lozenge; `wip`/`dr
 `Team:<name>` tags), Tags and every entry of `properties`. People are written as their name. `created` and `updated` are not
 exported. The Confluence import (not part of Archsight) does the reverse, which is why `Team:` tags and `properties` exist.
 
-**Credentials** work like the Jira token, with a personal access token: `CONFLUENCE_TOKEN`, or the `token:` field of
-`~/.config/architecture/confluence.yaml` (`--credentials PATH` for another file). The host comes from the page URL. The token
-is never printed. If the Confluence has the draw.io app, add `drawio: true` to the same file (or `CONFLUENCE_DRAWIO=true`,
-`--drawio` / `--no-drawio` per run):
+**Credentials** are a personal access token, set as `confluence.token` in the [configuration file](/doc/configuration)
+(`~/.config/archsight/archsight.yaml`, `--config PATH` for another file) or in `ARCHSIGHT_CONFLUENCE_TOKEN`. The host comes from
+the page URL. The token is never printed. If the Confluence has the draw.io app, add `drawio: true` (or
+`ARCHSIGHT_CONFLUENCE_DRAWIO=true`, `--drawio` / `--no-drawio` per run):
 
 ```yaml
-token: <personal access token>
-drawio: true
+confluence:
+  token: <personal access token>
+  drawio: true
 ```
 
 **What is exported**: headings, text, tables, lists, links, code (code macro), a table of contents when `toc: yes`, images

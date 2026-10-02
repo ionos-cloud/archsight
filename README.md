@@ -183,6 +183,7 @@ Detailed documentation is available in the web interface under the Help menu:
 | [TOGAF Reference](docs/togaf.md) | TOGAF alignment and concepts |
 | [Diagrams](docs/diagram.md) | `.asd` diagram DSL and the `archsight diagram` command |
 | [Architecture](docs/architecture.md) | Technology stack and directory structure |
+| [Configuration](docs/configuration.md) | The configuration file and environment variables (tokens, URLs) |
 | [Docker](docs/docker.md) | Running Archsight in Docker |
 | [Kubernetes](docs/kubernetes.md) | Helm chart deployment guide |
 
