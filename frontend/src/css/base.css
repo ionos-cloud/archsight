@@ -355,3 +355,8 @@ main .canvas a {
   color: var(--pico-muted-color);
   font-style: italic;
 }
+
+/* several issues in a row ({jira:A}{jira:B}) must not run together */
+.macro-jira + .macro-jira {
+  margin-left: 0.5em;
+}

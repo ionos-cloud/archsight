@@ -38,10 +38,6 @@ function day(value) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-function isUrl(value) {
-  return /^https?:\/\/\S+$/.test(value)
-}
-
 function tagQuery(tag) {
   return { name: 'search', query: searchParams(`Page: page/tags == "${tag}"`, 'pages') }
 }
@@ -96,10 +92,7 @@ function tagQuery(tag) {
         </div>
         <div v-for="property in page.properties" :key="property.key" class="prop">
           <dt>{{ property.key }}</dt>
-          <dd>
-            <a v-if="isUrl(property.value)" :href="property.value" target="_blank" rel="noopener">{{ property.value }}</a>
-            <template v-else>{{ property.value }}</template>
-          </dd>
+          <dd v-html="property.html"></dd>
         </div>
         <div v-if="page.confluence" class="prop">
           <dt>Confluence</dt>

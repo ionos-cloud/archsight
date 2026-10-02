@@ -1766,12 +1766,16 @@ components:
           description: 'Frontmatter `properties`: further key/value pairs (e.g. the page properties imported from Confluence), in order'
           items:
             type: object
-            required: [key, value]
+            required: [key, value, html]
             properties:
               key:
                 type: string
               value:
                 type: string
+                description: The text as written in the frontmatter
+              html:
+                type: string
+                description: The value rendered as inline markdown (links, emphasis, `{macros}`, `[[wiki links]]`), without a paragraph around it
         confluence:
           type: [string, 'null']
           format: uri

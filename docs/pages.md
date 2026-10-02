@@ -31,7 +31,7 @@ confluence: https://confluence.example.com/spaces/ARCH/pages/12345/Language+Stra
 | `tags` | Comma-separated list (or YAML list); searchable with `Page: page/tags == "concept"` |
 | `author`, `owner` | `Name <email@domain.com>` or just a name; with an email shown as a `mailto:` link |
 | `created`, `updated` | ISO 8601 date or time (`2026-01-12`, `2026-01-12T09:30:00Z`). The inline editor sets `updated` when it saves a changed page; the Confluence import fills both from the page history |
-| `properties` | Everything else you want to record, as a mapping of `key: value` pairs (kept in order, shown in the page header, URLs as links, `{jira:KEY}` works). In the API and in queries it is `page/properties`, one `Key: value` per line |
+| `properties` | Everything else you want to record, as a mapping of `key: value` pairs (kept in order and shown in the page header). Values are inline markdown: links, emphasis, `{macros}` such as `{jira:KEY}` and `[[wiki links]]` work, bare URLs become links. In the API and in queries it is `page/properties`, one `Key: value` per line |
 | `status` | Free text, e.g. `rfc`, `wip`, `approved` |
 | `toc` | `yes` shows a table of contents |
 | `confluence` | URL of the corresponding Confluence page, shown as a link |
