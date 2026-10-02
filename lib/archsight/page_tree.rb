@@ -24,21 +24,35 @@ module Archsight
     end
 
     # Menu titles leading to the page, outermost first
+    # (the menu that opens the page is the page itself, so it is not part of its own trail)
     def breadcrumb(page)
       trail = [] #: Array[Hash[String, String]]
       seen = Set.new
-      current = parent_menu(page)
+      opener = opening_menu(page)
+      current = parent_menu(page) || (opener && parent_menu(opener))
       while current && seen.add?(current.name)
-        trail.unshift({ "name" => current.name, "title" => current.title })
+        crumb = { "name" => current.name, "title" => current.title }
+        crumb["page"] = current.own_page.name if current.own_page
+        trail.unshift(crumb)
         current = parent_menu(current)
       end
       trail
     end
 
+    # The child pages of a page: the contents of the menu that opens it. A sub-menu is one entry (its title, linked
+    # to the page it opens), its own contents are the entries below it.
+    # @param depth [Integer, Float] number of levels
+    # @param sort [String, nil] "title" sorts every level by title, nil keeps the declared order
+    # @return [Array<Hash>] `{ "name" => page name or nil, "title" =>, "children" => [...] }`
+    def children(page, depth: 1, sort: nil, reverse: false)
+      menu = opening_menu(page)
+      menu ? child_entries(menu, depth, sort, reverse, [menu.name]) : []
+    end
+
     # Pages that are not contained in any menu. The home page is not one of them: it is shown
     # at `/` and does not need a menu.
     def unsorted_pages
-      pages.values.reject { |p| parent_menu(p) || p.home? }.sort_by { |p| p.title.to_s.downcase }
+      pages.values.reject { |p| parent_menu(p) || opening_menu(p) || p.home? }.sort_by { |p| p.title.to_s.downcase }
     end
 
     # The page shown at `/` instead of the overview: a page named "Home" wins over one that is
@@ -81,6 +95,7 @@ module Archsight
         "name" => menu.name,
         "title" => menu.title,
         "icon" => menu.annotations["menu/icon"],
+        "page" => menu.own_page&.name,
         "children" => children.filter_map { |child| child_node(child, path) }
       }
     end
@@ -104,12 +119,31 @@ module Archsight
     end
 
     def contained_menu?(menu)
-      menu.references.any? { |r| r[:instance].is_a?(Archsight::Resources::PageMenu) }
+      !parent_menu(menu).nil?
     end
 
+    # The menu that contains a page or menu (opening a page does not make the menu its parent)
     def parent_menu(inst)
-      ref = inst.references.find { |r| r[:instance].is_a?(Archsight::Resources::PageMenu) }
+      ref = inst.references.find { |r| r[:instance].is_a?(Archsight::Resources::PageMenu) && r[:verb].to_s == "contains" }
       ref && ref[:instance]
+    end
+
+    # The menu whose title links to the page
+    def opening_menu(page)
+      ref = page.references.find { |r| r[:instance].is_a?(Archsight::Resources::PageMenu) && r[:verb].to_s == "opens" }
+      ref && ref[:instance]
+    end
+
+    def child_entries(menu, depth, sort, reverse, path)
+      entries = menu.relations(:contains, :pages).map { |page| { "name" => page.name, "title" => page.title, "children" => [] } }
+      menu.relations(:contains, :menus).each do |sub|
+        next if path.include?(sub.name)
+
+        below = depth > 1 ? child_entries(sub, depth - 1, sort, reverse, path + [sub.name]) : []
+        entries << { "name" => sub.own_page&.name, "title" => sub.title, "children" => below }
+      end
+      entries = entries.sort_by { |entry| entry["title"].to_s.downcase } if sort == "title"
+      reverse ? entries.reverse : entries
     end
   end
 end

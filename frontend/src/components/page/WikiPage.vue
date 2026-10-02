@@ -13,7 +13,7 @@ import EmbeddedKind from './EmbeddedKind.vue'
 const props = defineProps({
   title: String,
   html: String,
-  breadcrumb: { type: Array, default: () => [] }, // [{ title }]
+  breadcrumb: { type: Array, default: () => [] }, // [{ title, page? }]
   toc: { type: Array, default: () => [] }, // [{ level, id, text }]
   backlinks: { type: Array, default: () => [] }, // [{ name, title }]
   editName: { type: String, default: null }, // shows the pen link to the editor of this page
@@ -83,7 +83,10 @@ function scrollTo(id) {
         aria-label="Edit page"
       ><i class="iconoir-edit-pencil"></i></router-link>
       <div v-if="breadcrumb.length" class="breadcrumb">
-        <span v-for="(crumb, i) in breadcrumb" :key="i">{{ crumb.title }}</span>
+        <template v-for="(crumb, i) in breadcrumb" :key="i">
+          <router-link v-if="crumb.page" :to="{ name: 'page', params: { name: crumb.page } }">{{ crumb.title }}</router-link>
+          <span v-else>{{ crumb.title }}</span>
+        </template>
       </div>
       <h1>{{ title }}</h1>
       <slot name="properties"></slot>

@@ -135,7 +135,7 @@ class Archsight::Web::Application < Sinatra::Base
     # @param git_url [String, nil] Git URL for resolving relative paths (e.g., for README images)
     # @param base [String, nil] directory of the file the markdown comes from, relative to the resources
     #   directory ("" for the root): its relative images become assets (see Archsight::Assets)
-    def markdown(data, git_url: nil, base: nil)
+    def markdown(data, git_url: nil, base: nil, page: nil)
       html = Kramdown::Document.new(data, input: "GFM").to_html
       html = Archsight::Helpers::AssetImages.rewrite(html, base_dir: base, resources_dir: Archsight.resources_dir) if base
       # ```asd blocks become placeholders until the text passes below are done (see DiagramBlocks)
@@ -156,7 +156,7 @@ class Archsight::Web::Application < Sinatra::Base
       # ![[View/Name]] / ![[Analysis/Name]] become placeholders the frontend fills with the live content
       # Convert [[Target]] / [[Target|label]] wiki-style links to page and resource links
       html = Archsight::Helpers::Embeds.new(db).render(html)
-      html = Archsight::Helpers::WikiLinks.new(db).render(html)
+      html = Archsight::Helpers::WikiLinks.new(db).render(Archsight::Helpers::Macros.render(html, context: Archsight::Helpers::Macros::Context.new(db, page)))
       Archsight::Helpers::DiagramBlocks.restore(html, diagrams)
     end
 

@@ -12,7 +12,7 @@ const page = ref(null)
 const error = ref(null)
 const hasProperties = computed(() => {
   const p = page.value
-  return !!(p && (p.status || p.author || p.owner || p.tags.length || p.confluence))
+  return !!(p && (p.status || p.author || p.owner || p.created || p.updated || p.tags.length || p.properties?.length || p.confluence))
 })
 
 async function load() {
@@ -31,6 +31,15 @@ watch(() => props.name, load, { immediate: true })
 
 function statusClass(status) {
   return `status-${String(status).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+}
+
+function day(value) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function isUrl(value) {
+  return /^https?:\/\/\S+$/.test(value)
 }
 
 function tagQuery(tag) {
@@ -69,12 +78,27 @@ function tagQuery(tag) {
             <template v-else>{{ page.owner.name }}</template>
           </dd>
         </div>
+        <div v-if="page.created" class="prop">
+          <dt>Created</dt>
+          <dd :title="page.created">{{ day(page.created) }}</dd>
+        </div>
+        <div v-if="page.updated" class="prop">
+          <dt>Updated</dt>
+          <dd :title="page.updated">{{ day(page.updated) }}</dd>
+        </div>
         <div v-if="page.tags.length" class="prop">
           <dt>Tags</dt>
           <dd>
             <template v-for="(tag, i) in page.tags" :key="tag">
               <router-link :to="tagQuery(tag)">{{ tag }}</router-link><template v-if="i < page.tags.length - 1">, </template>
             </template>
+          </dd>
+        </div>
+        <div v-for="property in page.properties" :key="property.key" class="prop">
+          <dt>{{ property.key }}</dt>
+          <dd>
+            <a v-if="isUrl(property.value)" :href="property.value" target="_blank" rel="noopener">{{ property.value }}</a>
+            <template v-else>{{ property.value }}</template>
           </dd>
         </div>
         <div v-if="page.confluence" class="prop">

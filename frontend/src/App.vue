@@ -22,14 +22,14 @@ async function loadKinds() {
 loadKinds()
 
 const pages = ref(null)
-const pageTags = ref([])
+const pageFilters = ref([])
 const pageHome = ref(null) // { name, title } of the page shown at /, if there is one
 
 async function loadPages() {
   try {
     const data = await getPages()
     pages.value = data.pages
-    pageTags.value = data.tags || []
+    pageFilters.value = data.filters || []
     pageHome.value = data.home || null
   } catch {
     pages.value = []
@@ -67,7 +67,7 @@ provide('reloadPages', loadPages)
   <template v-else>
     <NavigationBar />
     <main class="container-fluid">
-      <SidebarPanel :kinds="kinds" :pages="pages" :page-tags="pageTags" />
+      <SidebarPanel :kinds="kinds" :pages="pages" :page-filters="pageFilters" />
       <div class="content">
         <router-view />
       </div>

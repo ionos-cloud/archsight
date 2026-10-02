@@ -52,7 +52,16 @@
   color: var(--pico-muted-color);
 }
 
-.wiki-page .breadcrumb span:not(:last-child)::after {
+.wiki-page .breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.wiki-page .breadcrumb a:hover {
+  color: var(--wiki-accent);
+}
+
+.wiki-page .breadcrumb > :not(:last-child)::after {
   content: '\203A';
   margin-left: 0.35rem;
 }
@@ -214,7 +223,7 @@
 
 .wiki-page .page-body th,
 .wiki-page .page-body td {
-  min-width: 6rem; /* wide tables scroll instead of squeezing every column */
+  min-width: 3rem; /* wide tables scroll instead of squeezing every column, narrow columns may stay narrow */
   padding: 6px 10px;
   border: 1px solid var(--wiki-line);
   text-align: left;

@@ -7,6 +7,7 @@ require_relative "helpers/resource_resolver"
 require_relative "helpers/embeds"
 require_relative "helpers/wiki_links"
 require_relative "helpers/asset_images"
+require_relative "helpers/macros"
 
 module Archsight
   # Helpers provides utility functions for the architecture tool

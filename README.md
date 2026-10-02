@@ -99,6 +99,8 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 
 **Export to Confluence**: `archsight export --to confluence` publishes pages to the Confluence page they link to, with images, diagrams and draw.io, and refuses to overwrite edits made in Confluence unless `--force` ([Wiki pages](docs/pages.md#exporting-to-confluence)).
 
+**Macros** such as `{status:yellow WIP}` and `{emoticon:2705}` work inline in pages ([Wiki pages](docs/pages.md#macros)).
+
 **Views and analyses** can be embedded in pages with `![[View/Name]]` / `![[Analysis/Name]]` ([Wiki pages](docs/pages.md#embedding-views-and-analyses)).
 
 **Images and draw.io diagrams** are plain files in the resources directory and are embedded in markdown with relative

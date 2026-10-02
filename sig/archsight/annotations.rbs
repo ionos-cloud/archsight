@@ -140,6 +140,12 @@ module Archsight
       def self.to_numeric: (Array[untyped]) -> Array[Float]
     end
 
+    class Person
+      NAME: Regexp
+
+      def self.valid?: (untyped) -> bool
+    end
+
     class EmailRecipient
       EMAIL_PATTERN: Regexp
       RECIPIENT_PATTERN: Regexp

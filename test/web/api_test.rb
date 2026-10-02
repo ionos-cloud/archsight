@@ -518,4 +518,46 @@ class APITest < Minitest::Test
     # Should be normalized to at least 0
     assert_operator data["offset"], :>=, 0
   end
+
+  # GET /api/v1/status tests
+
+  def test_status_lozenge_is_a_cached_svg
+    get "/api/v1/status/yellow/WIP.svg"
+
+    assert_predicate last_response, :ok?
+    assert_equal "image/svg+xml", last_response.content_type.split(";").first
+    assert_includes last_response.body, ">WIP</text>"
+    assert_includes last_response.headers["Cache-Control"], "immutable"
+    assert_includes last_response.headers["Cache-Control"], "max-age=31536000"
+    assert_equal "nosniff", last_response.headers["X-Content-Type-Options"]
+    assert_includes last_response.headers["Content-Security-Policy"], "default-src 'none'"
+  end
+
+  def test_status_lozenge_answers_not_modified_for_its_etag
+    get "/api/v1/status/green/OK"
+    etag = last_response.headers["ETag"]
+
+    refute_nil etag
+
+    get "/api/v1/status/green/OK", {}, { "HTTP_IF_NONE_MATCH" => etag }
+
+    assert_equal 304, last_response.status
+  end
+
+  def test_status_lozenge_text_may_be_encoded_and_the_suffix_is_optional
+    get "/api/v1/status/red/a%2Fb%20c.svg"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, ">A/B C</text>"
+  end
+
+  def test_status_lozenge_rejects_unknown_colours_and_bad_text
+    get "/api/v1/status/pink/x"
+
+    assert_equal 404, last_response.status
+
+    get "/api/v1/status/red/#{"a" * 41}"
+
+    assert_equal 400, last_response.status
+  end
 end

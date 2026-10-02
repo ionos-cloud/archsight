@@ -40,9 +40,11 @@ const route = useRoute()
 
 const activeName = computed(() => (route.name === 'page' ? route.params.name : null))
 
+// Whether the page is the menu's own page or sits somewhere below it
 function contains(node, name) {
-  return (node.children || []).some(
-    (c) => (c.type === 'page' && c.name === name) || (c.type === 'menu' && contains(c, name)),
+  return (
+    node.page === name ||
+    (node.children || []).some((c) => (c.type === 'page' && c.name === name) || (c.type === 'menu' && contains(c, name)))
   )
 }
 
@@ -82,7 +84,23 @@ watch(activeName, (name) => {
       :aria-selected="node.type === 'page' ? activeName === node.name : undefined"
     >
       <template v-if="node.type === 'menu'">
-        <button type="button" class="row menu-toggle" @click="toggle(node)">
+        <!-- a menu with its own page: the arrow only unfolds, the title opens the page -->
+        <div v-if="node.page" class="row menu-split" :class="{ current: activeName === node.page }">
+          <button
+            type="button"
+            class="fold"
+            :aria-label="`${isOpen(node) ? 'Fold' : 'Unfold'} ${node.title}`"
+            @click="toggle(node)"
+          >
+            <i class="chevron iconoir-nav-arrow-right" :class="{ open: isOpen(node) }" aria-hidden="true"></i>
+          </button>
+          <router-link
+            class="menu-link"
+            :to="{ name: 'page', params: { name: node.page } }"
+            :aria-current="activeName === node.page ? 'page' : undefined"
+          >{{ node.title }}</router-link>
+        </div>
+        <button v-else type="button" class="row menu-toggle" @click="toggle(node)">
           <i class="chevron iconoir-nav-arrow-right" :class="{ open: isOpen(node) }" aria-hidden="true"></i>
           <span>{{ node.title }}</span>
         </button>
@@ -171,6 +189,51 @@ watch(activeName, (name) => {
 
 .menu-toggle {
   font-weight: 600;
+}
+
+/* menu with its own page: the chevron button and the title link are two separate targets in one row */
+.menu-split {
+  gap: 0;
+  padding: 0;
+  cursor: default;
+}
+
+.fold {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  width: auto;
+  margin: 0;
+  padding: 0.2rem 0.25rem 0.2rem 0.5rem;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.fold:focus-visible,
+.menu-link:focus-visible {
+  outline: 2px solid var(--wiki-accent);
+  outline-offset: -2px;
+}
+
+.menu-link {
+  flex: 1;
+  margin: 0;
+  padding: 0.2rem 0.5rem 0.2rem 0.25rem;
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.menu-split.current {
+  border-left-color: var(--wiki-accent);
+  background: var(--wiki-tint);
+}
+
+.menu-split.current .menu-link {
+  color: var(--wiki-accent);
 }
 
 .chevron,

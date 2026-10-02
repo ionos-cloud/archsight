@@ -71,12 +71,12 @@ module Archsight::Web::API::Routes
     json_response(build_instance_response(kind, instance))
   end
 
-  # GET /api/v1/pages - Page tree built from PageMenu resources, page tags and the home page
+  # GET /api/v1/pages - Page tree built from PageMenu resources, page tags and filters and the home page
   # (shown at `/`; it is not in the tree unless a menu contains it)
   get "/api/v1/pages" do
     tree = Archsight::PageTree.new(db)
     home = tree.home_page
-    json_response({ pages: tree.tree, tags: page_tag_counts, home: home && { name: home.name, title: home.title } })
+    json_response({ pages: tree.tree, tags: page_tag_counts, filters: page_filters, home: home && { name: home.name, title: home.title } })
   end
 
   # GET /api/v1/pages/:name - Rendered page with metadata, toc, breadcrumb and backlinks
@@ -128,6 +128,21 @@ module Archsight::Web::API::Routes
     cache_control :public, :must_revalidate, max_age: 0
     etag "#{File.mtime(file).to_i}-#{File.size(file)}"
     send_file file, type: type, disposition: :inline
+  end
+
+  # GET /api/v1/status/:colour/*text - The lozenge of a `{status:colour text}` macro, generated on the fly. The
+  # URL fully determines the SVG, so it is cached for good.
+  get "/api/v1/status/:colour/*" do
+    text = params["splat"].first.to_s.delete_suffix(".svg").strip
+    json_error("Unknown colour '#{params["colour"]}'", status: 404, error_type: "NotFound") unless Archsight::Helpers::Macros::Status::COLOURS.key?(params["colour"].to_s.downcase)
+    json_error("The text must have 1 to #{Archsight::Helpers::Macros::Status::MAX_TEXT} characters without braces", status: 400, error_type: "BadRequest") unless Archsight::Helpers::Macros::Status.valid_text?(text)
+
+    svg = Archsight::Helpers::Macros::Status.svg(params["colour"], text)
+    content_type "image/svg+xml"
+    headers "X-Content-Type-Options" => "nosniff", "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    cache_control :public, :immutable, max_age: 31_536_000
+    etag Archsight::Helpers::Macros::Status.etag(svg).delete('"')
+    svg
   end
 
   helpers do

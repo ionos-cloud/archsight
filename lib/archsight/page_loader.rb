@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "date"
+require "time"
 require "yaml"
 
 module Archsight
@@ -69,6 +70,9 @@ module Archsight
 
     def format_value(key, value)
       case value
+      when Hash then value.map { |k, v| "#{k}: #{v.to_s.gsub(/\s*\n\s*/, " ")}" }.join("\n")
+      when Time then value.utc.iso8601
+      when Date then value.iso8601
       when Array then value.join(", ")
       when true then key == "toc" ? "yes" : "true"
       when false then key == "toc" ? "no" : "false"

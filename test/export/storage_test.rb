@@ -232,4 +232,14 @@ class ConfluenceStorageTest < Minitest::Test
   ensure
     ENV.delete("ARCHSIGHT_DRAWIO_CLI")
   end
+
+  def test_macros_become_confluence_macros_also_in_tables_and_never_in_code
+    result = convert("Now {status:green Done} {emoticon:2705 check mark button}\n\n| A | B |\n|---|---|\n| {status:red R&D} | `{status:red x}` |\n")
+    well_formed!(result.body)
+
+    assert_includes result.body, %(<ac:parameter ac:name="colour">Green</ac:parameter><ac:parameter ac:name="title">Done</ac:parameter>)
+    assert_includes result.body, %(<ac:emoticon ac:emoji-id="2705" ac:name="check mark button")
+    assert_includes result.body, %(<td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">Red</ac:parameter><ac:parameter ac:name="title">R&amp;D</ac:parameter>)
+    assert_includes result.body, "<code>{status:red x}</code>"
+  end
 end

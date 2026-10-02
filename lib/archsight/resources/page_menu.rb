@@ -14,6 +14,7 @@ class Archsight::Resources::PageMenu < Archsight::Resources::Base
   icon "folder"
   layer "other"
 
+  relation :opens, :pages, "Page"
   relation :contains, :pages, "Page"
   relation :contains, :menus, "PageMenu"
 
@@ -28,5 +29,10 @@ class Archsight::Resources::PageMenu < Archsight::Resources::Base
 
   def title
     annotations["menu/title"] || name
+  end
+
+  # The page the menu title links to, nil if the menu only groups
+  def own_page
+    relations(:opens, :pages).first
   end
 end
