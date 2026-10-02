@@ -10,14 +10,14 @@ class JiraMacroTest < Minitest::Test
   TEMPLATE = "https://jira.example.com/browse/{issue}"
 
   def setup
-    @env = ENV.to_h.slice("ARCHSIGHT_JIRA_ISSUE_URL", "ARCHSIGHT_JIRA_CONFIG")
+    @env = ENV.to_h.slice("ARCHSIGHT_JIRA_ISSUE_URL", "ARCHSIGHT_CONFIG")
     ENV.delete("ARCHSIGHT_JIRA_ISSUE_URL")
-    ENV["ARCHSIGHT_JIRA_CONFIG"] = File.join(Dir.tmpdir, "no-such-jira-#{Process.pid}.yaml")
+    ENV["ARCHSIGHT_CONFIG"] = File.join(Dir.tmpdir, "no-such-archsight-#{Process.pid}.yaml")
     Settings.reset!
   end
 
   def teardown
-    %w[ARCHSIGHT_JIRA_ISSUE_URL ARCHSIGHT_JIRA_CONFIG].each { |key| ENV.delete(key) }
+    %w[ARCHSIGHT_JIRA_ISSUE_URL ARCHSIGHT_CONFIG].each { |key| ENV.delete(key) }
     ENV.update(@env)
     Settings.reset!
   end
@@ -56,9 +56,9 @@ class JiraMacroTest < Minitest::Test
 
   def test_the_url_comes_from_the_file_and_nothing_else_of_it_is_used
     Dir.mktmpdir do |dir|
-      file = File.join(dir, "jira.yaml")
-      File.write(file, "token: secret\nissue_url: #{TEMPLATE}\n")
-      ENV["ARCHSIGHT_JIRA_CONFIG"] = file
+      file = File.join(dir, "archsight.yaml")
+      File.write(file, "jira:\n  token: secret\n  issue_url: #{TEMPLATE}\nconfluence:\n  token: other\n")
+      ENV["ARCHSIGHT_CONFIG"] = file
       Settings.reset!
 
       assert_equal TEMPLATE, Settings.issue_url
@@ -68,9 +68,9 @@ class JiraMacroTest < Minitest::Test
 
   def test_a_broken_file_means_no_links
     Dir.mktmpdir do |dir|
-      file = File.join(dir, "jira.yaml")
-      File.write(file, "issue_url: [unclosed\n")
-      ENV["ARCHSIGHT_JIRA_CONFIG"] = file
+      file = File.join(dir, "archsight.yaml")
+      File.write(file, "jira:\n  issue_url: [unclosed\n")
+      ENV["ARCHSIGHT_CONFIG"] = file
       Settings.reset!
 
       assert_nil Settings.issue_url

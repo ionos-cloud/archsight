@@ -41,6 +41,9 @@ Access web interface at: <http://localhost:4567>
 | `ARCHSIGHT_RESOURCES_DIR` | Path to resources directory inside the container | `/resources` |
 | `APP_ENV` | Application environment | `production` |
 
+Settings for integrations (access tokens, the Jira URL) are given as environment variables or in a mounted configuration file,
+see [Configuration](/doc/configuration#containers).
+
 ## Building Locally
 
 ```bash

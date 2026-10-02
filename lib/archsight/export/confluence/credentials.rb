@@ -1,21 +1,20 @@
 # frozen_string_literal: true
 
-require "yaml"
+require_relative "../../user_config"
 
 module Archsight
   module Export
     module Confluence
-      # What the export needs to know about the Confluence it writes to, like JIRA_TOKEN for Jira:
+      # What the export needs to know about the Confluence it writes to, from the `confluence` section of the user
+      # configuration (see Archsight::UserConfig):
       #
-      #   ~/.config/architecture/confluence.yaml
-      #     token: <personal access token>     # or CONFLUENCE_TOKEN
-      #     drawio: true                       # this Confluence has the draw.io app (or CONFLUENCE_DRAWIO=true)
+      #   confluence:
+      #     token: <personal access token>     # or ARCHSIGHT_CONFLUENCE_TOKEN (CONFLUENCE_TOKEN)
+      #     drawio: true                       # this Confluence has the draw.io app (ARCHSIGHT_CONFLUENCE_DRAWIO)
       #
-      # The token never appears in output: it is wrapped in a Secret, and the errors name the file and the field only.
+      # The token never appears in output: it is wrapped in a Secret, and the errors name the file and the setting only.
       module Credentials
-        DEFAULT_PATH = File.join("~", ".config", "architecture", "confluence.yaml")
         TRUE_WORDS = %w[true 1 yes on].freeze
-        FALSE_WORDS = %w[false 0 no off].freeze
 
         # Holds the token; to_s and inspect hide it, #reveal is the one way to read it.
         class Secret
@@ -32,37 +31,27 @@ module Archsight
 
         module_function
 
-        # @param path [String, nil] credentials file (default ~/.config/architecture/confluence.yaml)
+        # @param path [String, nil] configuration file (default: see UserConfig.path)
         # @return [Settings]
-        # @raise [Archsight::Export::Error] without a token
+        # @raise [Archsight::Export::Error] without a token, or with a configuration file that cannot be read
         def load(path: nil, env: ENV)
-          file = File.expand_path(path || DEFAULT_PATH)
-          data = File.file?(file) ? read(file) : nil
-          token = env["CONFLUENCE_TOKEN"].to_s.strip
-          token = data["token"].to_s.strip if token.empty? && data
-          raise Error, missing(file, data ? "it has no `token:` field" : "the file does not exist") if token.empty?
+          file = path ? File.expand_path(path) : UserConfig.path(env: env)
+          token = UserConfig.setting("confluence", "token", aliases: ["CONFLUENCE_TOKEN"], env: env, path: path).to_s.strip
+          raise Error, missing(file) if token.empty?
 
-          Settings.new(token: Secret.new(token), drawio: flag(env["CONFLUENCE_DRAWIO"], data&.fetch("drawio", nil)))
+          drawio = UserConfig.setting("confluence", "drawio", aliases: ["CONFLUENCE_DRAWIO"], env: env, path: path)
+          Settings.new(token: Secret.new(token), drawio: flag(drawio))
+        rescue UserConfig::Error => e
+          raise Error, e.message
         end
 
-        def read(file)
-          data = YAML.safe_load_file(file)
-          data.is_a?(Hash) ? data : {}
-        rescue Psych::Exception
-          raise Error, missing(file, "it is not valid YAML")
+        # "true"/"yes"/... or a YAML boolean; anything else (and unset) is false
+        def flag(value)
+          value == true || TRUE_WORDS.include?(value.to_s.strip.downcase)
         end
 
-        # An environment value ("true"/"false") wins over the file's boolean; unset means false
-        def flag(from_env, from_file)
-          word = from_env.to_s.strip.downcase
-          return true if TRUE_WORDS.include?(word)
-          return false if FALSE_WORDS.include?(word)
-
-          from_file == true || TRUE_WORDS.include?(from_file.to_s.downcase)
-        end
-
-        def missing(file, reason)
-          "no Confluence token: set CONFLUENCE_TOKEN or put `token: <personal access token>` in #{file} (#{reason})"
+        def missing(file)
+          "no Confluence token: set ARCHSIGHT_CONFLUENCE_TOKEN or put `token: <personal access token>` in the `confluence:` section of #{file}"
         end
       end
     end

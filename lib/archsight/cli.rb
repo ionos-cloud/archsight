@@ -286,17 +286,17 @@ module Archsight
 
       confluence: a page is only overwritten when Confluence still holds what the last export wrote. Pages
       never exported before, or edited in Confluence since, are reported as blocked and not exported until
-      --force. The token is read from CONFLUENCE_TOKEN or the `token:` field of
-      ~/.config/architecture/confluence.yaml (see --credentials); `drawio: true` there (or --drawio) says the
-      Confluence has the draw.io app, then diagrams become draw.io macros instead of images. Exits with 1 if a page
-      was blocked or failed.
+      --force. The token is read from ARCHSIGHT_CONFLUENCE_TOKEN or `confluence.token` in
+      ~/.config/archsight/archsight.yaml (see --config); `confluence.drawio: true` there (or --drawio) says the
+      Confluence has the draw.io app, then diagrams become draw.io macros instead of images. See the Configuration
+      page of the documentation. Exits with 1 if a page was blocked or failed.
     DESC
     option :to, type: :string, required: true, desc: "Export target: confluence"
     option :force, type: :boolean, default: false, desc: "Overwrite pages that were edited in the target since the last export"
     option :lock, type: :boolean, default: true, desc: "Restrict editing of exported pages to the exporting user (--no-lock to skip)"
     option :dry_run, type: :boolean, default: false, desc: "Show what would be exported without writing anything"
-    option :credentials, type: :string, desc: "Credentials file (default: ~/.config/architecture/confluence.yaml)"
-    option :drawio, type: :boolean, desc: "The target has the draw.io app: export diagrams as draw.io macros, else as images (default: `drawio:` in the credentials file)"
+    option :config, type: :string, desc: "Configuration file (default: ARCHSIGHT_CONFIG or ~/.config/archsight/archsight.yaml)"
+    option :drawio, type: :boolean, desc: "The target has the draw.io app: export diagrams as draw.io macros, else as images (default: `confluence.drawio` of the configuration)"
     def export(*names)
       configure_resources
       require "archsight/database"
@@ -311,9 +311,9 @@ module Archsight
       end
 
       settings = nil
-      if options[:credentials]
+      if options[:config]
         require "archsight/export/confluence/credentials"
-        settings = Archsight::Export::Confluence::Credentials.load(path: options[:credentials])
+        settings = Archsight::Export::Confluence::Credentials.load(path: options[:config])
       end
       exporter = Archsight::Export.exporter_for(options[:to]).new(
         database: db, resources_dir: Archsight.resources_dir, force: options[:force], lock: options[:lock],
