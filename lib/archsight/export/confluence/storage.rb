@@ -48,6 +48,11 @@ module Archsight
             @options[:storage].image(elem.attr["src"].to_s, elem.attr["alt"].to_s)
           end
 
+          # A macro whose output is a link of its own (Jira) is shown as plain text inside a link: no link in a link
+          def convert_a(elem, indent)
+            @options[:storage].in_link { super }
+          end
+
           def convert_text(elem, indent)
             @options[:storage].restore(super)
           end
@@ -143,7 +148,19 @@ module Archsight
         end
 
         def restore(text)
-          text.gsub(PLACEHOLDER) { @placeholders.fetch(Regexp.last_match(2).to_i) }
+          text.gsub(PLACEHOLDER) do
+            xml, plain = @placeholders.fetch(Regexp.last_match(2).to_i)
+            @in_link && plain ? plain : xml
+          end
+        end
+
+        # Runs the block for the content of a link
+        def in_link
+          previous = @in_link
+          @in_link = true
+          yield
+        ensure
+          @in_link = previous
         end
 
         private
@@ -161,7 +178,7 @@ module Archsight
         def protect_text(text)
           text = Archsight::Helpers::Macros.replace(text) do |macro, value|
             xml = macro.confluence(value, Archsight::Helpers::Macros::Context.new(@database, nil))
-            xml && placeholder("LINK", xml)
+            xml && placeholder("LINK", xml, plain: (macro.plain(value) if macro.respond_to?(:plain)))
           end
           text = text.gsub(/!\[\[([^\]|]+)\]\]/) { placeholder("EMBED", embed_note(Regexp.last_match(1).strip)) }
           text.gsub(Archsight::Helpers::WikiLinks::PATTERN) do
@@ -169,8 +186,8 @@ module Archsight
           end
         end
 
-        def placeholder(kind, xml)
-          @placeholders << xml
+        def placeholder(kind, xml, plain: nil)
+          @placeholders << [xml, plain]
           "ARCHSIGHT#{kind}#{@placeholders.length - 1}X"
         end
 

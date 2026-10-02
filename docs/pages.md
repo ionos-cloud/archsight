@@ -166,6 +166,11 @@ the import of a Confluence page does the same the other way round.
 | `children` | `{children}`, `{children:all sort=title}` | the child pages of the page it is on: the contents of the menu that opens the page |
 | `pagetree` | `{pagetree}`, `{pagetree:root=handbook sort=title}` | the page tree below a page, all levels, the page itself on top |
 
+In the Confluence export every macro becomes the native Confluence macro, in paragraphs, headings, lists and table cells: `status` the
+status lozenge (colours as in Confluence), `emoticon` an emoticon, `jira` the Jira issue macro (with the `server` and `serverId` of the
+`jira.server` / `jira.server_id` settings, see [Configuration](/doc/configuration)), `children` and `pagetree` the macros of the same name.
+Inside the text of a link a Jira macro is written as its plain key (a link cannot contain a link); in code it stays as written.
+
 The Jira link is built from the `jira.issue_url` setting, a URL with `{issue}` in it (`ARCHSIGHT_JIRA_ISSUE_URL`), see
 [Configuration](/doc/configuration):
 

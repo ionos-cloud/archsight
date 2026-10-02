@@ -112,9 +112,11 @@ module Archsight
             Children.list([{ "name" => root.name, "title" => root.title, "children" => entries }], "macro-children macro-pagetree macro-block")
           end
 
+          # The root of Confluence's page tree is a link (an empty one is "this page"), not a string
           def confluence(options, context = nil)
-            title = options.root ? (page_of(options.root, context)&.title || options.root) : "@self"
-            parameters = [parameter("root", title)]
+            title = options.root && (page_of(options.root, context)&.title || options.root)
+            link = title ? %(<ac:link><ri:page ri:content-title="#{ERB::Util.html_escape(title)}" /></ac:link>) : "<ac:link />"
+            parameters = [%(<ac:parameter ac:name="root">#{link}</ac:parameter>)]
             parameters << parameter("sort", "title") if options.order
             parameters << parameter("reverse", "true") if options.reverse
             %(<ac:structured-macro ac:name="pagetree">#{parameters.join}</ac:structured-macro>)

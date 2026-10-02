@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "erb"
+require "kramdown"
+require "kramdown-parser-gfm"
 require_relative "../../helpers/macros"
 
 module Archsight
@@ -58,18 +60,19 @@ module Archsight
           Annotations::EmailRecipient.parse(value)&.fetch(:name)
         end
 
-        # Text with its links and `{macros}` (jira, status, emoticon) made live, the rest escaped
+        # Inline markdown (emphasis, code, links, bare URLs) with `{macros}` (jira, status, emoticon) made live
         def text(value)
           source = value.to_s
           return "" if source.strip.empty?
 
           kept = []
-          pattern = /#{Helpers::Macros::PATTERN.source}|#{URL.source}/
+          pattern = /#{Helpers::Macros::PATTERN.source}|(?<![(<"\[])#{URL.source}/
           marked = source.gsub(pattern) do |match|
             kept << live(match)
-            "\u0000#{kept.length - 1}\u0000"
-          end
-          h(marked).gsub(/\u0000(\d+)\u0000/) { kept.fetch(Regexp.last_match(1).to_i) }
+            "ARCHSIGHTKEPT#{kept.length - 1}X"
+          end.gsub("<", "&lt;") # raw HTML is not allowed, it could break the storage XML
+          html = Kramdown::Document.new(marked, input: "GFM", auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot]).to_html.strip
+          html.sub(%r{\A<p>(.*)</p>\z}m, '\1').gsub(/ARCHSIGHTKEPT(\d+)X/) { kept.fetch(Regexp.last_match(1).to_i) }
         end
 
         def live(match)
