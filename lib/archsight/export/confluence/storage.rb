@@ -121,13 +121,12 @@ module Archsight
 
         # @param markdown [String] body of the page
         # @param toc [Boolean] add a table of contents
-        # @param header [String] storage format put between the banner and the body (the page properties)
+        # @param header [String] storage format of the page properties, shown top left next to the banner
         # @return [Converted]
         def convert(markdown, toc: false, header: "")
           document = Kramdown::Document.new(protect(markdown), input: "GFM", auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot])
           html, = Converter.convert(document.root, document.options.merge(storage: self))
-          body = banner + header + (toc ? %(<ac:structured-macro ac:name="toc" />\n) : "") + html
-          Converted.new(body: body, attachments: @attachments, problems: @problems)
+          Converted.new(body: layout(header, banner, (toc ? %(<ac:structured-macro ac:name="toc" />\n) : "") + html), attachments: @attachments, problems: @problems)
         end
 
         # ---- called by the converter
@@ -216,6 +215,14 @@ module Archsight
         end
 
         private
+
+        # The page layout: the page properties top left, the hint that the page is generated top right (a narrow
+        # sidebar), then the content in a section of its own, full width
+        def layout(properties, banner, content)
+          cell = ->(xml) { %(<ac:layout-cell>#{xml.empty? ? "<p />" : xml}</ac:layout-cell>) }
+          %(<ac:layout><ac:layout-section ac:type="two_right_sidebar">#{cell.call(properties)}#{cell.call(banner)}</ac:layout-section>) +
+            %(<ac:layout-section ac:type="single">#{cell.call(content)}</ac:layout-section></ac:layout>)
+        end
 
         def banner
           %(<ac:structured-macro ac:name="info"><ac:rich-text-body><p>#{format(BANNER, source: h(@source))}</p></ac:rich-text-body></ac:structured-macro>\n)
