@@ -224,6 +224,7 @@ or `.../display/KEY/Title`). Without `PAGE` every page that has a `confluence:` 
 
 ```bash
 archsight export --to confluence -r resources                 # all linked pages
+archsight export --to confluence -r resources --tag public    # only pages tagged `public` (repeat or list: any match)
 archsight export --to confluence handbook-home --dry-run      # show what would happen
 archsight export --to confluence handbook-home --force        # overwrite changes made in Confluence
 ```

@@ -282,7 +282,7 @@ module Archsight
     desc "export [PAGE...]", "Export wiki pages to another system"
     long_desc <<~DESC
       Publishes wiki pages to the system named by --to. With no PAGE, every page that links to a target
-      page (for confluence: `confluence: <page URL>` in its frontmatter) is exported.
+      page (for confluence: `confluence: <page URL>` in its frontmatter) is exported. --tag TAG limits the export to pages carrying one of the given tags.
 
       confluence: a page is only overwritten when Confluence still holds what the last export wrote. Pages
       never exported before, or edited in Confluence since, are reported as blocked and not exported until
@@ -295,6 +295,7 @@ module Archsight
     option :force, type: :boolean, default: false, desc: "Overwrite pages that were edited in the target since the last export"
     option :lock, type: :boolean, default: true, desc: "Restrict editing of exported pages to the exporting user (--no-lock to skip)"
     option :dry_run, type: :boolean, default: false, desc: "Show what would be exported without writing anything"
+    option :tag, type: :array, default: [], desc: "Only export pages with at least one of these tags (repeatable, case-insensitive)"
     option :config, type: :string, desc: "Configuration file (default: ARCHSIGHT_CONFIG or ~/.config/archsight/archsight.yaml)"
     option :drawio, type: :boolean, desc: "The target has the draw.io app: export diagrams as draw.io macros, else as images (default: `confluence.drawio` of the configuration)"
     def export(*names)
@@ -317,7 +318,7 @@ module Archsight
       end
       exporter = Archsight::Export.exporter_for(options[:to]).new(
         database: db, resources_dir: Archsight.resources_dir, force: options[:force], lock: options[:lock],
-        dry_run: options[:dry_run], settings: settings, drawio: options[:drawio]
+        dry_run: options[:dry_run], settings: settings, drawio: options[:drawio], tags: options[:tag]
       )
       results = exporter.run(names)
       print_export_results(results)

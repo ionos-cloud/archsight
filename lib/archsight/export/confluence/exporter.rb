@@ -31,8 +31,9 @@ module Archsight
         # @param database [Archsight::Database]
         # @param settings [Credentials::Settings, nil] token and draw.io support; default: Credentials.load
         # @param drawio [Boolean, nil] overrides the settings' draw.io flag
+        # @param tags [Array<String>] only export pages that have at least one of these `page/tags` (case-insensitive)
         # @param client_factory [#call, nil] `(base_url, token) -> Client`, for tests
-        def initialize(database:, resources_dir:, force: false, lock: true, dry_run: false, settings: nil, drawio: nil, client_factory: nil)
+        def initialize(database:, resources_dir:, force: false, lock: true, dry_run: false, settings: nil, drawio: nil, tags: [], client_factory: nil)
           @database = database
           @resources_dir = resources_dir
           @force = force
@@ -40,6 +41,7 @@ module Archsight
           @dry_run = dry_run
           @settings = settings
           @drawio = drawio
+          @tags = Array(tags).map { |t| t.to_s.strip.downcase }.reject(&:empty?)
           @client_factory = client_factory || ->(base, secret) { Client.new(base: base, token: secret) }
           @clients = {}
         end
@@ -55,15 +57,22 @@ module Archsight
         # @return [Array<Array(Page|String, Result|nil)>]
         def select(names)
           all = @database.instances_by_kind("Page")
-          return all.values.select { |p| link(p) }.sort_by(&:name).map { |p| [p, nil] } if names.empty?
+          return all.values.select { |p| link(p) && tagged?(p) }.sort_by(&:name).map { |p| [p, nil] } if names.empty?
 
           names.map do |name|
             page = all[name]
             if page.nil? then [name, Result.new(page: name, status: :failed, message: "no such page")]
             elsif link(page).nil? then [page, Result.new(page: name, status: :skipped, message: "no `confluence:` link in the frontmatter")]
+            elsif !tagged?(page) then [page, Result.new(page: name, status: :skipped, message: "has none of the tags #{@tags.join(", ")}")]
             else [page, nil]
             end
           end
+        end
+
+        def tagged?(page)
+          return true if @tags.empty?
+
+          page.annotations["page/tags"].to_s.split(",").map { |t| t.strip.downcase }.intersect?(@tags)
         end
 
         def link(page)
