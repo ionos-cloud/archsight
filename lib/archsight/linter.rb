@@ -107,6 +107,8 @@ module Archsight
         @errors << "#{instance.path_ref}: Markdown syntax error in annotation '#{key}': #{e.message}"
       end
       validate_diagram_blocks(instance, key, value)
+      validate_view_blocks(instance, key, value)
+      validate_requirements_blocks(instance, key, value)
       validate_asset_images(instance, key, value)
       validate_embeds(instance, key, value)
     end
@@ -161,6 +163,25 @@ module Archsight
       end
     end
 
+    # Every ```view block must be a valid View, or the page shows an error box instead of the view
+    def validate_view_blocks(instance, key, value)
+      Helpers::ViewBlocks.sources(value).each_with_index do |source, index|
+        spec = Helpers::ViewBlocks.parse(source)
+        check_view_components(instance, spec[:fields])
+      rescue Helpers::ViewBlocks::Error => e
+        @errors << "#{instance.path_ref}: View error in annotation '#{key}' (view block #{index + 1}): #{e.message}"
+      end
+    end
+
+    # Every ```requirements block must be a valid filter, or the page shows an error box instead of the table
+    def validate_requirements_blocks(instance, key, value)
+      Helpers::RequirementsBlocks.sources(value).each_with_index do |source, index|
+        Helpers::RequirementsBlocks.parse(source)
+      rescue Helpers::RequirementsBlocks::Error => e
+        @errors << "#{instance.path_ref}: Requirements error in annotation '#{key}' (requirements block #{index + 1}): #{e.message}"
+      end
+    end
+
     # Renders with the same resolver the web UI uses, so a `resource` reference that would show as a broken link there is reported here
     def render_diagram_source(instance, where, source)
       unresolved = []
@@ -173,10 +194,11 @@ module Archsight
     end
 
     def validate_view_fields(instance)
-      fields = instance.annotations["view/fields"]
-      return unless fields
+      check_view_components(instance, instance.annotations["view/fields"].to_s.split(",").map(&:strip))
+    end
 
-      fields.split(",").map(&:strip).each do |field|
+    def check_view_components(instance, fields)
+      fields.each do |field|
         next unless field.start_with?("@")
 
         component_name = field[1..]

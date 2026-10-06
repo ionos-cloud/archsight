@@ -140,6 +140,9 @@ class Archsight::Web::Application < Sinatra::Base
       html = Archsight::Helpers::AssetImages.rewrite(html, base_dir: base, resources_dir: Archsight.resources_dir) if base
       # ```asd blocks become placeholders until the text passes below are done (see DiagramBlocks)
       html, diagrams = Archsight::Helpers::DiagramBlocks.extract(html, resolver: Archsight::Helpers::ResourceResolver.new(db))
+      # so are ```view and ```requirements blocks (see ViewBlocks, RequirementsBlocks)
+      html, views = Archsight::Helpers::ViewBlocks.extract(html)
+      html, requirements = Archsight::Helpers::RequirementsBlocks.extract(html)
 
       # Resolve relative URLs if we have a git URL (for repository READMEs)
       if git_url && (base_url = github_raw_base_url(git_url))
@@ -157,7 +160,9 @@ class Archsight::Web::Application < Sinatra::Base
       # Convert [[Target]] / [[Target|label]] wiki-style links to page and resource links
       html = Archsight::Helpers::Embeds.new(db).render(html)
       html = Archsight::Helpers::WikiLinks.new(db).render(Archsight::Helpers::Macros.render(html, context: Archsight::Helpers::Macros::Context.new(db, page)))
-      Archsight::Helpers::DiagramBlocks.restore(html, diagrams)
+      html = Archsight::Helpers::DiagramBlocks.restore(html, diagrams)
+      html = Archsight::Helpers::ViewBlocks.restore(html, views)
+      Archsight::Helpers::RequirementsBlocks.restore(html, requirements)
     end
 
     # Generate asset path with cache-busting query string based on file mtime

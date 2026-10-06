@@ -489,4 +489,34 @@ class ApplicationHelpersTest < Minitest::Test
     assert_includes html, '<a href="https://example.com">'
     refute_includes html, 'class="broken-link"'
   end
+
+  def test_markdown_renders_view_blocks_without_touching_their_query
+    md = "See https://example.com\n\n```view\nmetadata:\n  annotations:\n    view/query: 'ApplicationService: name =~ \"[[x]] https://x.example\"'\n```\n"
+    html = Archsight::Web::Application.new!.markdown(md)
+
+    assert_includes html, '<div class="view-embed"'
+    assert_includes html, "[[x]] https://x.example"
+    assert_includes html, '<a href="https://example.com">'
+    refute_includes html, 'class="broken-link"'
+    refute_includes html, "view-block"
+  end
+
+  def test_markdown_renders_requirements_blocks_without_touching_their_query
+    md = "See https://example.com\n\n```requirements\nof: 'ApplicationService: name =~ \"[[x]] https://x.example\"'\n```\n\n```view\nmetadata:\n  annotations:\n    view/query: 'ApplicationService:'\n```\n"
+    html = Archsight::Web::Application.new!.markdown(md)
+
+    assert_includes html, '<div class="requirements-embed"'
+    assert_includes html, '<div class="view-embed"'
+    assert_includes html, "[[x]] https://x.example"
+    assert_includes html, '<a href="https://example.com">'
+    refute_includes html, 'class="broken-link"'
+    refute_includes html, "requirements-block"
+  end
+
+  def test_markdown_wiki_links_to_resources_show_the_name_and_the_kind_on_hover
+    html = Archsight::Web::Application.new!.markdown("See [[ApplicationComponent/Archsight:Web:API]].")
+
+    assert_includes html, 'href="/kinds/ApplicationComponent/instances/Archsight:Web:API" title="ApplicationComponent'
+    assert_includes html, ">Archsight:Web:API</a>"
+  end
 end

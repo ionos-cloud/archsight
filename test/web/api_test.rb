@@ -560,4 +560,56 @@ class APITest < Minitest::Test
 
     assert_equal 400, last_response.status
   end
+
+  # GET /api/v1/requirements tests
+
+  def test_get_api_requirements
+    get "/api/v1/requirements", of: "BusinessProcess:"
+
+    assert_predicate last_response, :ok?
+
+    data = json_response
+
+    assert_equal "BusinessProcess:", data["query"]
+    assert_equal data["requirements"].length, data["total"]
+    assert_predicate data["total"], :positive?
+    requirement = data["requirements"].first
+
+    assert_equal "implemented", requirement["status"]
+    assert_equal "BusinessProcess", requirement["by"].first["kind"]
+    assert_kind_of Float, data["query_time_ms"].to_f
+  end
+
+  def test_get_api_requirements_filters
+    get "/api/v1/requirements", of: "BusinessProcess:", priority: "must"
+
+    assert_predicate last_response, :ok?
+    assert_predicate json_response["total"], :positive?
+    assert_equal ["must"], json_response["requirements"].map { |r| r["priority"] }.uniq
+
+    get "/api/v1/requirements", of: "BusinessProcess:", priority: "may", status: "planned"
+
+    assert_predicate last_response, :ok?
+    assert_equal 0, json_response["total"]
+  end
+
+  def test_get_api_requirements_needs_a_valid_query_and_values
+    get "/api/v1/requirements"
+
+    assert_equal 400, last_response.status
+
+    get "/api/v1/requirements", of: "BusinessProcess: ((("
+
+    assert_equal 400, last_response.status
+    assert_equal "QueryError", json_response["error"]
+
+    get "/api/v1/requirements", of: "BusinessProcess:", priority: "urgent"
+
+    assert_equal 400, last_response.status
+    assert_includes json_response["message"], "priority"
+
+    get "/api/v1/requirements", of: "BusinessProcess:", status: "done"
+
+    assert_equal 400, last_response.status
+  end
 end

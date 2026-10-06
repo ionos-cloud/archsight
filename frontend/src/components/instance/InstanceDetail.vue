@@ -193,8 +193,8 @@ function initPanZoomOnGraph() {
     </p>
 
     <div ref="descEl" v-if="description" v-html="description" :class="{ footer: hasRelations }"></div>
-    <Teleport v-for="embed in embeds" :key="`${embed.kind}/${embed.name}`" :to="embed.el">
-      <EmbeddedKind :kind="embed.kind" :name="embed.name" />
+    <Teleport v-for="embed in embeds" :key="embed.key" :to="embed.el">
+      <EmbeddedKind :kind="embed.kind" :name="embed.name" :spec="embed.spec" />
     </Teleport>
   </article>
 

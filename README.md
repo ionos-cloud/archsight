@@ -97,11 +97,11 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 - `analyze_resource` - Get detailed resource information and impact analysis
 - `resource_doc` - Get documentation for resource kinds
 
-**Export to Confluence**: `archsight export --to confluence` publishes pages to the Confluence page they link to, with images, diagrams and draw.io, and refuses to overwrite edits made in Confluence unless `--force` ([Wiki pages](docs/pages.md#exporting-to-confluence)).
+**Export to Confluence**: `archsight export --to confluence` publishes pages to the Confluence page they link to, with images, diagrams and draw.io, views and requirements as tables, and refuses to overwrite edits made in Confluence unless `--force` ([Wiki pages](docs/pages.md#exporting-to-confluence)).
 
 **Macros** such as `{status:yellow WIP}` and `{emoticon:2705}` work inline in pages ([Wiki pages](docs/pages.md#macros)).
 
-**Views and analyses** can be embedded in pages with `![[View/Name]]` / `![[Analysis/Name]]` ([Wiki pages](docs/pages.md#embedding-views-and-analyses)).
+**Views and analyses** can be embedded in pages with `![[View/Name]]` / `![[Analysis/Name]]` ([Wiki pages](docs/pages.md#embedding-views-and-analyses)); a view can also be written in place with a ```` ```view ```` block ([inline views](docs/pages.md#inline-views)), and the business requirements of a selection of resources shown with a ```` ```requirements ```` block ([requirements](docs/pages.md#business-requirements-of-a-selection-of-resources)).
 
 **Images and draw.io diagrams** are plain files in the resources directory and are embedded in markdown with relative
 paths (`![](../img/a.png)`, `![](../../fop/flow.drawio)`); only files of image, draw.io and `.asd` diagram types inside the resources

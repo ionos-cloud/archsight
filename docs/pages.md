@@ -146,6 +146,53 @@ link to the resource. Other kinds are not embeddable; an unknown name, another k
 a sentence (instead of on its own line) is shown as a marker or a link, and `archsight lint` reports embeds that do not
 resolve. Code blocks and inline code are left alone.
 
+### Inline views
+
+A view that only this page needs does not have to be a resource of its own: a fenced ```` ```view ```` block holds the
+View as it would be written in a YAML file and is shown like an embedded view:
+
+````markdown
+```view
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: Services without backup      # the title above the list, optional
+  annotations:
+    view/query: 'ApplicationService: backup/mode == "none"'
+    view/fields: name, @owner
+    view/sort: -name
+    view/type: list:name
+```
+````
+
+Only `view/query` is required; `kind`, if given, must be `View` and `apiVersion` can be left out. Other annotations are
+ignored, so a View's YAML can be pasted in unchanged (to turn the block into a real view later, or the other way round).
+It loads and runs in the browser like any embed; the server only writes `<div class="view-embed" data-title data-query
+data-fields data-sort data-type>` around the source. A block that is not a valid View (broken YAML, missing or
+unparsable query, unknown `view/*` key or type) shows an error box with the source, and `archsight lint` reports it.
+
+### Business requirements of a selection of resources
+
+The "Business Requirements" table of an instance page (the requirements it `realizes`, `partiallyRealizes` or `plans`,
+with status, priority and story) can be put on a page for any selection of resources with a ```` ```requirements ```` block:
+
+````markdown
+```requirements
+title: Requirements of the backup services     # optional, default "Business Requirements"
+of: 'ApplicationService: name =~ "Backup"'     # required: query selecting the resources
+priority: must                                 # optional: must, should, may (one value or a list)
+status: [implemented, partial]                 # optional: implemented, partial, planned
+```
+````
+
+The table has one row per requirement of all selected resources. Its status is the best one any of them gives it
+(`realizes` = implemented, then `partially`, then `plans` = planned), and a "Realized by" column names the resources with their own
+status (left out when only one resource is selected). Rows are sorted by priority, then name; `priority` and `status` filter the rows.
+Like views, the block is only a placeholder on the server (`<div class="requirements-embed" data-title data-of data-priority
+data-status>` around the source): the frontend loads the rows from `GET /api/v1/requirements?of=&priority=&status=`, so rendering a page
+never runs the query. A block with a missing or unparsable `of`, an unknown key, priority or status shows an error box with the
+source, and `archsight lint` reports it.
+
 ## Macros
 
 Inline macros are written `{name:arguments}` and named like the macros of Confluence. They work inside a sentence, a
@@ -202,6 +249,8 @@ If several pages qualify, a page named `home` wins over one that is only titled 
 - Tables, code blocks and other GitHub-flavoured markdown.
 - Diagrams: fenced ```` ```asd ```` blocks (see [Diagrams](/doc/diagram)) replace draw.io drawings.
 - Links: `[[Page title]]`, `[[page-name]]`, `[[Name|label]]` and `[[Kind/Name]]` link to pages and resources.
+  A link without a label shows the title of a page and the name of a resource (`[[ApplicationComponent/KubeVirt]]` shows "KubeVirt"); hovering it shows the
+  kind and the first line of the description (the status of a page). The export to Confluence writes the same texts, without the hover.
 
 ## Editing
 
@@ -258,10 +307,17 @@ confluence:
 With `drawio` off nothing draw.io-specific is written, so any Confluence shows the diagrams. Rendering a `.drawio` needs the
 draw.io desktop CLI (`drawio`, or `ARCHSIGHT_DRAWIO_CLI`) on the machine that exports; the preview of an SVG needs
 `rsvg-convert` or that CLI. A diagram that cannot be rendered fails the page instead of leaving a blank diagram. Attachments an
-earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` to pages that have a Confluence link
-become links to them, other links are plain text; embedded views and analyses (`![[View/..]]`) become a note, their content
-is live and exists in Archsight only. A page with a broken image or a diagram that does not render is not exported and
-reported as failed. The Confluence title is kept.
+earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` and markdown links to pages (`[text](/pages/name)`) that have a Confluence link
+become links to them, other links to Archsight (pages without a Confluence link, resources, searches) are plain text. A page with a broken image, a diagram that does not render or an invalid
+```` ```view ````/```` ```requirements ```` block is not exported and reported as failed. The Confluence title is kept. The exported page uses the Confluence layout: the page properties top left, the note that the page is generated by Archsight top right, and the content below in a section of its own.
+
+**Views and requirements** are live in Archsight, so Confluence gets a regular table with the data of the moment of the export (every
+export writes the current data; a page whose tables did not change is `unchanged`): `![[View/Name]]` on a line of its own, a
+```` ```view ```` block and a ```` ```requirements ```` block each become a table with the title and item count above it, the columns of
+the view (Name, Kind unless `list:name`, the `view/fields`, sorted by `view/sort`; times are the stored values, not "3 days ago") or
+the requirements table (status and priority as status lozenges: implemented green, partial yellow, planned blue; `must` red,
+`should` yellow, `may` grey), and names of pages that have a Confluence link as links. At most 200 rows are exported, a note says how many
+were left out. A `![[View/..]]` that is not alone on its line or names no view stays a note, and so does `![[Analysis/..]]` (it runs a script).
 
 **Links in diagrams**: a node with `resource "Some Page"` links to the Confluence page of that wiki page (the page's own
 `confluence:` link) instead of its Archsight address, which means nothing in Confluence. A reference to a page without a

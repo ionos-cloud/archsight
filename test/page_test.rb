@@ -362,8 +362,8 @@ class PageDatabaseTest < Minitest::Test
     with_db do |db|
       html = Archsight::Helpers::WikiLinks.new(db).render("[[Beta|the beta]] [[a]] [[Nope]] [[<b>]]")
 
-      assert_includes html, '<a href="/pages/b">the beta</a>'
-      assert_includes html, '<a href="/pages/a">Alpha</a>'
+      assert_includes html, '<a href="/pages/b" title="Page">the beta</a>'
+      assert_includes html, '<a href="/pages/a" title="Page">Alpha</a>'
       assert_includes html, '<span class="broken-link" title="Resource not found">Nope</span>'
       assert_includes html, "&lt;b&gt;"
     end
