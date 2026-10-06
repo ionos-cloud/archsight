@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "erb"
+require "uri"
 require "digest"
 require "kramdown"
 require "kramdown-parser-gfm"
@@ -60,9 +61,15 @@ module Archsight
             @options[:storage].image(elem.attr["src"].to_s, elem.attr["alt"].to_s)
           end
 
-          # A macro whose output is a link of its own (Jira) is shown as plain text inside a link: no link in a link
+          # A link to a page of Archsight becomes a link to its Confluence page, or just its text if it has none;
+          # a macro whose output is a link of its own (Jira) is shown as plain text inside a link: no link in a link
           def convert_a(elem, indent)
-            @options[:storage].in_link { super }
+            storage = @options[:storage]
+            target = storage.link_target(elem.attr["href"].to_s)
+            return inner(elem, indent) unless target
+
+            elem.attr["href"] = target
+            storage.in_link { super }
           end
 
           def convert_text(elem, indent)
@@ -188,6 +195,17 @@ module Archsight
           index && @placeholders.fetch(index.to_i).first
         end
 
+        # Where a markdown link leads in Confluence. The links of a page point into Archsight (`/pages/<name>`,
+        # `/kinds/...`), which does not exist there: a page that has a Confluence page is linked to it, any other
+        # Archsight path is not a link.
+        # @return [String, nil] the href to use, nil for the text only
+        def link_target(href)
+          return href unless href.start_with?("/") && !href.start_with?("//")
+
+          page = archsight_page(href)
+          page && confluence_url(page)
+        end
+
         # Runs the block for the content of a link
         def in_link
           previous = @in_link
@@ -250,6 +268,15 @@ module Archsight
 
         def embed_note(reference)
           "<em>#{h(reference)} (live content, shown in Archsight only)</em>"
+        end
+
+        # The page an Archsight path (`/pages/<name>`, `/kinds/Page/instances/<name>`, optionally with #anchor or ?query) shows
+        def archsight_page(href)
+          path = href.split(/[#?]/, 2).first.to_s
+          name = path[%r{\A/pages/(.+)\z}, 1] || path[%r{\A/kinds/Page/instances/([^/]+)\z}, 1]
+          name && @wiki.page_for(URI.decode_uri_component(name))
+        rescue ArgumentError
+          nil
         end
 
         def wiki_link(target, label)
