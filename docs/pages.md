@@ -146,6 +146,31 @@ link to the resource. Other kinds are not embeddable; an unknown name, another k
 a sentence (instead of on its own line) is shown as a marker or a link, and `archsight lint` reports embeds that do not
 resolve. Code blocks and inline code are left alone.
 
+### Inline views
+
+A view that only this page needs does not have to be a resource of its own: a fenced ```` ```view ```` block holds the
+View as it would be written in a YAML file and is shown like an embedded view:
+
+````markdown
+```view
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: Services without backup      # the title above the list, optional
+  annotations:
+    view/query: 'ApplicationService: backup/mode == "none"'
+    view/fields: name, @owner
+    view/sort: -name
+    view/type: list:name
+```
+````
+
+Only `view/query` is required; `kind`, if given, must be `View` and `apiVersion` can be left out. Other annotations are
+ignored, so a View's YAML can be pasted in unchanged (to turn the block into a real view later, or the other way round).
+It loads and runs in the browser like any embed; the server only writes `<div class="view-embed" data-title data-query
+data-fields data-sort data-type>` around the source. A block that is not a valid View (broken YAML, missing or
+unparsable query, unknown `view/*` key or type) shows an error box with the source, and `archsight lint` reports it.
+
 ## Macros
 
 Inline macros are written `{name:arguments}` and named like the macros of Confluence. They work inside a sentence, a
@@ -260,7 +285,7 @@ draw.io desktop CLI (`drawio`, or `ARCHSIGHT_DRAWIO_CLI`) on the machine that ex
 `rsvg-convert` or that CLI. A diagram that cannot be rendered fails the page instead of leaving a blank diagram. Attachments an
 earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` to pages that have a Confluence link
 become links to them, other links are plain text; embedded views and analyses (`![[View/..]]`) become a note, their content
-is live and exists in Archsight only. A page with a broken image or a diagram that does not render is not exported and
+is live and exists in Archsight only; an inline ```` ```view ```` block is exported as a code block with its YAML. A page with a broken image or a diagram that does not render is not exported and
 reported as failed. The Confluence title is kept.
 
 **Links in diagrams**: a node with `resource "Some Page"` links to the Confluence page of that wiki page (the page's own

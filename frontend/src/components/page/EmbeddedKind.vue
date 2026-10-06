@@ -7,9 +7,12 @@ import AnalysisResults from '../instance/AnalysisResults.vue'
 
 // The live content of a View or Analysis inside a page (`![[View/Name]]`). The page is already on screen when
 // this mounts; the resource, its query or script are loaded here, and a spinner shows until they are there.
+// An inline view (a ```view block) brings its own `spec` (query, fields, sort, showKind) and `name` is its title:
+// nothing to load but the result.
 const props = defineProps({
   kind: String,
   name: String,
+  spec: { type: Object, default: null },
 })
 
 const instance = ref(null)
@@ -19,6 +22,7 @@ const analysisEl = ref(null)
 const error = ref(null)
 
 async function load() {
+  if (props.spec) return
   instance.value = null
   total.value = null
   analysis.value = null
@@ -32,7 +36,7 @@ async function load() {
 watch(() => [props.kind, props.name], load, { immediate: true })
 
 const annotations = computed(() => instance.value?.metadata?.annotations || {})
-const spec = computed(() => viewSpec(annotations.value))
+const viewSpecOf = computed(() => props.spec || viewSpec(annotations.value))
 // "Completed with findings 0.00s", for the line above the embedded analysis
 const analysisStatus = computed(() => {
   const result = analysis.value?.result
@@ -48,7 +52,8 @@ const icon = computed(() => (props.kind === 'View' ? 'iconoir-table-rows' : 'ico
   <div class="kind-embed-box">
     <p class="kind-embed-source">
       <i :class="icon"></i>
-      <router-link :to="{ name: 'instance', params: { kind, instance: name } }" :title="`Open ${kind.toLowerCase()} ${name}`">{{ name }}</router-link>
+      <span v-if="spec" class="kind-embed-title">{{ name || 'View' }}</span>
+      <router-link v-else :to="{ name: 'instance', params: { kind, instance: name } }" :title="`Open ${kind.toLowerCase()} ${name}`">{{ name }}</router-link>
       <span v-if="total != null" class="kind-embed-count">({{ total }} {{ total === 1 ? 'item' : 'items' }})</span>
       <template v-if="analysis">
         <span v-if="analysis.result" class="kind-embed-status" :class="{ failed: !analysis.result.success }">({{ analysisStatus.label }})</span>
@@ -60,11 +65,11 @@ const icon = computed(() => (props.kind === 'View' ? 'iconoir-table-rows' : 'ico
     </p>
 
     <div v-if="error" class="kind-embed-error" role="alert">{{ error }}</div>
-    <p v-else-if="!instance" class="kind-embed-loading" aria-busy="true">
+    <p v-else-if="!instance && !spec" class="kind-embed-loading" aria-busy="true">
       <i class="iconoir-refresh spinning"></i> Loading {{ kind.toLowerCase() }}...
     </p>
     <template v-else-if="kind === 'View'">
-      <ViewResults v-if="spec.query" :query="spec.query" :fields="spec.fields" :sort="spec.sort" :show-kind="spec.showKind" compact @loaded="total = $event.total" />
+      <ViewResults v-if="viewSpecOf.query" :query="viewSpecOf.query" :fields="viewSpecOf.fields" :sort="viewSpecOf.sort" :show-kind="viewSpecOf.showKind" compact @loaded="total = $event.total" />
       <p v-else class="kind-embed-empty">No query defined</p>
     </template>
     <template v-else-if="kind === 'Analysis'">

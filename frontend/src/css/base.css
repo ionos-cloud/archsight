@@ -38,13 +38,15 @@
   height: auto;
 }
 
-.asd-diagram-error {
+.asd-diagram-error,
+.view-block-error {
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;
   border-left: 4px solid var(--pico-del-color);
 }
 
-.asd-diagram-error pre {
+.asd-diagram-error pre,
+.view-block-error pre {
   margin-bottom: 0;
 }
 

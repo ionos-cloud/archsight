@@ -489,4 +489,15 @@ class ApplicationHelpersTest < Minitest::Test
     assert_includes html, '<a href="https://example.com">'
     refute_includes html, 'class="broken-link"'
   end
+
+  def test_markdown_renders_view_blocks_without_touching_their_query
+    md = "See https://example.com\n\n```view\nmetadata:\n  annotations:\n    view/query: 'ApplicationService: name =~ \"[[x]] https://x.example\"'\n```\n"
+    html = Archsight::Web::Application.new!.markdown(md)
+
+    assert_includes html, '<div class="view-embed"'
+    assert_includes html, "[[x]] https://x.example"
+    assert_includes html, '<a href="https://example.com">'
+    refute_includes html, 'class="broken-link"'
+    refute_includes html, "view-block"
+  end
 end
