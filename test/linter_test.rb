@@ -116,6 +116,17 @@ class LinterTest < Minitest::Test
     assert_includes lint("architecture/description" => unknown_component).first, "Unknown view component '@nope'"
   end
 
+  def test_validate_markdown_reports_a_broken_requirements_block
+    good = "```requirements\nof: 'ApplicationService:'\npriority: must\n```\n"
+    bad = "intro\n\n```requirements\npriority: must\n```\n"
+
+    assert_empty lint("architecture/description" => good)
+    errors = lint("architecture/description" => bad)
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "Requirements error in annotation 'architecture/description' (requirements block 1): `of` is missing"
+  end
+
   def test_validate_diagram_annotation
     assert_empty lint("architecture/diagram" => "component \"a\" { label \"A\" }\n")
 

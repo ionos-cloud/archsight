@@ -1,14 +1,16 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { getInstance } from '../../api/client.js'
+import { getInstance, getRequirements } from '../../api/client.js'
 import { viewSpec } from '../../composables/useViewSpec.js'
 import ViewResults from '../instance/ViewResults.vue'
 import AnalysisResults from '../instance/AnalysisResults.vue'
+import RequirementsTable from '../instance/RequirementsTable.vue'
 
 // The live content of a View or Analysis inside a page (`![[View/Name]]`). The page is already on screen when
 // this mounts; the resource, its query or script are loaded here, and a spinner shows until they are there.
 // An inline view (a ```view block) brings its own `spec` (query, fields, sort, showKind) and `name` is its title:
-// nothing to load but the result.
+// nothing to load but the result. The requirements of a selection of resources (a ```requirements block, kind
+// 'Requirements') bring a `spec` too (`of`, `priority`, `status`) and are loaded from the API here.
 const props = defineProps({
   kind: String,
   name: String,
@@ -20,8 +22,23 @@ const total = ref(null)
 const analysis = ref(null) // { result, executing } of an embedded analysis
 const analysisEl = ref(null)
 const error = ref(null)
+const requirements = ref(null) // the entries of a 'Requirements' embed
+
+async function loadRequirements() {
+  requirements.value = null
+  total.value = null
+  error.value = null
+  try {
+    const result = await getRequirements(props.spec)
+    requirements.value = result.requirements
+    total.value = result.total
+  } catch (e) {
+    error.value = e.message
+  }
+}
 
 async function load() {
+  if (props.kind === 'Requirements') return loadRequirements()
   if (props.spec) return
   instance.value = null
   total.value = null
@@ -33,7 +50,7 @@ async function load() {
     error.value = e.message
   }
 }
-watch(() => [props.kind, props.name], load, { immediate: true })
+watch(() => [props.kind, props.name, JSON.stringify(props.spec)], load, { immediate: true })
 
 const annotations = computed(() => instance.value?.metadata?.annotations || {})
 const viewSpecOf = computed(() => props.spec || viewSpec(annotations.value))
@@ -45,14 +62,18 @@ const analysisStatus = computed(() => {
   return { label: result.duration ? `${label} ${result.duration.toFixed(2)}s` : label }
 })
 const hasScript = computed(() => !!annotations.value['analysis/script'])
-const icon = computed(() => (props.kind === 'View' ? 'iconoir-table-rows' : 'iconoir-play'))
+const icon = computed(() => ({ View: 'iconoir-table-rows', Requirements: 'iconoir-list' })[props.kind] || 'iconoir-play')
+const title = computed(() => props.name || (props.kind === 'Requirements' ? 'Business Requirements' : 'View'))
+// The "Realized by" column only helps when the requirements come from more than one resource
+const showBy = computed(() => new Set((requirements.value || []).flatMap((r) => r.by.map((b) => `${b.kind}/${b.name}`))).size > 1)
+const priorityLink = (priority) => `/search?q=${encodeURIComponent(`BusinessRequirement: requirement/priority == "${priority}"`)}`
 </script>
 
 <template>
   <div class="kind-embed-box">
     <p class="kind-embed-source">
       <i :class="icon"></i>
-      <span v-if="spec" class="kind-embed-title">{{ name || 'View' }}</span>
+      <span v-if="spec" class="kind-embed-title">{{ title }}</span>
       <router-link v-else :to="{ name: 'instance', params: { kind, instance: name } }" :title="`Open ${kind.toLowerCase()} ${name}`">{{ name }}</router-link>
       <span v-if="total != null" class="kind-embed-count">({{ total }} {{ total === 1 ? 'item' : 'items' }})</span>
       <template v-if="analysis">
@@ -65,6 +86,13 @@ const icon = computed(() => (props.kind === 'View' ? 'iconoir-table-rows' : 'ico
     </p>
 
     <div v-if="error" class="kind-embed-error" role="alert">{{ error }}</div>
+    <p v-else-if="kind === 'Requirements' && !requirements" class="kind-embed-loading" aria-busy="true">
+      <i class="iconoir-refresh spinning"></i> Loading requirements...
+    </p>
+    <template v-else-if="kind === 'Requirements'">
+      <RequirementsTable v-if="requirements.length" :items="requirements" :priority-link="priorityLink" :show-by="showBy" />
+      <p v-else class="kind-embed-empty">No requirements</p>
+    </template>
     <p v-else-if="!instance && !spec" class="kind-embed-loading" aria-busy="true">
       <i class="iconoir-refresh spinning"></i> Loading {{ kind.toLowerCase() }}...
     </p>

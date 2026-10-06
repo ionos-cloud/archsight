@@ -39,6 +39,14 @@ export function search(query, { limit = 200, offset = 0, output = 'complete' } =
   return fetchJson(`${BASE}/search?${params}`)
 }
 
+// The business requirements of the resources `of` selects: { total, requirements: [{ name, status, priority, story, by }] }
+export function getRequirements({ of, priority = [], status = [] }) {
+  const params = new URLSearchParams({ of })
+  if (priority.length) params.set('priority', priority.join(','))
+  if (status.length) params.set('status', status.join(','))
+  return fetchJson(`${BASE}/requirements?${params}`)
+}
+
 export function searchCount(query) {
   const params = new URLSearchParams({ q: query, output: 'count' })
   return fetchJson(`${BASE}/search?${params}`)

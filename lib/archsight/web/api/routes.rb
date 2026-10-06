@@ -4,6 +4,7 @@ require "sinatra/base"
 require "sinatra/extension"
 require_relative "json_helpers"
 require_relative "page_helpers"
+require_relative "requirements_helpers"
 require_relative "../../assets"
 
 module Archsight; end
@@ -16,6 +17,7 @@ module Archsight::Web::API::Routes
 
   helpers Archsight::Web::API::JsonHelpers
   helpers Archsight::Web::API::PageHelpers
+  helpers Archsight::Web::API::RequirementsHelpers
 
   # Rendering is CPU work, previews are typed, not pasted
   MAX_DIAGRAM_SOURCE = 100_000
@@ -105,6 +107,23 @@ module Archsight::Web::API::Routes
       else
         json_response(build_search_response(query, results, parsed_query, query_time_ms))
       end
+    rescue Archsight::Query::QueryError => e
+      json_error(e.message, status: 400, error_type: "QueryError", query: query)
+    end
+  end
+
+  # GET /api/v1/requirements - The business requirements of the resources a query selects (see Archsight::Requirements)
+  get "/api/v1/requirements" do
+    query = params[:of]
+    json_error("Query parameter 'of' is required", status: 400, error_type: "BadRequest") unless query
+
+    priority = csv_param(:priority, Archsight::Requirements::PRIORITIES)
+    status = csv_param(:status, Archsight::Requirements::STATUSES.values)
+    start_time = Time.now
+
+    begin
+      requirements = Archsight::Requirements.collect(db, of: query, priority: priority, status: status)
+      json_response(build_requirements_response(query, requirements, ((Time.now - start_time) * 1000).round(2)))
     rescue Archsight::Query::QueryError => e
       json_error(e.message, status: 400, error_type: "QueryError", query: query)
     end

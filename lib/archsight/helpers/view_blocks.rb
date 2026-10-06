@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "erb"
 require "yaml"
+require_relative "fenced_blocks"
 
 module Archsight
   module Helpers
@@ -27,7 +27,6 @@ module Archsight
     #   ...further processing of html...
     #   html = ViewBlocks.restore(html, blocks)   # placeholders -> view placeholders / error boxes
     module ViewBlocks
-      BLOCK = %r{<pre><code class="language-view">(.*?)</code></pre>}m
       TYPES = %w[list:name list:name+kind].freeze
       KEYS = %w[view/query view/fields view/sort view/type].freeze
 
@@ -38,24 +37,16 @@ module Archsight
       # @return [Array(String, Hash{String => String})] HTML with a placeholder per view block, and the rendered
       #   replacement for each placeholder
       def extract(html)
-        blocks = {}
-        replaced = html.gsub(BLOCK) do |block|
-          placeholder = "<!--view-block:#{blocks.size}-->"
-          blocks[placeholder] = render_block(::CGI.unescapeHTML(Regexp.last_match(1)), block)
-          placeholder
-        end
-        [replaced, blocks]
+        FencedBlocks.extract(html, language: "view", prefix: "view-block") { |source, original| render_block(source, original) }
       end
 
       def restore(html, blocks)
-        return html if blocks.empty?
-
-        html.gsub(/<!--view-block:\d+-->/) { |placeholder| blocks.fetch(placeholder, placeholder) }
+        FencedBlocks.restore(html, blocks, prefix: "view-block")
       end
 
       # Source of every ```view block in `markdown` (for the linter).
       def sources(markdown)
-        markdown.scan(/^[ \t]*(?:```|~~~)view[ \t]*\n(.*?)^[ \t]*(?:```|~~~)[ \t]*$/m).flatten
+        FencedBlocks.sources(markdown, language: "view")
       end
 
       # The View a block describes.
@@ -81,14 +72,13 @@ module Archsight
       def render_block(source, original)
         spec = parse(source)
         data = { title: spec[:title], query: spec[:query], fields: spec[:fields].join(","), sort: spec[:sort].join(","), type: spec[:type] }
-        attributes = data.map { |name, value| %( data-#{name}="#{::ERB::Util.html_escape(value)}") }.join
-        %(<div class="view-embed"#{attributes}>#{original}</div>)
+        FencedBlocks.placeholder("view-embed", data, original)
       rescue Error => e
-        %(<div class="view-block-error"><p><strong>View error:</strong> #{::ERB::Util.html_escape(e.message)}</p>#{original}</div>)
+        FencedBlocks.error_box("view-block-error", "View error", e.message, original)
       end
 
       def load(source)
-        YAML.safe_load(source, aliases: false)
+        FencedBlocks.load_yaml(source)
       rescue Psych::Exception => e
         raise Error, "invalid YAML: #{e.message}"
       end

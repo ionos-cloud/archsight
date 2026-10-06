@@ -39,14 +39,16 @@
 }
 
 .asd-diagram-error,
-.view-block-error {
+.view-block-error,
+.requirements-block-error {
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;
   border-left: 4px solid var(--pico-del-color);
 }
 
 .asd-diagram-error pre,
-.view-block-error pre {
+.view-block-error pre,
+.requirements-block-error pre {
   margin-bottom: 0;
 }
 

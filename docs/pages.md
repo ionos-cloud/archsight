@@ -171,6 +171,28 @@ It loads and runs in the browser like any embed; the server only writes `<div cl
 data-fields data-sort data-type>` around the source. A block that is not a valid View (broken YAML, missing or
 unparsable query, unknown `view/*` key or type) shows an error box with the source, and `archsight lint` reports it.
 
+### Business requirements of a selection of resources
+
+The "Business Requirements" table of an instance page (the requirements it `realizes`, `partiallyRealizes` or `plans`,
+with status, priority and story) can be put on a page for any selection of resources with a ```` ```requirements ```` block:
+
+````markdown
+```requirements
+title: Requirements of the backup services     # optional, default "Business Requirements"
+of: 'ApplicationService: name =~ "Backup"'     # required: query selecting the resources
+priority: must                                 # optional: must, should, may (one value or a list)
+status: [implemented, partial]                 # optional: implemented, partial, planned
+```
+````
+
+The table has one row per requirement of all selected resources. Its status is the best one any of them gives it
+(`realizes` = implemented, then `partially`, then `plans` = planned), and a "Realized by" column names the resources with their own
+status (left out when only one resource is selected). Rows are sorted by priority, then name; `priority` and `status` filter the rows.
+Like views, the block is only a placeholder on the server (`<div class="requirements-embed" data-title data-of data-priority
+data-status>` around the source): the frontend loads the rows from `GET /api/v1/requirements?of=&priority=&status=`, so rendering a page
+never runs the query. A block with a missing or unparsable `of`, an unknown key, priority or status shows an error box with the
+source, and `archsight lint` reports it.
+
 ## Macros
 
 Inline macros are written `{name:arguments}` and named like the macros of Confluence. They work inside a sentence, a
@@ -285,7 +307,7 @@ draw.io desktop CLI (`drawio`, or `ARCHSIGHT_DRAWIO_CLI`) on the machine that ex
 `rsvg-convert` or that CLI. A diagram that cannot be rendered fails the page instead of leaving a blank diagram. Attachments an
 earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` to pages that have a Confluence link
 become links to them, other links are plain text; embedded views and analyses (`![[View/..]]`) become a note, their content
-is live and exists in Archsight only; an inline ```` ```view ```` block is exported as a code block with its YAML. A page with a broken image or a diagram that does not render is not exported and
+is live and exists in Archsight only; an inline ```` ```view ```` or ```` ```requirements ```` block is exported as a code block with its source. A page with a broken image or a diagram that does not render is not exported and
 reported as failed. The Confluence title is kept.
 
 **Links in diagrams**: a node with `resource "Some Page"` links to the Confluence page of that wiki page (the page's own

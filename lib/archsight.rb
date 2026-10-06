@@ -10,6 +10,7 @@ require_relative "archsight/linter"
 require_relative "archsight/template"
 require_relative "archsight/documentation"
 require_relative "archsight/query"
+require_relative "archsight/requirements"
 require_relative "archsight/resources"
 
 module Archsight
