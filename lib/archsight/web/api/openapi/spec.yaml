@@ -696,9 +696,11 @@ paths:
       summary: Business requirements of a selection of resources
       description: |
         The business requirements that the resources selected by `of` realize (`implemented`), partially realize
-        (`partial`) or plan (`planned`), merged over all of them: one entry per requirement with the best status and
-        the resources it comes from (`by`). Sorted by priority (must, should, may, none), then name. `story` is
-        rendered HTML.
+        (`partial`) or plan (`planned`), merged over all of them: one entry per requirement, with the best status
+        any of the resources gives it and the resources it comes from (`by`, each with its own status). Sorted by
+        priority (must, should, may, requirements without a priority last), then name. `story` is rendered HTML.
+        `priority` and `status` filter the merged entries, so `status=partial` lists requirements whose best
+        status is partial.
       operationId: getRequirements
       tags:
         - Search
@@ -713,14 +715,14 @@ paths:
         - name: priority
           in: query
           required: false
-          description: Comma separated list, only requirements with one of these priorities
+          description: Comma separated list, only requirements with one of these priorities (must, should, may)
           schema:
             type: string
           example: must,should
         - name: status
           in: query
           required: false
-          description: Comma separated list, only requirements with one of these statuses
+          description: Comma separated list, only requirements with one of these statuses (implemented, partial, planned)
           schema:
             type: string
           example: implemented,partial
@@ -731,33 +733,44 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [query, total, query_time_ms, requirements]
                 properties:
                   query:
                     type: string
+                    description: The `of` query as given
                   total:
                     type: integer
+                    description: Number of requirements returned
                   query_time_ms:
                     type: number
                   requirements:
                     type: array
                     items:
                       type: object
+                      required: [name, status, priority, story, by]
                       properties:
                         name:
                           type: string
+                          description: Name of the BusinessRequirement
                         status:
                           type: string
                           enum: [implemented, partial, planned]
+                          description: The best status among the resources in `by`
                         priority:
                           type: string
+                          enum: [must, should, may]
                           nullable: true
+                          description: Priority of the requirement, null if it has none
                         story:
                           type: string
                           nullable: true
+                          description: The requirement's story as rendered HTML, null if it has none
                         by:
                           type: array
+                          description: The selected resources that realize, partially realize or plan the requirement, best status first
                           items:
                             type: object
+                            required: [kind, name, status]
                             properties:
                               kind:
                                 type: string
@@ -766,12 +779,30 @@ paths:
                               status:
                                 type: string
                                 enum: [implemented, partial, planned]
+                                description: The status this resource gives the requirement
+              example:
+                query: 'ApplicationService: name =~ "Backup"'
+                total: 1
+                query_time_ms: 1.4
+                requirements:
+                  - name: "Requirement:Restore"
+                    status: partial
+                    priority: must
+                    story: "<p>As an operator I can restore a backup.</p>"
+                    by:
+                      - kind: ApplicationService
+                        name: Backup
+                        status: partial
         '400':
-          description: Invalid query, or an unknown priority or status
+          description: |
+            `of` is missing or `priority` or `status` holds an unknown value (`BadRequest`), or `of` is not a valid
+            query (`QueryError`, which also returns the query)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueryError'
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/QueryError'
 
   /dot:
     get:
