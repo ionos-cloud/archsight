@@ -272,7 +272,7 @@ class ConfluenceExporterTest < Minitest::Test
       run_export(force: true, settings_drawio: true)
 
       assert_includes @fake.pages["42"].body, 'ac:name="drawio"'
-      assert_includes @fake.pages["42"].attachments.keys, "flow.png"
+      assert(@fake.pages["42"].attachments.keys.any? { |name| name.match?(/\Aflow-\h{8}\.png\z/) })
 
       run_export(force: true, settings_drawio: true, drawio: false)
 
