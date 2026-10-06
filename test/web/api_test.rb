@@ -826,4 +826,17 @@ class APITest < Minitest::Test
     assert_predicate last_response, :ok?
     assert_includes json_response["relations"].dig("assignedTo", "TechnologyArtifact"), "Tech:Image:Hypervisor"
   end
+
+  def test_openapi_requirements_matches_the_code
+    get "/api/v1/openapi.yaml"
+    operation = YAML.safe_load(last_response.body).dig("paths", "/api/v1/requirements", "get")
+    item = operation.dig("responses", "200", "content", "application/json", "schema", "properties", "requirements", "items")["properties"]
+    statuses = Archsight::Requirements::STATUSES.values
+
+    assert_equal Archsight::Requirements::PRIORITIES, item["priority"]["enum"]
+    assert_equal statuses, item["status"]["enum"]
+    assert_equal statuses, item.dig("by", "items", "properties", "status", "enum")
+    assert_equal(%w[of priority status], operation["parameters"].map { |p| p["name"] })
+    assert_equal %w[200 400], operation["responses"].keys
+  end
 end
