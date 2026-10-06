@@ -29,8 +29,8 @@ class ConfluenceExporterTest < Minitest::Test
     FileUtils.rm_rf(@dir)
   end
 
-  def write_page(name, body, confluence: nil)
-    front = ["title: #{name.capitalize}", ("confluence: #{confluence}" if confluence)].compact.join("\n")
+  def write_page(name, body, confluence: nil, tags: nil)
+    front = ["title: #{name.capitalize}", ("confluence: #{confluence}" if confluence), ("tags: #{tags}" if tags)].compact.join("\n")
     File.write(File.join(@dir, "pages/#{name}.md"), "---\n#{front}\n---\n\n#{body}")
   end
 
@@ -147,6 +147,17 @@ class ConfluenceExporterTest < Minitest::Test
     assert_equal :skipped, run_export(["nolink"]).first.status
     assert_equal [:failed], run_export(["nope"]).map(&:status)
     assert_equal ["guide"], run_export([], force: true).map(&:page), "without names only linked pages are exported"
+  end
+
+  def test_tags_filter_the_pages_to_export
+    write_page("guide", "hello\n", confluence: URL, tags: "Public, Team:x")
+    write_page("other", "hello\n", confluence: URL, tags: "internal")
+
+    assert_equal %w[guide other], run_export([], dry_run: true).map(&:page)
+    assert_equal ["guide"], run_export([], dry_run: true, tags: ["public"]).map(&:page)
+    assert_equal %w[guide other], run_export([], dry_run: true, tags: %w[public internal]).map(&:page)
+    assert_equal [:skipped], run_export(["other"], tags: ["public"]).map(&:status)
+    assert_empty run_export([], tags: ["none"])
   end
 
   def test_a_page_with_a_broken_image_is_not_exported
