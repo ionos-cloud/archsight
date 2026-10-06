@@ -144,8 +144,12 @@ BusinessRequirement
        ↑ satisfies
 ComplianceEvidence
        ↑ evidencedBy
-ApplicationService
+ApplicationService (or TechnologyService / TechnologySystemSoftware)
 ```
+
+Technology elements such as a Kubernetes cluster runtime can plan, realize and be evidenced
+for requirements directly, so the requirement does not have to be attached to a placeholder
+ApplicationService. Applications deployed on them point to the TechnologyService with `servedBy`.
 
 ## Annotation Best Practices
 

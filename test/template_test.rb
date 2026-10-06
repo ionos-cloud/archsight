@@ -58,6 +58,17 @@ class TemplateTest < Minitest::Test
     assert_equal "active", yaml["metadata"]["annotations"]["activity/status"]
   end
 
+  def test_technology_kinds_can_plan_realize_and_be_evidenced
+    %w[TechnologyService TechnologySystemSoftware].each do |kind|
+      spec = YAML.safe_load(Archsight::Template.generate(kind))["spec"]
+
+      assert spec.key?("realizes"), "#{kind} should be able to realize requirements"
+      assert spec.key?("partiallyRealizes"), "#{kind} should be able to partially realize requirements"
+      assert spec.key?("plans"), "#{kind} should be able to plan requirements"
+      assert spec.key?("evidencedBy"), "#{kind} should be evidenced by compliance evidence"
+    end
+  end
+
   def test_all_resource_kinds_generate_valid_yaml
     Archsight::Resources.each do |kind|
       output = Archsight::Template.generate(kind.to_s)
