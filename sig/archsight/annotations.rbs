@@ -92,6 +92,8 @@ module Archsight
       @database: Database
       @computed_cache: Hash[untyped, untyped]
 
+      attr_reader traversal_cache: ComputedRelationResolver::TraversalCache
+
       def initialize: (Database) -> void
       def compute_all!: () -> void
       def compute_for_key: (Resources::Base, String) -> untyped
@@ -106,11 +108,30 @@ module Archsight
     class ComputedRelationResolver
       MAX_DEPTH: Integer
 
+      class TraversalCache
+        @database: Database
+        @reach: Hash[untyped, untyped]
+        @queries: Hash[String, untyped]
+        @kind_names: Hash[Class, String]
+        @evaluator: untyped
+
+        def initialize: (Database) -> void
+        def kind_name: (Class) -> String
+        def query: (String) -> untyped
+        def evaluator: () -> untyped
+        def reachable: (Resources::Base, Symbol, Integer) -> Array[Resources::Base]
+
+        private
+
+        def walk: (Resources::Base, Symbol, Integer) -> Array[Resources::Base]
+        def neighbours: (Resources::Base, Symbol) -> Array[Resources::Base]
+      end
+
       @instance: Resources::Base
       @database: Database
-      @query_cache: Hash[String, untyped]
+      @cache: TraversalCache
 
-      def initialize: (Resources::Base, Database) -> void
+      def initialize: (Resources::Base, Database, ?TraversalCache?) -> void
       def outgoing: (?untyped) -> Array[Resources::Base]
       def outgoing_transitive: (?untyped, ?max_depth: Integer) -> Array[Resources::Base]
       def incoming: (?untyped) -> Array[Resources::Base]
@@ -118,11 +139,8 @@ module Archsight
 
       private
 
+      def filtered: (Array[Resources::Base], untyped) -> Array[Resources::Base]
       def matches_filter?: (untyped, untyped) -> bool
-      def parse_query: (String) -> untyped
-      def evaluator: () -> untyped
-      def collect_transitive_outgoing: (untyped, untyped, Set[String], Integer, Integer, Array[Resources::Base]) -> void
-      def collect_transitive_incoming: (untyped, untyped, Set[String], Integer, Integer, Array[Resources::Base]) -> void
     end
 
     module ComputedAggregators

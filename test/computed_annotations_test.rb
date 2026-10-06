@@ -760,6 +760,102 @@ class ComputedAnnotationsTest < Minitest::Test
     end
   end
 
+  # === Transitive traversal semantics (diamonds, cycles, depth, shared caches) ===
+
+  def component(name, annotations = {})
+    @db.add_instance("ApplicationComponent", name, annotations)
+  end
+
+  def depends(from, to)
+    @db.link("ApplicationComponent", from, :dependsOn, :applicationComponents, "ApplicationComponent", to)
+  end
+
+  def resolver_for(instance)
+    Archsight::Annotations::ComputedRelationResolver.new(instance, @db)
+  end
+
+  def test_transitive_diamond_returns_each_node_once
+    %w[A B C D].each { |n| component(n) }
+    depends("A", "B")
+    depends("A", "C")
+    depends("B", "D")
+    depends("C", "D")
+
+    out = resolver_for(@db.instances_by_kind("ApplicationComponent")["A"]).outgoing_transitive(:ApplicationComponent)
+    inc = resolver_for(@db.instances_by_kind("ApplicationComponent")["D"]).incoming_transitive(:ApplicationComponent)
+
+    assert_equal %w[B C D], out.map(&:name).sort
+    assert_equal %w[A B C], inc.map(&:name).sort
+  end
+
+  def test_transitive_cycle_terminates_and_contains_start
+    %w[A B].each { |n| component(n) }
+    depends("A", "B")
+    depends("B", "A")
+    a = @db.instances_by_kind("ApplicationComponent")["A"]
+
+    assert_equal %w[A B], resolver_for(a).outgoing_transitive(:ApplicationComponent).map(&:name).sort
+    assert_equal %w[A B], resolver_for(a).incoming_transitive(:ApplicationComponent).map(&:name).sort
+  end
+
+  def test_transitive_respects_max_depth
+    names = (0..12).map { |i| "N#{i}" }
+    names.each { |n| component(n) }
+    names.each_cons(2) { |a, b| depends(a, b) }
+    start = @db.instances_by_kind("ApplicationComponent")["N0"]
+
+    default = resolver_for(start).outgoing_transitive(:ApplicationComponent).map(&:name)
+    short = resolver_for(start).outgoing_transitive(:ApplicationComponent, max_depth: 2).map(&:name)
+
+    assert_equal names[1..10].sort, default.sort
+    assert_equal %w[N1 N2], short.sort
+  end
+
+  def test_transitive_depth_uses_shortest_path
+    # N0 -> N1 -> ... -> N11 and a shortcut N0 -> N9: N11 is 3 hops away via the shortcut
+    names = (0..11).map { |i| "N#{i}" }
+    names.each { |n| component(n) }
+    names.each_cons(2) { |a, b| depends(a, b) }
+    depends("N0", "N9")
+    start = @db.instances_by_kind("ApplicationComponent")["N0"]
+
+    result = resolver_for(start).outgoing_transitive(:ApplicationComponent).map(&:name)
+
+    assert_includes result, "N11"
+  end
+
+  def test_transitive_filters_do_not_leak_between_calls
+    component("A")
+    component("B", "activity/status" => "active")
+    component("C", "activity/status" => "abandoned")
+    depends("A", "B")
+    depends("A", "C")
+    resolver = resolver_for(@db.instances_by_kind("ApplicationComponent")["A"])
+
+    active = resolver.outgoing_transitive('ApplicationComponent: activity/status == "active"')
+    abandoned = resolver.outgoing_transitive('ApplicationComponent: activity/status == "abandoned"')
+    all = resolver.outgoing_transitive
+
+    assert_equal ["B"], active.map(&:name)
+    assert_equal ["C"], abandoned.map(&:name)
+    assert_equal %w[B C], all.map(&:name).sort
+  end
+
+  def test_transitive_shared_manager_gives_same_results_for_several_keys
+    component("A")
+    component("B", "activity/status" => "active")
+    component("C", "activity/status" => "abandoned")
+    depends("A", "B")
+    depends("B", "C")
+    a = @db.instances_by_kind("ApplicationComponent")["A"]
+    manager = Archsight::Annotations::ComputedManager.new(@db)
+    evaluator = Archsight::Annotations::ComputedEvaluator.new(a, @db, manager)
+
+    assert_equal %w[B C], evaluator.outgoing_transitive(:ApplicationComponent).map(&:name).sort
+    assert_equal ["C"], evaluator.outgoing_transitive('ApplicationComponent: activity/status == "abandoned"').map(&:name)
+    assert_equal %w[B C], evaluator.outgoing_transitive(:ApplicationComponent).map(&:name).sort
+  end
+
   # Mock Database class for testing (based on evaluator_test.rb)
   class MockDatabase
     attr_accessor :instances
