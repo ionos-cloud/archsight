@@ -258,8 +258,8 @@ confluence:
 With `drawio` off nothing draw.io-specific is written, so any Confluence shows the diagrams. Rendering a `.drawio` needs the
 draw.io desktop CLI (`drawio`, or `ARCHSIGHT_DRAWIO_CLI`) on the machine that exports; the preview of an SVG needs
 `rsvg-convert` or that CLI. A diagram that cannot be rendered fails the page instead of leaving a blank diagram. Attachments an
-earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` to pages that have a Confluence link
-become links to them, other links are plain text; embedded views and analyses (`![[View/..]]`) become a note, their content
+earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` and markdown links to pages (`[text](/pages/name)`) that have a Confluence link
+become links to them, other links to Archsight (pages without a Confluence link, resources, searches) are plain text; embedded views and analyses (`![[View/..]]`) become a note, their content
 is live and exists in Archsight only. A page with a broken image or a diagram that does not render is not exported and
 reported as failed. The Confluence title is kept.
 

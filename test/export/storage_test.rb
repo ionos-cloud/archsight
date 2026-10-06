@@ -285,4 +285,46 @@ class ConfluenceStorageTest < Minitest::Test
     assert_includes body, '<a href="https://example.com/x">with PROJ-4 inside</a>'
     assert_includes body, '<a href="https://example.com/y">a <ac:structured-macro ac:name="status">'
   end
+
+  # ---- links to pages of Archsight
+
+  def test_a_link_to_a_page_with_a_confluence_page_points_there
+    body = convert("See [the **other** page](/pages/other) and [again](/pages/other#part) and [by kind](/kinds/Page/instances/other?x=1).\n").body
+    well_formed!(body)
+    url = "https://wiki.example.com/pages/viewpage.action?pageId=55"
+
+    assert_includes body, %(<a href="#{url}">the <strong>other</strong> page</a>)
+    assert_includes body, %(<a href="#{url}">again</a>)
+    assert_includes body, %(<a href="#{url}">by kind</a>)
+    refute_includes body, 'href="/'
+  end
+
+  def test_a_link_to_a_page_without_a_confluence_page_or_to_nothing_is_just_its_text
+    body = convert("[plain](/pages/plain), [gone](/pages/nope), [kind](/kinds/ApplicationService/instances/X), [search](/search?q=x), [doc](/doc/index) and [**bold**](/pages)\n").body
+    well_formed!(body)
+
+    assert_includes body, "plain, gone, kind, search, doc and <strong>bold</strong>"
+    refute_includes body, "<a "
+  end
+
+  def test_other_links_are_left_alone
+    body = convert("[web](https://example.com/a), [mail](mailto:a@example.com), [anchor](#part), [file](x.md), [proto](//example.com)\n").body
+
+    assert_includes body, '<a href="https://example.com/a">web</a>'
+    assert_includes body, '<a href="mailto:a@example.com">mail</a>'
+    assert_includes body, '<a href="#part">anchor</a>'
+    assert_includes body, '<a href="x.md">file</a>'
+    assert_includes body, '<a href="//example.com">proto</a>'
+  end
+
+  def test_page_names_in_links_are_decoded_and_wiki_links_still_work
+    File.write(File.join(@dir, "pages/with space.md"), "---\ntitle: Spaced\nname: with space\nconfluence: https://wiki.example.com/spaces/SP/pages/77/Spaced\n---\n\nx\n")
+    db = Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+    storage = Storage.new(page_name: "p", source: "pages/p.md", base_dir: "pages", resources_dir: @dir, wiki: Archsight::Helpers::WikiLinks.new(db),
+                          diagram_links: Archsight::Export::Confluence::DiagramLinks.new(db), database: db)
+    body = storage.convert("[x](/pages/with%20space) and [[other]]\n").body
+
+    assert_includes body, '<a href="https://wiki.example.com/pages/viewpage.action?pageId=77">x</a>'
+    assert_includes body, '<a href="https://wiki.example.com/pages/viewpage.action?pageId=55">Other Page</a>'
+  end
 end
