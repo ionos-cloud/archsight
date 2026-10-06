@@ -249,6 +249,8 @@ If several pages qualify, a page named `home` wins over one that is only titled 
 - Tables, code blocks and other GitHub-flavoured markdown.
 - Diagrams: fenced ```` ```asd ```` blocks (see [Diagrams](/doc/diagram)) replace draw.io drawings.
 - Links: `[[Page title]]`, `[[page-name]]`, `[[Name|label]]` and `[[Kind/Name]]` link to pages and resources.
+  A link without a label shows the title of a page and the name of a resource (`[[ApplicationComponent/KubeVirt]]` shows "KubeVirt"); hovering it shows the
+  kind and the first line of the description (the status of a page). The export to Confluence writes the same texts, without the hover.
 
 ## Editing
 

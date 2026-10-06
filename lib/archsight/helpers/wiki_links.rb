@@ -11,6 +11,7 @@ module Archsight
     # render as a `broken-link` span.
     class WikiLinks
       PATTERN = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/
+      HOVER_LENGTH = 200
 
       def initialize(database, resolver: ResourceResolver.new(database))
         @database = database
@@ -43,6 +44,26 @@ module Archsight
         find_page(target)
       end
 
+      # The text of a link without an explicit label: a page by its title, a resource named `Kind/Name` by its name
+      # (the kind is in the hover text), anything else as written (so a broken reference shows what must be fixed)
+      def label_for(target)
+        page = find_page(target)
+        return page.title if page
+
+        found = target.include?("/") ? @resolver.find(target) : nil
+        found.is_a?(Array) ? found.last : target
+      end
+
+      # The page or resource a target names, nil if it names none or is ambiguous
+      def target_for(target)
+        page = find_page(target)
+        return page if page
+
+        found = @resolver.find(target)
+        found = find_partial(target) || found if found == :missing && !target.include?("/")
+        found.is_a?(Array) ? @database.instances_by_kind(found.first)[found.last] : nil
+      end
+
       # Page path for a page name, nil if there is no such page
       def page_path(page)
         "/pages/#{ERB::Util.url_encode(page.name)}"
@@ -55,19 +76,32 @@ module Archsight
           target = ::Regexp.last_match(1).strip
           explicit_label = ::Regexp.last_match(2)&.strip
           href = resolve(target)
-          label = explicit_label || default_label(target)
+          label = explicit_label || label_for(target)
           text = ERB::Util.html_escape(label)
           if href.is_a?(String)
-            %(<a href="#{ERB::Util.html_escape(href)}">#{text}</a>)
+            %(<a href="#{ERB::Util.html_escape(href)}"#{hover(target_for(target))}>#{text}</a>)
           else
             %(<span class="broken-link" title="#{href == :ambiguous ? "Ambiguous reference" : "Resource not found"}">#{text}</span>)
           end
         end
       end
 
-      # Pages are shown by title, everything else by the text as written
-      def default_label(target)
-        find_page(target)&.title || target
+      # `title` attribute of a link: the kind and the first line of the description (the status of a page)
+      def hover(instance)
+        return "" unless instance
+
+        kind = instance.class.name.split("::").last
+        detail = kind == "Page" ? instance.annotations["page/status"] : plain_line(instance.annotations["architecture/description"])
+        text = [kind, detail].map(&:to_s).reject(&:empty?).join("\n")
+        %( title="#{ERB::Util.html_escape(text)}")
+      end
+
+      # The first line of a markdown text as plain text, at most HOVER_LENGTH characters
+      def plain_line(markdown)
+        line = markdown.to_s.lines.map(&:strip).find { |l| !l.empty? }.to_s
+        line = line.gsub(%r{!?\[\[([^\]|]+/)?([^\]|]+)(?:\|([^\]]+))?\]\]}) { Regexp.last_match(3) || Regexp.last_match(2) }
+                   .gsub(/!?\[([^\]]*)\]\([^)]*\)/, '\1').gsub(/\A[#>*\-\s]+/, "").delete("`*_")
+        line.length > HOVER_LENGTH ? "#{line[0, HOVER_LENGTH - 1].rstrip}…" : line
       end
 
       def find_page(target)

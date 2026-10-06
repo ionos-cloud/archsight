@@ -288,7 +288,7 @@ module Archsight
 
         def wiki_link(target, label)
           page = @wiki.page_for(target)
-          text = label || page&.title || target
+          text = label || @wiki.label_for(target)
           url = page && confluence_url(page)
           url ? %(<a href="#{h(url)}">#{h(text)}</a>) : h(text)
         end

@@ -522,4 +522,15 @@ class ConfluenceStorageTest < Minitest::Test
     assert_includes body, '<a href="https://wiki.example.com/pages/viewpage.action?pageId=77">x</a>'
     assert_includes body, '<a href="https://wiki.example.com/pages/viewpage.action?pageId=55">Other Page</a>'
   end
+
+  def test_a_resource_link_shows_the_name_without_the_kind
+    File.write(File.join(@dir, "res.yaml"), "apiVersion: architecture/v1alpha1\nkind: ApplicationComponent\nmetadata:\n  name: KubeVirt\n")
+    db = Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+    storage = Storage.new(page_name: "p", source: "pages/p.md", base_dir: "pages", resources_dir: @dir, wiki: Archsight::Helpers::WikiLinks.new(db),
+                          diagram_links: Archsight::Export::Confluence::DiagramLinks.new(db), database: db)
+    body = storage.convert("[[ApplicationComponent/KubeVirt]], [[ApplicationComponent/KubeVirt|the VM]] and [[ApplicationComponent/Nope]]\n").body
+
+    assert_includes body, "KubeVirt, the VM and ApplicationComponent/Nope"
+    refute_includes body, "ApplicationComponent/KubeVirt"
+  end
 end

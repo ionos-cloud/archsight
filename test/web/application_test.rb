@@ -512,4 +512,11 @@ class ApplicationHelpersTest < Minitest::Test
     refute_includes html, 'class="broken-link"'
     refute_includes html, "requirements-block"
   end
+
+  def test_markdown_wiki_links_to_resources_show_the_name_and_the_kind_on_hover
+    html = Archsight::Web::Application.new!.markdown("See [[ApplicationComponent/Archsight:Web:API]].")
+
+    assert_includes html, 'href="/kinds/ApplicationComponent/instances/Archsight:Web:API" title="ApplicationComponent'
+    assert_includes html, ">Archsight:Web:API</a>"
+  end
 end
