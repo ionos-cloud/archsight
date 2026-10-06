@@ -13,10 +13,88 @@
 class Archsight::Annotations::ComputedRelationResolver
   MAX_DEPTH = 10
 
-  def initialize(instance, database)
+  # TraversalCache holds what can be shared between all resolvers of one computation run: the unfiltered
+  # transitive neighbourhood of an instance (relations are fixed once the database is verified), parsed filter
+  # queries, one query evaluator and the short kind names. Filter results are never cached because they may
+  # depend on computed annotations that are set while the run progresses.
+  class TraversalCache
+    def initialize(database)
+      @database = database
+      @reach = {}
+      @queries = {}
+      @kind_names = {}.compare_by_identity
+    end
+
+    # Short kind name of a resource class ("ApplicationComponent")
+    def kind_name(klass)
+      @kind_names[klass] ||= klass.name.split("::").last
+    end
+
+    # Parsed query for a selector string
+    def query(selector)
+      @queries[selector] ||= begin
+        require_relative "../query/lexer"
+        require_relative "../query/parser"
+        Archsight::Query::Parser.new(Archsight::Query::Lexer.new(selector).tokenize).parse
+      end
+    end
+
+    def evaluator
+      @evaluator ||= begin
+        require_relative "../query/evaluator"
+        Archsight::Query::Evaluator.new(@database)
+      end
+    end
+
+    # All instances reachable from `start` within max_depth hops (direction :outgoing or :incoming),
+    # each once, in breadth-first order. `start` itself is included when a cycle leads back to it.
+    def reachable(start, direction, max_depth)
+      by_instance = (@reach[[direction, max_depth]] ||= {}.compare_by_identity)
+      by_instance[start] ||= walk(start, direction, max_depth)
+    end
+
+    private
+
+    def walk(start, direction, max_depth)
+      results = []
+      listed = {}.compare_by_identity
+      expanded = { start => true }.compare_by_identity
+      frontier = [start]
+      depth = 0
+      while depth < max_depth && !frontier.empty?
+        following = []
+        frontier.each do |node|
+          neighbours(node, direction).each do |other|
+            unless listed.key?(other)
+              listed[other] = true
+              results << other
+            end
+            next if expanded.key?(other)
+
+            expanded[other] = true
+            following << other
+          end
+        end
+        frontier = following
+        depth += 1
+      end
+      results
+    end
+
+    def neighbours(inst, direction)
+      if direction == :outgoing
+        inst.class.relations.flat_map { |verb, kind_name, _klass_name| inst.relations(verb, kind_name) }
+      else
+        (inst.references || []).filter_map { |ref| ref.is_a?(Hash) ? ref[:instance] : ref }
+      end
+    end
+  end
+
+  # @param cache [TraversalCache, nil] shared per computation run; a private one is created when omitted
+  def initialize(instance, database, cache = nil)
     @instance = instance
     @database = database
-    @query_cache = {}
+    @cache = cache || TraversalCache.new(database)
   end
 
   # Get direct outgoing relations (-> Kind)
@@ -41,11 +119,7 @@ class Archsight::Annotations::ComputedRelationResolver
   # @param max_depth [Integer] Maximum traversal depth (default 10)
   # @return [Array] Array of transitively related instances
   def outgoing_transitive(filter = nil, max_depth: MAX_DEPTH)
-    visited = Set.new
-    results = []
-
-    collect_transitive_outgoing(@instance, filter, visited, 0, max_depth, results)
-    results.uniq
+    filtered(@cache.reachable(@instance, :outgoing, max_depth), filter)
   end
 
   # Get direct incoming relations (<- Kind)
@@ -70,14 +144,22 @@ class Archsight::Annotations::ComputedRelationResolver
   # @param max_depth [Integer] Maximum traversal depth (default 10)
   # @return [Array] Array of instances that transitively reference this one
   def incoming_transitive(filter = nil, max_depth: MAX_DEPTH)
-    visited = Set.new
-    results = []
-
-    collect_transitive_incoming(@instance, filter, visited, 0, max_depth, results)
-    results.uniq
+    filtered(@cache.reachable(@instance, :incoming, max_depth), filter)
   end
 
   private
+
+  def filtered(instances, filter)
+    return instances.dup if filter.nil?
+
+    if filter.is_a?(Symbol)
+      kind = filter.to_s
+      instances.select { |inst| @cache.kind_name(inst.class) == kind }
+    else
+      query_node = @cache.query(filter)
+      instances.select { |inst| @cache.evaluator.matches?(query_node, inst) }
+    end
+  end
 
   # Check if an instance matches the given filter
   # @param instance [Object] The instance to check
@@ -86,75 +168,10 @@ class Archsight::Annotations::ComputedRelationResolver
   def matches_filter?(instance, filter)
     return true if filter.nil?
 
-    instance_kind = instance.class.name.split("::").last
-
     if filter.is_a?(Symbol)
-      # Simple kind check
-      instance_kind == filter.to_s
+      @cache.kind_name(instance.class) == filter.to_s
     else
-      # Query selector - parse and evaluate
-      query_node = parse_query(filter)
-      evaluator.matches?(query_node, instance)
-    end
-  end
-
-  # Parse a query string (with caching)
-  def parse_query(query_string)
-    @query_cache[query_string] ||= begin
-      require_relative "../query/lexer"
-      require_relative "../query/parser"
-      tokens = Archsight::Query::Lexer.new(query_string).tokenize
-      Archsight::Query::Parser.new(tokens).parse
-    end
-  end
-
-  # Get or create the query evaluator
-  def evaluator
-    @evaluator ||= begin
-      require_relative "../query/evaluator"
-      Archsight::Query::Evaluator.new(@database)
-    end
-  end
-
-  # Recursively collect transitive outgoing relations
-  def collect_transitive_outgoing(inst, filter, visited, depth, max_depth, results)
-    return if depth >= max_depth
-
-    key = "#{inst.class}/#{inst.name}"
-    return if visited.include?(key)
-
-    visited.add(key)
-
-    inst.class.relations.each do |verb, kind_name, _klass_name|
-      rels = inst.relations(verb, kind_name)
-      rels.each do |rel|
-        # Add to results if matches filter (or no filter)
-        results << rel if matches_filter?(rel, filter)
-
-        # Continue traversal (regardless of whether this matched)
-        collect_transitive_outgoing(rel, filter, visited.dup, depth + 1, max_depth, results)
-      end
-    end
-  end
-
-  # Recursively collect transitive incoming relations
-  def collect_transitive_incoming(inst, filter, visited, depth, max_depth, results)
-    return if depth >= max_depth
-
-    key = "#{inst.class}/#{inst.name}"
-    return if visited.include?(key)
-
-    visited.add(key)
-
-    refs = inst.references || []
-    # Extract instances from reference hashes
-    instances = refs.map { |ref| ref.is_a?(Hash) ? ref[:instance] : ref }.compact
-    instances.each do |ref|
-      # Add to results if matches filter (or no filter)
-      results << ref if matches_filter?(ref, filter)
-
-      # Continue traversal (regardless of whether this matched)
-      collect_transitive_incoming(ref, filter, visited.dup, depth + 1, max_depth, results)
+      @cache.evaluator.matches?(@cache.query(filter), instance)
     end
   end
 end

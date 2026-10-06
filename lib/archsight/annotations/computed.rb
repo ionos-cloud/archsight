@@ -28,7 +28,7 @@ class Archsight::Annotations::ComputedEvaluator
     @instance = instance
     @database = database
     @manager = manager
-    @resolver = Archsight::Annotations::ComputedRelationResolver.new(instance, database)
+    @resolver = Archsight::Annotations::ComputedRelationResolver.new(instance, database, manager.traversal_cache)
   end
 
   # Access a regular annotation value from the current instance
@@ -170,8 +170,12 @@ end
 # ComputedManager orchestrates the computation of all computed annotations.
 # It handles lazy evaluation, caching, and cycle detection.
 class Archsight::Annotations::ComputedManager
+  # Shared by all resolvers of this run, see ComputedRelationResolver::TraversalCache
+  attr_reader :traversal_cache
+
   def initialize(database)
     @database = database
+    @traversal_cache = Archsight::Annotations::ComputedRelationResolver::TraversalCache.new(database)
     @computed_cache = {}  # { [instance_object_id, key] => value }
     @computing = Set.new  # For cycle detection
   end
