@@ -30,10 +30,10 @@ class ConfluenceStorageTest < Minitest::Test
     FileUtils.rm_rf(@dir)
   end
 
-  def convert(markdown, toc: false, drawio: false)
+  def convert(markdown, toc: false, drawio: false, database: nil)
     storage = Storage.new(page_name: "p", source: "pages/p.md", base_dir: "pages", resources_dir: @dir,
                           wiki: Archsight::Helpers::WikiLinks.new(@db), page_id: "1", base: "https://wiki.example.com", drawio: drawio,
-                          diagram_links: Archsight::Export::Confluence::DiagramLinks.new(@db))
+                          diagram_links: Archsight::Export::Confluence::DiagramLinks.new(@db), database: database)
     storage.convert(markdown, toc: toc)
   end
 
@@ -284,5 +284,174 @@ class ConfluenceStorageTest < Minitest::Test
 
     assert_includes body, '<a href="https://example.com/x">with PROJ-4 inside</a>'
     assert_includes body, '<a href="https://example.com/y">a <ac:structured-macro ac:name="status">'
+  end
+
+  # ---- views and requirements as tables
+
+  DATA = <<~YAML
+    apiVersion: architecture/v1alpha1
+    kind: BusinessRequirement
+    metadata:
+      name: Req:Encrypt
+      annotations:
+        requirement/priority: must
+        requirement/story: Data is **encrypted** <at> rest
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: BusinessRequirement
+    metadata:
+      name: Req:Backup
+      annotations:
+        requirement/priority: should
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ApplicationService
+    metadata:
+      name: Backup & Restore
+      annotations:
+        backup/mode: "a ]]> b"
+    spec:
+      realizes:
+        businessRequirements: [Req:Backup]
+      partiallyRealizes:
+        businessRequirements: [Req:Encrypt]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ApplicationService
+    metadata:
+      name: Storage
+    spec:
+      realizes:
+        businessRequirements: [Req:Encrypt]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: View
+    metadata:
+      name: Services
+      annotations:
+        view/query: 'ApplicationService:'
+        view/fields: name, backup/mode
+        view/type: list:name
+  YAML
+
+  def data_db
+    File.write(File.join(@dir, "data.yaml"), DATA)
+    Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+  end
+
+  def cells(xml, tag)
+    REXML::Document.new(%(<root xmlns:ac="a" xmlns:ri="r">#{xml}</root>)).get_elements("//#{tag}").map { |e| e.texts.map(&:value).join.strip }
+  end
+
+  def test_a_view_embed_becomes_a_table_with_the_data_of_the_export
+    result = convert("Before\n\n![[View/Services]]\n\nAfter\n", database: data_db)
+    well_formed!(result.body)
+
+    assert_includes result.body, "<p><strong>Services</strong> (2 items)</p>"
+    assert_equal ["Name", "Backup mode"], cells(result.body, "th")
+    assert_equal ["Backup & Restore", "a ]]> b", "Storage", ""], cells(result.body, "td")
+    assert_includes result.body, "<td>Backup &amp; Restore</td>"
+    refute_includes result.body, "<p><table>"
+    refute_includes result.body, "ARCHSIGHT"
+    assert_empty result.problems
+  end
+
+  def test_a_view_block_becomes_a_table
+    source = "```view\nmetadata:\n  name: Mine\n  annotations:\n    view/query: 'ApplicationService: name == \"Storage\"'\n    view/type: list:name+kind\n```\n"
+    result = convert(source, database: data_db)
+    well_formed!(result.body)
+
+    assert_includes result.body, "<p><strong>Mine</strong> (1 item)</p>"
+    assert_equal %w[Name Kind], cells(result.body, "th")
+    assert_equal %w[Storage ApplicationService], cells(result.body, "td")
+    refute_includes result.body, 'ac:name="code"'
+  end
+
+  def test_a_requirements_block_becomes_a_table_with_lozenges
+    source = "```requirements\nof: 'ApplicationService:'\n```\n"
+    result = convert(source, database: data_db)
+    well_formed!(result.body)
+
+    assert_includes result.body, "<p><strong>Business Requirements</strong> (2 items)</p>"
+    assert_equal ["Status", "Name", "Priority", "Story", "Realized by"], cells(result.body, "th")
+    assert_includes result.body, '<ac:parameter ac:name="title">implemented</ac:parameter>'
+    assert_includes result.body, '<ac:parameter ac:name="colour">Red</ac:parameter><ac:parameter ac:name="title">must</ac:parameter>'
+    assert_includes result.body, '<ac:parameter ac:name="colour">Yellow</ac:parameter><ac:parameter ac:name="title">should</ac:parameter>'
+    assert_includes result.body, "Data is <strong>encrypted</strong> &lt;at&gt; rest"
+    assert_includes result.body, "Storage<br />Backup &amp; Restore"
+  end
+
+  def test_a_requirements_block_with_one_resource_has_no_realized_by_column
+    source = "```requirements\ntitle: Storage\nof: 'ApplicationService: name == \"Storage\"'\nstatus: implemented\n```\n"
+    result = convert(source, database: data_db)
+
+    assert_equal %w[Status Name Priority Story], cells(result.body, "th")
+    assert_includes result.body, "<p><strong>Storage</strong> (1 item)</p>"
+  end
+
+  def test_empty_and_cut_tables_say_so
+    empty = convert("```view\nmetadata:\n  annotations:\n    view/query: 'ApplicationService: name == \"Nope\"'\n```\n", database: data_db)
+    none = convert("```requirements\nof: 'ApplicationService: name == \"Nope\"'\n```\n", database: data_db)
+
+    assert_includes empty.body, "<em>No resources found</em>"
+    assert_includes none.body, "<em>No requirements</em>"
+
+    stub_const(Archsight::ViewTable, :LIMIT, 1) do
+      cut = convert("![[View/Services]]\n", database: data_db)
+      well_formed!(cut.body)
+
+      assert_equal 1, cells(cut.body, "tr").length - 1
+      assert_includes cut.body, "<em>1 more row not shown, see Archsight</em>"
+    end
+  end
+
+  def test_a_page_with_a_name_links_to_its_confluence_page
+    File.write(File.join(@dir, "data.yaml"), "#{DATA}---\napiVersion: architecture/v1alpha1\nkind: View\nmetadata:\n  name: Pages\n  annotations:\n    view/query: 'Page:'\n    view/type: list:name\n")
+    db = Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+    body = convert("![[View/Pages]]\n", database: db).body
+
+    assert_includes body, '<a href="https://wiki.example.com/pages/viewpage.action?pageId=55">other</a>'
+    assert_includes body, "<td>plain</td>"
+  end
+
+  def test_unknown_views_and_analyses_stay_notes_and_code_is_left_alone
+    body = convert("![[View/Nope]]\n\n![[Analysis/Check]]\n\n```\n![[View/Services]]\n```\n", database: data_db).body
+
+    assert_includes body, "<em>View/Nope (live content, shown in Archsight only)</em>"
+    assert_includes body, "<em>Analysis/Check (live content, shown in Archsight only)</em>"
+    assert_includes body, "![[View/Services]]"
+    refute_includes body, "<table"
+  end
+
+  def test_a_view_embed_inside_a_paragraph_is_a_note
+    body = convert("see this\n![[View/Services]]\nand that\n", database: data_db).body
+
+    assert_includes body, "<em>View/Services (live content, shown in Archsight only)</em>"
+    refute_includes body, "<table"
+  end
+
+  def test_an_invalid_block_is_a_problem_and_yields_no_table
+    bad = convert("```view\nkind: View\n```\n\n```requirements\npriority: must\n```\n\n```view\nmetadata:\n  annotations:\n    view/query: '((('\n```\n", database: data_db)
+
+    assert_equal 3, bad.problems.length
+    assert_includes bad.problems[0], "view block: view/query is missing"
+    assert_includes bad.problems[1], "requirements block: `of` is missing"
+    assert_includes bad.problems[2], "invalid query"
+    refute_includes bad.body, "<table"
+  end
+
+  def test_blocks_without_a_database_are_a_problem
+    result = convert("```view\nmetadata:\n  annotations:\n    view/query: 'ApplicationService:'\n```\n")
+
+    assert_includes result.problems.first, "no database"
+  end
+
+  def stub_const(mod, name, value)
+    old = mod.send(:remove_const, name)
+    mod.const_set(name, value)
+    yield
+  ensure
+    mod.send(:remove_const, name)
+    mod.const_set(name, old)
   end
 end

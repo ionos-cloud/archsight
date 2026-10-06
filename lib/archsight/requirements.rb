@@ -38,6 +38,24 @@ module Archsight
       entries.sort_by { |e| [PRIORITIES.index(e[:priority]) || PRIORITIES.size, e[:name]] }
     end
 
+    # The requirements of a ```requirements block as a plain table (see ViewTable), for places that cannot run the frontend.
+    # "Realized by" is only there when more than one resource contributes.
+    # @param spec [Hash] the parsed block: `{ title:, of:, priority:, status: }` (Helpers::RequirementsBlocks.parse)
+    # @raise [Archsight::Query::QueryError]
+    def table(database, spec)
+      entries = collect(database, of: spec[:of], priority: spec[:priority], status: spec[:status])
+      with_by = entries.flat_map { |e| e[:by].map { |b| [b[:kind], b[:name]] } }.uniq.length > 1
+      cell = ViewTable::Cell
+      rows = entries.first(ViewTable::LIMIT).map do |e|
+        row = [cell.new(text: e[:status], as: :status), cell.new(text: e[:name]), cell.new(text: e[:priority].to_s, as: :priority),
+               cell.new(text: e[:story].to_s, as: :markdown)]
+        row << cell.new(text: e[:by].map { |b| b[:name] }.join("\n")) if with_by
+        row
+      end
+      ViewTable::Table.new(title: spec[:title].to_s.empty? ? "Business Requirements" : spec[:title],
+                           columns: ["Status", "Name", "Priority", "Story", ("Realized by" if with_by)].compact, rows: rows, total: entries.length)
+    end
+
     def entry(requirement, by)
       by = by.sort_by { |b| [STATUSES.values.index(b[:status]), b[:kind], b[:name]] }
       {

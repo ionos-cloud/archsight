@@ -221,4 +221,40 @@ class ConfluenceExporterTest < Minitest::Test
     assert_equal ["colleague.pdf"], @fake.pages["42"].attachments.keys
     assert_equal 1, @fake.deleted.length
   end
+
+  def write_services(*names)
+    docs = names.map { |n| "apiVersion: architecture/v1alpha1\nkind: ApplicationService\nmetadata:\n  name: #{n}\n" }
+    File.write(File.join(@dir, "services.yaml"), docs.join("---\n"))
+  end
+
+  def test_views_and_requirements_are_exported_as_tables_that_follow_the_data
+    write_services("Alpha")
+    File.write(File.join(@dir, "view.yaml"), "apiVersion: architecture/v1alpha1\nkind: View\nmetadata:\n  name: Services\n  annotations:\n    view/query: 'ApplicationService:'\n    view/type: list:name\n")
+    write_page("guide", "![[View/Services]]\n\n```view\nmetadata:\n  annotations:\n    view/query: 'ApplicationService:'\n```\n\n```requirements\nof: 'ApplicationService:'\n```\n", confluence: URL)
+    result = run_export(force: true).first
+    body = @fake.pages["42"].body
+
+    assert_equal :exported, result.status
+    assert_equal 2, body.scan("<table>").length
+    assert_includes body, "<td>Alpha</td>"
+    assert_includes body, "<em>No requirements</em>"
+    refute_includes body, 'ac:name="code"'
+
+    assert_equal :unchanged, run_export.first.status
+
+    write_services("Alpha", "Beta")
+    again = run_export.first
+
+    assert_equal :exported, again.status
+    assert_includes @fake.pages["42"].body, "<td>Beta</td>"
+  end
+
+  def test_a_page_with_an_invalid_view_block_is_not_exported
+    write_page("guide", "```view\nkind: View\n```\n", confluence: URL)
+    result = run_export(force: true).first
+
+    assert_equal :failed, result.status
+    assert_includes result.message, "view/query is missing"
+    assert_equal "<p>hello</p>", @fake.pages["42"].body
+  end
 end

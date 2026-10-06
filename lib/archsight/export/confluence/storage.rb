@@ -7,10 +7,15 @@ require "kramdown-parser-gfm"
 require_relative "../../assets"
 require_relative "../../diagram"
 require_relative "../../helpers/macros"
+require_relative "../../helpers/view_blocks"
+require_relative "../../helpers/requirements_blocks"
+require_relative "../../query"
+require_relative "../../requirements"
 require_relative "diagram_links"
 require_relative "drawio"
 require_relative "page_url"
 require_relative "rasterizer"
+require_relative "tables"
 
 module Archsight
   module Export
@@ -31,11 +36,18 @@ module Archsight
           def convert_codeblock(elem, _indent)
             language = elem.options[:lang].to_s
             return @options[:storage].diagram(elem.value, nil) if language == "asd"
+            return @options[:storage].view_block(elem.value) if language == "view"
+            return @options[:storage].requirements_block(elem.value) if language == "requirements"
 
             @options[:storage].code(elem.value, language)
           end
 
           def convert_p(elem, indent)
+            only = elem.children.length == 1 && elem.children.first.type == :text ? elem.children.first.value.strip : nil
+            if only && (table = @options[:storage].table_placeholder(only))
+              return table
+            end
+
             image = elem.children.reject { |c| c.type == :text && c.value.strip.empty? }
             if image.length == 1 && image.first.type == :img && (block = @options[:storage].block_image(image.first.attr))
               return "#{block}\n"
@@ -69,7 +81,8 @@ module Archsight
         }.freeze
         KNOWN_LANGUAGES = %w[actionscript3 applescript bash c# cpp css coldfusion delphi diff erlang groovy html/xml java javafx
                              javascript perl php text powershell python ruby scala sql vb yaml].freeze
-        PLACEHOLDER = /ARCHSIGHT(LINK|EMBED)(\d+)X/
+        PLACEHOLDER = /ARCHSIGHT(LINK|EMBED|TABLE)(\d+)X/
+        TABLE_PLACEHOLDER = /\AARCHSIGHTTABLE(\d+)X\z/
         CODE = /(^[ \t]*(?:```|~~~).*?^[ \t]*(?:```|~~~)[ \t]*$|`[^`\n]*`)/m
 
         # @param page_name [String] used to name generated attachments
@@ -149,9 +162,30 @@ module Archsight
 
         def restore(text)
           text.gsub(PLACEHOLDER) do
+            kind = Regexp.last_match(1)
             xml, plain = @placeholders.fetch(Regexp.last_match(2).to_i)
-            @in_link && plain ? plain : xml
+            # a table that is not alone in its paragraph (see table_placeholder) is shown as the note
+            kind == "TABLE" || (@in_link && plain) ? plain : xml
           end
+        end
+
+        # A ```view block as a table (the data of the moment of the export), block XML
+        def view_block(source)
+          table_xml("view block") { Tables.xml(ViewTable.from_block(database!, source)) }
+        end
+
+        # A ```requirements block as a table, block XML
+        def requirements_block(source)
+          table_xml("requirements block") do
+            Tables.xml(Archsight::Requirements.table(database!, Helpers::RequirementsBlocks.parse(source)), empty: "No requirements")
+          end
+        end
+
+        # The table of a paragraph that holds nothing but the placeholder of a `![[View/Name]]` (a table cannot sit
+        # inside a paragraph), nil for any other text
+        def table_placeholder(text)
+          index = text[TABLE_PLACEHOLDER, 1]
+          index && @placeholders.fetch(index.to_i).first
         end
 
         # Runs the block for the content of a link
@@ -180,10 +214,33 @@ module Archsight
             xml = macro.confluence(value, Archsight::Helpers::Macros::Context.new(@database, nil))
             xml && placeholder("LINK", xml, plain: (macro.plain(value) if macro.respond_to?(:plain)))
           end
+          text = text.gsub(%r{^[ \t]*!\[\[View/([^\]|]+)\]\][ \t]*$}) { view_embed(Regexp.last_match(1).strip) || Regexp.last_match(0) }
           text = text.gsub(/!\[\[([^\]|]+)\]\]/) { placeholder("EMBED", embed_note(Regexp.last_match(1).strip)) }
           text.gsub(Archsight::Helpers::WikiLinks::PATTERN) do
             placeholder("LINK", wiki_link(Regexp.last_match(1).strip, Regexp.last_match(2)&.strip))
           end
+        end
+
+        # A View on a line of its own becomes its table; an unknown View stays an embed (a note), the linter reports it.
+        # Next to other text of its paragraph the table cannot be placed and the note is shown (`plain`).
+        def view_embed(name)
+          view = @database&.instances_by_kind("View")&.[](name)
+          return nil unless view
+
+          xml = table_xml("view #{name}") { Tables.xml(ViewTable.from_view(@database, view)) }
+          placeholder("TABLE", xml, plain: embed_note("View/#{name}"))
+        end
+
+        # The XML of a table, or nothing and a problem (the page is not exported) if it cannot be built
+        def table_xml(what)
+          yield
+        rescue Helpers::ViewBlocks::Error, Helpers::RequirementsBlocks::Error, Archsight::Query::QueryError => e
+          problem("#{what}: #{e.message}")
+          ""
+        end
+
+        def database!
+          @database || raise(Helpers::ViewBlocks::Error, "the export has no database to read the data from")
         end
 
         def placeholder(kind, xml, plain: nil)

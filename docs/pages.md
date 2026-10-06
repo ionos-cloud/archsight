@@ -306,9 +306,16 @@ With `drawio` off nothing draw.io-specific is written, so any Confluence shows t
 draw.io desktop CLI (`drawio`, or `ARCHSIGHT_DRAWIO_CLI`) on the machine that exports; the preview of an SVG needs
 `rsvg-convert` or that CLI. A diagram that cannot be rendered fails the page instead of leaving a blank diagram. Attachments an
 earlier export added and the page no longer uses are removed; attachments added by others are left alone. `[[links]]` to pages that have a Confluence link
-become links to them, other links are plain text; embedded views and analyses (`![[View/..]]`) become a note, their content
-is live and exists in Archsight only; an inline ```` ```view ```` or ```` ```requirements ```` block is exported as a code block with its source. A page with a broken image or a diagram that does not render is not exported and
-reported as failed. The Confluence title is kept.
+become links to them, other links are plain text. A page with a broken image, a diagram that does not render or an invalid
+```` ```view ````/```` ```requirements ```` block is not exported and reported as failed. The Confluence title is kept.
+
+**Views and requirements** are live in Archsight, so Confluence gets a regular table with the data of the moment of the export (every
+export writes the current data; a page whose tables did not change is `unchanged`): `![[View/Name]]` on a line of its own, a
+```` ```view ```` block and a ```` ```requirements ```` block each become a table with the title and item count above it, the columns of
+the view (Name, Kind unless `list:name`, the `view/fields`, sorted by `view/sort`; times are the stored values, not "3 days ago") or
+the requirements table (status and priority as status lozenges: implemented green, partial yellow, planned blue; `must` red,
+`should` yellow, `may` grey), and names of pages that have a Confluence link as links. At most 200 rows are exported, a note says how many
+were left out. A `![[View/..]]` that is not alone on its line or names no view stays a note, and so does `![[Analysis/..]]` (it runs a script).
 
 **Links in diagrams**: a node with `resource "Some Page"` links to the Confluence page of that wiki page (the page's own
 `confluence:` link) instead of its Archsight address, which means nothing in Confluence. A reference to a page without a
