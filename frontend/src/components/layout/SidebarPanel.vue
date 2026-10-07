@@ -3,6 +3,7 @@ import { ref, watch, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { getKindFilters } from '../../api/client.js'
 import PageTree from '../page/PageTree.vue'
+import NavActions from './NavActions.vue'
 import { useSidebarTab } from '../../composables/useSidebarTab.js'
 import { searchParams } from '../../composables/useSearchScope.js'
 
@@ -91,22 +92,25 @@ function filterQuery(key, value) {
 
 <template>
   <aside class="sidebar">
-    <div v-if="hasPages" class="sidebar-tabs" role="tablist" aria-label="Browse" @keydown="onTabKeydown">
-      <button
-        v-for="tab in TABS"
-        :id="`sidebar-tab-${tab.id}`"
-        :key="tab.id"
-        type="button"
-        role="tab"
-        class="sidebar-tab"
-        :aria-selected="activeTab === tab.id"
-        :aria-controls="`sidebar-panel-${tab.id}`"
-        :tabindex="activeTab === tab.id ? 0 : -1"
-        @click="selectTab(tab.id)"
-      >
-        <i :class="tab.icon" aria-hidden="true"></i>
-        <span>{{ tab.title }}</span>
-      </button>
+    <div class="sidebar-head">
+      <div v-if="hasPages" class="sidebar-tabs" role="tablist" aria-label="Browse" @keydown="onTabKeydown">
+        <button
+          v-for="tab in TABS"
+          :id="`sidebar-tab-${tab.id}`"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="sidebar-tab"
+          :aria-selected="activeTab === tab.id"
+          :aria-controls="`sidebar-panel-${tab.id}`"
+          :tabindex="activeTab === tab.id ? 0 : -1"
+          @click="selectTab(tab.id)"
+        >
+          <i :class="tab.icon" aria-hidden="true"></i>
+          <span>{{ tab.title }}</span>
+        </button>
+      </div>
+      <NavActions class="sidebar-actions" />
     </div>
 
     <div
@@ -200,11 +204,22 @@ function filterQuery(key, value) {
 }
 
 /* Pages / Kinds tabs: compact, icon and label on one centre line */
+/* the Pages/Kinds row: tabs at the left, reload and help flush with the sidebar's right edge */
+.sidebar-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
 .sidebar-tabs {
   display: flex;
   gap: 0.25rem;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.sidebar-actions {
+  margin-left: auto;
+  margin-bottom: 4px;
 }
 
 .sidebar-tab {
