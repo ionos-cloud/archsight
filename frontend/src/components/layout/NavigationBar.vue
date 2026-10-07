@@ -1,15 +1,12 @@
 <script setup>
-import { ref, inject, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { reload as apiReload } from '../../api/client.js'
 import { useSearchScope, searchParams } from '../../composables/useSearchScope.js'
 
 const router = useRouter()
 const route = useRoute()
 const { scope, placeholder } = useSearchScope()
-const reloadKinds = inject('reloadKinds')
 const query = ref('')
-const searching = ref(false)
 let debounceTimer = null
 
 function onInput() {
@@ -34,21 +31,6 @@ watch(scope, (value) => {
     router.replace({ name: 'search', query: searchParams(route.query.q, value) })
   }
 })
-
-async function reload() {
-  searching.value = true
-  try {
-    const result = await apiReload()
-    if (result.error) {
-      router.push({ name: 'error', query: { data: JSON.stringify(result.error) } })
-    } else {
-      await reloadKinds()
-      window.location.reload()
-    }
-  } finally {
-    searching.value = false
-  }
-}
 </script>
 
 <template>
@@ -62,18 +44,9 @@ async function reload() {
           </router-link>
         </strong>
       </li>
-      <li>
-        <a class="nav-link" href="#" @click.prevent="reload">
-          <i class="iconoir-reload-window"></i>
-          Reload
-        </a>
-      </li>
     </ul>
     <ul>
       <li class="search-container">
-        <router-link class="search-help" to="/doc/index" title="Help">
-          <i class="iconoir-help-circle"></i>
-        </router-link>
         <input
           id="search-input"
           v-model="query"
@@ -82,9 +55,6 @@ async function reload() {
           @input="onInput"
           @keydown.enter.prevent="onSubmit"
         />
-        <span v-if="searching" class="search-spinner">
-          <i class="iconoir-refresh spinning"></i>
-        </span>
       </li>
     </ul>
   </nav>
@@ -111,38 +81,5 @@ async function reload() {
 
 .search-container input.search {
   min-width: 700px;
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.search-help {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: var(--pico-card-background-color);
-  border: 1px solid var(--pico-muted-border-color);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  color: var(--pico-muted-color);
-}
-
-.search-help:hover {
-  background-color: var(--pico-primary);
-  color: var(--pico-primary-inverse);
-  border-color: var(--pico-primary);
-}
-
-.search-help i {
-  font-size: var(--fs-md);
 }
 </style>
