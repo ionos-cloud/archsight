@@ -276,9 +276,9 @@ function filterQuery(key, value) {
   content: '';
   order: 1;
   height: 2px;
-  margin: 3px 0 4px;
+  margin: 3px -0.5rem 6px; /* as wide as a selected row, which bleeds 0.5rem like every link */
   border-radius: 1px;
-  background-color: currentColor;
+  background-color: var(--layer);
 }
 
 .kind-group > ul {
@@ -322,10 +322,18 @@ function filterQuery(key, value) {
   text-decoration: none;
 }
 
-.kind-filter a[aria-current="page"],
 .instance-list a[aria-current="page"] {
   background-color: var(--pico-primary);
   color: var(--pico-primary-inverse);
+}
+
+/* the selected kind is outlined in its layer colour; an inset shadow keeps the text where it was.
+   Pico redefines --pico-color and --pico-background-color on links, so use variables it leaves alone. */
+.kind-filter a[aria-current="page"] {
+  background-color: var(--pico-card-background-color);
+  color: var(--pico-contrast);
+  font-weight: var(--fw-strong);
+  box-shadow: inset 0 0 0 2px var(--layer);
 }
 
 .kind-count {

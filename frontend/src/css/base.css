@@ -230,32 +230,38 @@ article>header h2 {
 
 /* Strategy Layer - Orange */
 .icon-strategy {
-  color: #D4824A;
+  --layer: #D4824A; /* also read by the sidebar rule and selection */
+  color: var(--layer);
 }
 
 /* Business Layer - Yellow */
 .icon-business {
-  color: #D4B83C;
+  --layer: #D4B83C; /* also read by the sidebar rule and selection */
+  color: var(--layer);
 }
 
 /* Application Layer - Blue */
 .icon-application {
-  color: #4A9ECD;
+  --layer: #4A9ECD; /* also read by the sidebar rule and selection */
+  color: var(--layer);
 }
 
 /* Technology Layer - Green */
 .icon-technology {
-  color: #7AB316;
+  --layer: #7AB316; /* also read by the sidebar rule and selection */
+  color: var(--layer);
 }
 
 /* Motivation Layer - Purple */
 .icon-motivation {
-  color: #AB47BC;
+  --layer: #AB47BC; /* also read by the sidebar rule and selection */
+  color: var(--layer);
 }
 
 /* Other - Gray */
 .icon-other {
-  color: #999999;
+  --layer: #999999; /* also read by the sidebar rule and selection */
+  color: var(--layer);
 }
 
 /* Reduce article padding for tighter layout */
