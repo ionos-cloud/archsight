@@ -91,6 +91,24 @@ class DatabaseTest < Minitest::Test
     end
   end
 
+  def test_raises_on_empty_name
+    Dir.mktmpdir do |dir|
+      yaml_content = <<~YAML
+        ---
+        apiVersion: architecture/v1alpha1
+        kind: TechnologyArtifact
+        metadata:
+          name: ""
+        spec: {}
+      YAML
+      File.write(File.join(dir, "test.yaml"), yaml_content)
+
+      db = Archsight::Database.new(dir, verbose: false)
+      error = assert_raises(Archsight::ResourceError) { db.reload! }
+      assert_match(/metadata name of TechnologyArtifact not present/, error.message)
+    end
+  end
+
   def test_raises_on_invalid_api_version
     Dir.mktmpdir do |dir|
       yaml_content = <<~YAML
