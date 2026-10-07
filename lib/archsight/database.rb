@@ -119,7 +119,8 @@ module Archsight
       kind = obj["kind"] || raise("kind not defined")
       klass = Archsight::Resources[kind] || raise("#{kind} is not a valid kind")
       inst = klass.new(obj, @current_ref)
-      inst.name || raise("metadata name of #{kind} not present")
+      raise("metadata name of #{kind} not present") if inst.name.to_s.strip.empty?
+
       inst
     end
 
