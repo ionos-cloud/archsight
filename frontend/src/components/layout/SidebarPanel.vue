@@ -276,7 +276,7 @@ function filterQuery(key, value) {
   content: '';
   order: 1;
   height: 1px;
-  margin: 3px -0.5rem 6px; /* as wide as a selected row, which bleeds 0.5rem like every link */
+  margin: 3px 0 6px; /* same width as the tab bar line and the Filters divider */
   background-color: var(--layer);
   opacity: 0.5; /* a quiet divider; the selected kind carries the full colour */
 }
