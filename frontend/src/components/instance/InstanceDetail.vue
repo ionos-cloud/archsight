@@ -205,12 +205,6 @@ function initPanZoomOnGraph() {
   <article class="documentation">
     <header><h2>Details</h2></header>
     <table>
-      <thead>
-        <tr>
-          <th scope="col">Name</th>
-          <th scope="col">Value</th>
-        </tr>
-      </thead>
       <tbody>
         <GitInfo :annotations="annotations" />
         <LanguageStats :annotations="annotations" :kind="kind" />

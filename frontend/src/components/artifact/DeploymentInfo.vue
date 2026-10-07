@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 
 const props = defineProps({ annotations: Object, kind: String })
@@ -25,7 +26,7 @@ function filterUrl(key, value) {
 
 <template>
   <tr v-if="hasDeployment">
-    <th scope="row">Deployment Artifacts</th>
+    <th scope="row" :title="keyHint('repository/artifacts')">Deployment Artifacts</th>
     <td>
       <div class="deployment-types">
         <template v-for="dt in deploymentTypes" :key="dt.key">

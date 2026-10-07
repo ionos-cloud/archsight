@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 import { httpGit } from '../../composables/useFormatting.js'
 
@@ -13,7 +14,7 @@ function copyClone() {
 
 <template>
   <tr v-if="gitUrl">
-    <th scope="row">
+    <th scope="row" :title="keyHint('repository/git')">
       <a class="git-link" :href="httpUrl" target="_blank">Git Repo</a>
     </th>
     <td>

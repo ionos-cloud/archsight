@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 import { iconForUrl, categoryForUrl } from '../../composables/useFormatting.js'
 
@@ -26,13 +27,13 @@ const groupedLinks = computed(() => {
 
 <template>
   <tr v-if="hasLinks">
-    <th scope="row">Links</th>
+    <th scope="row" :title="keyHint('link/<name>')">Links</th>
     <td>
       <template v-if="groupedLinks">
         <template v-for="[category, links] in groupedLinks" :key="category">
           <strong>{{ category }}</strong><br />
           <template v-for="link in links" :key="link.key">
-            <a :href="link.url" target="_blank" rel="noopener noreferrer">
+            <a :href="link.url" :title="keyHint(link.key)" target="_blank" rel="noopener noreferrer">
               <span :class="iconForUrl(link.url)"></span>
               {{ link.name }}
             </a><br />

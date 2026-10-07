@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 
 const props = defineProps({ annotations: Object })
@@ -30,7 +31,7 @@ const segments = computed(() => {
 
 <template>
   <tr v-if="hasData">
-    <th scope="row">Repositories</th>
+    <th scope="row" :title="keyHint('repository/artifacts/total', 'repository/artifacts/active', 'repository/artifacts/abandoned', 'repository/artifacts/archived', 'repository/artifacts/highBusFactor')">Repositories</th>
     <td>
       <div class="repository-distribution">
         <div class="repository-total">

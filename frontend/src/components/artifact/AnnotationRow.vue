@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { ref, computed } from 'vue'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 
@@ -33,7 +34,7 @@ function filterQuery(val) {
 
 <template>
   <tr>
-    <th scope="row">{{ label }}</th>
+    <th scope="row" :title="keyHint(annotationKey)">{{ label }}</th>
     <td>
       <template v-if="format === 'markdown'">
         <div ref="mdEl" v-html="value"></div>

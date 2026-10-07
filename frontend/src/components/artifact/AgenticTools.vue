@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 
 const props = defineProps({ annotations: Object, kind: String })
@@ -22,7 +23,7 @@ function filterUrl(key, value) {
 <template>
   <template v-if="hasTools">
     <tr>
-      <th scope="row" colspan="2">
+      <th scope="row" colspan="2" :title="keyHint('agentic/tools')">
         <i class="iconoir-cpu"></i> AI Coding Assistants
       </th>
     </tr>
