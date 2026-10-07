@@ -62,18 +62,20 @@ async function reload() {
           </router-link>
         </strong>
       </li>
-      <li>
-        <a class="nav-link" href="#" @click.prevent="reload">
-          <i class="iconoir-reload-window"></i>
-          Reload
-        </a>
+      <li class="nav-actions-item">
+        <!-- one segmented control: reload and help -->
+        <div class="nav-actions" role="group" aria-label="Actions">
+          <a class="nav-action" href="#" title="Reload" aria-label="Reload" @click.prevent="reload">
+            <i class="iconoir-reload-window" aria-hidden="true"></i>
+          </a>
+          <router-link class="nav-action" to="/doc/index" title="Help" aria-label="Help">
+            <i class="iconoir-help-circle" aria-hidden="true"></i>
+          </router-link>
+        </div>
       </li>
     </ul>
     <ul>
       <li class="search-container">
-        <router-link class="search-help" to="/doc/index" title="Help">
-          <i class="iconoir-help-circle"></i>
-        </router-link>
         <input
           id="search-input"
           v-model="query"
@@ -122,27 +124,53 @@ async function reload() {
   to { transform: rotate(360deg); }
 }
 
-.search-help {
+/* reload and help as one segmented control: icon-only, a shared hairline between the two */
+.nav-actions-item {
+  display: flex;
+  align-items: center;
+}
+
+.nav-actions {
+  display: inline-flex;
+  margin: 0; /* Pico's [role="group"] adds a bottom margin */
+}
+
+.nav-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 2.25rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  color: var(--pico-muted-color);
   background-color: var(--pico-card-background-color);
   border: 1px solid var(--pico-muted-border-color);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  color: var(--pico-muted-color);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.search-help:hover {
-  background-color: var(--pico-primary);
-  color: var(--pico-primary-inverse);
-  border-color: var(--pico-primary);
+.nav-action + .nav-action {
+  margin-left: -1px; /* the two borders become one line */
 }
 
-.search-help i {
+.nav-action:first-child {
+  border-radius: var(--pico-border-radius) 0 0 var(--pico-border-radius);
+}
+
+.nav-action:last-child {
+  border-radius: 0 var(--pico-border-radius) var(--pico-border-radius) 0;
+}
+
+.nav-action:hover,
+.nav-action:focus-visible {
+  color: var(--pico-primary);
+  background-color: color-mix(in srgb, var(--pico-primary) 12%, var(--pico-card-background-color));
+  position: relative; /* keeps the hovered edge above its neighbour */
+}
+
+.nav-action i {
   font-size: var(--fs-md);
+  line-height: 1;
 }
 </style>
