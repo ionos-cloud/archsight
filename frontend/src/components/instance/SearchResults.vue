@@ -1,15 +1,19 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { search } from '../../api/client.js'
 import { scopedQuery } from '../../composables/useSearchScope.js'
 import ResourceList from './ResourceList.vue'
+import KindFacets from '../search/KindFacets.vue'
+import QueryError from '../search/QueryError.vue'
+import SearchHints from '../search/SearchHints.vue'
 
 const PAGE_SIZE = 100
 
 const route = useRoute()
 const results = ref([])
 const total = ref(0)
+const byKind = ref({})
 const queryTime = ref(0)
 const queryStr = ref('')
 const effectiveQuery = ref('')
@@ -18,212 +22,181 @@ const kindFilter = ref(null)
 const loading = ref(false)
 const loadingMore = ref(false)
 const error = ref(null)
+const moreError = ref(false)
 let offset = 0
+let request = 0 // answers that arrive after a newer search was started are dropped
+
+const hasQuery = computed(() => !!queryStr.value)
+// with a single kind there is nothing to choose, unless a kind is selected (then "All" must stay reachable)
+const showFacets = computed(() => Object.keys(byKind.value).length > 1 || !!kindFilter.value)
+const stale = computed(() => loading.value || !!error.value)
+const countText = computed(() => {
+  const noun = total.value === 1 ? 'result' : 'results'
+  return kindFilter.value ? `${total.value} ${noun} in ${kindFilter.value}` : `${total.value} ${noun}`
+})
 
 async function doSearch() {
   const q = route.query.q
   kindFilter.value = route.query.kind || null
   scope.value = route.query.scope === 'pages' ? 'pages' : 'kinds'
-  if (!q) { results.value = []; total.value = 0; return }
+  if (!q) {
+    request++
+    results.value = []; total.value = 0; byKind.value = {}
+    queryStr.value = ''; effectiveQuery.value = ''
+    error.value = null; loading.value = false
+    return
+  }
   queryStr.value = q
   effectiveQuery.value = scopedQuery(q, scope.value)
+  const mine = ++request
   loading.value = true
   error.value = null
-  offset = 0
+  moreError.value = false
   try {
-    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset: 0, output: 'brief' })
+    // the previous hits stay on screen (dimmed) until the new ones are here
+    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset: 0, output: 'brief', kind: kindFilter.value })
+    if (mine !== request) return
     results.value = data.instances || []
     total.value = data.total || 0
+    byKind.value = data.by_kind || {}
     queryTime.value = data.query_time_ms || 0
     offset = results.value.length
   } catch (e) {
+    if (mine !== request) return
+    // a query that does not parse (often only while typing) keeps the last hits visible
     error.value = e.message
-    results.value = []
   } finally {
-    loading.value = false
+    if (mine === request) loading.value = false
   }
 }
 
 async function loadMore() {
-  if (loadingMore.value || offset >= total.value) return
-  const q = route.query.q
-  if (!q) return
+  if (loadingMore.value || offset >= total.value || !queryStr.value) return
   loadingMore.value = true
+  moreError.value = false
+  const mine = request
   try {
-    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset, output: 'brief' })
+    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset, output: 'brief', kind: kindFilter.value })
+    if (mine !== request) return
     const items = data.instances || []
     results.value = [...results.value, ...items]
     offset += items.length
-  } catch { /* ignore */ }
-  loadingMore.value = false
+  } catch {
+    moreError.value = true
+  } finally {
+    loadingMore.value = false
+  }
 }
 
-watch(() => [route.query.q, route.query.scope], doSearch, { immediate: true })
+watch(() => [route.query.q, route.query.scope, route.query.kind], doSearch, { immediate: true })
 </script>
 
 <template>
-  <div v-if="error" class="search-error">
-    <div class="search-error-header">
-      <i class="iconoir-warning-triangle"></i>
-      Query Syntax Error
-    </div>
-    <div class="search-error-message">{{ error }}</div>
-    <div class="search-error-query">Query: <code>{{ effectiveQuery }}</code></div>
-  </div>
+  <article class="search-page">
+    <!-- not aria-busy: Pico draws a spinner for it, which pushes the whole page down while a search runs -->
+    <span class="sr-only" role="status" aria-live="polite">{{ loading ? 'Searching' : '' }}</span>
+    <header>
+      <h2><i class="iconoir-search" aria-hidden="true"></i> Search</h2>
+      <div class="header-actions">
+        <router-link class="search-syntax" to="/doc/search" title="Query syntax">
+          <i class="iconoir-help-circle" aria-hidden="true"></i>
+        </router-link>
+      </div>
+    </header>
 
-  <article class="search-context">
-    <header><h3>Search Query</h3></header>
-    <div class="search-query-display">
-      <p class="query-item">
-        <span class="label">Query:</span>
-        <code class="query-value">{{ queryStr }}</code>
+    <SearchHints v-if="!hasQuery" mode="intro" :scope="scope" />
+
+    <template v-else>
+      <KindFacets v-if="showFacets" :by-kind="byKind" :selected="kindFilter" />
+
+      <QueryError v-if="error" :message="error" />
+
+      <p v-if="!error && results.length" class="search-summary">
+        {{ countText }}
+        <span class="search-meta">{{ queryTime }} ms</span>
+        <span v-if="scope === 'pages' && effectiveQuery !== queryStr" class="search-meta">
+          searched as <code>{{ effectiveQuery }}</code>
+        </span>
       </p>
-      <p v-if="scope === 'pages'" class="query-item">
-        <span class="label">Scope:</span>
-        <span class="scope-value">Pages</span>
-      </p>
-      <p v-if="scope === 'pages' && effectiveQuery !== queryStr" class="query-item">
-        <span class="label">Searched:</span>
-        <code class="query-value">{{ effectiveQuery }}</code>
-      </p>
-      <p v-if="kindFilter" class="query-item">
-        <span class="label">Kind:</span>
-        <code class="kind-value">{{ kindFilter }}</code>
-      </p>
-      <p v-if="!error" class="query-item">
-        <span class="label">Results:</span>
-        <span class="result-count">{{ total }} {{ total === 1 ? 'item' : 'items' }}</span>
-      </p>
-      <p class="query-item">
-        <span class="label">Time:</span>
-        <span class="search-time">{{ queryTime }} ms</span>
-      </p>
-    </div>
+
+      <div :class="{ stale }">
+        <ResourceList
+          v-if="results.length"
+          rows
+          :instances="results"
+          :omit-kind="!!kindFilter"
+          :page-links="scope === 'pages'"
+          :total="total"
+          :loading-more="loadingMore"
+          @load-more="loadMore"
+        />
+        <p v-if="moreError" class="more-error">
+          Could not load more results.
+          <button type="button" class="more-retry" @click="loadMore">Try again</button>
+        </p>
+      </div>
+
+      <SearchHints v-if="!loading && !error && !results.length" mode="empty" :query="queryStr" :scope="scope" />
+    </template>
   </article>
-
-  <article v-if="!error && !loading" class="search-results">
-    <header><h3>Results</h3></header>
-    <p v-if="!results.length"><em>No results found</em></p>
-    <ResourceList v-else :instances="results" :omit-kind="!!kindFilter" :page-links="scope === 'pages'" :total="total" :loading-more="loadingMore" @load-more="loadMore" />
-  </article>
-
-  <article v-if="loading"><p>Searching...</p></article>
 </template>
 
 <style scoped>
-.search-query-display {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  align-items: center;
-  padding: 1rem 0;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.query-item {
-  display: flex;
+.search-syntax {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
-}
-
-.query-item .label {
-  font-weight: 600;
   color: var(--pico-muted-color);
-  text-transform: uppercase;
+}
+
+.search-syntax:hover {
+  color: var(--pico-primary);
+}
+
+.search-summary {
+  margin: 0 0 0.25rem;
   font-size: var(--fs-xs);
-  letter-spacing: 0.5px;
+  color: var(--pico-muted-color);
 }
 
-.query-item code {
-  padding: 0.35rem 0.75rem;
-  background-color: var(--pico-code-background-color);
-  border-radius: 6px;
-  font-size: var(--fs-sm);
-  font-family: var(--font-mono);
-  color: var(--pico-color);
+.search-meta {
+  margin-left: 0.75rem;
 }
 
-.query-value {
-  word-break: break-word;
-}
-
-.kind-value {
-  text-transform: capitalize;
-}
-
-.scope-value {
-  font-weight: 600;
-}
-
-.result-count {
-  font-weight: 600;
-  color: var(--pico-color);
-  font-size: 1em;
-}
-
-.search-error {
-  padding: 1rem;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.search-error-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  color: #991b1b;
-  font-weight: 600;
-}
-
-.search-error-header i {
-  font-size: var(--fs-md);
-}
-
-.search-error-message {
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  color: #991b1b;
-  background-color: #fef2f2;
-  padding: 0.75rem;
-  border-radius: 4px;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.search-error-query {
-  margin-top: 0.5rem;
+.search-summary code {
   font-size: var(--fs-xs);
-  color: #7f1d1d;
 }
 
-.search-error-query code {
-  background-color: #fef2f2;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+/* the previous hits stay while a new search runs or its query is wrong */
+.stale {
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  .search-error {
-    background-color: #450a0a;
-    border-color: #7f1d1d;
-  }
-  .search-error-header {
-    color: #fca5a5;
-  }
-  .search-error-message {
-    color: #fecaca;
-    background-color: #7f1d1d;
-  }
-  .search-error-query {
-    color: #fca5a5;
-  }
-  .search-error-query code {
-    background-color: #7f1d1d;
-  }
+.more-error {
+  margin: 0.5rem 0 0;
+  font-size: var(--fs-xs);
+  color: var(--pico-del-color);
+}
+
+.more-retry {
+  display: inline;
+  width: auto;
+  margin: 0 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pico-primary);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>

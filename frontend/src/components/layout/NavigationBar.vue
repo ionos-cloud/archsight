@@ -1,29 +1,13 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSearchScope, searchParams } from '../../composables/useSearchScope.js'
+import { useSearchBox } from '../../composables/useSearchBox.js'
 
 const router = useRouter()
 const route = useRoute()
 const { scope, placeholder } = useSearchScope()
-const query = ref('')
-let debounceTimer = null
-
-function onInput() {
-  clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    if (query.value.trim()) {
-      router.push({ name: 'search', query: searchParams(query.value, scope.value) })
-    }
-  }, 300)
-}
-
-function onSubmit() {
-  clearTimeout(debounceTimer)
-  if (query.value.trim()) {
-    router.push({ name: 'search', query: searchParams(query.value, scope.value) })
-  }
-}
+const { query, onInput, onSubmit, clear } = useSearchBox(scope)
 
 // Switching the sidebar tab while looking at results runs the same search in the other scope
 watch(scope, (value) => {
@@ -45,7 +29,7 @@ watch(scope, (value) => {
         </strong>
       </li>
     </ul>
-    <ul>
+    <ul class="nav-search">
       <li class="search-container">
         <input
           id="search-input"
@@ -55,6 +39,9 @@ watch(scope, (value) => {
           @input="onInput"
           @keydown.enter.prevent="onSubmit"
         />
+        <button v-if="query" type="button" class="search-clear" aria-label="Clear search" title="Clear" @click="clear">
+          <i class="iconoir-xmark" aria-hidden="true"></i>
+        </button>
       </li>
     </ul>
   </nav>
@@ -74,12 +61,53 @@ watch(scope, (value) => {
 }
 
 .search-container {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.search-container input.search {
-  min-width: 700px;
+/* the search column takes what the logo leaves and shrinks with the window; 700px is its maximum */
+.nav-search {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-end;
 }
+
+.search-container {
+  flex: 0 1 calc(700px + 1rem);
+  min-width: 0;
+}
+
+.search-container input.search {
+  width: 100%;
+  min-width: 0;
+  padding-right: 2.25rem; /* room for the clear button */
+}
+
+.search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pico-muted-color);
+  cursor: pointer;
+}
+
+.search-clear:hover,
+.search-clear:focus-visible {
+  background-color: var(--tint);
+  color: var(--pico-color);
+}
+
 </style>

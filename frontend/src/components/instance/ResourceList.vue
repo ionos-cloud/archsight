@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { computed, ref, inject, onMounted, onBeforeUnmount, watch } from 'vue'
 import { timeAgo, fieldValue, isIdentityField } from '../../composables/useFormatting.js'
+import HighlightList from '../search/HighlightList.vue'
 
 const props = defineProps({
   instances: { type: Array, required: true },
@@ -11,6 +12,8 @@ const props = defineProps({
   loadingMore: { type: Boolean, default: false },
   // page search: pages link to the wiki page (/pages/<name>) and show their title
   pageLinks: { type: Boolean, default: false },
+  // quiet rows (hairlines instead of a box per row), used by the search results
+  rows: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['load-more'])
@@ -127,7 +130,7 @@ function isTimeField(key) {
     </tbody>
   </table>
 
-  <ul v-else class="search-instance-list">
+  <ul v-else class="search-instance-list" :class="{ rows }">
     <li v-for="inst in instances" :key="inst.name" class="search-instance-item">
       <div class="instance-main">
         <router-link class="instance-name" :to="linkTo(inst)">
@@ -137,6 +140,7 @@ function isTimeField(key) {
         <span v-if="subLabelOf(inst)" class="instance-sub">{{ subLabelOf(inst) }}</span>
         <span v-if="!omitKind && !isPageLink(inst)" class="instance-kind">{{ inst.kind }}</span>
       </div>
+      <HighlightList v-if="inst.highlights?.length" :items="inst.highlights" :kind="inst.kind" />
     </li>
   </ul>
 
@@ -178,9 +182,32 @@ function isTimeField(key) {
 
 .instance-main {
   display: flex;
+  flex-wrap: wrap; /* in a narrow window the kind goes below a long name */
   align-items: center;
-  gap: 12px;
+  gap: 0 12px;
   flex: 1;
+  min-width: 0;
+}
+
+/* quiet rows: a hairline between hits, the hover tint is the only emphasis */
+.rows .search-instance-item {
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0.5rem 0.25rem;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.rows .search-instance-item:hover {
+  background-color: var(--tint);
+}
+
+.rows .instance-kind {
+  padding: 0;
+  background: none;
 }
 
 .instance-name {
@@ -188,6 +215,7 @@ function isTimeField(key) {
   font-size: 1em;
   color: var(--pico-primary);
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 /* stretched link: the whole row is the click target, the name stays the accessible link */
