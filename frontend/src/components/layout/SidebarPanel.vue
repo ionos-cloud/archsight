@@ -66,6 +66,11 @@ function kindLabel(kind, group) {
   return kind.startsWith(group.title) && rest ? rest : kind
 }
 
+// "ComplianceEvidence" -> ["Compliance", "Evidence"]: in a narrow tile a long name wraps between its words
+function kindWords(label) {
+  return label.split(/(?<=[a-z])(?=[A-Z])/)
+}
+
 function isCurrentKind(kindName) {
   return currentKind.value === kindName
 }
@@ -153,7 +158,7 @@ function filterQuery(key, value) {
                   :to="{ name: 'kind', params: { kind: k.kind } }"
                   :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
                 >
-                  <span class="kind-name" :title="k.kind">{{ kindLabel(k.kind, group) }}</span>
+                  <span class="kind-name" :title="k.kind"><template v-for="(part, i) in kindWords(kindLabel(k.kind, group))" :key="i"><wbr v-if="i" />{{ part }}</template></span>
                   <span class="kind-count">{{ k.instance_count }}</span>
                 </router-link>
               </li>
@@ -409,6 +414,39 @@ function filterQuery(key, value) {
   .sidebar {
     width: clamp(250px, 20vw, 400px);
     flex-shrink: 0;
+  }
+}
+
+/* Sidebar above the content (below 800px, a phone): each group is a grid of button-like tiles, the name on
+   top and the count below, big enough for a thumb. The group's hairline and heading stay. */
+@media not all and (min-width: 800px) {
+  .kind-group > ul {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: 0.4rem;
+  }
+
+  .kind-filter .kind-group a {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.25rem;
+    min-height: 3.5rem;
+    margin: 0;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--pico-border-radius);
+    box-shadow: inset 0 0 0 1px var(--line);
+    overflow-wrap: break-word; /* a single long word, as a last resort */
+  }
+
+  .kind-filter .kind-group a[aria-current="page"] {
+    box-shadow: inset 0 0 0 2px var(--layer);
+  }
+
+  .kind-filter .kind-group .kind-count {
+    min-width: 0;
+    padding: 0;
+    text-align: left;
   }
 }
 </style>
