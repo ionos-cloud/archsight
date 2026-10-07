@@ -66,11 +66,6 @@ function kindLabel(kind, group) {
   return kind.startsWith(group.title) && rest ? rest : kind
 }
 
-// "ComplianceEvidence" -> ["Compliance", "Evidence"]: in a narrow tile a long name wraps between its words
-function kindWords(label) {
-  return label.split(/(?<=[a-z])(?=[A-Z])/)
-}
-
 function isCurrentKind(kindName) {
   return currentKind.value === kindName
 }
@@ -158,7 +153,7 @@ function filterQuery(key, value) {
                   :to="{ name: 'kind', params: { kind: k.kind } }"
                   :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
                 >
-                  <span class="kind-name" :title="k.kind"><template v-for="(part, i) in kindWords(kindLabel(k.kind, group))" :key="i"><wbr v-if="i" />{{ part }}</template></span>
+                  <span class="kind-name" :title="k.kind">{{ kindLabel(k.kind, group) }}</span>
                   <span class="kind-count">{{ k.instance_count }}</span>
                 </router-link>
               </li>
@@ -417,13 +412,21 @@ function filterQuery(key, value) {
   }
 }
 
-/* Sidebar above the content (below 800px, a phone): each group is a grid of button-like tiles, the name on
-   top and the count below, big enough for a thumb. The group's hairline and heading stay. */
+/* Sidebar above the content (below 800px, a phone): each group is a row of button-like tiles that wrap, the
+   name on top and the count below, big enough for a thumb. A tile has a minimum width and grows to fit its
+   name, so a long one ("ComplianceEvidence") widens its tile instead of wrapping. The group's hairline and
+   heading stay. */
 @media not all and (min-width: 800px) {
   .kind-group > ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.4rem;
+  }
+
+  .kind-group li {
+    flex: 0 1 auto;
+    min-width: 7.5rem;
+    max-width: 100%;
   }
 
   .kind-filter .kind-group a {
@@ -436,7 +439,13 @@ function filterQuery(key, value) {
     padding: 0.5rem 0.6rem;
     border-radius: var(--pico-border-radius);
     box-shadow: inset 0 0 0 1px var(--line);
-    overflow-wrap: break-word; /* a single long word, as a last resort */
+  }
+
+  .kind-filter .kind-group .kind-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* only the narrowest window truncates (the tooltip has the full name) */
   }
 
   .kind-filter .kind-group a[aria-current="page"] {
