@@ -411,4 +411,51 @@ function filterQuery(key, value) {
     flex-shrink: 0;
   }
 }
+
+/* Sidebar above the content (below 800px, a phone): each group is a row of button-like tiles that wrap, the
+   name on top and the count below, big enough for a thumb. A tile has a minimum width and grows to fit its
+   name, so a long one ("ComplianceEvidence") widens its tile instead of wrapping. The group's hairline and
+   heading stay. */
+@media not all and (min-width: 800px) {
+  .kind-group > ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .kind-group li {
+    flex: 0 1 auto;
+    min-width: 7.5rem;
+    max-width: 100%;
+  }
+
+  .kind-filter .kind-group a {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.25rem;
+    min-height: 3.5rem;
+    margin: 0;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--pico-border-radius);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .kind-filter .kind-group .kind-name {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* only the narrowest window truncates (the tooltip has the full name) */
+  }
+
+  .kind-filter .kind-group a[aria-current="page"] {
+    box-shadow: inset 0 0 0 2px var(--layer);
+  }
+
+  .kind-filter .kind-group .kind-count {
+    min-width: 0;
+    padding: 0;
+    text-align: left;
+  }
+}
 </style>
