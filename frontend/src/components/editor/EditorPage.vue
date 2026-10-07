@@ -336,7 +336,7 @@ function closeMarkdown() {
 
 .field-group .field-error {
   color: var(--pico-del-color, #c62828);
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
   margin-top: 0.125rem;
 }
 
@@ -346,7 +346,7 @@ function closeMarkdown() {
   color: var(--pico-primary);
   padding: 0.125rem 0.5rem;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   border-radius: 4px;
   margin: 0;
   width: auto;
@@ -364,7 +364,7 @@ function closeMarkdown() {
 }
 
 .field-group .code-field textarea {
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 /* YAML output */
@@ -416,7 +416,7 @@ function closeMarkdown() {
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--muted-border-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
 .editor-header h2 {
@@ -437,19 +437,19 @@ function closeMarkdown() {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--border-radius);
+  border-radius: var(--pico-border-radius);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-header:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--pico-primary);
+  border-color: var(--pico-primary);
 }
 
 .yaml-output > header {

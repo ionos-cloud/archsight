@@ -112,8 +112,8 @@ function removeRelation(index) {
 #relations-list {
   display: flex;
   flex-direction: column;
-  background-color: var(--background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
 }
 
@@ -127,8 +127,8 @@ function removeRelation(index) {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.35rem 0.5rem;
-  font-size: 0.9rem;
-  border-bottom: 1px solid var(--muted-border-color);
+  font-size: var(--fs-sm);
+  border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
 .relation-item:last-child {
@@ -148,7 +148,7 @@ function removeRelation(index) {
 
 .relation-text em {
   font-style: normal;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .btn-remove {
@@ -162,18 +162,18 @@ function removeRelation(index) {
   background: transparent;
   border: none;
   border-radius: 3px;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .btn-remove:hover {
-  background-color: var(--del-color);
+  background-color: var(--pico-del-color);
   color: white;
 }
 
 .btn-remove i {
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
 }
 
 .add-relation-row {
@@ -198,7 +198,7 @@ function removeRelation(index) {
 }
 
 .no-relations {
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   font-style: italic;
   margin: 0;
 }

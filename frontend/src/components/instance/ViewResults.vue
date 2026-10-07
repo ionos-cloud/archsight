@@ -106,8 +106,8 @@ watch(() => [props.query, props.fields.join(',')], executeQuery, { immediate: tr
 
 <style scoped>
 .view-result-meta {
-  font-size: 0.9em;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   margin-left: 1rem;
 }
 
@@ -115,7 +115,7 @@ watch(() => [props.query, props.fields.join(',')], executeQuery, { immediate: tr
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 @keyframes spin {
@@ -145,8 +145,8 @@ watch(() => [props.query, props.fields.join(',')], executeQuery, { immediate: tr
 }
 
 .search-error-message {
-  font-family: monospace;
-  font-size: 0.95em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
   color: #991b1b;
   background-color: #fef2f2;
   padding: 0.75rem;

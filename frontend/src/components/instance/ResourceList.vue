@@ -1,4 +1,5 @@
 <script setup>
+import { useRouter } from 'vue-router'
 import { computed, ref, inject, onMounted, onBeforeUnmount, watch } from 'vue'
 import { timeAgo, fieldValue, isIdentityField } from '../../composables/useFormatting.js'
 
@@ -18,6 +19,15 @@ const pageTitles = inject('pageTitles', null)
 
 function isPageLink(inst) {
   return props.pageLinks && inst.kind === 'Page'
+}
+
+const router = useRouter()
+
+// the whole table row opens the resource; real links, selections and modified clicks keep their own behaviour
+function openRow(inst, event) {
+  if (event.target.closest('a') || event.metaKey || event.ctrlKey || event.shiftKey) return
+  if (window.getSelection()?.toString()) return
+  router.push(linkTo(inst))
 }
 
 function linkTo(inst) {
@@ -93,7 +103,7 @@ function isTimeField(key) {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="inst in instances" :key="inst.name" class="resource-list-row">
+      <tr v-for="inst in instances" :key="inst.name" class="resource-list-row" @click="openRow(inst, $event)">
         <td class="col-name">
           <router-link class="instance-name" :to="linkTo(inst)">
             <i v-if="inst.icon" :class="`iconoir-${inst.icon} icon-${inst.layer}`"></i>
@@ -138,8 +148,8 @@ function isTimeField(key) {
 <style scoped>
 .instance-sub {
   margin-left: 0.5rem;
-  color: var(--muted-color);
-  font-size: 0.8em;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-xs);
 }
 
 .search-instance-list {
@@ -149,19 +159,21 @@ function isTimeField(key) {
 }
 
 .search-instance-item {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 6px 8px;
   margin-bottom: 2px;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
   transition: border-color 0.15s ease;
 }
 
 .search-instance-item:hover {
-  border-color: var(--primary);
+  border-color: var(--pico-primary);
+  background-color: var(--pico-code-background-color);
 }
 
 .instance-main {
@@ -174,19 +186,22 @@ function isTimeField(key) {
 .instance-name {
   font-weight: 600;
   font-size: 1em;
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: none;
 }
 
-.instance-name:hover {
-  text-decoration: underline;
+/* stretched link: the whole row is the click target, the name stays the accessible link */
+.search-instance-item .instance-name::after {
+  content: '';
+  position: absolute;
+  inset: 0;
 }
 
 .instance-kind {
-  font-size: 0.85em;
-  color: var(--muted-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
   padding: 2px 8px;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 4px;
 }
 
@@ -200,19 +215,21 @@ function isTimeField(key) {
   text-align: left;
   padding: 8px 12px;
   font-weight: 600;
-  font-size: 0.85em;
-  color: var(--muted-color);
-  border-bottom: 2px solid var(--muted-border-color);
-  background-color: var(--card-background-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
+  border-bottom: 2px solid var(--pico-muted-border-color);
+  background-color: var(--pico-card-background-color);
 }
 
 .resource-list-table tbody tr {
-  border-bottom: 1px solid var(--muted-border-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
   transition: background-color 0.15s ease;
 }
 
+.resource-list-table tbody tr { cursor: pointer; }
+
 .resource-list-table tbody tr:hover {
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
 }
 
 .resource-list-table td {
@@ -229,12 +246,12 @@ function isTimeField(key) {
 }
 
 .resource-list-table .col-annotation {
-  color: var(--color);
-  font-size: 0.9em;
+  color: var(--pico-color);
+  font-size: var(--fs-sm);
 }
 
 .resource-list-table .empty-value {
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .resource-list-table .instance-name {

@@ -75,13 +75,13 @@ async function retry() {
 }
 
 .error-message {
-  font-size: 1.1rem;
+  font-size: var(--fs-md);
   margin-bottom: 0.5rem;
 }
 
 .error-location {
   color: #6b7280;
-  font-family: monospace;
+  font-family: var(--font-mono);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -92,7 +92,7 @@ async function retry() {
   color: white;
   padding: 0.125rem 0.5rem;
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
 }
 
 .reload-btn {
@@ -115,8 +115,8 @@ async function retry() {
 }
 
 .error-code-block code {
-  font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', monospace;
-  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
   line-height: 1.1;
 }
 

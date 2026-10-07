@@ -139,9 +139,9 @@ const trendClass = computed(() => {
   flex-wrap: wrap;
   gap: 16px;
   padding: 8px 12px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   border-radius: 6px;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
 }
 
 .team-stat-item {
@@ -151,22 +151,22 @@ const trendClass = computed(() => {
 }
 
 .team-stat-value {
-  font-size: 1.5em;
+  font-size: var(--fs-lg);
   font-weight: 600;
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 .team-stat-label {
-  color: var(--muted-color);
-  font-size: 0.9em;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-sm);
 }
 
 .team-value {
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 a.team-value {
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: none;
 }
 
@@ -181,11 +181,11 @@ a.team-value:hover {
 }
 
 .team-member {
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 a.team-member {
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: none;
 }
 
@@ -208,21 +208,21 @@ a.team-member:hover {
 }
 
 .jira-metric-label {
-  font-size: 0.85em;
-  color: var(--muted-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
 }
 
 .jira-metric-total {
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   font-weight: 600;
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 .jira-trend {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   cursor: help;
 }
 
@@ -246,7 +246,7 @@ a.team-member:hover {
 
 .jira-trend-neutral i,
 .jira-trend-neutral .jira-trend-text {
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 @media (prefers-color-scheme: dark) {

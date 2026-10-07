@@ -88,9 +88,9 @@ function filterUrl(key, value) {
   gap: 8px;
   min-width: 200px;
   padding: 8px 12px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   border-radius: 6px;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
 }
 
 .language-total {
@@ -100,14 +100,14 @@ function filterUrl(key, value) {
 }
 
 .language-total .language-count {
-  font-size: 1.5em;
+  font-size: var(--fs-lg);
   font-weight: 600;
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 .language-total .language-label {
-  color: var(--muted-color);
-  font-size: 0.9em;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-sm);
 }
 
 .language-bar {
@@ -115,7 +115,7 @@ function filterUrl(key, value) {
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
-  background-color: var(--muted-border-color);
+  background-color: var(--pico-muted-border-color);
 }
 
 .language-bar-segment {
@@ -150,7 +150,7 @@ function filterUrl(key, value) {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
 }
 
 .language-legend-item {
@@ -160,12 +160,12 @@ function filterUrl(key, value) {
 }
 
 .language-legend-item a {
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   text-decoration: none;
 }
 
 .language-legend-item a:hover {
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: underline;
 }
 

@@ -96,7 +96,7 @@ function isUrl(v) {
       </div>
     </header>
 
-    <div ref="descEl" v-if="description" class="import-description" v-html="description"></div>
+    <div ref="descEl" v-if="description" class="description-box prose" v-html="description"></div>
 
     <template v-if="hasRelations">
       <div v-if="hasOutgoingRelations && !graphTooLarge && svgHtml" class="graph-container">
@@ -168,9 +168,9 @@ function isUrl(v) {
 }
 
 .instance-kind-subtitle {
-  font-size: 0.4em;
+  font-size: var(--fs-xs);
   font-weight: 400;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   opacity: 0.7;
   margin-top: 0.1em;
 }
@@ -178,7 +178,7 @@ function isUrl(v) {
 .instance-name {
   font-weight: 600;
   font-size: 1em;
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: none;
 }
 
@@ -193,19 +193,19 @@ function isUrl(v) {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--border-radius);
+  border-radius: var(--pico-border-radius);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-header:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--pico-primary);
+  border-color: var(--pico-primary);
 }
 
 .import-header {
@@ -226,20 +226,12 @@ function isUrl(v) {
   margin-right: auto;
 }
 
-.import-description {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background-color: var(--card-background-color);
-  border-radius: 8px;
-  border: 1px solid var(--muted-border-color);
-}
-
 .graph-container {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   height: auto;
   min-height: 150px;
   max-height: 70vh;
@@ -265,21 +257,21 @@ function isUrl(v) {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.9em;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   padding: 0.25rem 0.5rem;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 4px;
 }
 
-.import-meta-item i { font-size: 1.1em; }
+.import-meta-item i { font-size: var(--fs-md); }
 .import-meta-item.status-enabled { color: #10b981; }
 .import-meta-item.status-disabled { color: #ef4444; }
 
 .import-output-path {
   margin-bottom: 1rem;
   padding: 0.5rem 0.75rem;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 4px;
 }
 
@@ -287,9 +279,9 @@ function isUrl(v) {
 
 .import-config-section {
   margin-top: 1rem;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 8px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
 }
 
 .import-config-section summary {
@@ -299,18 +291,18 @@ function isUrl(v) {
   padding: 0.75rem 1rem;
   cursor: pointer;
   font-weight: 600;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   user-select: none;
 }
 
-.import-config-section summary:hover { color: var(--color); }
+.import-config-section summary:hover { color: var(--pico-color); }
 
 .import-config-section summary::marker,
 .import-config-section summary::-webkit-details-marker { display: none; }
 
 .import-config-section summary::before {
   content: '\25B6';
-  font-size: 0.7em;
+  font-size: var(--fs-2xs);
   transition: transform 0.2s ease;
 }
 
@@ -325,14 +317,14 @@ function isUrl(v) {
 .import-config-table th,
 .import-config-table td {
   padding: 0.5rem 1rem;
-  border-top: 1px solid var(--muted-border-color);
+  border-top: 1px solid var(--pico-muted-border-color);
 }
 
 .import-config-table th {
   width: 30%;
   text-align: left;
   font-weight: 500;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .import-config-table code { word-break: break-all; }

@@ -302,7 +302,7 @@ onUnmounted(() => {
   flex-direction: column;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-  background-color: var(--card-background-color, #fff);
+  background-color: var(--pico-card-background-color, #fff);
   overflow: hidden;
 }
 
@@ -311,7 +311,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.5rem 1rem;
-  background-color: var(--card-background-color, #fff);
+  background-color: var(--pico-card-background-color, #fff);
   flex-wrap: wrap;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1;
@@ -327,34 +327,34 @@ onUnmounted(() => {
   margin: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--border-radius);
-  color: var(--color);
-  font-size: 0.85rem;
+  border-radius: var(--pico-border-radius);
+  color: var(--pico-color);
+  font-size: var(--fs-xs);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .toolbar-btn:hover {
-  background-color: var(--muted-border-color);
-  border-color: var(--muted-border-color);
+  background-color: var(--pico-muted-border-color);
+  border-color: var(--pico-muted-border-color);
 }
 
 .toolbar-btn:active {
-  background-color: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-inverse);
+  background-color: var(--pico-primary);
+  border-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
 }
 
 .toolbar-btn i {
-  font-size: 1.1rem;
+  font-size: var(--fs-md);
 }
 
 .toolbar-divider {
   width: 1px;
   height: 1.5rem;
   margin: 0 0.5rem;
-  background-color: var(--muted-border-color);
+  background-color: var(--pico-muted-border-color);
 }
 
 .toolbar-spacer {
@@ -364,7 +364,7 @@ onUnmounted(() => {
 .toolbar-action {
   padding: 0.4rem 0.75rem;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
 }
 
 .toolbar-select {
@@ -374,7 +374,7 @@ onUnmounted(() => {
   max-width: 15rem;
   padding: 0 0.75rem;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
   border: 1px solid var(--pico-muted-border-color, #e4e4e7);
   border-radius: var(--pico-border-radius, 0.375rem);
   background-color: transparent;
@@ -454,8 +454,8 @@ onUnmounted(() => {
   flex: 1;
   min-height: 0;
   padding: 1rem 1.5rem;
-  font-family: var(--font-family);
-  font-size: 0.7rem;
+  font-family: var(--pico-font-family);
+  font-size: var(--fs-sm);
   line-height: 1.55;
   overflow-y: auto;
   position: relative;
@@ -481,9 +481,9 @@ onUnmounted(() => {
   font-weight: 600;
 }
 
-#lexical-editor-root :deep(h1) { font-size: 1.7em; }
-#lexical-editor-root :deep(h2) { font-size: 1.4em; }
-#lexical-editor-root :deep(h3) { font-size: 1.15em; }
+#lexical-editor-root :deep(h1) { font-size: var(--fs-xl); }
+#lexical-editor-root :deep(h2) { font-size: var(--fs-lg); }
+#lexical-editor-root :deep(h3) { font-size: var(--fs-md); }
 #lexical-editor-root :deep(h4) { font-size: 1em; }
 
 #lexical-editor-root :deep(h1:first-child),
@@ -512,18 +512,18 @@ onUnmounted(() => {
 
 #lexical-editor-root :deep(code) {
   padding: 0.15rem 0.35rem;
-  background-color: var(--code-background-color, #f4f4f5);
+  background-color: var(--pico-code-background-color, #f4f4f5);
   border: 1px solid var(--pico-muted-border-color, #e4e4e7);
   border-radius: 3px;
   font-family: var(--pico-font-family-monospace, monospace);
-  font-size: 0.9em;
+  font-size: var(--fs-sm);
 }
 
 #lexical-editor-root :deep(pre) {
   margin: 0.75rem 0;
   padding: 1rem;
-  background-color: var(--code-background-color);
-  border-radius: var(--border-radius);
+  background-color: var(--pico-code-background-color);
+  border-radius: var(--pico-border-radius);
   overflow-x: auto;
   position: relative;
 }
@@ -539,12 +539,12 @@ onUnmounted(() => {
   margin: 0.75rem -1.5rem;
   padding: 1rem 1.5rem;
   min-width: calc(100% + 3rem);
-  background-color: var(--code-background-color, #f4f4f5);
+  background-color: var(--pico-code-background-color, #f4f4f5);
   border-top: 1px solid var(--pico-muted-border-color, #e4e4e7);
   border-bottom: 1px solid var(--pico-muted-border-color, #e4e4e7);
   border-radius: 0;
   font-family: var(--pico-font-family-monospace, monospace);
-  font-size: 0.9em;
+  font-size: var(--fs-sm);
   line-height: 1.5;
   overflow-x: auto;
   white-space: pre;
@@ -563,7 +563,7 @@ onUnmounted(() => {
 #lexical-editor-root :deep(.lexical-code .tokenFunction) { color: #6f42c1; }
 
 #lexical-editor-root :deep(a) {
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: underline;
 }
 
@@ -591,26 +591,26 @@ onUnmounted(() => {
 
 @media (prefers-color-scheme: dark) {
   .markdown-editor-panel {
-    background-color: var(--card-background-color, #1e1e1e);
+    background-color: var(--pico-card-background-color, #1e1e1e);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   .markdown-editor-backdrop {
     background-color: rgba(0, 0, 0, 0.7);
   }
   .lexical-toolbar {
-    background-color: var(--card-background-color, #1e1e1e);
+    background-color: var(--pico-card-background-color, #1e1e1e);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   }
   .toolbar-btn {
-    color: var(--color, #c9d1d9);
+    color: var(--pico-color, #c9d1d9);
   }
   .toolbar-btn:hover {
     background-color: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.1);
   }
   .toolbar-btn:active {
-    background-color: var(--primary);
-    border-color: var(--primary);
+    background-color: var(--pico-primary);
+    border-color: var(--pico-primary);
   }
   .toolbar-divider {
     background-color: rgba(255, 255, 255, 0.15);
@@ -618,15 +618,15 @@ onUnmounted(() => {
   .toolbar-select {
     background-color: transparent;
     border-color: rgba(255, 255, 255, 0.2);
-    color: var(--color, #c9d1d9);
+    color: var(--pico-color, #c9d1d9);
   }
   .toolbar-select:hover,
   .toolbar-select:focus {
-    border-color: var(--primary, #58a6ff);
+    border-color: var(--pico-primary, #58a6ff);
   }
   #lexical-editor-root {
-    color: var(--color, #c9d1d9);
-    background-color: var(--card-background-color, #1e1e1e);
+    color: var(--pico-color, #c9d1d9);
+    background-color: var(--pico-card-background-color, #1e1e1e);
   }
   #lexical-editor-root :deep(blockquote) {
     border-left-color: rgba(255, 255, 255, 0.2);

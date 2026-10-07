@@ -31,12 +31,12 @@ const messageIcons = { error: 'xmark-circle', warning: 'warning-triangle', info:
 }
 
 .analysis-heading.level-0 {
-  font-size: 1.25em;
-  border-bottom: 1px solid var(--muted-border-color);
+  font-size: var(--fs-md);
+  border-bottom: 1px solid var(--pico-muted-border-color);
   padding-bottom: 0.25rem;
 }
 
-.analysis-heading.level-1 { font-size: 1.1em; }
+.analysis-heading.level-1 { font-size: var(--fs-md); }
 .analysis-heading.level-2 { font-size: 1em; }
 
 .analysis-text {

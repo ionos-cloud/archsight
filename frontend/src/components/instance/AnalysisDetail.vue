@@ -48,7 +48,7 @@ export default {
         </router-link>
       </div>
     </header>
-    <div ref="descEl" v-if="description" class="analysis-description" v-html="description"></div>
+    <div ref="descEl" v-if="description" class="description-box prose" v-html="description"></div>
   </article>
 
   <template v-if="analysisScript">
@@ -99,9 +99,9 @@ export default {
 }
 
 .instance-kind-subtitle {
-  font-size: 0.4em;
+  font-size: var(--fs-xs);
   font-weight: 400;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   opacity: 0.7;
   margin-top: 0.1em;
 }
@@ -109,7 +109,7 @@ export default {
 .instance-name {
   font-weight: 600;
   font-size: 1em;
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: none;
 }
 
@@ -124,19 +124,19 @@ export default {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--border-radius);
+  border-radius: var(--pico-border-radius);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-header:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--pico-primary);
+  border-color: var(--pico-primary);
 }
 
 .analysis-header {
@@ -147,14 +147,6 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.analysis-description {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background-color: var(--card-background-color);
-  border-radius: 8px;
-  border: 1px solid var(--muted-border-color);
 }
 
 .analysis-metadata {
@@ -170,15 +162,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.9em;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   padding: 0.25rem 0.5rem;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 4px;
 }
 
 .analysis-meta-item i {
-  font-size: 1.1em;
+  font-size: var(--fs-md);
 }
 
 .analysis-script pre.code {
@@ -192,8 +184,8 @@ export default {
 
 .analysis-script pre.code code {
   white-space: pre;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: 0.9em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
   line-height: 1.5;
 }
 
@@ -206,14 +198,14 @@ export default {
 
 .analysis-script-header .copy-button {
   padding: 0.25rem 0.5rem;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
 }
 
 .copy-button {
   padding: 6px;
   background-color: transparent;
-  color: var(--primary);
-  border: 1px solid var(--muted-border-color);
+  color: var(--pico-primary);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -225,15 +217,15 @@ export default {
 }
 
 .copy-button:hover {
-  background-color: var(--card-background-color);
-  border-color: var(--primary);
+  background-color: var(--pico-card-background-color);
+  border-color: var(--pico-primary);
 }
 
 .analysis-details-section {
   margin-top: 1rem;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 8px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
 }
 
 .analysis-details-section summary {
@@ -243,18 +235,18 @@ export default {
   padding: 0.75rem 1rem;
   cursor: pointer;
   font-weight: 600;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   user-select: none;
 }
 
-.analysis-details-section summary:hover { color: var(--color); }
+.analysis-details-section summary:hover { color: var(--pico-color); }
 
 .analysis-details-section summary::marker,
 .analysis-details-section summary::-webkit-details-marker { display: none; }
 
 .analysis-details-section summary::before {
   content: '\25B6';
-  font-size: 0.7em;
+  font-size: var(--fs-2xs);
   transition: transform 0.2s ease;
 }
 
@@ -263,7 +255,7 @@ export default {
 
 .analysis-details-content {
   padding: 1rem;
-  border-top: 1px solid var(--muted-border-color);
+  border-top: 1px solid var(--pico-muted-border-color);
 }
 
 .analysis-details-content .analysis-metadata { margin-bottom: 1rem; }
@@ -274,6 +266,6 @@ export default {
   align-items: center;
   gap: 0.5rem;
   padding: 1.5rem;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 </style>

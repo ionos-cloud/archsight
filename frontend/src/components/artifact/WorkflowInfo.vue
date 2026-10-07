@@ -124,16 +124,16 @@ function has(list, item) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 6px;
   text-decoration: none;
-  color: var(--color);
+  color: var(--pico-color);
   transition: border-color 0.2s ease;
 }
 
 .workflow-platform-item:hover {
-  border-color: var(--primary);
+  border-color: var(--pico-primary);
 }
 
 .workflow-platform-item input[type="checkbox"] {
@@ -160,12 +160,12 @@ function has(list, item) {
 
 .workflow-types li a {
   text-decoration: none;
-  color: var(--color);
+  color: var(--pico-color);
   transition: color 0.2s ease;
 }
 
 .workflow-types li a:hover {
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: underline;
 }
 

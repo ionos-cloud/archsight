@@ -43,19 +43,19 @@ function copyClone() {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   border-radius: 6px;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
 }
 
 .git-item i {
-  font-size: 1.2em;
-  color: var(--primary);
+  font-size: var(--fs-md);
+  color: var(--pico-primary);
 }
 
 .git-link {
   font-weight: 600;
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: none;
 }
 
@@ -64,10 +64,10 @@ function copyClone() {
 }
 
 .git-clone-command {
-  color: var(--muted-color);
-  font-size: 0.9em;
-  font-family: monospace;
-  background-color: var(--code-background-color);
+  color: var(--pico-muted-color);
+  font-size: var(--fs-sm);
+  font-family: var(--font-mono);
+  background-color: var(--pico-code-background-color);
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -75,8 +75,8 @@ function copyClone() {
 .copy-button {
   padding: 6px;
   background-color: transparent;
-  color: var(--primary);
-  border: 1px solid var(--muted-border-color);
+  color: var(--pico-primary);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -88,8 +88,8 @@ function copyClone() {
 }
 
 .copy-button:hover {
-  background-color: var(--card-background-color);
-  border-color: var(--primary);
+  background-color: var(--pico-card-background-color);
+  border-color: var(--pico-primary);
   transform: scale(1.1);
 }
 
@@ -100,6 +100,6 @@ function copyClone() {
 }
 
 .copy-button i {
-  font-size: 1.1em;
+  font-size: var(--fs-md);
 }
 </style>

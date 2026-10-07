@@ -29,7 +29,7 @@ useInternalLinks(descEl)
         {{ data.name }}
       </h2>
     </header>
-    <div ref="descEl" v-if="viewDescription" class="view-description" v-html="viewDescription"></div>
+    <div ref="descEl" v-if="viewDescription" class="description-box prose" v-html="viewDescription"></div>
     <div v-if="viewQuery" class="view-query-display">
       <p class="query-item">
         <span class="label">Query:</span>
@@ -57,15 +57,7 @@ useInternalLinks(descEl)
 }
 
 .view-header h2 i {
-  color: var(--primary);
-}
-
-.view-description {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background-color: var(--card-background-color);
-  border-radius: 8px;
-  border: 1px solid var(--muted-border-color);
+  color: var(--pico-primary);
 }
 
 .view-query-display {
@@ -86,21 +78,21 @@ useInternalLinks(descEl)
 
 .query-item .label {
   font-weight: 600;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   text-transform: uppercase;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
 }
 
 .query-item code {
   padding: 0.25rem 0.5rem;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 4px;
 }
 
 .view-empty-state {
   padding: 1.5rem;
   text-align: center;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 </style>

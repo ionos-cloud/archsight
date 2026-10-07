@@ -64,7 +64,7 @@ function statusIcon(status) {
 
 <style scoped>
 .requirement-status-icon {
-  font-size: 1.2em;
+  font-size: var(--fs-md);
 }
 
 .requirement-status-icon.status-implemented {

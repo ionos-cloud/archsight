@@ -55,21 +55,21 @@ function filterUrl(key, value) {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 6px;
   text-decoration: none;
-  color: var(--color);
+  color: var(--pico-color);
   transition: border-color 0.2s ease;
 }
 
 .deployment-item:hover {
-  border-color: var(--primary);
+  border-color: var(--pico-primary);
 }
 
 .deployment-item i {
-  color: var(--primary);
-  font-size: 1.2em;
+  color: var(--pico-primary);
+  font-size: var(--fs-md);
   flex-shrink: 0;
 }
 </style>

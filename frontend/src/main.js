@@ -7,6 +7,8 @@ import '@picocss/pico/css/pico.min.css'
 import 'iconoir/css/iconoir.css'
 
 // Custom CSS (global styles only — component styles are in <style scoped> blocks)
+import './css/tokens.css'
+import './css/prose.css'
 import './css/highlight.css'
 import './css/base.css'
 import './css/mermaid-layers.css'
