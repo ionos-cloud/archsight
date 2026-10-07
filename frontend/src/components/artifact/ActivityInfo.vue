@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 import SparklineChart from '../SparklineChart.vue'
 
@@ -45,37 +46,37 @@ function filterUrl(key, value) {
 
 <template>
   <tr v-if="hasActivity">
-    <th scope="row">Activity</th>
+    <th scope="row" :title="keyHint('activity/commits', 'activity/contributors', 'activity/contributors/6m', 'activity/contributors/total', 'activity/status', 'activity/busFactor', 'activity/createdAt')">Activity</th>
     <td>
       <div class="activity-summary">
         <div v-if="commits" class="activity-item">
           <i class="iconoir-git-commit"></i>
-          <span class="activity-label">Commits:</span>
+          <span class="activity-label" :title="keyHint('activity/commits')">Commits:</span>
           <SparklineChart :values="commits" />
           <span class="activity-value sparkline-total">{{ commitsTotal }}</span>
         </div>
         <div v-if="contributors" class="activity-item">
           <i class="iconoir-community"></i>
-          <span class="activity-label">Contributors:</span>
+          <span class="activity-label" :title="keyHint('activity/contributors', 'activity/contributors/6m', 'activity/contributors/total')">Contributors:</span>
           <SparklineChart :values="contributors" color-class="contributors-sparkline" />
           <span v-if="contributors6m" class="activity-value sparkline-total">{{ contributors6m }}</span>
           <span v-if="contributorsTotal" class="activity-value contributors-total">({{ contributorsTotal }} total)</span>
         </div>
         <div v-if="createdAt" class="activity-item">
           <i class="iconoir-calendar"></i>
-          <span class="activity-label">Created:</span>
+          <span class="activity-label" :title="keyHint('activity/createdAt')">Created:</span>
           <span class="activity-value">{{ createdDate }}</span>
         </div>
         <div v-if="status" class="activity-item">
           <i class="iconoir-info-circle"></i>
-          <span class="activity-label">Status:</span>
+          <span class="activity-label" :title="keyHint('activity/status')">Status:</span>
           <router-link :class="`activity-value status-${status}`" :to="filterUrl('activity/status', status)">
             {{ status }}
           </router-link>
         </div>
         <div v-if="busFactor" class="activity-item">
           <i class="iconoir-warning-triangle"></i>
-          <span class="activity-label">Bus Factor:</span>
+          <span class="activity-label" :title="keyHint('activity/busFactor')">Bus Factor:</span>
           <router-link
             :class="`activity-value bus-factor-${busFactor}`"
             :to="filterUrl('activity/busFactor', busFactor)"

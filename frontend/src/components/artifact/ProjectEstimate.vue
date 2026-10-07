@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 import { toEuro, aiAdjustedEstimate } from '../../composables/useFormatting.js'
 
@@ -12,7 +13,7 @@ const hasEstimate = computed(() => cost.value != null || schedule.value != null 
 
 <template>
   <tr v-if="hasEstimate">
-    <th scope="row">
+    <th scope="row" :title="keyHint('scc/estimatedCost', 'scc/estimatedScheduleMonths', 'scc/estimatedPeople')">
       Project Estimate
       <span class="estimate-note" title="Estimates adjusted for &euro;80k salary and AI-assisted development (3x productivity)">
         <i class="iconoir-info-circle"></i>

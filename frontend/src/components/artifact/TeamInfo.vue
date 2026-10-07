@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 import SparklineChart from '../SparklineChart.vue'
 
@@ -70,7 +71,7 @@ const trendClass = computed(() => {
   </tr>
 
   <tr v-if="jiraKey && jiraUrl">
-    <th scope="row">Jira Project</th>
+    <th scope="row" :title="keyHint('team/jira', 'jira/projectUrl', 'jira/issues/created', 'jira/issues/resolved')">Jira Project</th>
     <td>
       <div class="jira-info">
         <a class="badge badge-info" :href="jiraUrl" target="_blank">{{ jiraKey }}</a>
@@ -97,7 +98,7 @@ const trendClass = computed(() => {
   </tr>
 
   <tr v-if="lead">
-    <th scope="row">Team Lead</th>
+    <th scope="row" :title="keyHint('team/lead')">Team Lead</th>
     <td>
       <a v-if="extractEmail(lead)" class="team-value" :href="`mailto:${extractEmail(lead)}`">{{ lead }}</a>
       <span v-else class="team-value">{{ lead }}</span>
@@ -105,7 +106,7 @@ const trendClass = computed(() => {
   </tr>
 
   <tr v-if="teamSize || leadSize">
-    <th scope="row">Team Stats</th>
+    <th scope="row" :title="keyHint('team/size', 'team/lead/size')">Team Stats</th>
     <td>
       <div class="team-stats">
         <div v-if="leadSize" class="team-stat-item">
@@ -121,7 +122,7 @@ const trendClass = computed(() => {
   </tr>
 
   <tr v-if="members">
-    <th scope="row">Team Members</th>
+    <th scope="row" :title="keyHint('team/members')">Team Members</th>
     <td>
       <div class="team-members">
         <template v-for="member in membersList" :key="member">

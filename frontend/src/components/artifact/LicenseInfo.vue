@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 
 const props = defineProps({ annotations: Object, kind: String })
@@ -54,7 +55,7 @@ function filterUrl(key, value) {
 
 <template>
   <tr v-if="spdx">
-    <th scope="row">License</th>
+    <th scope="row" :title="keyHint('license/spdx', 'license/category', 'license/dependencies/count', 'license/dependencies/ecosystems', 'license/dependencies/risk', 'license/dependencies/copyleft', 'license/dependencies/licenses')">License</th>
     <td>
       <div class="activity-summary">
         <div class="activity-item">

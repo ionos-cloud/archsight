@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 import { numberWithDelimiter } from '../../composables/useFormatting.js'
 
@@ -44,7 +45,7 @@ function filterUrl(key, value) {
 
 <template>
   <tr v-if="langData">
-    <th scope="row">Languages</th>
+    <th scope="row" :title="keyHint('scc/languages', 'scc/language/<Language>/loc')">Languages</th>
     <td>
       <div class="language-distribution">
         <div class="language-total">

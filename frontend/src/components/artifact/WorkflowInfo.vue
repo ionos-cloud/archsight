@@ -1,4 +1,5 @@
 <script setup>
+import { keyHint } from '../../composables/useKeyHint.js'
 import { computed } from 'vue'
 
 const props = defineProps({ annotations: Object, kind: String })
@@ -20,7 +21,7 @@ function has(list, item) {
 <template>
   <template v-if="hasWorkflow">
     <tr>
-      <th scope="row">CI/CD Platforms</th>
+      <th scope="row" :title="keyHint('workflow/platforms')">CI/CD Platforms</th>
       <td>
         <div class="workflow-platforms">
           <router-link class="workflow-platform-item" :to="filterUrl('workflow/platforms', 'github-actions')">
@@ -41,7 +42,7 @@ function has(list, item) {
     <tr>
       <td class="info-section-cell" colspan="2">
         <details open>
-          <summary><strong>Workflow Types</strong></summary>
+          <summary :title="keyHint('workflow/types')"><strong>Workflow Types</strong></summary>
           <div class="workflow-types">
             <div>
               <div class="workflow-category">
