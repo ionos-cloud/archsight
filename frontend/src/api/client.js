@@ -34,8 +34,9 @@ export function getInstance(kind, name) {
   return fetchJson(`${BASE}/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}`)
 }
 
-export function search(query, { limit = 200, offset = 0, output = 'complete' } = {}) {
+export function search(query, { limit = 200, offset = 0, output = 'complete', kind = null } = {}) {
   const params = new URLSearchParams({ q: query, limit, offset, output })
+  if (kind) params.set('kind', kind)
   return fetchJson(`${BASE}/search?${params}`)
 }
 

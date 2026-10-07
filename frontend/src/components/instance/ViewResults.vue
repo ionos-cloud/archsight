@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { search } from '../../api/client.js'
 import { fieldValue } from '../../composables/useFormatting.js'
 import ResourceList from './ResourceList.vue'
+import QueryError from '../search/QueryError.vue'
 
 // Runs a view's query and lists the result (the view page and page embeds). Loading is local: the parent
 // renders at once and this shows a spinner until the result is there.
@@ -79,10 +80,7 @@ watch(() => [props.query, props.fields.join(',')], executeQuery, { immediate: tr
 </script>
 
 <template>
-  <div v-if="error" class="search-error">
-    <div class="search-error-header"><i class="iconoir-warning-triangle"></i> Query Error</div>
-    <div class="search-error-message">{{ error }}</div>
-  </div>
+  <QueryError v-if="error" :message="error" />
 
   <article v-else-if="loading" class="view-loading" aria-busy="true">
     <i class="iconoir-refresh spinning"></i> Running query...
@@ -125,48 +123,5 @@ watch(() => [props.query, props.fields.join(',')], executeQuery, { immediate: tr
 
 .spinning {
   animation: spin 1s linear infinite;
-}
-
-.search-error {
-  padding: 1rem;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.search-error-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  color: #991b1b;
-  font-weight: 600;
-}
-
-.search-error-message {
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  color: #991b1b;
-  background-color: #fef2f2;
-  padding: 0.75rem;
-  border-radius: 4px;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-@media (prefers-color-scheme: dark) {
-  .search-error {
-    background-color: #450a0a;
-    border-color: #7f1d1d;
-  }
-  .search-error-header {
-    color: #fca5a5;
-  }
-  .search-error-message {
-    color: #fecaca;
-    background-color: #7f1d1d;
-  }
 }
 </style>
