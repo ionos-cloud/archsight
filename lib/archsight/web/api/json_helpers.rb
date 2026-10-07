@@ -130,13 +130,11 @@ module Archsight::Web::API::JsonHelpers
   end
 
   def build_count_response(query, results, query_time_ms)
-    by_kind = results.group_by { |r| r.class.to_s.split("::").last }
-                     .transform_values(&:length)
     {
       query: query,
       total: results.length,
       query_time_ms: query_time_ms,
-      by_kind: by_kind
+      by_kind: Archsight::MCP.count_by_kind(results)
     }
   end
 
@@ -144,10 +142,13 @@ module Archsight::Web::API::JsonHelpers
     limit, offset = parse_pagination_params
     output = parse_output_param
     sorted = results.sort_by(&:name)
-    pagination = paginate(sorted, limit: limit, offset: offset)
+    # `kind` narrows the hits to one kind; by_kind always counts all hits so the facets stay complete
+    kind = params[:kind].to_s
+    visible = kind.empty? ? sorted : sorted.select { |r| Archsight::MCP.kind_of(r) == kind }
+    pagination = paginate(visible, limit: limit, offset: offset)
 
     instances = pagination[:items].map do |r|
-      resource_summary(r, output: output, omit_kind: false)
+      resource_summary(r, output: output, omit_kind: false).merge(highlights: Archsight::MCP.highlights(r))
     end
 
     {
@@ -157,6 +158,7 @@ module Archsight::Web::API::JsonHelpers
       offset: pagination[:offset],
       count: instances.length,
       query_time_ms: query_time_ms,
+      by_kind: Archsight::MCP.count_by_kind(results),
       instances: instances
     }
   end

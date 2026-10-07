@@ -17,15 +17,17 @@ module Archsight
 
       def self.inherited: (Class) -> void
       def self.relation: (Symbol, Symbol, String) -> void
+      MAX_SUMMARY_ANNOTATIONS: Integer
       def self.relations: () -> Array[[Symbol, Symbol, String]]
-      def self.annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?list: bool) -> void
+      def self.annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?summary: bool) -> void
       def self.annotations: () -> Array[Annotations::Annotation]
-      def self.computed_annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?list: bool) { () -> untyped } -> void
+      def self.computed_annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?summary: bool) { () -> untyped } -> void
       def self.computed_annotations: () -> Array[Annotations::Computed]
       def self.annotation_matching: (String) -> Annotations::Annotation?
       def self.matches_annotation_pattern?: (String) -> bool
       def self.filterable_annotations: () -> Array[Annotations::Annotation]
-      def self.list_annotations: () -> Array[Annotations::Annotation]
+      def self.summary_annotations: () -> Array[Annotations::Annotation]
+      def self.register_annotation: (Annotations::Annotation) -> void
       def self.annotation_title: (String) -> String
       def self.annotation_format: (String) -> Symbol?
       def self.annotation_enum: (String) -> Array[String]?

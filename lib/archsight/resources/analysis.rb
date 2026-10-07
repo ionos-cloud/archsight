@@ -45,7 +45,8 @@ class Archsight::Resources::Analysis < Archsight::Resources::Base
   annotation "analysis/handler",
              description: "Script handler type (only 'ruby' currently supported)",
              title: "Handler",
-             enum: %w[ruby]
+             enum: %w[ruby],
+             summary: true
 
   # Script content
   annotation "analysis/script",

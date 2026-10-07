@@ -34,13 +34,14 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
              description: "Service plane classification (control manages resources, data handles traffic)",
              title: "Service Plane",
              enum: %w[control data],
-             list: true
+             summary: true
 
   # Computed Annotations
   computed_annotation "repository/artifacts/total",
                       title: "Total Git Repositories",
                       description: "Number of related git repositories",
-                      type: Integer do
+                      type: Integer,
+                      summary: true do
     count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'))
   end
 
@@ -83,7 +84,7 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
 
   computed_annotation "scc/languages",
                       title: "Primary Languages",
-                      list: true,
+                      summary: true,
                       description: "Top 4 programming languages by lines of code across related artifacts",
                       filter: :list,
                       sidebar: true do

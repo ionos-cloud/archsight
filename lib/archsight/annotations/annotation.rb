@@ -5,7 +5,7 @@ require_relative "person"
 
 # Annotation represents a single annotation definition with its schema and behavior
 class Archsight::Annotations::Annotation
-  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :list, :editor
+  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :summary, :editor
 
   def initialize(key, options = {})
     @key = key
@@ -15,7 +15,7 @@ class Archsight::Annotations::Annotation
     @enum = options[:enum]
     @validator = options[:validator]
     @sidebar = options.fetch(:sidebar, true)
-    @list = options.fetch(:list, false)
+    @summary = options.fetch(:summary, false)
     @editor = options.fetch(:editor, true)
     @type = options[:type]
 
@@ -51,8 +51,9 @@ class Archsight::Annotations::Annotation
     @filter == :list
   end
 
-  def list_display?
-    @list == true
+  # Summary annotations are returned with every search hit (at most MAX_SUMMARY per kind)
+  def summary?
+    @summary == true
   end
 
   def has_validation?

@@ -142,7 +142,8 @@ module Archsight
         rows = ["| Annotation | Description | Values |", "|------------|-------------|--------|"]
         annotations.each do |a|
           values = format_values(a)
-          rows << "| `#{a.key}` | #{a.description || "-"} | #{values} |"
+          description = a.summary? ? "#{a.description || "-"} _(summary: shown with search hits)_" : (a.description || "-")
+          rows << "| `#{a.key}` | #{description} | #{values} |"
         end
         rows.join("\n")
       end

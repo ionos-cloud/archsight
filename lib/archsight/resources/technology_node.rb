@@ -34,7 +34,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
              description: "Type of infrastructure node",
              title: "Infrastructure Type",
              enum: %w[vm bare-metal kubernetes-node network-appliance storage-array],
-             list: true
+             summary: true
 
   relation :realizes, :businessConstraints, :BusinessConstraint
   relation :servedBy, :technologyServices, :TechnologyService

@@ -8,7 +8,7 @@ module Archsight
       attr_reader enum: untyped
       attr_reader sidebar: bool
       attr_reader type: Class?
-      attr_reader list: bool
+      attr_reader summary: bool
 
       @explicit_title: String?
       @validator: (^(String) -> String?)?
@@ -20,7 +20,7 @@ module Archsight
       def title: () -> String
       def filterable?: () -> boolish
       def list?: () -> bool
-      def list_display?: () -> bool
+      def summary?: () -> bool
       def has_validation?: () -> boolish
       def value_for: (Resources::Base) -> untyped
       def validate: (untyped) -> Array[String]

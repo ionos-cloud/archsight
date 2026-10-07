@@ -38,7 +38,8 @@ class Archsight::Resources::DataObject < Archsight::Resources::Base
   annotation "data/visibility",
              description: "API visibility level",
              title: "Visibility",
-             enum: %w[public private internal]
+             enum: %w[public private internal],
+             summary: true
 
   annotation "generated/variants",
              description: "OpenAPI schema variants compacted into this DataObject",

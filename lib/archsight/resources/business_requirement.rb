@@ -32,20 +32,21 @@ class Archsight::Resources::BusinessRequirement < Archsight::Resources::Base
 
   annotation "requirement/type",
              description: "Type of requirement (business or legal)",
-             enum: %w[business legal compliance functional non-functional]
+             enum: %w[business legal compliance functional non-functional],
+             summary: true
 
   annotation "requirement/reference",
              description: "Regulatory or standard reference (comma-separated for multiple)",
              filter: :list,
              enum: %w[c5-2020 itgs-2023 gdpr-2018 nis1 nis2 iso27001 sox pci-dss hipaa eu-data-act-2025 ens
                       iso27001-2022],
-             list: true
+             summary: true
 
   annotation "requirement/priority",
              description: "Implementation priority (must, should, may)",
              filter: :word,
              enum: %w[must should may],
-             list: true
+             summary: true
 
   annotation "requirement/story",
              description: "One-line business value statement explaining what the requirement enables",

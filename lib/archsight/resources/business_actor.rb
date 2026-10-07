@@ -36,7 +36,8 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
              sidebar: false,
              filter: :word,
              format: :tag_word,
-             type: Archsight::Annotations::EmailRecipient
+             type: Archsight::Annotations::EmailRecipient,
+             summary: true
 
   annotation "team/members",
              description: 'Team members (format: "Name <email>" or "email")',
@@ -108,7 +109,7 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
   computed_annotation "team/size",
                       title: "Team Size",
                       description: "Number of team members (including sub-teams)",
-                      list: true,
+                      summary: true,
                       type: Integer do
     # Count members from this team
     members = @instance.annotations["team/members"]
@@ -147,7 +148,8 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
   computed_annotation "repository/artifacts/total",
                       title: "Maintained Repositories",
                       description: "Number of git repositories maintained by this team",
-                      type: Integer do
+                      type: Integer,
+                      summary: true do
     count(incoming_transitive('TechnologyArtifact: artifact/type == "repo"'))
   end
 
