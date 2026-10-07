@@ -33,7 +33,8 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
   computed_annotation "repository/artifacts/total",
                       title: "Total Git Repositories",
                       description: "Number of related git repositories",
-                      type: Integer do
+                      type: Integer,
+                      summary: true do
     count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'))
   end
 
@@ -110,7 +111,7 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
   computed_annotation "activity/createdAt",
                       title: "Created",
                       description: "Earliest repository creation date across all related application services",
-                      list: true,
+                      summary: true,
                       type: Time do
     services = outgoing_transitive(:ApplicationService)
     next nil if services.empty?
@@ -170,7 +171,7 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
   computed_annotation "activity/contributors/6m",
                       title: "Contributors (6 months)",
                       description: "Sum of unique contributors in the last 6 months across related services",
-                      list: true,
+                      summary: true,
                       type: Integer do
     services = outgoing_transitive(:ApplicationService)
     next nil if services.empty?

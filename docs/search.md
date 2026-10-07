@@ -263,3 +263,20 @@ Using `in` to simplify OR conditions:
 
     # Combined with other conditions:
     activity/status == "active" & repository/artifacts in ("container", "chart")
+
+## Search results
+
+The result page lists the hits with a count per kind. Click a kind to narrow the list; the query stays the same.
+Every hit also shows its **summary attributes**: up to three annotations per kind (normal or computed) that
+the kind definition marks with `summary: true`, for example the activity status of a repository or the priority
+of a requirement. Clicking a tag value adds it to the query.
+
+The same data is available from the API: `GET /api/v1/search?q=...` returns `by_kind` (hits per kind, for all
+hits of the query) and, for each hit, `highlights`:
+
+    "highlights": [
+      { "key": "activity/status", "title": "Activity Status", "value": "active", "format": "tag_word", "type": null }
+    ]
+
+Add `kind=TechnologyArtifact` to narrow the hits to one kind (`total` and paging follow, `by_kind` still counts
+all hits).

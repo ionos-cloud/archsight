@@ -38,11 +38,13 @@ class Archsight::Resources::Page < Archsight::Resources::Base
              description: "Owner responsible for keeping the page up to date (Name <email@domain.com>, or just a name)",
              title: "Owner",
              type: Archsight::Annotations::Person,
-             sidebar: false
+             sidebar: false,
+             summary: true
   annotation "page/status",
              description: "Lifecycle status (e.g. rfc, wip, approved)",
              filter: :word,
-             title: "Status"
+             title: "Status",
+             summary: true
   annotation "page/tags",
              description: "Comma-separated tags",
              filter: :list,

@@ -236,8 +236,7 @@ end
 # Collect all unique dependency licenses across the portfolio
 computed_annotation 'computed/license_types',
                     title: 'All License Types',
-                    filter: :list,
-                    list: true do
+                    filter: :list do
   collect(outgoing_transitive(:TechnologyArtifact), 'license/dependencies/licenses')
 end
 

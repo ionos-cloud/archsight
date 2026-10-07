@@ -386,6 +386,80 @@ class APITest < Minitest::Test
     assert_nil resource["spec"]
   end
 
+  def test_get_api_search_includes_highlights_of_the_summary_annotations
+    get "/api/v1/search", q: 'BusinessRequirement: name =~ ".*"', output: "brief"
+
+    assert_predicate last_response, :ok?
+    requirement = json_response["instances"].find { |i| i["highlights"]&.any? }
+
+    assert requirement, "expected a requirement with highlights"
+    keys = requirement["highlights"].map { |h| h["key"] }
+
+    assert_includes keys, "requirement/priority"
+    priority = requirement["highlights"].find { |h| h["key"] == "requirement/priority" }
+
+    assert_equal "Priority", priority["title"]
+    assert_equal "tag_word", priority["format"]
+    assert_nil requirement["metadata"], "brief output still has no annotations"
+  end
+
+  def test_get_api_search_highlights_are_empty_for_kinds_without_summary_annotations
+    get "/api/v1/search", q: 'BusinessProcess: name =~ ".*"', output: "brief"
+
+    assert_predicate last_response, :ok?
+    json_response["instances"].each { |i| assert_equal [], i["highlights"] }
+  end
+
+  def test_get_api_search_highlights_for_every_output_level
+    %w[brief annotations complete].each do |output|
+      get "/api/v1/search", q: 'BusinessRequirement: name =~ ".*"', output: output, limit: 5
+
+      assert_predicate last_response, :ok?, output
+      assert(json_response["instances"].all? { |i| i.key?("highlights") }, "highlights in #{output} output")
+    end
+  end
+
+  def test_get_api_search_count_has_no_instances_or_highlights
+    get "/api/v1/search", q: 'name =~ ".*"', output: "count"
+
+    assert_predicate last_response, :ok?
+    refute json_response.key?("instances")
+  end
+
+  def test_get_api_search_returns_hits_per_kind
+    get "/api/v1/search", q: 'name =~ ".*"', limit: 1, output: "brief"
+
+    assert_predicate last_response, :ok?
+    data = json_response
+
+    assert_kind_of Hash, data["by_kind"]
+    assert_equal data["total"], data["by_kind"].values.sum
+  end
+
+  def test_get_api_search_kind_param_narrows_hits_but_not_the_facets
+    get "/api/v1/search", q: 'name =~ ".*"', output: "brief"
+    all = json_response
+    kind = all["by_kind"].keys.first
+
+    get "/api/v1/search", q: 'name =~ ".*"', output: "brief", kind: kind
+    narrowed = json_response
+
+    assert_equal all["by_kind"][kind], narrowed["total"]
+    assert(narrowed["instances"].all? { |i| i["kind"] == kind })
+    assert_equal all["by_kind"], narrowed["by_kind"]
+  end
+
+  def test_get_api_search_unknown_kind_returns_no_hits
+    get "/api/v1/search", q: 'name =~ ".*"', output: "brief", kind: "NoSuchKind"
+
+    assert_predicate last_response, :ok?
+    data = json_response
+
+    assert_equal 0, data["total"]
+    assert_empty data["instances"]
+    assert_predicate data["by_kind"], :any?
+  end
+
   def test_get_api_search_with_kind_filter
     get "/api/v1/search", q: 'TechnologyArtifact: name =~ ".*"', limit: 5
 

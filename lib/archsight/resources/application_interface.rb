@@ -34,11 +34,13 @@ class Archsight::Resources::ApplicationInterface < Archsight::Resources::Base
   annotation "api/responsiveness",
              description: "API 99th percentile responsiveness target",
              title: "API Responsiveness (99p)",
-             enum: %w[10ms 100ms 1000ms 2s 5s 10s unresponsive]
+             enum: %w[10ms 100ms 1000ms 2s 5s 10s unresponsive],
+             summary: true
   annotation "api/authenticationMethod",
              description: "API authentication method",
              title: "API Authentication Method",
-             enum: ["none", "hard coded", "token", "oidc"]
+             enum: ["none", "hard coded", "token", "oidc"],
+             summary: true
   annotation "api/authorization",
              description: "API authorization mechanism",
              title: "API Authorization",

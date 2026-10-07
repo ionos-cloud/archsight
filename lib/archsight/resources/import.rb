@@ -38,7 +38,9 @@ class Archsight::Resources::Import < Archsight::Resources::Base
   # Handler selection
   annotation "import/handler",
              description: "Handler class name to execute this import",
-             title: "Handler", enum: %w[
+             title: "Handler",
+             summary: true,
+             enum: %w[
                gitlab github repository
                rest-api rest-api-index
                jira-discover jira-metrics
@@ -57,7 +59,8 @@ class Archsight::Resources::Import < Archsight::Resources::Base
   annotation "import/enabled",
              description: "Whether this import is enabled",
              title: "Enabled",
-             enum: %w[true false]
+             enum: %w[true false],
+             summary: true
 
   annotation "import/priority",
              description: "Execution priority (lower runs first among ready imports)",

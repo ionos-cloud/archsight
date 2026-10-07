@@ -40,8 +40,12 @@ Computed annotations support all the same options as regular annotations:
 | `enum` | Array | nil | Allowed values |
 | `sidebar` | Boolean | false | Show in sidebar |
 | `type` | Class | nil | Type for value coercion (Integer, Float, String) |
-| `list` | Boolean | false | Whether values are lists |
+| `summary` | Boolean | false | Return the value with every search hit of this kind (at most 3 per kind) |
 | `&block` | Block | required | The computation logic |
+
+`summary: true` (also available on regular `annotation` definitions) marks the value as a summary attribute: the
+search API returns it with every hit of the kind (`highlights`) and the result page shows it next to the name.
+A kind can have at most 3 summary annotations; a fourth raises an `ArgumentError` when the kind is defined.
 
 ### Value Handling
 
@@ -89,8 +93,7 @@ end
 computed_annotation 'computed/languages',
                     title: 'Languages',
                     description: 'All programming languages used',
-                    filter: :list,
-                    list: true do
+                    filter: :list do
   collect(outgoing_transitive(:TechnologyArtifact), 'scc/languages')
 end
 ```
@@ -299,8 +302,7 @@ class ApplicationComponent < Base
   computed_annotation 'computed/languages',
                       title: 'Languages',
                       description: 'All programming languages used across related artifacts',
-                      filter: :list,
-                      list: true do
+                      filter: :list do
     collect(outgoing_transitive(:TechnologyArtifact), 'scc/languages')
   end
 

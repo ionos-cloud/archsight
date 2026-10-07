@@ -32,11 +32,13 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
 
   annotation "evidence/type",
              description: "Type of evidence",
-             enum: %w[documentation process configuration audit-log technical-control]
+             enum: %w[documentation process configuration audit-log technical-control],
+             summary: true
 
   annotation "evidence/status",
              description: "Current status of evidence",
-             enum: %w[implemented partial not-implemented]
+             enum: %w[implemented partial not-implemented],
+             summary: true
 
   relation :satisfies, :businessRequirements, :BusinessRequirement
 end

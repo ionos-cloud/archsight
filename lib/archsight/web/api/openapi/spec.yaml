@@ -650,7 +650,12 @@ paths:
         See the API description for full query language documentation.
 
         Response includes: kind, name, metadata, spec (no relations/references).
-        Additional fields: query, query_time_ms, by_kind (count mode).
+        Additional fields: query, query_time_ms, by_kind.
+
+        Every hit carries `highlights`: the values of the kind's summary attributes (annotations marked
+        `summary: true` in the kind definition, at most 3 per kind, computed ones included) that are set.
+        `by_kind` counts all hits of the query per kind, also when `kind` narrows the list, so a client can show
+        facets and let the user pick one.
       operationId: search
       tags:
         - Search
@@ -674,6 +679,13 @@ paths:
             orphan:
               value: '<- none'
               summary: Find orphan resources
+        - name: kind
+          in: query
+          required: false
+          description: Only return hits of this kind (`total` and paging follow; `by_kind` still counts all hits)
+          schema:
+            type: string
+          example: TechnologyArtifact
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/output'
@@ -1307,6 +1319,40 @@ components:
           items:
             $ref: '#/components/schemas/Kind'
 
+    Highlight:
+      type: object
+      required:
+        - key
+        - title
+        - value
+      properties:
+        key:
+          type: string
+          description: Annotation key, exactly as the query language takes it
+          example: activity/status
+        title:
+          type: string
+          description: Display title of the annotation
+          example: Activity Status
+        value:
+          description: The value; an array for list annotations, a number for Integer/Float typed ones
+          oneOf:
+            - type: string
+            - type: number
+            - type: array
+              items:
+                type: string
+        format:
+          type: string
+          nullable: true
+          description: Rendering hint of the annotation (tag_word, tag_list, markdown, link, ...)
+          example: tag_word
+        type:
+          type: string
+          nullable: true
+          description: Short name of the value type when the annotation declares one (Integer, Float, Time, Person, ...)
+          example: Integer
+
     Instance:
       type: object
       required:
@@ -1329,6 +1375,11 @@ components:
           type: object
           additionalProperties: true
           description: Instance specification
+        highlights:
+          type: array
+          description: Values of the kind's summary attributes that are set (search results only)
+          items:
+            $ref: '#/components/schemas/Highlight'
         relations:
           type: object
           additionalProperties:
@@ -1389,7 +1440,7 @@ components:
           type: object
           additionalProperties:
             type: integer
-          description: Result counts by kind (count mode only)
+          description: Result counts by kind (search and count mode; all hits of the query, not only the current page)
         instances:
           type: array
           items:

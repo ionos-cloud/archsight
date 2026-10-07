@@ -42,7 +42,8 @@ class Archsight::Resources::View < Archsight::Resources::Base
              description: "Display type for results",
              title: "Display Type",
              enum: %w[list:name list:name+kind],
-             sidebar: false
+             sidebar: false,
+             summary: true
 
   annotation "view/sort",
              description: 'Comma-separated list of fields to sort by. Prefix with - for descending (e.g., "-scc/language/Go/loc,name"). Special fields: name, kind',

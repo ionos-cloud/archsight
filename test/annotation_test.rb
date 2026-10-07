@@ -176,3 +176,52 @@ class AnnotationFormatTest < Minitest::Test
     assert_predicate annotation, :diagram?
   end
 end
+
+class AnnotationSummaryTest < Minitest::Test
+  def test_summary_defaults_to_false
+    refute_predicate Archsight::Annotations::Annotation.new("test/key"), :summary?
+  end
+
+  def test_summary_can_be_set
+    assert_predicate Archsight::Annotations::Annotation.new("test/key", summary: true), :summary?
+  end
+
+  def test_kind_accepts_up_to_three_summary_annotations
+    kind = Class.new(Archsight::Resources::Base)
+    3.times { |i| kind.annotation("test/key#{i}", summary: true) }
+
+    assert_equal 3, kind.summary_annotations.length
+  end
+
+  def test_kind_rejects_a_fourth_summary_annotation
+    kind = Class.new(Archsight::Resources::Base)
+    3.times { |i| kind.annotation("test/key#{i}", summary: true) }
+
+    error = assert_raises(ArgumentError) { kind.annotation("test/key3", summary: true) }
+    assert_match(/at most 3/, error.message)
+    assert_match(%r{test/key3}, error.message)
+  end
+
+  def test_annotations_that_are_not_summary_do_not_count
+    kind = Class.new(Archsight::Resources::Base)
+    5.times { |i| kind.annotation("test/plain#{i}") }
+    kind.annotation("test/summary", summary: true)
+
+    assert_equal ["test/summary"], kind.summary_annotations.map(&:key)
+  end
+
+  def test_computed_annotations_can_be_summary_and_count_against_the_limit
+    kind = Class.new(Archsight::Resources::Base)
+    kind.computed_annotation("test/computed", summary: true) { 1 }
+    2.times { |i| kind.annotation("test/key#{i}", summary: true) }
+
+    assert_equal 3, kind.summary_annotations.length
+    assert_raises(ArgumentError) { kind.computed_annotation("test/computed2", summary: true) { 2 } }
+  end
+
+  def test_every_kind_stays_within_the_limit
+    Archsight::Resources.resource_classes.each_value do |klass|
+      assert_operator klass.summary_annotations.length, :<=, Archsight::Resources::Base::MAX_SUMMARY_ANNOTATIONS, klass.name
+    end
+  end
+end

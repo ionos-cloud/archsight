@@ -141,13 +141,15 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   annotation "deployment/cluster",
              description: "Target cluster name",
              title: "Cluster",
-             filter: :word
+             filter: :word,
+             summary: true
 
   # Computed Annotations
   computed_annotation "repository/artifacts/total",
                       title: "Total Git Repositories",
                       description: "Number of related git repositories",
-                      type: Integer do
+                      type: Integer,
+                      summary: true do
     count(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'))
   end
 
@@ -190,7 +192,7 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
 
   computed_annotation "scc/language",
                       title: "Primary Language",
-                      list: true,
+                      summary: true,
                       description: "Programming language with most lines of code across related artifacts",
                       filter: :word,
                       sidebar: true do

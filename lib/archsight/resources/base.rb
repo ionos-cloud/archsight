@@ -23,13 +23,29 @@ module Archsight
         @relations || []
       end
 
+      # A kind may mark at most this many annotations as summary (see Base.annotation)
+      MAX_SUMMARY_ANNOTATIONS = 3
+
       # Define an annotation using the Annotation class
+      # `summary: true` marks it as a summary attribute: it is returned with every search hit of this kind.
       def self.annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil, sidebar: true,
-                          type: nil, list: false, editor: true, validator: nil)
-        @annotations ||= [] #: Array[Archsight::Annotations::Annotation]
+                          type: nil, summary: false, editor: true, validator: nil)
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, list: list, editor: editor, validator: validator }
-        @annotations << Archsight::Annotations::Annotation.new(key, options)
+                    sidebar: sidebar, type: type, summary: summary, editor: editor, validator: validator }
+        register_annotation(Archsight::Annotations::Annotation.new(key, options))
+      end
+
+      # Append an annotation definition, enforcing the limit of summary annotations per kind.
+      # Annotations of included modules (include_annotations) come through here as well.
+      def self.register_annotation(annotation)
+        @annotations ||= [] #: Array[Archsight::Annotations::Annotation]
+        if annotation.summary? && @annotations.count(&:summary?) >= MAX_SUMMARY_ANNOTATIONS
+          raise ArgumentError,
+                "#{name}: at most #{MAX_SUMMARY_ANNOTATIONS} annotations can be summary attributes, " \
+                "cannot add #{annotation.key}"
+        end
+
+        @annotations << annotation
       end
 
       # Get all annotation definitions
@@ -48,19 +64,18 @@ module Archsight
       # @param enum [Array, nil] Allowed values
       # @param sidebar [Boolean] Show in sidebar (default false for computed)
       # @param type [Class, nil] Type for value coercion (Integer, Float, String)
-      # @param list [Boolean] Whether values are lists (default false)
+      # @param summary [Boolean] Return the value with every search hit of this kind (default false, max 3 per kind)
       # @yield Block that computes the annotation value, evaluated in Evaluator context
       def self.computed_annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil,
-                                   sidebar: false, type: nil, list: false, editor: true, &)
+                                   sidebar: false, type: nil, summary: false, editor: true, &)
         require_relative "../annotations/computed"
         @computed_annotations ||= [] #: Array[Archsight::Annotations::Computed]
         @computed_annotations << Archsight::Annotations::Computed.new(key, description: description, type: type, &)
 
         # Also register as a regular annotation so it passes validation and is recognized
-        @annotations ||= [] #: Array[Archsight::Annotations::Annotation]
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, list: list, editor: editor }
-        @annotations << Archsight::Annotations::Annotation.new(key, options)
+                    sidebar: sidebar, type: type, summary: summary, editor: editor }
+        register_annotation(Archsight::Annotations::Annotation.new(key, options))
       end
 
       # Get all computed annotation definitions
@@ -83,9 +98,9 @@ module Archsight
         annotations.select(&:filterable?).reject(&:pattern?)
       end
 
-      # Get annotations marked for list display
-      def self.list_annotations
-        annotations.select(&:list_display?).reject(&:pattern?)
+      # Get the annotations marked as summary attributes (returned with search hits)
+      def self.summary_annotations
+        annotations.select(&:summary?).reject(&:pattern?)
       end
 
       def self.annotation_title(key)

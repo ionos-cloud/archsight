@@ -74,7 +74,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              description: "Repository activity status",
              title: "Activity Status",
              enum: %w[active abandoned bot-only archived inaccessible empty no-code],
-             list: true
+             summary: true
   annotation "activity/reason",
              description: "Reason for activity status (for non-standard statuses)",
              title: "Status Reason",
@@ -83,7 +83,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              description: "Bus factor assessment",
              title: "Bus Factor",
              enum: %w[high medium low unknown],
-             list: true
+             summary: true
   annotation "activity/createdAt",
              description: "Date of first commit (repository creation)",
              title: "Created",
@@ -130,7 +130,8 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   annotation "repository/visibility",
              description: "Repository visibility classification",
              title: "Visibility",
-             enum: %w[private internal open-source public]
+             enum: %w[private internal open-source public],
+             summary: true
   annotation "repository/recentTags",
              description: "Recent git tags (releases)",
              title: "Recent Tags",
