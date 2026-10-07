@@ -38,6 +38,33 @@ function onTabKeydown(event) {
   selectTab(TABS[(index + step + TABS.length) % TABS.length].id, { focus: true })
 }
 
+// kinds grouped by ArchiMate layer; "other" holds the tool's own kinds (pages, views, imports, ...)
+const LAYERS = [
+  { id: 'strategy', title: 'Strategy' },
+  { id: 'motivation', title: 'Motivation' },
+  { id: 'business', title: 'Business' },
+  { id: 'application', title: 'Application' },
+  { id: 'technology', title: 'Technology' },
+  { id: 'other', title: 'Other' },
+]
+
+const kindGroups = computed(() => {
+  const all = props.kinds?.kinds || []
+  const known = new Set(LAYERS.map((l) => l.id))
+  return LAYERS
+    .map((layer) => ({
+      ...layer,
+      kinds: all.filter((k) => (known.has(k.layer) ? k.layer : 'other') === layer.id),
+    }))
+    .filter((group) => group.kinds.length)
+})
+
+// inside its layer group the layer prefix is redundant: BusinessActor under "Business" reads "Actor"
+function kindLabel(kind, group) {
+  const rest = group.id === 'other' ? '' : kind.slice(group.title.length)
+  return kind.startsWith(group.title) && rest ? rest : kind
+}
+
 function isCurrentKind(kindName) {
   return currentKind.value === kindName
 }
@@ -113,21 +140,24 @@ function filterQuery(key, value) {
     >
     <div class="sidebar-section">
       <nav class="kind-filter">
-        <ul>
-          <template v-if="kinds">
-            <li v-for="k in kinds.kinds" :key="k.kind">
-              <router-link
-                :to="{ name: 'kind', params: { kind: k.kind } }"
-                :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
-              >
-                <span class="kind-name">{{ k.kind }}</span>
-                <span class="kind-count">{{ k.instance_count }}</span>
-              </router-link>
-            </li>
-          </template>
-          <li v-else>
-            <span class="kind-name">Loading...</span>
-          </li>
+        <template v-if="kinds">
+          <section v-for="group in kindGroups" :key="group.id" :class="['kind-group', `icon-${group.id}`]">
+            <h3 class="kind-group-title">{{ group.title }}</h3>
+            <ul>
+              <li v-for="k in group.kinds" :key="k.kind">
+                <router-link
+                  :to="{ name: 'kind', params: { kind: k.kind } }"
+                  :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
+                >
+                  <span class="kind-name" :title="k.kind">{{ kindLabel(k.kind, group) }}</span>
+                  <span class="kind-count">{{ k.instance_count }}</span>
+                </router-link>
+              </li>
+            </ul>
+          </section>
+        </template>
+        <ul v-else>
+          <li><span class="kind-name">Loading...</span></li>
         </ul>
       </nav>
     </div>
@@ -230,6 +260,44 @@ function filterQuery(key, value) {
   line-height: 1;
 }
 
+.kind-group + .kind-group {
+  margin-top: 0.75rem;
+}
+
+/* A group is a layer: a hairline in the layer colour sits under its heading. The .icon-<layer> class on the
+   section supplies the colour; the rule is a pseudo-element so the heading text can stay muted
+   (some layer colours are too light for text). */
+.kind-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.kind-group::before {
+  content: '';
+  order: 1;
+  height: 1px;
+  margin: 3px 0 6px; /* same width as the tab bar line and the Filters divider */
+  background-color: var(--layer);
+  opacity: 0.5; /* a quiet divider; the selected kind carries the full colour */
+}
+
+.kind-group > ul {
+  order: 2;
+}
+
+/* Pico pulls every link up; for the first one that would let a selected row cover the group heading */
+.kind-group li:first-child a {
+  margin-top: 0;
+}
+
+.kind-group-title {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+  color: var(--pico-muted-color);
+}
+
 .kind-filter ul,
 .instance-list ul {
   padding: 0;
@@ -254,10 +322,18 @@ function filterQuery(key, value) {
   text-decoration: none;
 }
 
-.kind-filter a[aria-current="page"],
 .instance-list a[aria-current="page"] {
   background-color: var(--pico-primary);
   color: var(--pico-primary-inverse);
+}
+
+/* the selected kind is outlined in its layer colour; an inset shadow keeps the text where it was.
+   Pico redefines --pico-color and --pico-background-color on links, so use variables it leaves alone. */
+.kind-filter a[aria-current="page"] {
+  background-color: var(--pico-card-background-color);
+  color: var(--pico-contrast);
+  font-weight: var(--fw-strong);
+  box-shadow: inset 0 0 0 2px var(--layer);
 }
 
 .kind-count {
