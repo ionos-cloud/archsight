@@ -264,7 +264,7 @@ function filterQuery(key, value) {
   margin-top: 0.75rem;
 }
 
-/* A group is a layer: a rule in the layer colour sits under its heading. The .icon-<layer> class on the
+/* A group is a layer: a hairline in the layer colour sits under its heading. The .icon-<layer> class on the
    section supplies the colour; the rule is a pseudo-element so the heading text can stay muted
    (some layer colours are too light for text). */
 .kind-group {
@@ -275,10 +275,10 @@ function filterQuery(key, value) {
 .kind-group::before {
   content: '';
   order: 1;
-  height: 2px;
+  height: 1px;
   margin: 3px -0.5rem 6px; /* as wide as a selected row, which bleeds 0.5rem like every link */
-  border-radius: 1px;
   background-color: var(--layer);
+  opacity: 0.5; /* a quiet divider; the selected kind carries the full colour */
 }
 
 .kind-group > ul {
