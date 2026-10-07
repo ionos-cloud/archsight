@@ -182,8 +182,9 @@ function isTimeField(key) {
 
 .instance-main {
   display: flex;
+  flex-wrap: wrap; /* in a narrow window the kind goes below a long name */
   align-items: center;
-  gap: 12px;
+  gap: 0 12px;
   flex: 1;
   min-width: 0;
 }
@@ -214,6 +215,7 @@ function isTimeField(key) {
   font-size: 1em;
   color: var(--pico-primary);
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 /* stretched link: the whole row is the click target, the name stays the accessible link */

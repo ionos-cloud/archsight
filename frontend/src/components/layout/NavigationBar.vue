@@ -29,7 +29,7 @@ watch(scope, (value) => {
         </strong>
       </li>
     </ul>
-    <ul>
+    <ul class="nav-search">
       <li class="search-container">
         <input
           id="search-input"
@@ -67,7 +67,21 @@ watch(scope, (value) => {
   gap: 0.5rem;
 }
 
+/* the search column takes what the logo leaves and shrinks with the window; 700px is its maximum */
+.nav-search {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.search-container {
+  flex: 0 1 calc(700px + 1rem);
+  min-width: 0;
+}
+
 .search-container input.search {
+  width: 100%;
+  min-width: 0;
   padding-right: 2.25rem; /* room for the clear button */
 }
 
@@ -96,7 +110,4 @@ watch(scope, (value) => {
   color: var(--pico-color);
 }
 
-.search-container input.search {
-  min-width: 700px;
-}
 </style>
