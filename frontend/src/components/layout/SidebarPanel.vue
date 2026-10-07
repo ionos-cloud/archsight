@@ -59,6 +59,12 @@ const kindGroups = computed(() => {
     .filter((group) => group.kinds.length)
 })
 
+// inside its layer group the layer prefix is redundant: BusinessActor under "Business" reads "Actor"
+function kindLabel(kind, group) {
+  const rest = group.id === 'other' ? '' : kind.slice(group.title.length)
+  return kind.startsWith(group.title) && rest ? rest : kind
+}
+
 function isCurrentKind(kindName) {
   return currentKind.value === kindName
 }
@@ -135,18 +141,15 @@ function filterQuery(key, value) {
     <div class="sidebar-section">
       <nav class="kind-filter">
         <template v-if="kinds">
-          <section v-for="group in kindGroups" :key="group.id" class="kind-group">
-            <h3 class="kind-group-title">
-              <span :class="['kind-group-dot', `icon-${group.id}`]" aria-hidden="true"></span>
-              {{ group.title }}
-            </h3>
+          <section v-for="group in kindGroups" :key="group.id" :class="['kind-group', `icon-${group.id}`]">
+            <h3 class="kind-group-title">{{ group.title }}</h3>
             <ul>
               <li v-for="k in group.kinds" :key="k.kind">
                 <router-link
                   :to="{ name: 'kind', params: { kind: k.kind } }"
                   :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
                 >
-                  <span class="kind-name">{{ k.kind }}</span>
+                  <span class="kind-name" :title="k.kind">{{ kindLabel(k.kind, group) }}</span>
                   <span class="kind-count">{{ k.instance_count }}</span>
                 </router-link>
               </li>
@@ -261,25 +264,35 @@ function filterQuery(key, value) {
   margin-top: 0.75rem;
 }
 
-/* layer heading above each group of kinds */
-.kind-group-title {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0 0 6px;
-  padding: 0 0.5rem;
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-  line-height: 1;
-  text-transform: uppercase;
-  color: var(--pico-muted-color);
+/* A group is a layer: its colour is a thin rail in the gutter left of the content edge (links already
+   bleed 0.5rem into it), so the heading, the kind names and the tabs above share one left edge.
+   The .icon-<layer> class on the section supplies the colour. */
+.kind-group {
+  position: relative;
 }
 
-.kind-group-dot {
-  width: 0.6rem;
-  height: 0.6rem;
+.kind-group::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 4px;
+  left: -0.5rem;
+  width: 3px;
   border-radius: 2px;
-  background-color: currentColor; /* the .icon-<layer> class sets the colour */
+  background-color: currentColor;
+}
+
+/* Pico pulls every link up; for the first one that would let a selected row cover the group heading */
+.kind-group li:first-child a {
+  margin-top: 0;
+}
+
+.kind-group-title {
+  margin: 0 0 2px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+  color: var(--pico-muted-color);
 }
 
 .kind-filter ul,
