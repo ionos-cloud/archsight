@@ -382,3 +382,18 @@ main .canvas a {
 .documentation th[title] {
   cursor: help;
 }
+
+/* Sidebar above the content (below 800px, see the row layout above): the content uses the full window width.
+   The page container's side padding is cancelled and the cards keep only a small gutter. The variable is
+   what Pico's card header and footer use to bleed to the card's edge, so it is set along with the padding. */
+@media not all and (min-width: 800px) {
+  .content {
+    margin-inline: calc(var(--pico-spacing) * -1);
+  }
+
+  .content article {
+    --pico-block-spacing-horizontal: 0.5rem;
+    padding-inline: 0.5rem;
+    border-radius: 0;
+  }
+}
