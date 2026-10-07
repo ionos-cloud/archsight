@@ -133,9 +133,12 @@ module Archsight::Import::Handlers::GoModuleParser
   # Convert a Go module path to an ApplicationComponent name.
   # Strips the SCM host segment and joins remaining path segments with ":".
   # "github.com/example-org/billing-service/pkg" → "example-org:billing-service:pkg"
+  # A module path without a host ("module foo") has nothing left after stripping
+  # it and gets no component, rather than one with an empty name.
+  # @return [String, nil]
   def component_name(mod_name)
     parts = mod_name.split("/")
     parts.shift
-    parts.join(":")
+    parts.join(":") unless parts.empty?
   end
 end

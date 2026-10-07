@@ -30,6 +30,17 @@ class GoGrapherTest < Minitest::Test
     end
   end
 
+  def test_module_path_without_host_emits_no_component
+    with_repo do |repo|
+      write(repo, "go.mod", "module myapp\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+
+      resources = run_full_handler(repo)
+
+      assert_empty(resources.select { |r| r["kind"] == "ApplicationComponent" })
+    end
+  end
+
   def test_root_go_mod_with_subdir_go_mod_emits_two_components
     with_repo do |repo|
       write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")

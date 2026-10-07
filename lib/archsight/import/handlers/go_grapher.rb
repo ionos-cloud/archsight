@@ -55,6 +55,9 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     output = +""
 
     modules.each do |rel_dir, mod_name|
+      comp_name = component_name(mod_name)
+      next unless comp_name
+
       mod_dir = rel_dir == "." ? path : File.join(path, rel_dir)
       specs = detect_openapi_specs(mod_dir)
       existing_interfaces = database&.instances_by_kind("ApplicationInterface") || {}
@@ -69,7 +72,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
       # is expected to keep and refine, not auto-regenerated on each run.
       component = untracked_resource_yaml(
         kind: "ApplicationComponent",
-        name: component_name(mod_name),
+        name: comp_name,
         spec: comp_spec
       )
       output << YAML.dump(component)
