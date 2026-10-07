@@ -183,6 +183,23 @@ class ApplicationTest < Minitest::Test
     assert_includes last_response.body, "<article>"
   end
 
+  # A placeholder such as <file> outside backticks is read as an HTML tag and swallows the text after it
+  KNOWN_DOC_TAGS = %w[a abbr article b blockquote br code dd del details div dl dt em h1 h2 h3 h4 h5 h6 hr i img input
+                      kbd li ol p pre s samp small span strong sub summary sup table tbody td tfoot th thead tr u ul
+                      var section nav svg].freeze
+
+  def test_api_docs_contain_only_known_html_tags
+    Dir[File.expand_path("../../docs/*.md", __dir__)].each do |file|
+      name = File.basename(file, ".md")
+      get "/api/v1/docs/#{name}"
+
+      assert_predicate last_response, :ok?, name
+      tags = last_response.body.scan(%r{</?([A-Za-z][\w-]*)}).flatten.map(&:downcase).uniq - KNOWN_DOC_TAGS
+
+      assert_empty tags, "docs/#{name}.md renders unknown tags (a <placeholder> outside backticks?)"
+    end
+  end
+
   def test_api_doc_erb
     get "/api/v1/docs/index"
 
