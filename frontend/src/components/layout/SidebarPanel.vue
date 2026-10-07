@@ -264,22 +264,25 @@ function filterQuery(key, value) {
   margin-top: 0.75rem;
 }
 
-/* A group is a layer: its colour is a thin rail in the gutter left of the content edge (links already
-   bleed 0.5rem into it), so the heading, the kind names and the tabs above share one left edge.
-   The .icon-<layer> class on the section supplies the colour. */
+/* A group is a layer: a rule in the layer colour sits under its heading. The .icon-<layer> class on the
+   section supplies the colour; the rule is a pseudo-element so the heading text can stay muted
+   (some layer colours are too light for text). */
 .kind-group {
-  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .kind-group::before {
   content: '';
-  position: absolute;
-  top: 2px;
-  bottom: 4px;
-  left: -0.5rem;
-  width: 3px;
-  border-radius: 2px;
+  order: 1;
+  height: 2px;
+  margin: 3px 0 4px;
+  border-radius: 1px;
   background-color: currentColor;
+}
+
+.kind-group > ul {
+  order: 2;
 }
 
 /* Pico pulls every link up; for the first one that would let a selected row cover the group heading */
@@ -288,7 +291,7 @@ function filterQuery(key, value) {
 }
 
 .kind-group-title {
-  margin: 0 0 2px;
+  margin: 0;
   font-size: var(--fs-xs);
   font-weight: var(--fw-strong);
   line-height: var(--lh-heading);
