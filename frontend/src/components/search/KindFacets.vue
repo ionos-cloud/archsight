@@ -90,8 +90,7 @@ function to(kind) {
 
 .facet.selected {
   background-color: var(--pico-card-background-color);
-  box-shadow: inset 0 0 0 2px var(--layer);
-  font-weight: var(--fw-strong);
+  box-shadow: inset 0 0 0 2px var(--layer); /* no bolder text: a wider chip would nudge its neighbours */
 }
 
 .facet-dot {

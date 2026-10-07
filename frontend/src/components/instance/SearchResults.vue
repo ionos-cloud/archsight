@@ -92,7 +92,9 @@ watch(() => [route.query.q, route.query.scope, route.query.kind], doSearch, { im
 </script>
 
 <template>
-  <article class="search-page" :aria-busy="loading ? 'true' : undefined">
+  <article class="search-page">
+    <!-- not aria-busy: Pico draws a spinner for it, which pushes the whole page down while a search runs -->
+    <span class="sr-only" role="status" aria-live="polite">{{ loading ? 'Searching' : '' }}</span>
     <header>
       <h2><i class="iconoir-search" aria-hidden="true"></i> Search</h2>
       <div class="header-actions">
@@ -140,6 +142,15 @@ watch(() => [route.query.q, route.query.scope, route.query.kind], doSearch, { im
 </template>
 
 <style scoped>
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .search-syntax {
   display: inline-flex;
   align-items: center;
