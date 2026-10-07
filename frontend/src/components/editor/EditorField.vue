@@ -160,7 +160,7 @@ const hasError = computed(() => props.error && props.error.length > 0)
 }
 
 .field-group label .required {
-  color: var(--del-color);
+  color: var(--pico-del-color);
   margin-left: 0.15rem;
 }
 
@@ -171,14 +171,14 @@ const hasError = computed(() => props.error && props.error.length > 0)
 }
 
 .field-description {
-  font-size: 0.8rem;
-  color: var(--muted-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
   margin-top: 0.25rem;
 }
 
 .field-error {
-  color: var(--del-color);
-  font-size: 0.8rem;
+  color: var(--pico-del-color);
+  font-size: var(--fs-xs);
   margin-top: 0.25rem;
 }
 
@@ -187,8 +187,8 @@ const hasError = computed(() => props.error && props.error.length > 0)
 }
 
 .markdown-field textarea {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
   line-height: 1.5;
   min-height: 24rem;
   resize: vertical;
@@ -200,8 +200,8 @@ const hasError = computed(() => props.error && props.error.length > 0)
 }
 
 .code-field textarea {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  font-size: 0.9em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
   line-height: 1.5;
   min-height: 600px;
   resize: vertical;
@@ -243,8 +243,8 @@ const hasError = computed(() => props.error && props.error.length > 0)
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  color: var(--muted-color);
-  font-size: 0.8rem;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-xs);
   margin-top: 0.5rem;
 }
 
@@ -264,23 +264,23 @@ const hasError = computed(() => props.error && props.error.length > 0)
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-  color: var(--muted-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
   background: transparent;
-  border: 1px solid var(--muted-border-color);
-  border-radius: var(--border-radius);
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-edit-markdown:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--pico-primary);
+  border-color: var(--pico-primary);
   background-color: transparent;
 }
 
 .btn-edit-markdown i {
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
 }
 
 @media (prefers-color-scheme: dark) {

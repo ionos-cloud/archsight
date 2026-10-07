@@ -106,7 +106,7 @@ function scrollTo(id) {
       </ul>
     </aside>
 
-    <div ref="bodyEl" class="page-body" v-html="html"></div>
+    <div ref="bodyEl" class="page-body prose" v-html="html"></div>
     <Teleport v-for="embed in embeds" :key="embed.key" :to="embed.el">
       <EmbeddedKind :kind="embed.kind" :name="embed.name" :spec="embed.spec" />
     </Teleport>

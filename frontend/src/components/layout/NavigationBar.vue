@@ -129,20 +129,20 @@ async function reload() {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   transition: all 0.2s ease;
   cursor: pointer;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .search-help:hover {
-  background-color: var(--primary);
-  color: var(--primary-inverse);
-  border-color: var(--primary);
+  background-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+  border-color: var(--pico-primary);
 }
 
 .search-help i {
-  font-size: 1.1em;
+  font-size: var(--fs-md);
 }
 </style>

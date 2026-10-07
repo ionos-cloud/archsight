@@ -192,7 +192,7 @@ function initPanZoomOnGraph() {
       <i class="iconoir-graph-up"></i> No outgoing dependencies — graph omitted
     </p>
 
-    <div ref="descEl" v-if="description" v-html="description" :class="{ footer: hasRelations }"></div>
+    <div ref="descEl" v-if="description" v-html="description" :class="['prose', { footer: hasRelations }]"></div>
     <Teleport v-for="embed in embeds" :key="embed.key" :to="embed.el">
       <EmbeddedKind :kind="embed.kind" :name="embed.name" :spec="embed.spec" />
     </Teleport>
@@ -245,9 +245,9 @@ function initPanZoomOnGraph() {
 }
 
 .instance-kind-subtitle {
-  font-size: 0.4em;
+  font-size: var(--fs-xs);
   font-weight: 400;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   opacity: 0.7;
   margin-top: 0.1em;
 }
@@ -263,15 +263,15 @@ function initPanZoomOnGraph() {
   width: auto;
   margin-bottom: 0;
   padding: 0.25rem 0.75rem;
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
 }
 
 .graph-container {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   height: auto;
   min-height: 150px;
   max-height: 70vh;
@@ -297,18 +297,18 @@ function initPanZoomOnGraph() {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  font-size: 0.9rem;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--border-radius);
+  border-radius: var(--pico-border-radius);
   text-decoration: none;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .btn-header:hover {
-  color: var(--primary);
-  border-color: var(--primary);
+  color: var(--pico-primary);
+  border-color: var(--pico-primary);
 }
 </style>

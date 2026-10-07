@@ -140,20 +140,20 @@ async function saveToFile() {
   align-items: center;
   gap: 0.5rem;
   margin: 0 0 1rem 0;
-  color: var(--ins-color);
+  color: var(--pico-ins-color);
   font-weight: 500;
 }
 
 #yaml-content {
-  margin: 0 calc(var(--block-spacing-horizontal) * -1);
-  padding: var(--block-spacing-horizontal);
-  background-color: var(--code-background-color);
+  margin: 0 calc(var(--pico-block-spacing-horizontal) * -1);
+  padding: var(--pico-block-spacing-horizontal);
+  background-color: var(--pico-code-background-color);
   border-radius: 0;
   overflow-x: auto;
 }
 
 #yaml-content code {
-  font-size: 0.9em;
+  font-size: var(--fs-sm);
   white-space: pre;
   line-height: 1.5;
   padding: 0;
@@ -171,8 +171,8 @@ footer {
   display: flex;
   gap: 0.5rem;
   margin: 0;
-  font-size: 0.9em;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   flex: 1;
   min-width: 0;
   line-height: 1.5;

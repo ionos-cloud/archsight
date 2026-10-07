@@ -41,9 +41,9 @@ function initPanZoomOnGraph() {
 .graph-container {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 4px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   height: auto;
   min-height: 150px;
   max-height: 70vh;

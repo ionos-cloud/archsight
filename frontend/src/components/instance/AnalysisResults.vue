@@ -153,7 +153,7 @@ defineExpose({ run })
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.75rem;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   margin: 0;
 }
 
@@ -163,7 +163,7 @@ defineExpose({ run })
   justify-content: center;
   gap: 0.5rem;
   padding: 2rem;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 @keyframes spin {
@@ -178,8 +178,8 @@ defineExpose({ run })
 .analysis-results {
   min-height: 100px;
   padding: 1rem;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 8px;
 }
 
@@ -187,7 +187,7 @@ defineExpose({ run })
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   font-style: italic;
   margin: 0;
 }
@@ -197,7 +197,7 @@ defineExpose({ run })
   align-items: center;
   gap: 0.5rem;
   padding: 1.5rem;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .analysis-result-container {
@@ -210,9 +210,9 @@ defineExpose({ run })
   align-items: center;
   padding: 0.75rem 1rem;
   margin: -1rem -1rem 1rem -1rem;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 8px 8px 0 0;
-  border-bottom: 1px solid var(--muted-border-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
 .analysis-result-header .status-indicator {
@@ -230,8 +230,8 @@ defineExpose({ run })
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.9em;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
 }
 
 .analysis-error-details {
@@ -244,12 +244,12 @@ defineExpose({ run })
 }
 
 .analysis-error-details details { margin-top: 0.5rem; }
-.analysis-error-details summary { cursor: pointer; color: var(--muted-color); font-size: 0.9em; }
-.analysis-error-details pre { margin-top: 0.5rem; font-size: 0.85em; max-height: 200px; overflow: auto; }
+.analysis-error-details summary { cursor: pointer; color: var(--pico-muted-color); font-size: var(--fs-sm); }
+.analysis-error-details pre { margin-top: 0.5rem; font-size: var(--fs-xs); max-height: 200px; overflow: auto; }
 
 .analysis-output { margin-top: 0.5rem; }
 
 .compact .analysis-results-placeholder {
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
 }
 </style>

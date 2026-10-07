@@ -127,7 +127,7 @@ function blockLinks(event) {
   justify-content: space-between;
   align-items: center;
   color: var(--pico-muted-color);
-  font-size: 0.7rem;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -156,7 +156,7 @@ function blockLinks(event) {
   height: 1.4rem;
   margin: 0;
   padding: 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
   color: var(--pico-muted-color);
   background: transparent;
   border: 1px solid transparent;
@@ -179,7 +179,7 @@ function blockLinks(event) {
   padding: 0.35rem 0.6rem;
   border-left: 4px solid var(--pico-del-color);
   background: var(--pico-mark-background-color);
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   overflow-wrap: anywhere;
 }
 
@@ -200,6 +200,6 @@ function blockLinks(event) {
 .preview-empty {
   margin: 0;
   color: var(--pico-muted-color);
-  font-size: 0.8rem;
+  font-size: var(--fs-xs);
 }
 </style>

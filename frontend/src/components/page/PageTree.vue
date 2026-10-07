@@ -145,7 +145,7 @@ watch(activeName, (name) => {
 /* guide line under the parent's chevron shows how deep a row sits */
 .page-tree .page-tree {
   margin-left: 0.55rem;
-  border-left: 1px solid var(--wiki-line);
+  border-left: 1px solid var(--line);
 }
 
 .page-tree li {
@@ -166,7 +166,7 @@ watch(activeName, (name) => {
   background: none;
   box-shadow: none;
   color: inherit;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   line-height: 1.3;
   text-align: left;
   text-decoration: none;
@@ -179,11 +179,11 @@ watch(activeName, (name) => {
 }
 
 .row:hover {
-  background: var(--wiki-tint);
+  background: var(--tint);
 }
 
 .row:focus-visible {
-  outline: 2px solid var(--wiki-accent);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
@@ -214,7 +214,7 @@ watch(activeName, (name) => {
 
 .fold:focus-visible,
 .menu-link:focus-visible {
-  outline: 2px solid var(--wiki-accent);
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
@@ -228,12 +228,12 @@ watch(activeName, (name) => {
 }
 
 .menu-split.current {
-  border-left-color: var(--wiki-accent);
-  background: var(--wiki-tint);
+  border-left-color: var(--accent);
+  background: var(--tint);
 }
 
 .menu-split.current .menu-link {
-  color: var(--wiki-accent);
+  color: var(--accent);
 }
 
 .chevron,
@@ -253,9 +253,9 @@ watch(activeName, (name) => {
 }
 
 .row[aria-current='page'] {
-  border-left-color: var(--wiki-accent);
-  background: var(--wiki-tint);
-  color: var(--wiki-accent);
+  border-left-color: var(--accent);
+  background: var(--tint);
+  color: var(--accent);
   font-weight: 600;
 }
 

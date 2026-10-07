@@ -58,17 +58,17 @@ function filterUrl(key, value) {
 
 .tool-item {
   padding: 0.75rem;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 6px;
   transition: opacity 0.2s ease, border-color 0.2s ease;
   text-decoration: none;
-  color: var(--color);
+  color: var(--pico-color);
   display: block;
 }
 
 .tool-item:hover {
-  border-color: var(--primary);
+  border-color: var(--pico-primary);
 }
 
 .tool-item.not-implemented {
@@ -88,19 +88,19 @@ function filterUrl(key, value) {
 }
 
 .tool-item-header i {
-  font-size: 1.2em;
+  font-size: var(--fs-md);
 }
 
 .tool-item-header i.implemented {
-  color: var(--primary);
+  color: var(--pico-primary);
 }
 
 .tool-item-header i.not-implemented {
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .tool-item-description {
-  font-size: 0.85em;
-  color: var(--muted-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
 }
 </style>

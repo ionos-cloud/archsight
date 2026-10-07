@@ -166,7 +166,7 @@ function filterQuery(key, value) {
 }
 
 .sidebar-section:not(:last-child) {
-  border-bottom: 1px solid var(--muted-border-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
 /* Pages / Kinds tabs: compact, icon and label on one centre line */
@@ -174,7 +174,7 @@ function filterQuery(key, value) {
   display: flex;
   gap: 0.25rem;
   margin-bottom: 12px;
-  border-bottom: 1px solid var(--muted-border-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
 }
 
 .sidebar-tab {
@@ -184,10 +184,10 @@ function filterQuery(key, value) {
   width: auto;
   margin: 0 0 -1px;
   padding: 0.35rem 0.6rem;
-  font-size: 0.85rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -197,18 +197,18 @@ function filterQuery(key, value) {
 
 .sidebar-tab i {
   flex-shrink: 0;
-  font-size: 1.1em;
+  font-size: var(--fs-md);
   line-height: 1;
 }
 
 .sidebar-tab:hover,
 .sidebar-tab:focus-visible {
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 .sidebar-tab[aria-selected='true'] {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: var(--pico-primary);
+  border-bottom-color: var(--pico-primary);
 }
 
 /* small label above Tags / Filters (they are not headings of their own any more) */
@@ -217,16 +217,16 @@ function filterQuery(key, value) {
   align-items: center;
   gap: 0.35rem;
   margin-bottom: 8px;
-  font-size: 0.75em;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   line-height: 1;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   text-transform: uppercase;
 }
 
 .sidebar-label i {
   flex-shrink: 0;
-  font-size: 1.1em;
+  font-size: var(--fs-md);
   line-height: 1;
 }
 
@@ -248,7 +248,7 @@ function filterQuery(key, value) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2px;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   text-decoration: none;
@@ -256,12 +256,12 @@ function filterQuery(key, value) {
 
 .kind-filter a[aria-current="page"],
 .instance-list a[aria-current="page"] {
-  background-color: var(--primary);
-  color: var(--primary-inverse);
+  background-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
 }
 
 .kind-count {
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   padding: 2px 6px;
   border-radius: 10px;
   min-width: 24px;
@@ -282,9 +282,9 @@ function filterQuery(key, value) {
 }
 
 .filter-label {
-  font-size: 0.75em;
+  font-size: var(--fs-2xs);
   font-weight: 600;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   text-transform: uppercase;
   margin-bottom: 0.25rem;
   padding: 0;
@@ -298,20 +298,20 @@ function filterQuery(key, value) {
 
 .filter-chip {
   display: inline-block;
-  font-size: 0.75em;
+  font-size: var(--fs-2xs);
   padding: 0.2rem 0.5rem;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 12px;
   text-decoration: none;
-  color: var(--color);
+  color: var(--pico-color);
   transition: all 0.2s ease;
 }
 
 .filter-chip:hover {
-  background-color: var(--primary);
-  color: var(--primary-inverse);
-  border-color: var(--primary);
+  background-color: var(--pico-primary);
+  color: var(--pico-primary-inverse);
+  border-color: var(--pico-primary);
 }
 
 @media all and (min-width: 800px) {

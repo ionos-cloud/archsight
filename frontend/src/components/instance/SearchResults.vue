@@ -129,19 +129,19 @@ watch(() => [route.query.q, route.query.scope], doSearch, { immediate: true })
 
 .query-item .label {
   font-weight: 600;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   text-transform: uppercase;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   letter-spacing: 0.5px;
 }
 
 .query-item code {
   padding: 0.35rem 0.75rem;
-  background-color: var(--code-background-color);
+  background-color: var(--pico-code-background-color);
   border-radius: 6px;
-  font-size: 0.95em;
-  font-family: monospace;
-  color: var(--color);
+  font-size: var(--fs-sm);
+  font-family: var(--font-mono);
+  color: var(--pico-color);
 }
 
 .query-value {
@@ -158,7 +158,7 @@ watch(() => [route.query.q, route.query.scope], doSearch, { immediate: true })
 
 .result-count {
   font-weight: 600;
-  color: var(--color);
+  color: var(--pico-color);
   font-size: 1em;
 }
 
@@ -180,12 +180,12 @@ watch(() => [route.query.q, route.query.scope], doSearch, { immediate: true })
 }
 
 .search-error-header i {
-  font-size: 1.2em;
+  font-size: var(--fs-md);
 }
 
 .search-error-message {
-  font-family: monospace;
-  font-size: 0.95em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
   color: #991b1b;
   background-color: #fef2f2;
   padding: 0.75rem;
@@ -197,7 +197,7 @@ watch(() => [route.query.q, route.query.scope], doSearch, { immediate: true })
 
 .search-error-query {
   margin-top: 0.5rem;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
   color: #7f1d1d;
 }
 

@@ -47,7 +47,7 @@ onMounted(async () => {
   border: 1px solid #ddd;
   border-radius: 4px;
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

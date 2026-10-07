@@ -64,9 +64,9 @@ const segments = computed(() => {
   gap: 8px;
   min-width: 200px;
   padding: 8px 12px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   border-radius: 6px;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
 }
 
 .repository-total {
@@ -76,14 +76,14 @@ const segments = computed(() => {
 }
 
 .repository-total .repository-count {
-  font-size: 1.5em;
+  font-size: var(--fs-lg);
   font-weight: 600;
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 .repository-total .repository-label {
-  color: var(--muted-color);
-  font-size: 0.9em;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-sm);
 }
 
 .repository-bar {
@@ -91,7 +91,7 @@ const segments = computed(() => {
   height: 8px;
   border-radius: 4px;
   overflow: hidden;
-  background-color: var(--muted-border-color);
+  background-color: var(--pico-muted-border-color);
 }
 
 .repository-bar-segment {
@@ -109,14 +109,14 @@ const segments = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 0.85em;
+  font-size: var(--fs-xs);
 }
 
 .repository-legend-item {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
 }
 
 .repository-legend-dot {

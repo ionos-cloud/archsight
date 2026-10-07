@@ -53,33 +53,33 @@ const hasEstimate = computed(() => cost.value != null || schedule.value != null 
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background-color: var(--card-background-color);
+  background-color: var(--pico-card-background-color);
   border-radius: 6px;
-  border: 1px solid var(--muted-border-color);
+  border: 1px solid var(--pico-muted-border-color);
 }
 
 .estimate-item i {
-  font-size: 1.2em;
-  color: var(--primary);
+  font-size: var(--fs-md);
+  color: var(--pico-primary);
 }
 
 .estimate-label {
-  color: var(--muted-color);
-  font-size: 0.9em;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-sm);
 }
 
 .estimate-value {
   font-weight: 600;
-  color: var(--color);
+  color: var(--pico-color);
 }
 
 .estimate-note {
   margin-left: 0.5rem;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   cursor: help;
 }
 
 .estimate-note i {
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
 }
 </style>

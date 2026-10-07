@@ -1,0 +1,82 @@
+/* Rendered markdown (wiki pages, descriptions, editor preview). One reading typography for all of it. */
+.prose {
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+}
+
+.prose > :first-child { margin-top: 0; }
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  margin: 1.7em 0 0.5em;
+  font-weight: var(--fw-strong);
+  line-height: var(--lh-heading);
+  scroll-margin-top: 1rem;
+}
+
+.prose h1 { font-size: var(--fs-xl); font-weight: var(--fw-heading); }
+.prose h2 { font-size: var(--fs-lg); font-weight: var(--fw-heading); }
+.prose h3 { font-size: var(--fs-md); }
+.prose h4 { font-size: var(--fs-base); }
+.prose h5 { font-size: var(--fs-xs); }
+.prose h6 { font-size: var(--fs-xs); color: var(--pico-muted-color); }
+
+/* keep prose lines readable; tables, code and diagrams may use the full width */
+.prose p,
+.prose li,
+.prose blockquote {
+  max-width: 75ch;
+}
+
+.prose p,
+.prose ul,
+.prose ol,
+.prose blockquote,
+.prose pre {
+  margin: 0 0 10px;
+  font-size: inherit;
+}
+
+.prose li { margin: 2px 0; }
+.prose ul,
+.prose ol { padding-left: 1.6em; }
+
+.prose table {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 10px 0 16px;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.prose th,
+.prose td {
+  min-width: 3rem; /* wide tables scroll instead of squeezing every column, narrow columns may stay narrow */
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.prose th {
+  font-weight: var(--fw-strong);
+  background: var(--tint);
+}
+
+.prose code { font-size: 0.9em; padding: 1px 4px; }
+.prose pre code { font-size: var(--fs-xs); padding: 0; }
+
+.prose blockquote {
+  padding: 4px 14px;
+  border-left: 3px solid var(--line);
+  color: var(--pico-muted-color);
+}
+
+.prose a { text-decoration: none; }
+.prose a:hover { text-decoration: underline; }

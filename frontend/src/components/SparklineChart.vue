@@ -51,9 +51,6 @@ const tooltipSuffix = computed(() => {
   gap: 1px;
   height: 20px;
   padding: 2px 4px;
-  background-color: var(--card-background-color);
-  border-radius: 4px;
-  border: 1px solid var(--muted-border-color);
 }
 
 .activity-sparkline-bar {

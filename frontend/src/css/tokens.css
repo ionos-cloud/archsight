@@ -1,0 +1,41 @@
+/* Design tokens: the one place that sets the type scale, spacing and neutral colours.
+   Components use these instead of raw sizes; colours come from Pico's --pico-* variables. */
+:root {
+  /* 14px base for the whole app (Pico's fluid 16-21px ramp would otherwise apply; this
+     comes later in the cascade, so it wins at every breakpoint). Pico sizes in rem, so its
+     own controls follow. */
+  --pico-font-size: 87.5%;
+  --pico-line-height: 1.6;
+
+  /* type scale (relative to the 14px root) */
+  --fs-2xs: 0.75rem;  /* badges, chips, tiny labels */
+  --fs-xs: 0.86rem;   /* secondary text, breadcrumbs, tree rows */
+  --fs-sm: 0.93rem;   /* tables, properties, form controls */
+  --fs-base: 1rem;    /* body */
+  --fs-md: 1.14rem;   /* section headings */
+  --fs-lg: 1.43rem;
+  --fs-xl: 1.71rem;
+  --fs-title: 2rem;   /* page and resource titles */
+
+  --lh-tight: 1.2;
+  --lh-heading: 1.25;
+  --lh-body: 1.6;
+
+  --fw-regular: 400;
+  --fw-heading: 500;
+  --fw-strong: 600;
+
+  /* spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 28px;
+
+  --font-mono: var(--pico-font-family-monospace);
+
+  /* neutral hairlines and tints that work on light and dark backgrounds */
+  --line: rgba(128, 128, 128, 0.28);
+  --tint: rgba(128, 128, 128, 0.08);
+  --accent: var(--pico-primary);
+}

@@ -137,16 +137,16 @@ const incoming = computed(() => {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
-  color: var(--muted-color);
-  font-size: 1rem;
+  color: var(--pico-muted-color);
+  font-size: var(--fs-base);
   font-weight: 600;
 }
 
 .relations-section .relation-group {
   margin-bottom: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background-color: var(--card-background-color);
-  border: 1px solid var(--muted-border-color);
+  background-color: var(--pico-card-background-color);
+  border: 1px solid var(--pico-muted-border-color);
   border-radius: 0.5rem;
 }
 
@@ -159,13 +159,13 @@ const incoming = computed(() => {
 }
 
 .relations-section .relation-verb {
-  font-size: 0.875rem;
-  color: var(--muted-color);
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
   margin-bottom: 0.5rem;
 }
 
 .relations-section .relations-empty {
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   font-style: italic;
 }
 

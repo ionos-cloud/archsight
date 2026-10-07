@@ -1,11 +1,4 @@
 /* Wiki pages. Compact Confluence-like reading typography on top of Pico. */
-:root {
-  /* neutral hairlines and tints that work on light and dark backgrounds */
-  --wiki-line: rgba(128, 128, 128, 0.28);
-  --wiki-tint: rgba(128, 128, 128, 0.08);
-  --wiki-accent: var(--pico-primary);
-}
-
 /* ---------- layout: content column plus a sticky contents rail ---------- */
 .wiki-page {
   display: grid;
@@ -15,8 +8,6 @@
   grid-template-rows: auto auto 1fr auto;
   align-content: start;
   flex: 1 0 auto;
-  font-size: 14px;
-  line-height: 1.6;
 }
 
 .wiki-page > .page-head { grid-area: head; }
@@ -48,7 +39,7 @@
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-bottom: 4px;
-  font-size: 0.86em;
+  font-size: var(--fs-xs);
   color: var(--pico-muted-color);
 }
 
@@ -58,7 +49,7 @@
 }
 
 .wiki-page .breadcrumb a:hover {
-  color: var(--wiki-accent);
+  color: var(--accent);
 }
 
 .wiki-page .breadcrumb > :not(:last-child)::after {
@@ -68,7 +59,7 @@
 
 .wiki-page .page-head h1 {
   margin: 0 0 14px;
-  font-size: 2em;
+  font-size: var(--fs-title);
   font-weight: 500;
   line-height: 1.2;
 }
@@ -79,8 +70,8 @@
 .wiki-page .page-properties {
   max-width: 34rem;
   margin: 0 0 24px;
-  border-top: 1px solid var(--wiki-line);
-  font-size: 0.93em;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm);
 }
 
 .wiki-page .page-properties .prop {
@@ -88,7 +79,7 @@
   grid-template-columns: 7.5rem minmax(0, 1fr);
   align-items: center;
   padding: 6px 0;
-  border-bottom: 1px solid var(--wiki-line);
+  border-bottom: 1px solid var(--line);
 }
 
 .wiki-page .page-properties dt {
@@ -109,7 +100,7 @@
     gap: 0 2.25rem;
     max-width: none;
     padding: 7px 0;
-    border-bottom: 1px solid var(--wiki-line);
+    border-bottom: 1px solid var(--line);
   }
 
   .wiki-page .page-properties .prop {
@@ -128,7 +119,7 @@
 /* ---------- contents rail ---------- */
 .wiki-page .page-toc {
   margin: 0 0 20px;
-  font-size: 0.93em;
+  font-size: var(--fs-sm);
 }
 
 .wiki-page .page-toc .toc-title {
@@ -141,7 +132,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-left: 1px solid var(--wiki-line);
+  border-left: 1px solid var(--line);
 }
 
 .wiki-page .page-toc li {
@@ -164,94 +155,20 @@
 .wiki-page .page-toc a:hover { color: inherit; }
 
 .wiki-page .page-toc a[aria-current='location'] {
-  border-left-color: var(--wiki-accent);
-  color: var(--wiki-accent);
+  border-left-color: var(--accent);
+  color: var(--accent);
   font-weight: 600;
 }
 
-/* ---------- body ---------- */
-.wiki-page .page-body > :first-child { margin-top: 0; }
-
-.wiki-page .page-body h1,
-.wiki-page .page-body h2,
-.wiki-page .page-body h3,
-.wiki-page .page-body h4,
-.wiki-page .page-body h5,
-.wiki-page .page-body h6 {
-  margin: 1.7em 0 0.5em;
-  font-weight: 600;
-  line-height: 1.25;
-  scroll-margin-top: 1rem;
-}
-
-.wiki-page .page-body h1 { font-size: 1.71em; font-weight: 500; }
-.wiki-page .page-body h2 { font-size: 1.43em; font-weight: 500; }
-.wiki-page .page-body h3 { font-size: 1.14em; }
-.wiki-page .page-body h4 { font-size: 1em; }
-.wiki-page .page-body h5 { font-size: 0.86em; }
-.wiki-page .page-body h6 { font-size: 0.86em; color: var(--pico-muted-color); }
-
-/* keep prose lines readable; tables, code and diagrams may use the full width */
-.wiki-page .page-body p,
-.wiki-page .page-body li,
-.wiki-page .page-body blockquote {
-  max-width: 75ch;
-}
-
-.wiki-page .page-body p,
-.wiki-page .page-body ul,
-.wiki-page .page-body ol,
-.wiki-page .page-body blockquote,
-.wiki-page .page-body pre {
-  margin: 0 0 10px;
-  font-size: inherit;
-}
-
-.wiki-page .page-body li { margin: 2px 0; }
-.wiki-page .page-body ul,
-.wiki-page .page-body ol { padding-left: 1.6em; }
-
-.wiki-page .page-body table {
-  display: block;
-  width: auto;
-  max-width: 100%;
-  overflow-x: auto;
-  margin: 10px 0 16px;
-  border-collapse: collapse;
-  font-size: 0.93em;
-}
-
-.wiki-page .page-body th,
-.wiki-page .page-body td {
-  min-width: 3rem; /* wide tables scroll instead of squeezing every column, narrow columns may stay narrow */
-  padding: 6px 10px;
-  border: 1px solid var(--wiki-line);
-  text-align: left;
-  vertical-align: top;
-}
-
-.wiki-page .page-body th {
-  font-weight: 600;
-  background: var(--wiki-tint);
-}
-
-.wiki-page .page-body code { font-size: 0.9em; padding: 1px 4px; }
-.wiki-page .page-body pre code { font-size: 0.86em; padding: 0; }
-
-.wiki-page .page-body blockquote {
-  padding: 4px 14px;
-  border-left: 3px solid var(--wiki-line);
-  color: var(--pico-muted-color);
-}
-
+/* ---------- body: typography comes from .prose (prose.css) ---------- */
 .wiki-page .page-body .asd-diagram { margin: 12px 0; }
 
 /* ---------- footer ---------- */
 .wiki-page .page-foot {
   margin-top: 28px;
   padding-top: 12px;
-  border-top: 1px solid var(--wiki-line);
-  font-size: 0.93em;
+  border-top: 1px solid var(--line);
+  font-size: var(--fs-sm);
 }
 
 .wiki-page .page-foot ul {
@@ -276,7 +193,7 @@
   border-radius: 10px;
   background: #dfe1e6;
   color: #42526e;
-  font-size: 0.86em;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -301,13 +218,13 @@
   gap: 0.5rem;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid var(--wiki-line);
+  border-bottom: 1px solid var(--line);
 }
 
 .wiki-page .page-actions .page-resource {
   flex: 1;
   color: var(--pico-muted-color);
-  font-size: 0.9em;
+  font-size: var(--fs-sm);
 }
 
 /* ---------- edit link: a pen at the top right of the page head ---------- */
@@ -331,6 +248,6 @@
 
 .wiki-page .page-edit:hover,
 .wiki-page .page-edit:focus-visible {
-  color: var(--wiki-accent);
-  border-color: var(--wiki-line);
+  color: var(--accent);
+  border-color: var(--line);
 }

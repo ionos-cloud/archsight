@@ -113,8 +113,8 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`BusinessRequ
   align-items: center;
   gap: 0.35rem;
   margin: 0 0 0.25rem;
-  font-size: 0.8em;
-  color: var(--muted-color);
+  font-size: var(--fs-xs);
+  color: var(--pico-muted-color);
 }
 
 .kind-embed-source a {
@@ -123,7 +123,7 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`BusinessRequ
 }
 
 .kind-embed-source a:hover {
-  color: var(--primary);
+  color: var(--pico-primary);
   text-decoration: underline;
 }
 
@@ -145,11 +145,11 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`BusinessRequ
 }
 
 .kind-embed-rerun i {
-  font-size: 1.1em;
+  font-size: var(--fs-md);
 }
 
 .kind-embed-rerun:hover:not(:disabled) {
-  color: var(--primary);
+  color: var(--pico-primary);
 }
 
 .kind-embed-loading,
@@ -158,7 +158,7 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`BusinessRequ
   align-items: center;
   gap: 0.5rem;
   margin: 0;
-  color: var(--muted-color);
+  color: var(--pico-muted-color);
   font-style: italic;
 }
 
