@@ -38,6 +38,27 @@ function onTabKeydown(event) {
   selectTab(TABS[(index + step + TABS.length) % TABS.length].id, { focus: true })
 }
 
+// kinds grouped by ArchiMate layer; "other" holds the tool's own kinds (pages, views, imports, ...)
+const LAYERS = [
+  { id: 'strategy', title: 'Strategy' },
+  { id: 'motivation', title: 'Motivation' },
+  { id: 'business', title: 'Business' },
+  { id: 'application', title: 'Application' },
+  { id: 'technology', title: 'Technology' },
+  { id: 'other', title: 'Other' },
+]
+
+const kindGroups = computed(() => {
+  const all = props.kinds?.kinds || []
+  const known = new Set(LAYERS.map((l) => l.id))
+  return LAYERS
+    .map((layer) => ({
+      ...layer,
+      kinds: all.filter((k) => (known.has(k.layer) ? k.layer : 'other') === layer.id),
+    }))
+    .filter((group) => group.kinds.length)
+})
+
 function isCurrentKind(kindName) {
   return currentKind.value === kindName
 }
@@ -113,21 +134,27 @@ function filterQuery(key, value) {
     >
     <div class="sidebar-section">
       <nav class="kind-filter">
-        <ul>
-          <template v-if="kinds">
-            <li v-for="k in kinds.kinds" :key="k.kind">
-              <router-link
-                :to="{ name: 'kind', params: { kind: k.kind } }"
-                :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
-              >
-                <span class="kind-name">{{ k.kind }}</span>
-                <span class="kind-count">{{ k.instance_count }}</span>
-              </router-link>
-            </li>
-          </template>
-          <li v-else>
-            <span class="kind-name">Loading...</span>
-          </li>
+        <template v-if="kinds">
+          <section v-for="group in kindGroups" :key="group.id" class="kind-group">
+            <h3 class="kind-group-title">
+              <span :class="['kind-group-dot', `icon-${group.id}`]" aria-hidden="true"></span>
+              {{ group.title }}
+            </h3>
+            <ul>
+              <li v-for="k in group.kinds" :key="k.kind">
+                <router-link
+                  :to="{ name: 'kind', params: { kind: k.kind } }"
+                  :aria-current="isCurrentKind(k.kind) ? 'page' : undefined"
+                >
+                  <span class="kind-name">{{ k.kind }}</span>
+                  <span class="kind-count">{{ k.instance_count }}</span>
+                </router-link>
+              </li>
+            </ul>
+          </section>
+        </template>
+        <ul v-else>
+          <li><span class="kind-name">Loading...</span></li>
         </ul>
       </nav>
     </div>
@@ -228,6 +255,31 @@ function filterQuery(key, value) {
   flex-shrink: 0;
   font-size: var(--fs-md);
   line-height: 1;
+}
+
+.kind-group + .kind-group {
+  margin-top: 0.75rem;
+}
+
+/* layer heading above each group of kinds */
+.kind-group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 6px;
+  padding: 0 0.5rem;
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--pico-muted-color);
+}
+
+.kind-group-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+  background-color: currentColor; /* the .icon-<layer> class sets the colour */
 }
 
 .kind-filter ul,
