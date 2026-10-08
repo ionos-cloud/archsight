@@ -246,9 +246,10 @@ function filterQuery(key, value) {
   line-height: 1;
 }
 
+/* Pico redefines --pico-color on a hovered button (to the inverse, white), so use a variable it leaves alone */
 .sidebar-tab:hover,
 .sidebar-tab:focus-visible {
-  color: var(--pico-color);
+  color: var(--pico-contrast);
 }
 
 .sidebar-tab[aria-selected='true'] {
