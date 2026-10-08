@@ -89,3 +89,10 @@ export function fieldValue(inst, key) {
   if (isIdentityField(key)) return inst[key] ?? null
   return inst.metadata?.annotations?.[key] ?? null
 }
+
+// The name of an instance as shown in its header: the kind stands under it and has an icon, so a leading
+// `<Kind>:` ("Analysis:Architecture:Health" of kind Analysis) is dropped. Only the display changes, never the name.
+export function displayName(name, kind) {
+  const prefix = `${kind}:`
+  return kind && name?.startsWith(prefix) && name.length > prefix.length ? name.slice(prefix.length) : name
+}

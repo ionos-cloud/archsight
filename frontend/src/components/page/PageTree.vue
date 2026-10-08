@@ -191,7 +191,8 @@ watch(activeName, (name) => {
   font-weight: 600;
 }
 
-/* menu with its own page: the chevron button and the title link are two separate targets in one row */
+/* menu with its own page: the chevron button and the title link are two separate targets in one row. The title
+   starts where the label of a plain row does (same left padding + chevron column + the .25rem gap). */
 .menu-split {
   gap: 0;
   padding: 0;
@@ -204,7 +205,8 @@ watch(activeName, (name) => {
   align-self: stretch;
   width: auto;
   margin: 0;
-  padding: 0.2rem 0.25rem 0.2rem 0.5rem;
+  padding: 0.2rem 0 0.2rem 0.5rem; /* no right padding: the title's own left padding is the gap */
+  font-size: var(--fs-xs); /* a button does not inherit the row's size, and the chevron column is sized in em */
   border: 0;
   background: none;
   box-shadow: none;

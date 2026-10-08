@@ -1,0 +1,210 @@
+/* Printing: only the page content goes to paper. The search bar, the sidebar and the controls stay on the screen,
+   the cards lose their frame and shadow, and "Archsight" stands in the bottom left corner of every page. */
+@page {
+  margin: 14mm 14mm 20mm;
+
+  /* the watermark: the page's own bottom-left margin box, so it stands on every page and never over the content */
+  @bottom-left {
+    content: 'Archsight';
+    font: 600 9pt var(--pico-font-family-sans-serif, sans-serif);
+    letter-spacing: 0.04em;
+    color: rgba(0, 0, 0, 0.35);
+  }
+}
+
+@media print {
+  /* Browsers leave backgrounds out of a print unless told otherwise. Icons (a mask filled with currentColor), badges
+     and status lozenges are backgrounds, so they would vanish. */
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* paper is read close up: the 14px screen root (10.5pt) is too large, about 8.6pt sets the whole rem scale smaller */
+  :root {
+    --pico-font-size: 72%;
+  }
+
+  /* chrome: navigation, sidebar and everything that is only for clicking */
+  #app > nav,
+  .sidebar,
+  .header-actions,
+  .page-actions,
+  .page-edit,
+  .page-toc,
+  .btn-header,
+  .rerun,
+  .copy-button,
+  .view-pager,
+  .svg-zoom-btn,
+  .kind-embed-rerun {
+    display: none !important;
+  }
+
+  /* the sidebar is gone, the content takes the page */
+  main {
+    display: block;
+    padding: 0;
+  }
+
+  .content {
+    display: block;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* cards become plain sections */
+  .content article {
+    margin: 0 0 1rem;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* Pico lets a card's header and footer bleed out of the card with negative margins. With the card's padding gone
+     that pulls the header above the page's content area, where Firefox cuts it off at the paper's edge. */
+  .content article > header,
+  .content article > footer {
+    background: none;
+    margin: 0 0 0.5rem;
+    padding: 0.15rem 0 0.4rem;
+  }
+
+  /* the fold arrows only invite a click */
+  summary::before,
+  summary::after {
+    display: none !important;
+  }
+
+  /* a header reads: icon and name on the left, the kind floating right (component styles are scoped, hence !important) */
+  .content article > header h2 {
+    display: flex;
+    flex: 1;
+    align-items: center;
+  }
+
+  .instance-title-text {
+    display: contents !important;
+  }
+
+  .instance-kind-subtitle {
+    order: 1;
+    margin: 0 0 0 auto !important;
+    padding-left: 1rem;
+    font-size: 0.85rem !important;
+    font-weight: 400;
+    color: #666 !important;
+    opacity: 1 !important;
+  }
+
+  /* where a generated resource comes from: its own line under the title, the kind keeps the right edge */
+  .content article > header {
+    flex-wrap: wrap;
+  }
+
+  .generated-badge {
+    flex-basis: 100%;
+    flex-direction: row;
+    gap: 0.75rem;
+    margin-top: 0.15rem;
+  }
+
+  /* nothing is wider than the page: pictures and diagrams shrink to its width, keeping their proportions */
+  .content img,
+  .content svg,
+  .content canvas,
+  .content video,
+  .content iframe {
+    max-width: 100% !important;
+    height: auto;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  /* what is read stays whole: a heading is not left alone at the foot of a page, a row or a figure is not split */
+  h1, h2, h3, h4,
+  summary {
+    break-after: avoid;
+  }
+
+  /* a section's title stays with what follows it: the title row of a card is never the last thing on a page */
+  .content article > header,
+  .relations-column h3 {
+    break-after: avoid;
+  }
+
+  /* a long table or list runs on to the next page, between rows; only a single row, figure or relation is kept whole */
+  table,
+  .relations-section,
+  .documentation {
+    break-inside: auto;
+  }
+
+  tr, img, svg, pre, blockquote,
+  .relation-group,
+  .analysis-message {
+    break-inside: avoid;
+  }
+
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* a grid splits badly across pages: the two relation columns follow each other (component styles are scoped) */
+  .relations-grid {
+    display: block !important;
+  }
+
+  thead {
+    display: table-header-group; /* the header row repeats on each page */
+  }
+
+  /* nothing is cut off at the edge of a scroll box */
+  .analysis-table-wrapper,
+  .asd-diagram,
+  pre {
+    overflow: visible;
+    max-height: none;
+  }
+
+  pre {
+    white-space: pre-wrap;
+  }
+
+  /* a link reads as text */
+  .content a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* graphs: pan/zoom fitted the picture to the size of the screen, which crops it on paper. The SVG has a viewBox,
+     so without that transform it scales to the width of the page as a whole. */
+  .graph-container {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible;
+  }
+
+  .graph-container svg,
+  .graph-container #graphviz,
+  .mermaid svg {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 200mm; /* a tall graph shrinks to fit a page instead of being cut by a page break */
+  }
+
+  .svg-pan-zoom_viewport {
+    transform: none !important;
+  }
+
+  .mermaid {
+    height: auto !important;
+  }
+}

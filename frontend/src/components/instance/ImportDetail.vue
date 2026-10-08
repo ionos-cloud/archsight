@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { getInstanceDot } from '../../api/client.js'
 import { renderDot } from '../../composables/useGraphviz.js'
 import { initSvgPanZoom } from '../../composables/usePanZoom.js'
+import { displayName } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import RelationsGrid from './RelationsGrid.vue'
 
@@ -79,7 +80,7 @@ function isUrl(v) {
       <h2>
         <i v-if="kindMeta" :class="`iconoir-${kindMeta.icon} icon-${kindMeta.layer}`"></i>
         <div class="instance-title-text">
-          <span class="instance-name">{{ data.name }}</span>
+          <span class="instance-name">{{ displayName(data.name, 'Import') }}</span>
           <span class="instance-kind-subtitle">Import</span>
         </div>
       </h2>

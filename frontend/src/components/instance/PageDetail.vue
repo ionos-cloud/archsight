@@ -1,5 +1,6 @@
 <script setup>
 import PageView from '../page/PageView.vue'
+import { displayName } from '../../composables/useFormatting.js'
 import RelationsGrid from './RelationsGrid.vue'
 
 // Detail view of a Page resource: the rendered page (properties, contents, body, backlinks) with
@@ -16,7 +17,7 @@ defineProps({
       <div class="page-actions">
         <span class="page-resource">
           <i v-if="kindMeta" :class="`iconoir-${kindMeta.icon} icon-${kindMeta.layer}`"></i>
-          Page <code>{{ data.name }}</code>
+          Page <code>{{ displayName(data.name, 'Page') }}</code>
         </span>
         <router-link class="btn-header" :to="{ name: 'page', params: { name: data.name } }" title="Open in the handbook tree">
           <i class="iconoir-book"></i> Open in handbook
