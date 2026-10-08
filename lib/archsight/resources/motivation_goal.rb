@@ -33,5 +33,5 @@ class Archsight::Resources::MotivationGoal < Archsight::Resources::Base
 
   relation :realizes, :outcomes, :MotivationOutcome
   relation :refinedBy, :goals, :MotivationGoal
-  relation :realizes, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationRequirements, :MotivationRequirement
 end

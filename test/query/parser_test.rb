@@ -336,7 +336,7 @@ class ParserTest < Minitest::Test
   end
 
   def test_outgoing_transitive_relation
-    ast = parse("~> BusinessRequirement")
+    ast = parse("~> MotivationRequirement")
     expr = ast.expression
 
     assert_instance_of Archsight::Query::AST::OutgoingTransitiveRelation, expr

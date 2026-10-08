@@ -218,7 +218,8 @@ module Archsight::Query::AST
     attr_reader :kind_name
 
     def initialize(kind_name)
-      @kind_name = kind_name
+      # a renamed kind keeps matching under its old name
+      @kind_name = Archsight::Resources.canonical(kind_name)
     end
   end
 

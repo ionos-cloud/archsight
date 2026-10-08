@@ -11,7 +11,7 @@ metadata:
     architecture/tags: testing,quality
 spec:
   satisfies:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:QueryLanguage
 ---
 apiVersion: architecture/v1alpha1
@@ -27,5 +27,5 @@ metadata:
     architecture/tags: linting,types,quality
 spec:
   satisfies:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:RubyCompatibility

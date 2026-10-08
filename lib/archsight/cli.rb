@@ -127,6 +127,12 @@ module Archsight
       linter = Archsight::Linter.new(db)
       errors = linter.validate
 
+      warnings = linter.warnings
+      if warnings.any?
+        puts "Deprecations (#{warnings.count}):"
+        warnings.each { |warning| puts "  #{warning}" }
+      end
+
       if errors.any?
         puts "Validation Errors (#{errors.count}):"
         errors.each { |error| display_error_with_context(error) }

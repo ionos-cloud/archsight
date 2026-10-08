@@ -316,7 +316,7 @@ class ConfluenceStorageTest < Minitest::Test
 
   DATA = <<~YAML
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Req:Encrypt
       annotations:
@@ -324,7 +324,7 @@ class ConfluenceStorageTest < Minitest::Test
         requirement/story: Data is **encrypted** <at> rest
     ---
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Req:Backup
       annotations:
@@ -338,9 +338,9 @@ class ConfluenceStorageTest < Minitest::Test
         backup/mode: "a ]]> b"
     spec:
       realizes:
-        businessRequirements: [Req:Backup]
+        motivationRequirements: [Req:Backup]
       partiallyRealizes:
-        businessRequirements: [Req:Encrypt]
+        motivationRequirements: [Req:Encrypt]
     ---
     apiVersion: architecture/v1alpha1
     kind: ApplicationService
@@ -348,7 +348,7 @@ class ConfluenceStorageTest < Minitest::Test
       name: Storage
     spec:
       realizes:
-        businessRequirements: [Req:Encrypt]
+        motivationRequirements: [Req:Encrypt]
     ---
     apiVersion: architecture/v1alpha1
     kind: View
@@ -398,7 +398,7 @@ class ConfluenceStorageTest < Minitest::Test
     result = convert(source, database: data_db)
     well_formed!(result.body)
 
-    assert_includes result.body, "<p><strong>Business Requirements</strong> (2 items)</p>"
+    assert_includes result.body, "<p><strong>Requirements</strong> (2 items)</p>"
     assert_equal ["Status", "Name", "Priority", "Story", "Realized by"], cells(result.body, "th")
     assert_includes result.body, '<ac:parameter ac:name="title">implemented</ac:parameter>'
     assert_includes result.body, '<ac:parameter ac:name="colour">Red</ac:parameter><ac:parameter ac:name="title">must</ac:parameter>'

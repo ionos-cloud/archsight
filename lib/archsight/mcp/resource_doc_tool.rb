@@ -23,7 +23,7 @@ class Archsight::MCP::ResourceDocTool < FastMcp::Tool
     • ApplicationComponent - Services and application building blocks
     • ApplicationInterface - APIs and interfaces exposed by components
     • ApplicationService - Business services provided by applications
-    • BusinessRequirement - Compliance controls and business requirements
+    • MotivationRequirement - Statements of need, such as compliance and legal requirements
     • ComplianceEvidence - Evidence linking artifacts to compliance requirements
   DESC
   arguments do

@@ -23,7 +23,7 @@ Most models start bottom-up and grow a thin top-down layer of capabilities and r
 ## The realization chain
 
 ```asd
-component "req" { label "BusinessRequirement" }
+component "req" { label "MotivationRequirement" }
 component "svc" { label "ApplicationService" }
 component "comp" { label "ApplicationComponent" }
 component "art" { label "TechnologyArtifact" }

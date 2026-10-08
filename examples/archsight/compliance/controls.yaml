@@ -42,7 +42,7 @@ spec:
     businessActors:
       - Archsight:Maintainers
   satisfies:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:OpenSource
 ---
 apiVersion: architecture/v1alpha1
@@ -70,7 +70,7 @@ spec:
     businessActors:
       - Archsight:Maintainers
   satisfies:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:RubyCompatibility
   evidencedBy:
     complianceEvidences:

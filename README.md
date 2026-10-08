@@ -101,7 +101,7 @@ claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 
 **Macros** such as `{status:yellow WIP}` and `{emoticon:2705}` work inline in pages ([Wiki pages](docs/pages.md#macros)).
 
-**Views and analyses** can be embedded in pages with `![[View/Name]]` / `![[Analysis/Name]]` ([Wiki pages](docs/pages.md#embedding-views-and-analyses)); a view can also be written in place with a ```` ```view ```` block ([inline views](docs/pages.md#inline-views)), and the business requirements of a selection of resources shown with a ```` ```requirements ```` block ([requirements](docs/pages.md#business-requirements-of-a-selection-of-resources)).
+**Views and analyses** can be embedded in pages with `![[View/Name]]` / `![[Analysis/Name]]` ([Wiki pages](docs/pages.md#embedding-views-and-analyses)); a view can also be written in place with a ```` ```view ```` block ([inline views](docs/pages.md#inline-views)), and the requirements of a selection of resources shown with a ```` ```requirements ```` block ([requirements](docs/pages.md#requirements-of-a-selection-of-resources)).
 
 **Images and draw.io diagrams** are plain files in the resources directory and are embedded in markdown with relative
 paths (`![](../img/a.png)`, `![](../../fop/flow.drawio)`); only files of image, draw.io and `.asd` diagram types inside the resources

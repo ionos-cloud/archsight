@@ -34,8 +34,8 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
   relation :realizedThrough, :technologyArtifacts, :TechnologyArtifact
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface
-  relation :realizes, :businessRequirements, :BusinessRequirement
-  relation :partiallyRealizes, :businessRequirements, :BusinessRequirement
-  relation :plans, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationRequirements, :MotivationRequirement
+  relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
+  relation :plans, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
 end

@@ -171,14 +171,14 @@ It loads and runs in the browser like any embed; the server only writes `<div cl
 data-fields data-sort data-type>` around the source. A block that is not a valid View (broken YAML, missing or
 unparsable query, unknown `view/*` key or type) shows an error box with the source, and `archsight lint` reports it.
 
-### Business requirements of a selection of resources
+### Requirements of a selection of resources
 
-The "Business Requirements" table of an instance page (the requirements it `realizes`, `partiallyRealizes` or `plans`,
+The "Requirements" table of an instance page (the requirements it `realizes`, `partiallyRealizes` or `plans`,
 with status, priority and story) can be put on a page for any selection of resources with a ```` ```requirements ```` block:
 
 ````markdown
 ```requirements
-title: Requirements of the backup services     # optional, default "Business Requirements"
+title: Requirements of the backup services     # optional, default "Requirements"
 of: 'ApplicationService: name =~ "Backup"'     # required: query selecting the resources
 priority: must                                 # optional: must, should, may (one value or a list)
 status: [implemented, partial]                 # optional: implemented, partial, planned

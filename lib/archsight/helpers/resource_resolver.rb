@@ -38,7 +38,7 @@ module Archsight
         klass = Archsight::Resources[kind]
         return [] unless klass && @database.instances.fetch(klass, {}).key?(name)
 
-        [[kind, name]]
+        [[Archsight::Resources.canonical(kind), name]] # a renamed kind is linked under its new name
       end
 
       def in_any_kind(name)

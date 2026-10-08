@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { getKindInstances } from '../../api/client.js'
 import ResourceList from './ResourceList.vue'
 
@@ -9,6 +10,7 @@ const props = defineProps({
   kind: String,
 })
 
+const router = useRouter()
 const kinds = inject('kinds')
 const instances = ref([])
 const total = ref(0)
@@ -22,6 +24,8 @@ async function load() {
   offset = 0
   try {
     const result = await getKindInstances(props.kind, { limit: PAGE_SIZE, offset: 0, output: 'brief' })
+    // a renamed kind opened under its old name (an old link): carry on under the current name
+    if (result.kind && result.kind !== props.kind) router.replace({ name: 'kind', params: { kind: result.kind } })
     instances.value = result.instances || []
     total.value = result.total || 0
     offset = instances.value.length

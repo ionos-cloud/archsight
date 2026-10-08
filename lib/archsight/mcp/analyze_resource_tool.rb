@@ -24,13 +24,13 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
        Example: kind="ApplicationInterface", name="Kubernetes:RestAPI", impact=true
 
     RESOURCE KINDS: TechnologyArtifact, ApplicationComponent, ApplicationInterface,
-    ApplicationService, BusinessRequirement, ComplianceEvidence, and more.
+    ApplicationService, MotivationRequirement, ComplianceEvidence, and more.
   DESC
   arguments do
     required(:kind).filled(:string).description(
       "Resource type to analyze. Common kinds: TechnologyArtifact (repos, code), " \
       "ApplicationComponent (services), ApplicationInterface (APIs), " \
-      "BusinessRequirement (compliance controls), ComplianceEvidence (compliance proof)"
+      "MotivationRequirement (compliance and legal requirements), ComplianceEvidence (compliance proof)"
     )
     required(:name).filled(:string).description(
       "Exact name of the resource (case-sensitive). Use QueryTool first if unsure of exact name."

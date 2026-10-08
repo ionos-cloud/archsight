@@ -84,7 +84,7 @@ class Archsight::Resources::MyResource < Archsight::Resources::Base
     description: 'Custom field description',
     enum: ['value1', 'value2']
 
-  relation :realizes, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationRequirements, :MotivationRequirement
 end
 ```
 

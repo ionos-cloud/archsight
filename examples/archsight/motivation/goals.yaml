@@ -12,7 +12,7 @@ spec:
     outcomes:
       - Outcome:DeveloperProductivity
       - Outcome:ArchitectureVisibility
-    businessRequirements:
+    motivationRequirements:
       - Requirement:QueryLanguage
 ---
 apiVersion: architecture/v1alpha1

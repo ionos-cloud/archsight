@@ -292,7 +292,7 @@ class Archsight::Query::Evaluator
 
     case node.operator
     when "=="
-      instance_kind == node.value.value.to_s
+      instance_kind == Archsight::Resources.canonical(node.value.value)
     when "=~"
       regex = build_regex_from_value(node.value)
       !!(instance_kind =~ regex)
@@ -303,7 +303,7 @@ class Archsight::Query::Evaluator
 
   def evaluate_kind_in_condition(node, instance)
     instance_kind = instance.class.to_s.split("::").last
-    query_values = node.values.map { |v| v.value.to_s }
+    query_values = node.values.map { |v| Archsight::Resources.canonical(v.value) }
     query_values.include?(instance_kind)
   end
 

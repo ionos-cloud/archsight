@@ -47,6 +47,6 @@ class Archsight::Resources::ApplicationInterface < Archsight::Resources::Base
              enum: ["none", "hard coded", "pbac", "abac", "rbac"]
 
   relation :servedBy, :technologyComponents, :TechnologyInterface
-  relation :realizes, :businessConstraints, :BusinessConstraint
+  relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :serves, :dataObjects, :DataObject
 end

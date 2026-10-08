@@ -198,8 +198,8 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
   end
 
   relation :realizes, :strategyCapabilities, :StrategyCapability
-  relation :realizes, :businessConstraints, :BusinessConstraint
-  relation :realizes, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationConstraints, :MotivationConstraint
+  relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :servedBy, :businessActors, :BusinessActor
   relation :servedBy, :applicationServices, :ApplicationService
   relation :exposes, :applicationInterfaces, :ApplicationInterface

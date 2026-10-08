@@ -121,7 +121,7 @@ Examples:
     -> ApplicationInterface              # exposes an interface
     -> "Kubernetes:RestAPI"              # exposes specific interface
     <- ApplicationComponent              # referenced by a component
-    ~> BusinessRequirement               # transitively reaches requirement
+    ~> MotivationRequirement               # transitively reaches requirement
     -> none & <- none                    # orphan (no relations)
     TechnologyArtifact: <- none          # unreferenced artifacts
 
@@ -249,7 +249,7 @@ Large Go codebases:
 
 Resources with compliance chain:
 
-    ~> BusinessRequirement
+    ~> MotivationRequirement
 
 Complex query with grouping:
 

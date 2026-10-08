@@ -34,9 +34,9 @@ Names are unique per kind. Several documents can share one file, separated by `-
 
 | Layer | Kinds | Answers |
 |-------|-------|---------|
-| Motivation | MotivationStakeholder, MotivationGoal, MotivationOutcome | Why? |
+| Motivation | MotivationStakeholder, MotivationGoal, MotivationOutcome, MotivationRequirement, MotivationConstraint | Why? |
 | Strategy | StrategyCapability | What ability do we need? |
-| Business | BusinessActor, BusinessProduct, BusinessProcess, BusinessRequirement, BusinessConstraint | Who does what? |
+| Business | BusinessActor, BusinessProduct, BusinessProcess, BusinessControl | Who does what? |
 | Application | ApplicationService, ApplicationComponent, ApplicationInterface, DataObject | Which software? |
 | Technology | TechnologyService, TechnologyArtifact, TechnologyInterface, TechnologySystemSoftware, TechnologyNode | How is it built and run? |
 | Compliance | ComplianceEvidence | Can we prove it? |

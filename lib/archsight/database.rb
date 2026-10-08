@@ -40,12 +40,19 @@ module Archsight
     end
   end
 
+  # Deprecation is a use of a renamed kind or relation key that was accepted under its old name
+  Deprecation = Struct.new(:ref, :message) do
+    def to_s
+      "#{ref}: #{message}"
+    end
+  end
+
   # Database loads yaml files and folders to create an in-memory representation
   # of the structure. The loading and parsing of files will raise errors
   # if invalid data is passed.
   class Database
     attr_accessor :instances, :verbose, :verify, :compute_annotations, :only_kinds
-    attr_reader :path
+    attr_reader :path, :deprecations
 
     def initialize(path, verbose: false, verify: true, compute_annotations: true, only_kinds: nil)
       @path = path
@@ -54,10 +61,12 @@ module Archsight
       @compute_annotations = compute_annotations
       @only_kinds = only_kinds
       @instances = {}
+      @deprecations = []
     end
 
     def reload!
       @instances = {}
+      @deprecations = []
 
       # load all resources
       Dir.glob(File.join(@path, "**/*.{yaml,md}")).each do |path|
@@ -118,10 +127,47 @@ module Archsight
 
       kind = obj["kind"] || raise("kind not defined")
       klass = Archsight::Resources[kind] || raise("#{kind} is not a valid kind")
+      accept_old_names(obj)
       inst = klass.new(obj, @current_ref)
       raise("metadata name of #{kind} not present") if inst.name.to_s.strip.empty?
 
       inst
+    end
+
+    # Documents may still use the old name of a renamed kind and the old relation keys. They are rewritten to the
+    # current names here, so everything after loading only sees those, and each rewrite is kept as a deprecation
+    # (reported by `archsight lint`).
+    def accept_old_names(obj)
+      kind = obj["kind"]
+      current = Archsight::Resources.canonical(kind)
+      if current != kind
+        deprecate("kind '#{kind}' is renamed to '#{current}'")
+        obj["kind"] = current
+      end
+
+      return unless obj["spec"].is_a?(Hash)
+
+      obj["spec"].each do |verb, keys|
+        next unless keys.is_a?(Hash)
+
+        Archsight::Resources::RELATION_KEY_ALIASES.each do |old_key, new_key|
+          next unless keys.key?(old_key)
+
+          deprecate("relation key '#{old_key}' under '#{verb}' is renamed to '#{new_key}'")
+          keys[new_key] = (Array(keys[new_key]) + Array(keys.delete(old_key))).uniq
+        end
+      end
+    end
+
+    def deprecate(message)
+      @deprecations << Deprecation.new(@current_ref, "#{message} (the old name will be removed in a future release)")
+    end
+
+    # Whether a document of this kind is wanted by the only_kinds filter, whichever of its names either side uses
+    def kind_wanted?(kind)
+      return true unless @only_kinds
+
+      @only_kinds.map { |k| Archsight::Resources.canonical(k) }.include?(Archsight::Resources.canonical(kind))
     end
 
     def load_file(path)
@@ -132,7 +178,7 @@ module Archsight
           next unless obj # skip empty / unknown documents
 
           # Skip resources that don't match only_kinds filter
-          next if @only_kinds && !@only_kinds.include?(obj["kind"])
+          next unless kind_wanted?(obj["kind"])
 
           self << create_valid_instance(obj)
         end

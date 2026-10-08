@@ -5,7 +5,7 @@ require_relative "test_helper"
 class RequirementsTest < Minitest::Test
   YAML_DOC = <<~YAML
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Req:A
       annotations:
@@ -13,19 +13,19 @@ class RequirementsTest < Minitest::Test
         requirement/story: Story **A**
     ---
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Req:B
       annotations:
         requirement/priority: should
     ---
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Req:C
     ---
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Req:Must0
       annotations:
@@ -37,11 +37,11 @@ class RequirementsTest < Minitest::Test
       name: Backup
     spec:
       realizes:
-        businessRequirements: [Req:A]
+        motivationRequirements: [Req:A]
       partiallyRealizes:
-        businessRequirements: [Req:B]
+        motivationRequirements: [Req:B]
       plans:
-        businessRequirements: [Req:C, Req:Must0]
+        motivationRequirements: [Req:C, Req:Must0]
     ---
     apiVersion: architecture/v1alpha1
     kind: ApplicationService
@@ -49,7 +49,7 @@ class RequirementsTest < Minitest::Test
       name: Restore
     spec:
       plans:
-        businessRequirements: [Req:A, Req:B]
+        motivationRequirements: [Req:A, Req:B]
     ---
     apiVersion: architecture/v1alpha1
     kind: ApplicationService

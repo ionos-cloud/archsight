@@ -9,7 +9,7 @@ metadata:
     architecture/tags: documentation,archimate
 spec:
   realizes:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:OpenSource
   servedBy:
     applicationServices:
@@ -27,7 +27,7 @@ metadata:
     architecture/tags: analysis,dependencies
 spec:
   realizes:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:QueryLanguage
   servedBy:
     applicationServices:

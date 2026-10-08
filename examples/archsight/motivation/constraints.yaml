@@ -1,5 +1,5 @@
 apiVersion: architecture/v1alpha1
-kind: BusinessConstraint
+kind: MotivationConstraint
 metadata:
   name: Constraint:GraphVizDependency
   annotations:
@@ -9,7 +9,7 @@ metadata:
     architecture/tags: dependency,graphviz
 ---
 apiVersion: architecture/v1alpha1
-kind: BusinessConstraint
+kind: MotivationConstraint
 metadata:
   name: Constraint:YAMLFormat
   annotations:

@@ -63,10 +63,10 @@ const analysisStatus = computed(() => {
 })
 const hasScript = computed(() => !!annotations.value['analysis/script'])
 const icon = computed(() => ({ View: 'iconoir-table-rows', Requirements: 'iconoir-list' })[props.kind] || 'iconoir-play')
-const title = computed(() => props.name || (props.kind === 'Requirements' ? 'Business Requirements' : 'View'))
+const title = computed(() => props.name || (props.kind === 'Requirements' ? 'Requirements' : 'View'))
 // The "Realized by" column only helps when the requirements come from more than one resource
 const showBy = computed(() => new Set((requirements.value || []).flatMap((r) => r.by.map((b) => `${b.kind}/${b.name}`))).size > 1)
-const priorityLink = (priority) => `/search?q=${encodeURIComponent(`BusinessRequirement: requirement/priority == "${priority}"`)}`
+const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRequirement: requirement/priority == "${priority}"`)}`
 </script>
 
 <template>

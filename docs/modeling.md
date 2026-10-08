@@ -52,6 +52,8 @@ Model **why** the architecture exists.
 | MotivationStakeholder | For roles that have interest in architecture outcomes (CTO, Security Team, Customers) |
 | MotivationGoal | For high-level objectives ("Achieve SOC 2 compliance", "Reduce latency") |
 | MotivationOutcome | For measurable results ("99.9% availability", "Sub-100ms response") |
+| MotivationRequirement | For must-have capabilities (compliance, functional needs) |
+| MotivationConstraint | For limitations (budget, regulations, technical debt) |
 
 **Example chain:** Stakeholder "Security Team" → hasConcern → Goal "Achieve Compliance" → realizes → Requirement "Encrypt data at rest"
 
@@ -64,8 +66,6 @@ Model **who** does **what** in business terms.
 | BusinessActor | For teams, departments, or organizations |
 | BusinessProcess | For workflows that produce business value |
 | BusinessProduct | For offerings to customers (cloud services, APIs) |
-| BusinessRequirement | For must-have capabilities (compliance, functional needs) |
-| BusinessConstraint | For limitations (budget, regulations, technical debt) |
 | BusinessControl | For controls that guide a process (access review, change approval), with an owner and executors |
 
 **Example chain:** Actor "Platform Team" → performedBy → Process "Incident Response" → servedBy → Service "Monitoring"
@@ -117,7 +117,7 @@ Model **infrastructure** and **code**.
 Shows how abstract concepts become concrete:
 
 ```
-BusinessRequirement
+MotivationRequirement
        ↓ realizes
 ApplicationService
        ↓ realizedThrough
@@ -150,12 +150,12 @@ BusinessProcess                             ApplicationService / ApplicationComp
 BusinessControl                                    ↓ evidencedBy
        ↓ satisfies                          ComplianceEvidence
        ↓                                           ↓ satisfies
-       └────────────→ BusinessRequirement ←────────┘
+       └────────────→ MotivationRequirement ←────────┘
 ```
 
 | Kind | Answers | Key relations |
 |------|---------|---------------|
-| BusinessRequirement | What must hold? | satisfied by controls and evidence; realized or planned by applications |
+| MotivationRequirement | What must hold? | satisfied by controls and evidence; realized or planned by applications |
 | BusinessControl | What do we do about it, who does it, how often? | a process is `guidedBy` it; `ownedBy` and `executedBy` actors; `satisfies` requirements; `evidencedBy` evidence |
 | ComplianceEvidence | How is it met, how can it be shown? | `satisfies` requirements; `evidencedBy` from an application, a technology element or a control |
 
@@ -164,7 +164,7 @@ How to model it:
 - **Process side.** Model a control once, let every process it governs point to it with `guidedBy`, and link it with `satisfies` to each requirement it addresses. Give it an owner (the accountable actor) and executors (the actors carrying it out). The `control/status` and `control/frequency` filters find, for example, the controls that are only partially implemented.
 - **Application side.** Whether an application implements a requirement is stated on the application (`realizes`, `plans`, `evidencedBy`), never on the control. Evidence is per resource and requirement: it says how *this* service or component meets *that* requirement.
 - **Evidence of a control.** A control can be `evidencedBy` evidence too. Use it for the records the control itself produces (reviews, diagrams, change history, audit logs) and set `evidence/type` to `process`, `documentation` or `audit-log`. Evidence that an application meets a requirement is linked from the application, not from a control.
-- **Reading it back.** A requirement's page lists its controls and evidence as incoming `satisfies` relations. The "Business Requirements" table of an application page and the `requirements` blocks list what applications implement (`realizes`, `partiallyRealizes`, `plans`); controls are not part of that table.
+- **Reading it back.** A requirement's page lists its controls and evidence as incoming `satisfies` relations. The "Requirements" table of an application page and the `requirements` blocks list what applications implement (`realizes`, `partiallyRealizes`, `plans`); controls are not part of that table.
 
 ```yaml
 # process side
@@ -179,13 +179,13 @@ metadata: { name: Control:ChangeApproval }
 spec:
   ownedBy:    { businessActors: [Team:Management] }
   executedBy: { businessActors: [Team:Operations] }
-  satisfies:  { businessRequirements: [Requirement:ChangeTraceability] }
+  satisfies:  { motivationRequirements: [Requirement:ChangeTraceability] }
 ---
 # application side
 kind: ApplicationService
 metadata: { name: Deployment }
 spec:
-  realizes:    { businessRequirements: [Requirement:ChangeTraceability] }
+  realizes:    { motivationRequirements: [Requirement:ChangeTraceability] }
   evidencedBy: { complianceEvidences: [Evidence:DeploymentAuditLog] }
 ```
 
@@ -194,7 +194,7 @@ spec:
 Shows how requirements are satisfied:
 
 ```
-BusinessRequirement
+MotivationRequirement
        ↑ satisfies
 ComplianceEvidence
        ↑ evidencedBy
@@ -248,7 +248,7 @@ relations:
 ### Compliance Mapping
 
 ```yaml
-kind: BusinessRequirement
+kind: MotivationRequirement
 name: DataEncryption
 annotations:
   requirement/reference: c5-2020, gdpr-2018
@@ -258,3 +258,28 @@ relations:
     outcomes:
       - DataProtection
 ```
+
+## Renamed Kinds
+
+Requirements and constraints are Motivation elements in ArchiMate, so their kinds are named that way:
+
+| Old | New |
+|-----|-----|
+| `BusinessRequirement` | `MotivationRequirement` |
+| `BusinessConstraint` | `MotivationConstraint` |
+| relation key `businessRequirements` | `motivationRequirements` |
+| relation key `businessConstraints` | `motivationConstraints` |
+
+Both kinds moved from the Business to the Motivation layer. Their annotations (`requirement/*`) are unchanged.
+
+For now the old names keep working: files with `kind: BusinessRequirement` or `businessRequirements:` keys load as they are, queries such as `BusinessRequirement: requirement/priority == "must"` and `~> BusinessRequirement` still match, and old links to `/kinds/BusinessRequirement/...` still open. Everything shown (the UI, the API, files written by the inline editor) uses the new names.
+
+`archsight lint` lists every use of an old name as a deprecation, with the file and line, without failing. Replace them, for example with a find and replace over your resources directory (YAML files and the queries in markdown pages):
+
+```bash
+find resources \( -name '*.yaml' -o -name '*.md' \) -exec sed -i.bak \
+  -e 's/BusinessRequirement/MotivationRequirement/g' -e 's/BusinessConstraint/MotivationConstraint/g' \
+  -e 's/businessRequirements/motivationRequirements/g' -e 's/businessConstraints/motivationConstraints/g' {} +
+```
+
+The old names will be removed in a future release.

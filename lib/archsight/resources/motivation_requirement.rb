@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# BusinessRequirement represents functional or non-functional requirements
-class Archsight::Resources::BusinessRequirement < Archsight::Resources::Base
+# MotivationRequirement represents functional or non-functional requirements
+class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
   include_annotations :git, :architecture
 
   description <<~MD
@@ -18,7 +18,7 @@ class Archsight::Resources::BusinessRequirement < Archsight::Resources::Base
 
     ## Usage
 
-    Use BusinessRequirement to represent:
+    Use MotivationRequirement to represent:
 
     - Compliance requirements (C5, ISO 27001)
     - Security requirements
@@ -38,7 +38,7 @@ class Archsight::Resources::BusinessRequirement < Archsight::Resources::Base
   MD
 
   icon "task-list"
-  layer "business"
+  layer "motivation"
 
   annotation "requirement/type",
              description: "Type of requirement (business or legal)",

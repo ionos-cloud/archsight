@@ -16,7 +16,7 @@ const EXAMPLES = {
   kinds: [
     { query: 'kubernetes', note: 'names that contain a word' },
     { query: 'TechnologyArtifact: activity/status == "active"', note: 'active repositories' },
-    { query: 'BusinessRequirement: requirement/priority == "must"', note: 'requirements that must be met' },
+    { query: 'MotivationRequirement: requirement/priority == "must"', note: 'requirements that must be met' },
     { query: '-> ApplicationInterface', note: 'resources that use an interface' },
   ],
   pages: [

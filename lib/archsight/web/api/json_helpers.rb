@@ -74,7 +74,7 @@ module Archsight::Web::API::JsonHelpers
 
   def build_list_response(kind, pagination, instances)
     {
-      kind: kind,
+      kind: Archsight::Resources.canonical(kind),
       total: pagination[:total],
       limit: pagination[:limit],
       offset: pagination[:offset],
@@ -88,7 +88,7 @@ module Archsight::Web::API::JsonHelpers
 
   def build_instance_response(kind, instance)
     {
-      kind: kind,
+      kind: Archsight::Resources.canonical(kind),
       name: instance.name,
       metadata: { annotations: render_annotations(instance.annotations, base: Archsight::Assets.base_dir_for(instance, resources_dir: Archsight.resources_dir)) },
       spec: serialize_spec(instance.spec),

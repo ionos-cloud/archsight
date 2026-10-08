@@ -214,10 +214,10 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
   relation :realizedThrough, :applicationComponents, :ApplicationComponent
   relation :servedBy, :businessActors, :BusinessActor
   relation :servedBy, :technologyServices, :TechnologyService
-  relation :realizes, :businessConstraints, :BusinessConstraint
-  relation :realizes, :businessRequirements, :BusinessRequirement
-  relation :partiallyRealizes, :businessRequirements, :BusinessRequirement
-  relation :plans, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationConstraints, :MotivationConstraint
+  relation :realizes, :motivationRequirements, :MotivationRequirement
+  relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
+  relation :plans, :motivationRequirements, :MotivationRequirement
   relation :realizes, :dataObjects, :DataObject
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
 end

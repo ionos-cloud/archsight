@@ -387,7 +387,7 @@ class APITest < Minitest::Test
   end
 
   def test_get_api_search_includes_highlights_of_the_summary_annotations
-    get "/api/v1/search", q: 'BusinessRequirement: name =~ ".*"', output: "brief"
+    get "/api/v1/search", q: 'MotivationRequirement: name =~ ".*"', output: "brief"
 
     assert_predicate last_response, :ok?
     requirement = json_response["instances"].find { |i| i["highlights"]&.any? }
@@ -412,7 +412,7 @@ class APITest < Minitest::Test
 
   def test_get_api_search_highlights_for_every_output_level
     %w[brief annotations complete].each do |output|
-      get "/api/v1/search", q: 'BusinessRequirement: name =~ ".*"', output: output, limit: 5
+      get "/api/v1/search", q: 'MotivationRequirement: name =~ ".*"', output: output, limit: 5
 
       assert_predicate last_response, :ok?, output
       assert(json_response["instances"].all? { |i| i.key?("highlights") }, "highlights in #{output} output")

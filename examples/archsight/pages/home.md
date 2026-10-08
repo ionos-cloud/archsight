@@ -48,7 +48,8 @@ The layout is free, the bundled example groups by layer:
 ```text
 examples/archsight/
 ├── strategy/      StrategyCapability
-├── business/      BusinessProduct, BusinessProcess, BusinessRequirement
+├── motivation/    MotivationStakeholder, MotivationGoal, MotivationOutcome, MotivationRequirement, MotivationConstraint
+├── business/      BusinessProduct, BusinessProcess
 ├── components/    ApplicationComponent
 ├── interfaces/    ApplicationInterface
 ├── technology/    TechnologyService, TechnologyArtifact

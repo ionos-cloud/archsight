@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# BusinessConstraint represents restrictions or limitations on architecture
-class Archsight::Resources::BusinessConstraint < Archsight::Resources::Base
+# MotivationConstraint represents restrictions or limitations on architecture
+class Archsight::Resources::MotivationConstraint < Archsight::Resources::Base
   include_annotations :git, :architecture
 
   description <<~MD
@@ -18,7 +18,7 @@ class Archsight::Resources::BusinessConstraint < Archsight::Resources::Base
 
     ## Usage
 
-    Use BusinessConstraint to represent:
+    Use MotivationConstraint to represent:
 
     - Regulatory requirements (GDPR, SOX, PCI-DSS)
     - Security policies
@@ -28,5 +28,5 @@ class Archsight::Resources::BusinessConstraint < Archsight::Resources::Base
   MD
 
   icon "prohibition"
-  layer "business"
+  layer "motivation"
 end

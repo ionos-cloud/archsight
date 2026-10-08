@@ -1,5 +1,5 @@
 apiVersion: architecture/v1alpha1
-kind: BusinessRequirement
+kind: MotivationRequirement
 metadata:
   name: Requirement:OpenSource
   annotations:
@@ -15,7 +15,7 @@ spec:
       - Outcome:CommunityAdoption
 ---
 apiVersion: architecture/v1alpha1
-kind: BusinessRequirement
+kind: MotivationRequirement
 metadata:
   name: Requirement:RubyCompatibility
   annotations:
@@ -31,7 +31,7 @@ spec:
       - Outcome:DeveloperProductivity
 ---
 apiVersion: architecture/v1alpha1
-kind: BusinessRequirement
+kind: MotivationRequirement
 metadata:
   name: Requirement:QueryLanguage
   annotations:

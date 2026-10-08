@@ -8,14 +8,14 @@ const props = defineProps({
   data: Object,
 })
 
-// Extract business requirements from relations
+// Extract requirements from relations
 const requirementNames = computed(() => {
   const rels = props.data.relations || {}
   const items = []
   const verbMap = { realizes: 'implemented', partiallyRealizes: 'partial', plans: 'planned' }
   for (const [verb, status] of Object.entries(verbMap)) {
     const kinds = rels[verb] || {}
-    const reqs = kinds.BusinessRequirement || kinds.businessRequirements || []
+    const reqs = kinds.MotivationRequirement || kinds.motivationRequirements || []
     for (const name of reqs) {
       items.push({ name, status, verb })
     }
@@ -31,7 +31,7 @@ watch(requirementNames, async (names) => {
   const results = await Promise.all(
     names.map(async (item) => {
       try {
-        const data = await getInstance('BusinessRequirement', item.name)
+        const data = await getInstance('MotivationRequirement', item.name)
         const annotations = data.metadata?.annotations || {}
         return {
           ...item,
@@ -48,13 +48,13 @@ watch(requirementNames, async (names) => {
 
 function priorityQuery(priority) {
   const instanceName = props.data.name
-  return `/search?q=${encodeURIComponent(`BusinessRequirement: <- "${instanceName}" & requirement/priority == "${priority}"`)}`
+  return `/search?q=${encodeURIComponent(`MotivationRequirement: <- "${instanceName}" & requirement/priority == "${priority}"`)}`
 }
 </script>
 
 <template>
   <article v-if="requirementNames.length" class="requirements-section">
-    <header><h2>Business Requirements</h2></header>
+    <header><h2>Requirements</h2></header>
     <RequirementsTable :items="requirements" :priority-link="priorityQuery" />
   </article>
 </template>
