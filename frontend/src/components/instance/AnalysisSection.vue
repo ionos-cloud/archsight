@@ -27,12 +27,12 @@ const messageIcons = { error: 'xmark-circle', warning: 'warning-triangle', info:
 <style scoped>
 .analysis-heading {
   font-weight: 600;
-  margin: 1rem 0 0.5rem 0;
+  margin: 1rem 0 0.4rem 0;
 }
 
 .analysis-heading.level-0 {
   font-size: var(--fs-md);
-  border-bottom: 1px solid var(--pico-muted-border-color);
+  border-bottom: 1px solid var(--line);
   padding-bottom: 0.25rem;
 }
 
@@ -47,44 +47,54 @@ const messageIcons = { error: 'xmark-circle', warning: 'warning-triangle', info:
   margin: 0;
 }
 
+/* a message is a note, not a box: a coloured edge and icon, the text stays in the normal colour */
 .analysis-message {
+  --msg: #3b82f6;
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
   margin: 0.5rem 0;
-  border-radius: 4px;
+  padding: 0.15rem 0 0.15rem 0.7rem;
+  border-left: 3px solid var(--msg);
 }
 
-.analysis-message i { margin-top: 0.15rem; }
-
-.analysis-message.message-info {
-  background-color: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #3b82f6;
+.analysis-message i {
+  margin-top: 0.15rem;
+  color: var(--msg);
 }
 
-.analysis-message.message-warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  color: #f59e0b;
-}
-
-.analysis-message.message-error {
-  background-color: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
-}
+.analysis-message.message-warning { --msg: #f59e0b; }
+.analysis-message.message-error { --msg: #ef4444; }
 
 .analysis-table-wrapper {
-  margin: 0.75rem 0;
+  margin: 0.5rem 0 0.75rem;
   overflow-x: auto;
+}
+
+.analysis-table-wrapper table {
+  margin: 0;
+  font-size: var(--fs-sm);
+}
+
+.analysis-table-wrapper th,
+.analysis-table-wrapper td {
+  padding: 0.35rem 0.75rem;
+}
+
+/* the first column lines up with the text above, the last with the edge */
+.analysis-table-wrapper th:first-child,
+.analysis-table-wrapper td:first-child { padding-left: 0; }
+
+pre.code {
+  margin: 0.5rem 0 0.75rem;
 }
 
 .analysis-list {
   margin: 0.5rem 0;
   padding-left: 1.5rem;
+  columns: 18rem; /* a long list wraps into columns instead of a tall strip */
 }
 
-.analysis-list li { margin: 0.25rem 0; }
+/* padding, not margin: a margin at the top of a column is dropped and the columns start unevenly */
+.analysis-list li { margin: 0; padding: 0.125rem 0; break-inside: avoid; }
 </style>
