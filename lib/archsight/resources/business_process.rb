@@ -34,4 +34,5 @@ class Archsight::Resources::BusinessProcess < Archsight::Resources::Base
   relation :realizes, :businessRequirements, :BusinessRequirement
   relation :servedBy, :applicationServices, :ApplicationService
   relation :performedBy, :businessActors, :BusinessActor
+  relation :guidedBy, :businessControls, :BusinessControl
 end

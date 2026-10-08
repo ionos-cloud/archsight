@@ -124,6 +124,10 @@ The metamodel defines architectural entities and their relationships across all 
 
 - **Principle**, **Constraint**, **Requirement**, **Gap**, **Work Package**, **Location**
 
+**Governance:**
+
+- **Control**: a decision-making step with accountability and authority, applied to a process or function. ArchiMate has no element for it; Archsight models it as `BusinessControl`, which a `BusinessProcess` is `guidedBy`
+
 ### Critical Relationships
 
 1. **Traceability**: Drivers → Goals → Objectives → Course of Action → Business Elements → Applications → Technology
