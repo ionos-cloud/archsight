@@ -17,3 +17,7 @@ spec:
   realizes:
     businessRequirements:
       - Requirement:QueryLanguage
+  guidedBy:
+    businessControls:
+      - Control:ArchitectureDocumentation
+      - Control:CodeQualityGate

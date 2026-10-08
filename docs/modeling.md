@@ -66,8 +66,11 @@ Model **who** does **what** in business terms.
 | BusinessProduct | For offerings to customers (cloud services, APIs) |
 | BusinessRequirement | For must-have capabilities (compliance, functional needs) |
 | BusinessConstraint | For limitations (budget, regulations, technical debt) |
+| BusinessControl | For controls that guide a process (access review, change approval), with an owner and executors |
 
 **Example chain:** Actor "Platform Team" → performedBy → Process "Incident Response" → servedBy → Service "Monitoring"
+
+**Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Actor "Platform Team". How controls, requirements and evidence fit together is described under Relation Patterns below.
 
 ### Strategy Layer
 
@@ -133,6 +136,57 @@ ApplicationService
 TechnologyService
        ↓ suppliedBy
 TechnologySystemSoftware
+```
+
+### Requirements, Controls and Evidence
+
+A requirement is the point where the process side and the application side of compliance meet:
+
+```
+Process side                                Application side
+
+BusinessProcess                             ApplicationService / ApplicationComponent
+       ↓ guidedBy                                  ↓ realizes / plans
+BusinessControl                                    ↓ evidencedBy
+       ↓ satisfies                          ComplianceEvidence
+       ↓                                           ↓ satisfies
+       └────────────→ BusinessRequirement ←────────┘
+```
+
+| Kind | Answers | Key relations |
+|------|---------|---------------|
+| BusinessRequirement | What must hold? | satisfied by controls and evidence; realized or planned by applications |
+| BusinessControl | What do we do about it, who does it, how often? | a process is `guidedBy` it; `ownedBy` and `executedBy` actors; `satisfies` requirements; `evidencedBy` evidence |
+| ComplianceEvidence | How is it met, how can it be shown? | `satisfies` requirements; `evidencedBy` from an application, a technology element or a control |
+
+How to model it:
+
+- **Process side.** Model a control once, let every process it governs point to it with `guidedBy`, and link it with `satisfies` to each requirement it addresses. Give it an owner (the accountable actor) and executors (the actors carrying it out). The `control/status` and `control/frequency` filters find, for example, the controls that are only partially implemented.
+- **Application side.** Whether an application implements a requirement is stated on the application (`realizes`, `plans`, `evidencedBy`), never on the control. Evidence is per resource and requirement: it says how *this* service or component meets *that* requirement.
+- **Evidence of a control.** A control can be `evidencedBy` evidence too. Use it for the records the control itself produces (reviews, diagrams, change history, audit logs) and set `evidence/type` to `process`, `documentation` or `audit-log`. Evidence that an application meets a requirement is linked from the application, not from a control.
+- **Reading it back.** A requirement's page lists its controls and evidence as incoming `satisfies` relations. The "Business Requirements" table of an application page and the `requirements` blocks list what applications implement (`realizes`, `partiallyRealizes`, `plans`); controls are not part of that table.
+
+```yaml
+# process side
+kind: BusinessProcess
+metadata: { name: Process:ChangeManagement }
+spec:
+  guidedBy:
+    businessControls: [Control:ChangeApproval]
+---
+kind: BusinessControl
+metadata: { name: Control:ChangeApproval }
+spec:
+  ownedBy:    { businessActors: [Team:Management] }
+  executedBy: { businessActors: [Team:Operations] }
+  satisfies:  { businessRequirements: [Requirement:ChangeTraceability] }
+---
+# application side
+kind: ApplicationService
+metadata: { name: Deployment }
+spec:
+  realizes:    { businessRequirements: [Requirement:ChangeTraceability] }
+  evidencedBy: { complianceEvidences: [Evidence:DeploymentAuditLog] }
 ```
 
 ### Compliance Chain

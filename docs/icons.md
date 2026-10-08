@@ -12,6 +12,7 @@ Current icon assignments for each resource type:
 | ApplicationService | `cube` | <i class="iconoir-cube"></i> |
 | BusinessActor | `community` | <i class="iconoir-community"></i> |
 | BusinessConstraint | `prohibition` | <i class="iconoir-prohibition"></i> |
+| BusinessControl | `shield-search` | <i class="iconoir-shield-search"></i> |
 | BusinessProcess | `kanban-board` | <i class="iconoir-kanban-board"></i> |
 | BusinessProduct | `box-iso` | <i class="iconoir-box-iso"></i> |
 | BusinessRequirement | `task-list` | <i class="iconoir-task-list"></i> |

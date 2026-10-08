@@ -25,6 +25,16 @@ class Archsight::Resources::BusinessRequirement < Archsight::Resources::Base
     - Performance requirements
     - Functional specifications
     - Legal obligations (GDPR, NIS2)
+
+    ## Who addresses it
+
+    A requirement is where the process side and the application side meet:
+
+    - **Process side:** a `BusinessControl` `satisfies` the requirement; a process is `guidedBy` the control
+    - **Application side:** applications `realize` or `plan` the requirement and are `evidencedBy` `ComplianceEvidence`,
+      which `satisfies` it
+
+    Both show as incoming relations on the requirement's page.
   MD
 
   icon "task-list"

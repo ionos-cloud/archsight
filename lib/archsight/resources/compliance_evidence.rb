@@ -25,6 +25,13 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
     - Test results and reports
     - Configuration documentation
     - Process documentation
+
+    ## Evidence of what
+
+    - **Of an application:** linked with `evidencedBy` from a service, component or technology element; it says how
+      that resource meets the requirement it `satisfies`
+    - **Of a control:** linked with `evidencedBy` from a `BusinessControl`; the records the control produces
+      (reviews, diagrams, change history, audit logs). Use `evidence/type` `process`, `documentation` or `audit-log`
   MD
 
   icon "shield-check"

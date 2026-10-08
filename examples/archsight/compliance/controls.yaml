@@ -1,0 +1,78 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessControl
+metadata:
+  name: Control:ArchitectureDocumentation
+  annotations:
+    control/id: ARCH-01
+    control/status: implemented
+    control/frequency: event-based
+    control/objective: |
+      Current and complete architecture documentation as the basis for safe operation
+      and for fast fault analysis.
+    control/last-review: '2026-09-01'
+    control/next-review: '2027-09-01'
+    architecture/description: |
+      The architecture model is kept up to date and is accessible to authorized employees.
+      It covers:
+
+      - Components, services and their relations
+      - Interfaces and the data they exchange
+      - Ownership of every component
+
+      Changes to the architecture are documented in the same change.
+
+      ## Best practices
+
+      - Keep the model in version control next to the code it describes
+      - Run `archsight lint` in every pipeline
+      - Review the documentation against the running system at least once a year
+
+      ## Evidence requirements
+
+      | Evidence | Description | Location |
+      |----------|-------------|----------|
+      | Model history | Traceability of changes to the documentation | Git history |
+      | Lint report | Resources are valid and every reference resolves | CI results |
+    architecture/tags: documentation,architecture
+spec:
+  ownedBy:
+    businessActors:
+      - Archsight:Maintainers
+  executedBy:
+    businessActors:
+      - Archsight:Maintainers
+  satisfies:
+    businessRequirements:
+      - Requirement:OpenSource
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessControl
+metadata:
+  name: Control:CodeQualityGate
+  annotations:
+    control/id: DEV-02
+    control/status: partial
+    control/frequency: continuous
+    control/objective: |
+      Every change passes linting, type checking and the test suite before it is merged.
+    control/last-review: '2026-03-01'
+    control/next-review: '2026-09-01'
+    architecture/description: |
+      Changes are merged only when the automated checks pass. The checks cover style,
+      types and tests. Branch protection that makes the gate mandatory is still being rolled out,
+      hence the status `partial`.
+    architecture/tags: quality,ci
+spec:
+  ownedBy:
+    businessActors:
+      - Archsight:Maintainers
+  executedBy:
+    businessActors:
+      - Archsight:Maintainers
+  satisfies:
+    businessRequirements:
+      - Requirement:RubyCompatibility
+  evidencedBy:
+    complianceEvidences:
+      - Archsight:CodeQuality
+      - Archsight:TestCoverage
