@@ -150,27 +150,18 @@ article>header h2 {
   }
 }
 
-/* Generated resource badge - prominent display in header */
+/* Where a generated resource comes from: plain muted text in the header, no box */
 .generated-badge {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
-  font-size: var(--fs-2xs);
-  padding: 6px 12px;
-  background-color: var(--pico-code-background-color);
+  font-size: var(--fs-xs);
   color: var(--pico-muted-color);
-  border-radius: 6px;
-  border: 1px solid var(--pico-muted-border-color);
 }
 
 .generated-badge .generated-script {
   font-weight: 500;
-}
-
-.generated-badge .generated-time {
-  font-size: var(--fs-sm);
-  opacity: 0.8;
 }
 
 /* Mermaid diagrams - base styles overridden by mermaid-layers.css */

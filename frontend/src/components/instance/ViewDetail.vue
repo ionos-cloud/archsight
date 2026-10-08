@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { displayName } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { viewSpec } from '../../composables/useViewSpec.js'
 import ViewResults from './ViewResults.vue'
@@ -26,7 +27,10 @@ useInternalLinks(descEl)
     <header>
       <h2>
         <i v-if="kindMeta" :class="`iconoir-${kindMeta.icon} icon-${kindMeta.layer}`"></i>
-        {{ data.name }}
+        <div class="instance-title-text">
+          <span class="instance-name">{{ displayName(data.name, 'View') }}</span>
+          <span class="instance-kind-subtitle">View</span>
+        </div>
       </h2>
     </header>
     <div ref="descEl" v-if="viewDescription" class="description-box prose" v-html="viewDescription"></div>
@@ -58,6 +62,20 @@ useInternalLinks(descEl)
 
 .view-header h2 i {
   color: var(--pico-primary);
+}
+
+.instance-title-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.instance-kind-subtitle {
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--pico-muted-color);
+  opacity: 0.7;
+  margin-top: 0.1em;
 }
 
 .view-query-display {

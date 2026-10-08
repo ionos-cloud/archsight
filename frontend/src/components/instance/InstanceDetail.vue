@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { getInstanceDot } from '../../api/client.js'
 import { renderDot } from '../../composables/useGraphviz.js'
 import { initSvgPanZoom } from '../../composables/usePanZoom.js'
-import { timeAgo } from '../../composables/useFormatting.js'
+import { timeAgo, displayName } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { renderMermaidIn } from '../../composables/useMermaid.js'
 import { renderDrawioIn } from '../../composables/useDrawio.js'
@@ -148,7 +148,7 @@ function initPanZoomOnGraph() {
       <h2>
         <i v-if="kindMeta" :class="`iconoir-${kindMeta.icon} icon-${kindMeta.layer}`"></i>
         <div class="instance-title-text">
-          <span class="instance-name">{{ data.name }}</span>
+          <span class="instance-name">{{ displayName(data.name, kind) }}</span>
           <span class="instance-kind-subtitle">{{ kind }}</span>
         </div>
       </h2>
