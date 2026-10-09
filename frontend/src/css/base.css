@@ -394,3 +394,48 @@ main .canvas a {
     border-radius: 0;
   }
 }
+
+/* ===== Tag chips: the values of tag annotations, each a link to the search for that value ===== */
+.chip-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.1em 0.7em;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-body);
+  color: inherit;
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chip-symbol {
+  font-size: 1.3em;
+}
+
+/* the namespace of a machine tag (ecosystem:go) is set apart from its value */
+.chip-namespace {
+  padding-right: 0.45em;
+  color: var(--pico-muted-color);
+  border-right: 1px solid var(--line);
+}

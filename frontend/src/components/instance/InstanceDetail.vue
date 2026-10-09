@@ -24,6 +24,7 @@ import AgenticTools from '../artifact/AgenticTools.vue'
 import LicenseInfo from '../artifact/LicenseInfo.vue'
 import ExternalLinks from '../artifact/ExternalLinks.vue'
 import AnnotationRow from '../artifact/AnnotationRow.vue'
+import { LEAD_KEYS } from '../../composables/useAnnotationSymbols.js'
 
 const props = defineProps({
   data: Object,
@@ -88,13 +89,17 @@ const SKIP_PATTERNS = [
   /^architecture\/.+\/modules$/,
 ]
 
+// how a resource is classified comes first (type, role, kind, tags), the rest keeps its order
 const customAnnotations = computed(() => {
-  return Object.entries(annotations.value).filter(([k]) => {
-    if (SKIP_KEYS.has(k)) return false
-    if (SKIP_PREFIXES.some(p => k.startsWith(p))) return false
-    if (SKIP_PATTERNS.some(p => p.test(k))) return false
-    return true
-  })
+  const rank = (key) => { const i = LEAD_KEYS.indexOf(key); return i === -1 ? LEAD_KEYS.length : i }
+  return Object.entries(annotations.value)
+    .filter(([k]) => {
+      if (SKIP_KEYS.has(k)) return false
+      if (SKIP_PREFIXES.some(p => k.startsWith(p))) return false
+      if (SKIP_PATTERNS.some(p => p.test(k))) return false
+      return true
+    })
+    .sort(([a], [b]) => rank(a) - rank(b))
 })
 
 // The graph is only fetched and laid out once it is visible: svg-pan-zoom measures the
@@ -223,7 +228,7 @@ function initPanZoomOnGraph() {
           :annotation-key="key"
           :value="value"
           :kind="kind"
-          :format="data.annotation_formats?.[key] === 'markdown' ? 'markdown' : null"
+          :format="data.annotation_formats?.[key] || null"
         />
       </tbody>
     </table>
