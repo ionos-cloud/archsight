@@ -35,6 +35,9 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
     []
   end
 
+  # Namespaces of the machine tags (namespace:value) that importers write into architecture/tags
+  MACHINE_TAG_NAMESPACES = %w[ecosystem packaging entrypoint linkage].freeze
+
   PALETTE = [
     { fill: "#ddeeff", edge: "#2266cc" },
     { fill: "#ddffd8", edge: "#2a8a1e" },
@@ -121,6 +124,31 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   # @return [Hash] Map of pkg_path => [dep_pkg_path, ...] using "/" separators
   def collect_packages(_repo_root, _modules, _prefix)
     raise NotImplementedError, "#{self.class}#collect_packages must be implemented"
+  end
+
+  # Hook: subclasses that emit ApplicationComponents describe each module here.
+  # @param _repo_root [String] Absolute path to the repository root
+  # @param _rel_dir [String] Directory of the module relative to the root ("." for the root)
+  # @param _mod_name [String] Module name from discover_modules
+  # @return [Hash] { type: "executable|library|module|...", tags: ["ecosystem:go", ...] }, empty when unknown
+  def component_facts(_repo_root, _rel_dir, _mod_name)
+    {}
+  end
+
+  # component/type and the machine tags (namespace:value) in architecture/tags for the facts of component_facts.
+  # The tags a person set stay; machine tags of the importer's namespaces from an earlier run are replaced.
+  def component_annotations(facts, existing_tags: nil)
+    annotations = {}
+    annotations["component/type"] = facts[:type] if facts[:type]
+    annotations["architecture/tags"] = merge_machine_tags(existing_tags, facts[:tags]).join(",") if facts[:tags]&.any?
+    annotations
+  end
+
+  def merge_machine_tags(existing_tags, machine_tags)
+    kept = existing_tags.to_s.split(",").map(&:strip).reject(&:empty?).reject do |tag|
+      MACHINE_TAG_NAMESPACES.include?(tag.split(":", 2).first) && tag.include?(":")
+    end
+    (kept + Array(machine_tags)).uniq
   end
 
   # ── Module coloring ───────────────────────────────────────────────────────

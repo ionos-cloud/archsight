@@ -25,6 +25,28 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     - Frontend applications
     - Background workers
 
+    ## Component types
+
+    Set `component/type` to say what the component is built as; importers set it from the manifests:
+
+    - `executable`: has an entry point and is run or deployed (services, workers, operators, command-line tools)
+    - `library`: imported by other components and not run on its own (shared libraries, SDKs)
+    - `module`: a unit of versioning or dependency that bundles executables and importable libraries (a Go module
+      with `cmd/` and shared packages, a Maven parent, an npm workspace root)
+    - `plugin`: loaded by a host program (kubectl, Terraform, Grafana)
+    - `frontend`: runs in the browser
+    - `other`
+
+    `component/role` refines an executable or plugin (`service`, `cli`, `job`, `operator`, `agent`); importers cannot
+    tell these apart, so it is set by hand and never overwritten. Importers also add machine tags
+    (`namespace:value`) to the regular `architecture/tags`: `ecosystem:go`, `packaging:go-module`,
+    `entrypoint:cmd/api`, `linkage:shared`; the tags a person set stay, and a re-import only replaces the machine
+    tags of these namespaces. Deployable forms (container image, chart, package) are `TechnologyArtifact`s, not
+    component types.
+
+    The computed `component/dependents` counts the components that depend on this one, which tells shared libraries
+    and modules from components nobody consumes.
+
     ## Security and risk modelling
 
     - **Asset at risk:** set `asset/value` and the protection needs; `assesses` from a vulnerability or risk.
@@ -45,6 +67,18 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              description: "Architecture size classification",
              title: "Architecture Size",
              enum: %w[microservice monolith]
+
+  # Classification
+  annotation "component/type",
+             description: "What the component is built as (executable, library, module, ...)",
+             title: "Component Type",
+             enum: %w[executable library module plugin frontend other],
+             filter: :word
+  annotation "component/role",
+             description: "What an executable or plugin does; set by hand",
+             title: "Component Role",
+             enum: %w[service cli job operator agent],
+             filter: :word
 
   # Availability
   annotation "availability/quality",
@@ -195,6 +229,14 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
                         type: Integer do
       sum(outgoing_transitive('TechnologyArtifact: artifact/type == "repo"'), anno_key)
     end
+  end
+
+  computed_annotation "component/dependents",
+                      title: "Dependents",
+                      description: "Number of components that depend directly on this one",
+                      type: Integer,
+                      sidebar: true do
+    count(incoming(:ApplicationComponent))
   end
 
   computed_annotation "scc/language",

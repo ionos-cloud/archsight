@@ -36,6 +36,23 @@ class GoDepResolverTest < Minitest::Test
     end
   end
 
+  def test_keeps_the_classification_and_the_curated_role_of_the_component
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/app\n\ngo 1.21\n\nrequire github.com/example/lib v1.0.0\n")
+      classified = { "component/type" => "executable", "architecture/tags" => "ecosystem:go", "component/role" => "service" }
+
+      db = mock_database({ "example:app" => {}, "example:lib" => {} }, "example:app" => classified)
+      create_handler(path: repo, database: db).execute
+
+      component = YAML.load_stream(File.read(output_path)).find { |r| r["kind"] == "ApplicationComponent" }
+      annotations = component.dig("metadata", "annotations")
+
+      assert_equal "executable", annotations["component/type"]
+      assert_equal "ecosystem:go", annotations["architecture/tags"]
+      assert_equal "service", annotations["component/role"]
+    end
+  end
+
   def test_skips_dep_when_target_not_in_database
     with_repo do |repo|
       write(repo, "go.mod", "module github.com/example/app\n\ngo 1.21\n\nrequire github.com/example/lib v1.0.0\n")
@@ -205,8 +222,10 @@ class GoDepResolverTest < Minitest::Test
   end
 
   # Minimal database stub that returns ApplicationComponent instances keyed by name.
-  def mock_database(components_by_name)
-    instances = components_by_name.transform_values { |spec| MockComponent.new(spec) }
+  def mock_database(components_by_name, annotations_by_name = {})
+    instances = components_by_name.to_h do |name, spec|
+      [name, MockComponent.new(spec, annotations_by_name.fetch(name, {}))]
+    end
     MockDatabase.new(instances)
   end
 
@@ -223,9 +242,9 @@ class GoDepResolverTest < Minitest::Test
   class MockComponent
     attr_reader :annotations
 
-    def initialize(spec)
+    def initialize(spec, annotations = {})
       @spec = spec
-      @annotations = {}
+      @annotations = annotations
     end
 
     def raw

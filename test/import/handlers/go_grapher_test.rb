@@ -163,6 +163,155 @@ class GoGrapherTest < Minitest::Test
     end
   end
 
+  # ── Component classification ──────────────────────────────────────────────
+
+  def component_of(resources, name)
+    resources.find { |r| r["kind"] == "ApplicationComponent" && r.dig("metadata", "name") == name }
+  end
+
+  def annotations_of(component)
+    component.dig("metadata", "annotations")
+  end
+
+  def test_module_with_only_main_packages_is_an_executable
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      write(repo, "internal/store/store.go", "package store\n")
+
+      annotations = annotations_of(component_of(run_full_handler(repo), "example:svc"))
+
+      assert_equal "executable", annotations["component/type"]
+      assert_equal "ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+    end
+  end
+
+  def test_module_without_main_packages_is_a_library
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/util\n\ngo 1.21\n")
+      write(repo, "util.go", "package util\n")
+
+      annotations = annotations_of(component_of(run_full_handler(repo), "example:util"))
+
+      assert_equal "library", annotations["component/type"]
+      assert_equal "ecosystem:go,packaging:go-module", annotations["architecture/tags"]
+    end
+  end
+
+  def test_module_with_main_and_importable_packages_is_a_module
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/platform\n\ngo 1.21\n")
+      write(repo, "cmd/api/main.go", "package main\n")
+      write(repo, "cmd/worker/main.go", "package main\n")
+      write(repo, "pkg/client/client.go", "package client\n")
+
+      annotations = annotations_of(component_of(run_full_handler(repo), "example:platform"))
+
+      assert_equal "module", annotations["component/type"]
+      assert_equal "ecosystem:go,packaging:go-module,entrypoint:cmd/api,entrypoint:cmd/worker",
+                   annotations["architecture/tags"]
+    end
+  end
+
+  def test_tests_ignored_build_files_testdata_and_vendor_do_not_count
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/lib\n\ngo 1.21\n")
+      write(repo, "lib.go", "package lib\n")
+      write(repo, "lib_test.go", "package main\n")
+      write(repo, "gen.go", "//go:build ignore\n\npackage main\n")
+      write(repo, "testdata/main.go", "package main\n")
+      write(repo, "vendor/x/main.go", "package main\n")
+
+      annotations = annotations_of(component_of(run_full_handler(repo), "example:lib"))
+
+      assert_equal "library", annotations["component/type"]
+    end
+  end
+
+  def test_nested_module_is_classified_on_its_own
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      write(repo, "pkg/go.mod", "module github.com/example/myapp/pkg\n\ngo 1.21\n")
+      write(repo, "pkg/helper.go", "package pkg\n")
+
+      resources = run_full_handler(repo)
+
+      assert_equal "executable", annotations_of(component_of(resources, "example:myapp"))["component/type"]
+      assert_equal "library", annotations_of(component_of(resources, "example:myapp:pkg"))["component/type"]
+    end
+  end
+
+  def test_entrypoints_are_limited_and_generated_annotations_are_kept
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/many\n\ngo 1.21\n")
+      12.times { |i| write(repo, "cmd/c#{format("%02d", i)}/main.go", "package main\n") }
+
+      annotations = annotations_of(component_of(run_full_handler(repo), "example:many"))
+
+      assert_equal(10, annotations["architecture/tags"].split(",").count { |t| t.start_with?("entrypoint:") })
+      assert annotations.key?("generated/script")
+    end
+  end
+
+  def test_a_component_type_from_another_source_is_not_overwritten
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      curated = { "example:svc" => { "component/type" => "plugin" } }
+
+      handler = create_handler(path: repo, database: MockDatabase.new(curated))
+      handler.execute
+      annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
+
+      refute annotations.key?("component/type")
+      refute annotations.key?("architecture/tags")
+    end
+  end
+
+  def test_tags_a_person_set_stay_and_machine_tags_are_added
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      existing = { "example:svc" => { "architecture/tags" => "billing, payments" } }
+
+      handler = create_handler(path: repo, database: MockDatabase.new(existing))
+      handler.execute
+      annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
+
+      assert_equal "billing,payments,ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+    end
+  end
+
+  def test_machine_tags_of_an_earlier_run_are_replaced
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      earlier = { "architecture/tags" => "billing,ecosystem:go,entrypoint:cmd/old,team:red",
+                  "generated/script" => "Import:GoGrapher:test" }
+
+      handler = create_handler(path: repo, database: MockDatabase.new("example:svc" => earlier))
+      handler.execute
+      annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
+
+      assert_equal "billing,team:red,ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+    end
+  end
+
+  def test_own_earlier_output_is_regenerated
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      earlier = { "example:svc" => { "component/type" => "library", "generated/script" => "Import:GoGrapher:test" } }
+
+      handler = create_handler(path: repo, database: MockDatabase.new(earlier))
+      handler.execute
+      annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
+
+      assert_equal "executable", annotations["component/type"]
+    end
+  end
+
   # ── Error cases ───────────────────────────────────────────────────────────
 
   def test_missing_path_raises_error
@@ -190,7 +339,7 @@ class GoGrapherTest < Minitest::Test
     FileUtils.rm_rf(repo)
   end
 
-  def create_handler(path:)
+  def create_handler(path:, database: nil)
     annotations = { "import/handler" => "go-grapher" }
     annotations["import/config/path"] = path if path
 
@@ -208,7 +357,7 @@ class GoGrapherTest < Minitest::Test
     progress = Archsight::Import::Progress.new(output: StringIO.new)
     Archsight::Import::Handlers::GoGrapher.new(
       import_resource,
-      database: nil,
+      database: database,
       resources_dir: @resources_dir,
       progress: progress
     )
@@ -222,6 +371,19 @@ class GoGrapherTest < Minitest::Test
     handler = create_handler(path: path)
     handler.execute
     YAML.load_stream(File.read(output_path))
+  end
+
+  # Minimal database stub: ApplicationComponents keyed by name, with the given annotations
+  class MockDatabase
+    Component = Struct.new(:annotations)
+
+    def initialize(annotations_by_name)
+      @instances = annotations_by_name.transform_values { |annotations| Component.new(annotations) }
+    end
+
+    def instances_by_kind(kind)
+      kind == "ApplicationComponent" ? @instances : {}
+    end
   end
 
   class MockGoImport
