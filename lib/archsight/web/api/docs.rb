@@ -18,7 +18,7 @@ module Archsight::Web::API::Docs
   # GET /api/v1/docs/resources/:filename — auto-generated resource docs
   get "/api/v1/docs/resources/:filename" do
     filename = params["filename"].gsub(/[^a-zA-Z0-9_-]/, "")
-    kind_name = filename.split("_").map(&:capitalize).join
+    kind_name = Archsight::Resources.canonical(filename.split("_").map(&:capitalize).join) # an old help link shows the renamed kind
 
     begin
       content = Archsight::Documentation.generate(kind_name)

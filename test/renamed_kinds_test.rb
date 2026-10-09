@@ -244,6 +244,14 @@ class RenamedKindsAPITest < Minitest::Test
     refute_empty json_response["instances"]
   end
 
+  def test_the_generated_help_of_an_old_kind_name_is_the_help_of_the_new_kind
+    get "/api/v1/docs/resources/business_requirement"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "MotivationRequirement"
+    refute_includes last_response.body, "BusinessRequirement"
+  end
+
   def test_an_old_instance_url_still_answers_with_the_new_kind_name
     get "/api/v1/kinds/BusinessRequirement/instances/Requirement:OpenSource"
 
