@@ -56,7 +56,12 @@ const kindGroups = computed(() => {
   return LAYERS
     .map((layer) => ({
       ...layer,
-      kinds: all.filter((k) => (known.has(k.layer) ? k.layer : 'other') === layer.id),
+      // kinds without resources are hidden, except the one being viewed (it stays as the page's context)
+      kinds: all.filter(
+        (k) =>
+          (known.has(k.layer) ? k.layer : 'other') === layer.id &&
+          (k.instance_count > 0 || k.kind === currentKind.value),
+      ),
     }))
     .filter((group) => group.kinds.length)
 })
