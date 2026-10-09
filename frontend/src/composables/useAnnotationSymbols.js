@@ -22,7 +22,6 @@ const SYMBOLS = {
 const LABELS = {
   'architecture/kind': 'Architecture style',
   'architecture/size': 'Architecture size',
-  'component/tags': 'Machine tags',
   'component/dependents': 'Used by',
 }
 
@@ -33,7 +32,6 @@ export const LEAD_KEYS = [
   'architecture/kind',
   'architecture/size',
   'architecture/tags',
-  'component/tags',
   'component/dependents',
 ]
 
