@@ -147,6 +147,8 @@ module Archsight
         obj["kind"] = current
       end
 
+      accept_old_annotations(obj)
+
       return unless obj["spec"].is_a?(Hash)
 
       obj["spec"].each do |verb, keys|
@@ -159,6 +161,28 @@ module Archsight
           keys[new_key] = (Array(keys[new_key]) + Array(keys.delete(old_key))).uniq
         end
       end
+    end
+
+    # A renamed annotation key (page/confluence is now link/confluence) is moved to its new key
+    def accept_old_annotations(obj)
+      annotations = obj.dig("metadata", "annotations")
+      return unless annotations.is_a?(Hash)
+
+      Archsight::Resources::ANNOTATION_ALIASES.each do |old_key, new_key|
+        next unless annotations.key?(old_key)
+
+        deprecate("annotation '#{old_key}' is renamed to '#{new_key}'#{legacy_frontmatter_hint(old_key)}")
+        value = annotations.delete(old_key)
+        annotations[new_key] ||= value
+      end
+    end
+
+    # In a page the annotation is a frontmatter key: `confluence:` is now `links: { confluence: ... }`
+    def legacy_frontmatter_hint(old_key)
+      return "" unless old_key.start_with?("page/")
+
+      name = old_key.delete_prefix("page/")
+      " (frontmatter `#{name}:` is now `links: { #{name}: <url> }`)"
     end
 
     def deprecate(message)

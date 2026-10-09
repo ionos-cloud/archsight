@@ -18,7 +18,9 @@ properties:
   Git Repository: https://git.example.com/org/language-strategy
   Ticket: "{jira:ARCH-42}"
 toc: yes
-confluence: https://confluence.example.com/spaces/ARCH/pages/12345/Language+Strategy
+links:
+  confluence: https://confluence.example.com/spaces/ARCH/pages/12345/Language+Strategy
+  jira: https://jira.example.com/browse/ARCH-12
 ---
 
 # Language Strategy
@@ -34,7 +36,7 @@ confluence: https://confluence.example.com/spaces/ARCH/pages/12345/Language+Stra
 | `properties` | Everything else you want to record, as a mapping of `key: value` pairs (kept in order and shown in the page header). Values are inline markdown: links, emphasis, `{macros}` such as `{jira:KEY}` and `[[wiki links]]` work, bare URLs become links. In the API and in queries it is `page/properties`, one `Key: value` per line |
 | `status` | Free text, e.g. `rfc`, `wip`, `approved` |
 | `toc` | `yes` shows a table of contents |
-| `confluence` | URL of the corresponding Confluence page, shown as a link |
+| `links` | A mapping of names to URLs: where the page lives in other systems (`confluence`, `jira`, `github`, ...), shown as links with the icon of the system. Each entry is the annotation `link/<name>` (`link/confluence`), the same links every other resource can have; a link has no direction, it is where the page comes from or where it is published to. The old `confluence: <url>` key still works, is reported as deprecated by `archsight lint` and is moved into `links` when the page is saved in the editor |
 | `name` | Optional unique name; defaults to the file name without `.md`. Files with the same name in different folders need an explicit `name` |
 
 Markdown files without a frontmatter block are ignored.
@@ -269,16 +271,26 @@ The form has the frontmatter keys as fields and the body as a markdown field (ri
 conflict if the file changed since the form was opened, and a file with broken frontmatter, without
 frontmatter or with a changed name is rejected before it is written.
 
-The saved frontmatter is rewritten in the order `title, tags, author, owner, status, toc, confluence`.
-`name` and keys the form does not know are kept; YAML comments inside the frontmatter are not.
+The saved frontmatter is rewritten in the order `title, tags, author, owner, status, toc, created, updated, properties`.
+`name`, `links` and keys the form does not know are kept (an old `confluence:` key becomes `links: { confluence: ... }`); YAML comments inside the frontmatter are not.
 
 Inside the rich editor, an ` ```asd ` block shows a live [diagram preview](/doc/diagram#preview-in-the-editor).
 
+### Migrating `confluence:` to `links`
+
+`archsight lint` lists every page that still uses `confluence:` (or `page/confluence`) as a deprecation without failing.
+Pages written as markdown can be moved with a find and replace over the resources directory; a page that has `links`
+already keeps that value:
+
+```bash
+find resources -name '*.md' -exec perl -0pi -e 's/^confluence:\s*(\S+)\s*$/links:\n  confluence: $1/m' {} +
+```
+
 ## Exporting to Confluence
 
-`archsight export --to confluence [PAGE...]` publishes pages to the Confluence page named in their `confluence:` frontmatter
+`archsight export --to confluence [PAGE...]` publishes pages to the Confluence page named in their `links.confluence` frontmatter
 (Confluence Data Center; a page URL such as `https://host/spaces/KEY/pages/12345/Title`, `.../pages/viewpage.action?pageId=12345`
-or `.../display/KEY/Title`). Without `PAGE` every page that has a `confluence:` link is exported.
+or `.../display/KEY/Title`). Without `PAGE` every page that has a `confluence` link is exported.
 
 ```bash
 archsight export --to confluence -r resources                 # all linked pages

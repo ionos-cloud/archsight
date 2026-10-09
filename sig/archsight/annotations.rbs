@@ -20,6 +20,7 @@ module Archsight
       def title: () -> String
       def filterable?: () -> boolish
       def list?: () -> bool
+      def unique?: () -> bool
       def summary?: () -> bool
       def has_validation?: () -> boolish
       def value_for: (Resources::Base) -> untyped

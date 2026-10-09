@@ -307,17 +307,24 @@ class Archsight::Query::Evaluator
     query_values.include?(instance_kind)
   end
 
-  def evaluate_name_condition(node, instance)
-    name = instance.name
-    return false unless name
+  # The name of a resource and its aliases (architecture/aliases): the name shortcut finds a resource by either
+  def names_of(instance)
+    aliases = instance.respond_to?(:annotations) ? instance.annotations&.[]("architecture/aliases") : nil
+    [instance.name, *aliases.to_s.split(",").map(&:strip).reject(&:empty?)].compact
+  end
 
+  def evaluate_name_condition(node, instance)
+    return false unless instance.name
+
+    names = names_of(instance)
     case node.operator
     when "=="
-      name == node.value.value.to_s
+      names.include?(node.value.value.to_s)
     when "!="
-      name != node.value.value.to_s
+      names.none?(node.value.value.to_s)
     when "=~"
-      !!(name =~ build_regex_from_value(node.value))
+      regex = build_regex_from_value(node.value)
+      names.any? { |name| name.match?(regex) }
     else
       false
     end
@@ -328,7 +335,7 @@ class Archsight::Query::Evaluator
     return false unless name
 
     query_values = node.values.map { |v| v.value.to_s }
-    query_values.include?(name)
+    names_of(instance).intersect?(query_values)
   end
 
   # Outgoing relations: what does this resource point to?

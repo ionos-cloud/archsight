@@ -5,6 +5,7 @@ require "uri"
 # Architecture module adds common architecture annotations to resource classes
 module Archsight::Annotations::Architecture
   def self.included(base)
+    base.include Archsight::Annotations::Links
     base.class_eval do
       annotation "architecture/abbr",
                  description: "Abbreviation or short name",
@@ -21,6 +22,13 @@ module Archsight::Annotations::Architecture
                  description: "Documentation URL or reference",
                  title: "Documentation",
                  type: URI
+      annotation "architecture/aliases",
+                 description: "Other identifiers of the resource (comma-separated), e.g. ITGS:A001; " \
+                              "unique among the resources of a kind",
+                 title: "Aliases",
+                 filter: :list,
+                 sidebar: false,
+                 unique: true
       annotation "architecture/tags",
                  description: "Comma-separated tags",
                  filter: :list,

@@ -76,7 +76,7 @@ module Archsight
         end
 
         def link(page)
-          value = page.annotations["page/confluence"].to_s.strip
+          value = page.annotations["link/confluence"].to_s.strip
           value.empty? ? nil : value
         end
 

@@ -4,6 +4,9 @@ metadata:
   name: Archsight:CLI
   annotations:
     architecture/abbr: CLI
+    architecture/aliases: ITGS:A001, C5:COS-07
+    link/confluence: https://confluence.example.com/spaces/ARCH/pages/20001/CLI
+    link/jira: https://jira.example.com/browse/ARCH-12
     architecture/description: |
       Command-line interface for archsight providing commands for
       linting resources, generating templates, rendering diagrams,

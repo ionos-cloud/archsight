@@ -288,7 +288,7 @@ module Archsight
     desc "export [PAGE...]", "Export wiki pages to another system"
     long_desc <<~DESC
       Publishes wiki pages to the system named by --to. With no PAGE, every page that links to a target
-      page (for confluence: `confluence: <page URL>` in its frontmatter) is exported. --tag TAG limits the export to pages carrying one of the given tags.
+      page (for confluence: `links: { confluence: <page URL> }` in its frontmatter) is exported. --tag TAG limits the export to pages carrying one of the given tags.
 
       confluence: a page is only overwritten when Confluence still holds what the last export wrote. Pages
       never exported before, or edited in Confluence since, are reported as blocked and not exported until
@@ -348,7 +348,7 @@ module Archsight
       results.each { |r| puts "#{labels.fetch(r.status).ljust(width)}  #{r.page}: #{r.message}" }
       counts = results.group_by(&:status).transform_values(&:count)
       puts counts.map { |status, count| "#{count} #{labels.fetch(status)}" }.join(", ") unless results.empty?
-      puts "Nothing to export: no page has a `confluence:` link." if results.empty?
+      puts "Nothing to export: no page has a `confluence` link." if results.empty?
     end
 
     def configure_resources

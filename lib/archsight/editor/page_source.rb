@@ -12,7 +12,7 @@ module Archsight
     # the counterpart of Editor.to_yaml for kinds that are stored as YAML.
     module PageSource
       # Frontmatter keys the form knows, in the order they are written
-      KNOWN_KEYS = %w[title tags author owner status toc confluence created updated properties].freeze
+      KNOWN_KEYS = %w[title tags author owner status toc created updated properties].freeze
       TIMESTAMPS = %w[created updated].freeze
       ISO_TIMESTAMP = /\A\d{4}-\d{2}-\d{2}(?:T[\d:.]+(?:Z|[+-]\d\d:\d\d))?\z/
 
@@ -33,6 +33,7 @@ module Archsight
       def render_fields(annotations, existing_source)
         extras = existing_meta(existing_source)
         extras.delete_if { |key, _| KNOWN_KEYS.include?(key) }
+        migrate_legacy_links(extras)
         lines = []
         lines << scalar_line("name", extras.delete("name")) if extras.key?("name")
         KNOWN_KEYS.each do |key|
@@ -44,6 +45,17 @@ module Archsight
         lines << YAML.dump(extras).sub(/\A---\s*\n/, "").delete_prefix("{}\n") unless extras.empty?
 
         "---\n#{lines.join}---\n#{body(annotations["page/content"])}"
+      end
+
+      # The old `confluence:` key becomes `links: { confluence: ... }` when the page is saved; the links mapping is
+      # not a form field, so it is kept as it is
+      def migrate_legacy_links(extras)
+        legacy = extras.delete("confluence")
+        return if legacy.nil?
+
+        links = extras["links"].is_a?(Hash) ? extras["links"] : {}
+        links["confluence"] ||= legacy
+        extras["links"] = links
       end
 
       # Check that a submitted file still is the page it replaces
