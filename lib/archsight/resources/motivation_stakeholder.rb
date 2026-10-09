@@ -26,6 +26,11 @@ class Archsight::Resources::MotivationStakeholder < Archsight::Resources::Base
     - Customer representatives
     - Regulatory bodies
     - Technical leadership
+
+    ## Security and risk modelling
+
+    A stakeholder (CISO, risk committee, data protection officer) can `hasConcern` for threats
+    (`MotivationDriver`) and risks (`MotivationAssessment`) in addition to goals and requirements.
   MD
 
   icon "user-crown"
@@ -35,4 +40,6 @@ class Archsight::Resources::MotivationStakeholder < Archsight::Resources::Base
   relation :hasConcern, :motivationRequirements, :MotivationRequirement
   relation :hasConcern, :motivationConstraints, :MotivationConstraint
   relation :hasConcern, :goals, :MotivationGoal
+  relation :hasConcern, :motivationDrivers, :MotivationDriver
+  relation :hasConcern, :motivationAssessments, :MotivationAssessment
 end

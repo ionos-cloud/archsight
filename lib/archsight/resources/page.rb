@@ -20,6 +20,11 @@ class Archsight::Resources::Page < Archsight::Resources::Base
 
     `title`, `author`, `owner`, `status`, `tags` (comma-separated), `toc` (yes/no), `confluence`
     (URL of the linked Confluence page) and an optional `name` (defaults to the file path).
+
+    ## Security and risk modelling
+
+    The text of a policy, a risk register narrative or an incident report is a `Page`. Link the structured
+    resources (`MotivationPrinciple`, `MotivationAssessment`, events) to it with `[[Page]]`.
   MD
 
   icon "page"

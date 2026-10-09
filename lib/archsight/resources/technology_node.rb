@@ -2,7 +2,7 @@
 
 # TechnologyNode represents physical infrastructure (VMs, servers, Kubernetes nodes)
 class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
-  include_annotations :git, :architecture
+  include_annotations :git, :architecture, :asset, :risk
 
   description <<~MD
     Represents physical infrastructure hosting application components.
@@ -25,6 +25,12 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     - Kubernetes nodes
     - Network appliances
     - Storage arrays
+
+    ## Security and risk modelling
+
+    A node is the typical asset of a vulnerability assessment: a scan result is a `MotivationAssessment` of type
+    `vulnerability` that `assesses` the nodes it was found on (one vulnerability, many nodes) and `influences` the
+    loss events it makes possible. Set the `asset/*` profile and `risk/domain` to group nodes by context.
   MD
 
   icon "server-connection"

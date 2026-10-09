@@ -2,7 +2,7 @@
 
 # BusinessProcess represents a structured business workflow or procedure
 class Archsight::Resources::BusinessProcess < Archsight::Resources::Base
-  include_annotations :git, :architecture
+  include_annotations :git, :architecture, :asset, :risk
 
   description <<~MD
     Represents a sequence of business behaviors that achieves a specific outcome.
@@ -25,6 +25,12 @@ class Archsight::Resources::BusinessProcess < Archsight::Resources::Base
     - Change management processes
     - Release deployment pipelines
     - Support escalation processes
+
+    ## Security and risk modelling
+
+    A process is an asset at risk (set `asset/value` and the protection needs `asset/confidentiality`,
+    `asset/integrity`, `asset/availability`), is `guidedBy` the controls that protect it, is hit by loss
+    events and is triggered by events. Group it with `risk/domain`.
   MD
 
   icon "kanban-board"

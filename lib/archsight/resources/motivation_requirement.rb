@@ -2,7 +2,7 @@
 
 # MotivationRequirement represents functional or non-functional requirements
 class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
-  include_annotations :git, :architecture
+  include_annotations :git, :architecture, :risk
 
   description <<~MD
     Represents a statement of need that must be realized by the architecture.
@@ -35,6 +35,14 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
       which `satisfies` it
 
     Both show as incoming relations on the requirement's page.
+
+    ## Security and risk modelling
+
+    - **Control measure:** `requirement/type` `control-measure` is a measure that realizes a control objective
+      (`realizes` a `MotivationGoal`), `mitigates` a risk and is realized by the asset or control that implements it.
+    - **Control requirement / catalogue control:** a control of a standard (C5, ISO 27001) is a requirement of type
+      `compliance`, listed in `requirement/reference`.
+    - **Policy:** a requirement can `realize` a `MotivationPrinciple` (the policy it implements).
   MD
 
   icon "task-list"
@@ -42,7 +50,7 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
 
   annotation "requirement/type",
              description: "Type of requirement (business or legal)",
-             enum: %w[business legal compliance functional non-functional],
+             enum: %w[business legal compliance functional non-functional control-measure],
              summary: true
 
   annotation "requirement/reference",
@@ -64,4 +72,7 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
              format: :markdown
 
   relation :realizes, :outcomes, :MotivationOutcome
+  relation :realizes, :goals, :MotivationGoal
+  relation :realizes, :motivationPrinciples, :MotivationPrinciple
+  relation :mitigates, :motivationAssessments, :MotivationAssessment
 end
