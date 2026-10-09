@@ -214,6 +214,35 @@ A ComplianceEvidence answers "how is the requirement met" in structured markdown
 `evidence/verification`, `evidence/gaps` and `evidence/sources`. Because they are separate annotations they can be
 queried, for example `ComplianceEvidence: evidence/gaps =~ "needs review"`.
 
+### Derived References
+
+Text and diagrams already say which resources they are about, so archsight turns that into relations instead of asking you
+to repeat it in YAML. There are two, and they are never written in a file:
+
+| Relation | Comes from | Where |
+|----------|------------|-------|
+| `mentions` | `[[Target]]`, `[[Kind/Name]]` links and `![[View/Name]]` embeds | the content of a page, the description of any resource, any markdown annotation |
+| `depicts` | the `resource "..."` of the nodes of a diagram | ```` ```asd ```` blocks and `![](file.asd)` files in those texts, and the `architecture/diagram` of any resource |
+
+```
+Page "Architecture overview"  --mentions-->  ApplicationComponent "Core:Database"     ([[Core:Database]])
+Page "Architecture overview"  --depicts--->  ApplicationComponent "Web:API"           (resource "Web:API" in a diagram)
+```
+
+They are rebuilt on every load, so they cannot drift from the text. They show on both sides: a resource lists the pages
+that mention and depict it under Relations ("Page / mentions"), and a page lists what it refers to. Only an exact name counts: a
+page by its name or title, `Kind/Name`, or a resource name that exists once. Part of a name, a name that exists in several
+kinds, and an unknown name do not make a relation (`archsight lint` reports unknown links in pages). Links in code are shown as
+written and do not count, and neither does a resource referring to itself. Views and requirements blocks pick resources with a
+query when they run, so they name nothing.
+
+Derived relations are followed like written ones: queries (`ApplicationComponent: <- Page`, `Page: -> ApplicationComponent`),
+transitive queries and impact analysis. A page that mentions a component therefore shows up when you ask what a change to the
+component affects, which tells you which pages to update, and a resource that only a page mentions is not an orphan
+(`<- none`). To leave them out of a query, exclude the verbs: `ApplicationComponent: ~{!mentions,depicts}> TechnologyArtifact`.
+Computed annotations (costs, teams, repositories) follow written relations only, so a link in a text never changes a number.
+They are not part of the editor's relation form, and `mentions:` or `depicts:` in a file is an unknown verb.
+
 ## Annotation Best Practices
 
 Use annotations to capture metadata:

@@ -20,6 +20,17 @@ module Archsight
       "businessConstraints" => "motivationConstraints"
     }.freeze
 
+    # Relations that are never written in a file: they are derived from what a resource's text and diagram say
+    # (see Archsight::References). `mentions` comes from links in text, `depicts` from the nodes of a diagram.
+    # Every kind can have them towards every kind, so instead of one relation per target kind a class gets one per
+    # verb, under the key DERIVED_KEY, that holds resources of any kind (relations are followed by looking at the
+    # resources they hold, not at the kind they were declared for).
+    DERIVED_VERBS = %i[mentions depicts].freeze
+    DERIVED_KEY = :resources
+
+    # The derived relations of every class, next to the ones it declares: [verb, key, kind]
+    DERIVED_RELATIONS = DERIVED_VERBS.map { |verb| [verb, DERIVED_KEY, "Resource"] }.freeze
+
     # The current name of a kind, whichever of its names is given
     def self.canonical(klass_name)
       name = klass_name.to_s

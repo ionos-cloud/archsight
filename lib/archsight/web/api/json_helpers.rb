@@ -172,11 +172,10 @@ module Archsight::Web::API::JsonHelpers
     relations = {}
 
     instance.class.relations.each do |verb, spec_key, kind|
-      rels = instance.relations(verb, spec_key).map(&:name)
-      next if rels.empty?
-
-      relations[verb] ||= {}
-      relations[verb][kind] = rels
+      found = instance.relations(verb, spec_key)
+      # derived relations hold resources of any kind: grouped by the kind each one is
+      groups = Archsight::Resources::DERIVED_VERBS.include?(verb) ? found.group_by(&:klass) : { kind => found }
+      groups.each { |target_kind, rels| (relations[verb] ||= {})[target_kind] = rels.map(&:name) unless rels.empty? }
     end
 
     relations

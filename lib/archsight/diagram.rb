@@ -44,6 +44,13 @@ module Archsight
       time(profile, :render) { Renderer.render(graph, layout, relation_filter: relation_filter, style: style, id_prefix: id_prefix) }
     end
 
+    # The `resource "..."` references of the nodes of a diagram source, in order and without duplicates. Parses and
+    # builds the graph but does not lay it out, so it is cheap enough to run over every diagram of a model.
+    # @raise [Archsight::Diagram::Error] if the source is not a valid diagram
+    def self.resource_references(source)
+      Graph.build(Parser.parse(source)).nodes_by_id.values.filter_map { |node| node.attrs["resource"] }.uniq
+    end
+
     def self.time(profile, key)
       return yield unless profile
 

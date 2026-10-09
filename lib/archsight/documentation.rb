@@ -104,7 +104,7 @@ module Archsight
           # Skip kinds not in a displayed layer
           next unless LAYER_ORDER.include?(klass.layer)
 
-          klass.relations.each do |verb, _relation_kind, target_klass|
+          klass.declared_relations.each do |verb, _relation_kind, target_klass|
             # Skip relations to excluded kinds
             next if EXCLUDED_KINDS.include?(target_klass.to_s)
 
@@ -149,13 +149,16 @@ module Archsight
       end
 
       def generate_relations_table(klass)
-        return "_No relations defined._" if klass.relations.empty?
+        derived = "Every resource also has the derived relations #{Archsight::Resources::DERIVED_VERBS.map { |v| "`#{v}`" }.join(" and ")} " \
+                  "towards any kind: they follow from links in its text and from its diagrams, so they are not written in files " \
+                  "(see the Modeling Guide)."
+        return "_No relations defined._\n\n#{derived}" if klass.declared_relations.empty?
 
         rows = ["| Relation | Target | Kind |", "|----------|--------|------|"]
-        klass.relations.each do |verb, kind, target_klass|
+        klass.declared_relations.each do |verb, kind, target_klass|
           rows << "| #{verb} | #{target_klass} | #{kind} |"
         end
-        rows.join("\n")
+        "#{rows.join("\n")}\n\n#{derived}"
       end
 
       def format_values(annotation)

@@ -35,10 +35,10 @@ module Archsight
       end
 
       def add_relations(yaml, klass)
-        return if klass.relations.empty?
+        return if klass.declared_relations.empty?
 
         yaml["spec"] = {} if yaml["spec"].nil?
-        klass.relations.each do |verb, relation_kind, _relation_klass|
+        klass.declared_relations.each do |verb, relation_kind, _relation_klass|
           relation_verb = verb.to_s.delete_prefix(":")
           yaml["spec"][relation_verb] ||= {}
           yaml["spec"][relation_verb][relation_kind.to_s] = []

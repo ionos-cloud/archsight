@@ -129,7 +129,7 @@ module Archsight
       klass = Archsight::Resources[kind]
       return [] unless klass
 
-      klass.relations
+      klass.declared_relations # derived relations are not written in files
     end
 
     # Get unique verbs for a resource kind's relations

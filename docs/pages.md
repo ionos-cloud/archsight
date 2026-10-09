@@ -193,6 +193,15 @@ data-status>` around the source): the frontend loads the rows from `GET /api/v1/
 never runs the query. A block with a missing or unparsable `of`, an unknown key, priority or status shows an error box with the
 source, and `archsight lint` reports it.
 
+## What a page refers to
+
+What a page says about the architecture becomes relations without anything to write: `[[Core:Database]]` or `[[Kind/Name]]` in the
+text makes the page `mention` that resource, and a resource in a diagram of the page (an ```` ```asd ```` block or an embedded
+`.asd` file) makes the page `depict` it. The resource then lists the page under Relations, and the page lists the resource, so you
+can see which pages talk about a component, and which pages to review when it changes (impact analysis includes them). Only exact
+names count and links in code are ignored. The same applies to the description and the diagram of every other resource. See
+[Derived references](modeling.md#derived-references).
+
 ## Macros
 
 Inline macros are written `{name:arguments}` and named like the macros of Confluence. They work inside a sentence, a

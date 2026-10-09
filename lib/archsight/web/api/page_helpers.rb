@@ -67,13 +67,14 @@ module Archsight::Web::API::PageHelpers
     rest.to_s.lstrip
   end
 
-  # Other pages linking to this page with [[name]], [[title]] (optionally with |label)
+  # The other pages that link to this page with [[name]] or [[title]] (optionally with |label): the pages that mention it
+  # (see Archsight::References), so a link in code does not count and a page is not listed twice.
   def page_backlinks(page)
-    targets = [page.name, page.title].map { |t| Regexp.escape(t.to_s) }.uniq.join("|")
-    pattern = /\[\[\s*(?:#{targets})\s*(?:\||\]\])/i
-    db.instances_by_kind("Page").values
-      .select { |other| other != page && other.annotations["page/content"].to_s.match?(pattern) }
-      .sort_by(&:name)
-      .map { |other| { name: other.name, title: other.title } }
+    page.references
+        .select { |ref| ref[:verb] == :mentions && ref[:instance].klass == "Page" && !ref[:instance].equal?(page) }
+        .map { |ref| ref[:instance] }
+        .uniq
+        .sort_by(&:name)
+        .map { |other| { name: other.name, title: other.title } }
   end
 end
