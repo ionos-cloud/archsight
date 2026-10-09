@@ -49,7 +49,7 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
              description: "Regulatory or standard reference (comma-separated for multiple)",
              filter: :list,
              enum: %w[c5-2020 itgs-2023 gdpr-2018 nis1 nis2 iso27001 sox pci-dss hipaa eu-data-act-2025 ens
-                      iso27001-2022],
+                      iso27001-2022 vsa-2023 con-11-1],
              summary: true
 
   annotation "requirement/priority",

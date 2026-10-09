@@ -188,6 +188,43 @@ class APITest < Minitest::Test
     assert_includes data["metadata"]["annotations"]["architecture/diagram"], 'theme "compact"'
   end
 
+  def test_get_instance_renders_the_markdown_annotations_of_the_kind
+    get "/api/v1/kinds/ComplianceEvidence/instances/Archsight:TestCoverage"
+
+    assert_predicate last_response, :ok?
+    annotations = json_response["metadata"]["annotations"]
+
+    # evidence/* fields are defined with format :markdown, so the server delivers HTML
+    assert_includes annotations["evidence/mechanism"], "<li>Minitest suite run in CI"
+    assert_includes annotations["evidence/mechanism"], "<code>bundle exec rake test</code>"
+    assert_includes annotations["evidence/coverage"], "<strong>web frontend</strong>"
+    # architecture/description keeps being rendered
+    assert_includes annotations["architecture/description"], "<p>"
+    # annotations without markdown format stay as written
+    assert_equal "technical-control", annotations["evidence/type"]
+  end
+
+  def test_get_instance_reports_the_annotation_formats
+    get "/api/v1/kinds/ComplianceEvidence/instances/Archsight:TestCoverage"
+
+    formats = json_response["annotation_formats"]
+
+    assert_equal "markdown", formats["evidence/mechanism"]
+    assert_equal "markdown", formats["evidence/operatorView"]
+    assert_equal "tag_word", formats["evidence/status"]
+  end
+
+  def test_compliance_evidence_defines_the_structured_fields_as_markdown
+    klass = Archsight::Resources["ComplianceEvidence"]
+    keys = %w[evidence/mechanism evidence/coverage evidence/operatorView evidence/verification evidence/gaps evidence/sources]
+
+    keys.each do |key|
+      assert_equal :markdown, klass.annotation_format(key), key
+    end
+    # they must not use up the summary slots (at most three per kind)
+    assert_equal %w[evidence/type evidence/status], klass.summary_annotations.map(&:key)
+  end
+
   def test_get_instance_without_a_diagram_annotation_has_no_diagram
     name = Archsight::Web::Application.database.instances_by_kind("TechnologyArtifact").values.first.name
     get "/api/v1/kinds/TechnologyArtifact/instances/#{name}"

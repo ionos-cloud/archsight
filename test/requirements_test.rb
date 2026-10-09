@@ -128,3 +128,72 @@ class RequirementsTest < Minitest::Test
     assert_raises(Archsight::Query::QueryError) { Archsight::Requirements.collect(@db, of: "ApplicationService: (((") }
   end
 end
+
+# Components answer requirements themselves (not only through a service) and carry their own evidence
+class ApplicationComponentRequirementsTest < Minitest::Test
+  YAML_DOC = <<~YAML
+    apiVersion: architecture/v1alpha1
+    kind: MotivationRequirement
+    metadata:
+      name: Req:Encryption
+      annotations:
+        requirement/priority: must
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ComplianceEvidence
+    metadata:
+      name: Evidence:TLS
+      annotations:
+        evidence/mechanism: |
+          - TLS terminated at the gateway
+    spec:
+      satisfies:
+        motivationRequirements: [Req:Encryption]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ApplicationComponent
+    metadata:
+      name: Gateway
+    spec:
+      realizes:
+        motivationRequirements: [Req:Encryption]
+      evidencedBy:
+        complianceEvidences: [Evidence:TLS]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ApplicationComponent
+    metadata:
+      name: Worker
+    spec:
+      plans:
+        motivationRequirements: [Req:Encryption]
+  YAML
+
+  def setup
+    @dir = Dir.mktmpdir
+    File.write(File.join(@dir, "all.yaml"), YAML_DOC)
+    @db = Archsight::Database.new(@dir)
+    @db.reload!
+  end
+
+  def teardown
+    FileUtils.rm_rf(@dir)
+  end
+
+  def test_components_realize_and_plan_requirements
+    entry = Archsight::Requirements.collect(@db, of: "ApplicationComponent:").find { |e| e[:name] == "Req:Encryption" }
+
+    assert_equal "implemented", entry[:status]
+    by = entry[:by].map { |b| [b[:kind], b[:name], b[:status]] }
+
+    assert_equal [%w[ApplicationComponent Gateway implemented], %w[ApplicationComponent Worker planned]], by
+  end
+
+  def test_a_component_is_evidenced_by_compliance_evidence
+    gateway = @db.instance_by_kind("ApplicationComponent", "Gateway")
+    evidence = @db.instance_by_kind("ComplianceEvidence", "Evidence:TLS")
+
+    assert_equal [evidence], gateway.relations(:evidencedBy, :complianceEvidences)
+    assert_equal [gateway], evidence.references_grouped.dig("ApplicationComponent", :evidencedBy)
+  end
+end

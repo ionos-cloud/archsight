@@ -223,6 +223,7 @@ function initPanZoomOnGraph() {
           :annotation-key="key"
           :value="value"
           :kind="kind"
+          :format="data.annotation_formats?.[key] === 'markdown' ? 'markdown' : null"
         />
       </tbody>
     </table>

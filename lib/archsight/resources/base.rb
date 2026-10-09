@@ -111,6 +111,17 @@ module Archsight
         annotation_matching(key)&.format
       end
 
+      # The formats this kind defines for the given annotation keys, `{ "evidence/gaps" => "markdown" }` (keys without
+      # a format are left out). The frontend shows each value accordingly.
+      def self.annotation_formats(keys)
+        formats = {} #: Hash[String, String]
+        keys.each do |key|
+          format = annotation_format(key)
+          formats[key] = format.to_s if format
+        end
+        formats
+      end
+
       def self.annotation_enum(key)
         annotation_matching(key)&.enum
       end

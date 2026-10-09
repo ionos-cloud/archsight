@@ -47,5 +47,33 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
              enum: %w[implemented partial not-implemented],
              summary: true
 
+  # The structured answer to "how does the evidenced resource meet the requirement": one markdown field per
+  # question. `architecture/description` stays a short summary; the fields hold the detail.
+  annotation "evidence/mechanism",
+             description: "How the requirement is implemented: the concrete mechanism and where it lives " \
+                          "(code, chart, configuration), as a short markdown list",
+             format: :markdown
+
+  annotation "evidence/coverage",
+             description: "What the mechanism covers and what it does not (data, flows, tenants, environments)",
+             format: :markdown
+
+  annotation "evidence/operatorView",
+             description: "Whether the mechanism holds against operators (admins, platform staff) or only against " \
+                          "other tenants; names the privileged paths",
+             format: :markdown
+
+  annotation "evidence/verification",
+             description: "How effectiveness is verified: tests, audits, documents; says so when there are none",
+             format: :markdown
+
+  annotation "evidence/gaps",
+             description: "Remaining gaps and open questions, the most important first",
+             format: :markdown
+
+  annotation "evidence/sources",
+             description: "Where the statements come from: repositories and files, wiki pages, tickets",
+             format: :markdown
+
   relation :satisfies, :motivationRequirements, :MotivationRequirement
 end

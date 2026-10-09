@@ -205,6 +205,15 @@ Technology elements such as a Kubernetes cluster runtime can plan, realize and b
 for requirements directly, so the requirement does not have to be attached to a placeholder
 ApplicationService. Applications deployed on them point to the TechnologyService with `servedBy`.
 
+ApplicationComponents can be evidenced as well (`realizes` / `plans motivationRequirements`, `evidencedBy
+complianceEvidences`), so requirements can be answered per component and not only per service.
+
+A ComplianceEvidence answers "how is the requirement met" in structured markdown fields next to
+`architecture/description` (kept as a short summary): `evidence/mechanism`, `evidence/coverage`,
+`evidence/operatorView` (does it hold against operators or only against other tenants),
+`evidence/verification`, `evidence/gaps` and `evidence/sources`. Because they are separate annotations they can be
+queried, for example `ComplianceEvidence: evidence/gaps =~ "needs review"`.
+
 ## Annotation Best Practices
 
 Use annotations to capture metadata:

@@ -30,6 +30,7 @@ module Archsight
       def self.register_annotation: (Annotations::Annotation) -> void
       def self.annotation_title: (String) -> String
       def self.annotation_format: (String) -> Symbol?
+      def self.annotation_formats: (Array[String]) -> Hash[String, String]
       def self.annotation_enum: (String) -> Array[String]?
       def self.icon: (?String?) -> String
       def self.layer: (?String?) -> String

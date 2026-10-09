@@ -346,4 +346,7 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationComponents, :ApplicationComponent
+  relation :realizes, :motivationRequirements, :MotivationRequirement
+  relation :plans, :motivationRequirements, :MotivationRequirement
+  relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
 end
