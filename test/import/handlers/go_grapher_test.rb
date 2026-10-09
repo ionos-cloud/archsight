@@ -182,7 +182,7 @@ class GoGrapherTest < Minitest::Test
       annotations = annotations_of(component_of(run_full_handler(repo), "example:svc"))
 
       assert_equal "executable", annotations["component/type"]
-      assert_equal "ecosystem:go,packaging:go-module,entrypoint:.", annotations["component/tags"]
+      assert_equal "ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
     end
   end
 
@@ -194,7 +194,7 @@ class GoGrapherTest < Minitest::Test
       annotations = annotations_of(component_of(run_full_handler(repo), "example:util"))
 
       assert_equal "library", annotations["component/type"]
-      assert_equal "ecosystem:go,packaging:go-module", annotations["component/tags"]
+      assert_equal "ecosystem:go,packaging:go-module", annotations["architecture/tags"]
     end
   end
 
@@ -209,7 +209,7 @@ class GoGrapherTest < Minitest::Test
 
       assert_equal "module", annotations["component/type"]
       assert_equal "ecosystem:go,packaging:go-module,entrypoint:cmd/api,entrypoint:cmd/worker",
-                   annotations["component/tags"]
+                   annotations["architecture/tags"]
     end
   end
 
@@ -249,7 +249,7 @@ class GoGrapherTest < Minitest::Test
 
       annotations = annotations_of(component_of(run_full_handler(repo), "example:many"))
 
-      assert_equal(10, annotations["component/tags"].split(",").count { |t| t.start_with?("entrypoint:") })
+      assert_equal(10, annotations["architecture/tags"].split(",").count { |t| t.start_with?("entrypoint:") })
       assert annotations.key?("generated/script")
     end
   end
@@ -265,7 +265,36 @@ class GoGrapherTest < Minitest::Test
       annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
 
       refute annotations.key?("component/type")
-      refute annotations.key?("component/tags")
+      refute annotations.key?("architecture/tags")
+    end
+  end
+
+  def test_tags_a_person_set_stay_and_machine_tags_are_added
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      existing = { "example:svc" => { "architecture/tags" => "billing, payments" } }
+
+      handler = create_handler(path: repo, database: MockDatabase.new(existing))
+      handler.execute
+      annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
+
+      assert_equal "billing,payments,ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+    end
+  end
+
+  def test_machine_tags_of_an_earlier_run_are_replaced
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      earlier = { "architecture/tags" => "billing,ecosystem:go,entrypoint:cmd/old,team:red",
+                  "generated/script" => "Import:GoGrapher:test" }
+
+      handler = create_handler(path: repo, database: MockDatabase.new("example:svc" => earlier))
+      handler.execute
+      annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
+
+      assert_equal "billing,team:red,ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
     end
   end
 

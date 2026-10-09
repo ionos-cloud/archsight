@@ -38,10 +38,11 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     - `other`
 
     `component/role` refines an executable or plugin (`service`, `cli`, `job`, `operator`, `agent`); importers cannot
-    tell these apart, so it is set by hand and never overwritten. `component/tags` holds machine tags
-    (`namespace:value`, comma-separated) written by importers: `ecosystem:go`, `packaging:go-module`,
-    `entrypoint:cmd/api`, `linkage:shared`. They are kept apart from the curated `architecture/tags`. Deployable
-    forms (container image, chart, package) are `TechnologyArtifact`s, not component types.
+    tell these apart, so it is set by hand and never overwritten. Importers also add machine tags
+    (`namespace:value`) to the regular `architecture/tags`: `ecosystem:go`, `packaging:go-module`,
+    `entrypoint:cmd/api`, `linkage:shared`; the tags a person set stay, and a re-import only replaces the machine
+    tags of these namespaces. Deployable forms (container image, chart, package) are `TechnologyArtifact`s, not
+    component types.
 
     The computed `component/dependents` counts the components that depend on this one, which tells shared libraries
     and modules from components nobody consumes.
@@ -68,8 +69,6 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              enum: %w[microservice monolith]
 
   # Classification
-  MACHINE_TAG = /\A[a-z][a-z0-9-]*:[^\s,]+\z/
-
   annotation "component/type",
              description: "What the component is built as (executable, library, module, ...)",
              title: "Component Type",
@@ -80,12 +79,6 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              title: "Component Role",
              enum: %w[service cli job operator agent],
              filter: :word
-  annotation "component/tags",
-             description: "Machine tags (namespace:value, comma-separated) set by importers: ecosystem, packaging, " \
-                          "entrypoint, linkage",
-             title: "Machine Tags",
-             filter: :list,
-             validator: ->(value) { "'#{value}' is not a machine tag (namespace:value)" unless value.match?(MACHINE_TAG) }
 
   # Availability
   annotation "availability/quality",

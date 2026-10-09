@@ -71,7 +71,8 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
       interface_names = specs.filter_map { |s| interface_name_from_spec(s, visibility: visibility) }
                              .select { |n| existing_interfaces.key?(n) }
 
-      facts = curated_component_type?(comp_name) ? {} : component_facts(path, rel_dir, mod_name)
+      existing = database&.instances_by_kind("ApplicationComponent")&.[](comp_name)
+      facts = curated_component_type?(existing) ? {} : component_facts(path, rel_dir, mod_name)
 
       comp_spec = { "realizedThrough" => { "technologyArtifacts" => [artifact_name] } }
       comp_spec["exposes"] = { "applicationInterfaces" => interface_names } if interface_names.any?
@@ -83,7 +84,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
         kind: "ApplicationComponent",
         name: comp_name,
         spec: comp_spec,
-        annotations: component_annotations(facts)
+        annotations: component_annotations(facts, existing_tags: existing&.annotations&.[]("architecture/tags"))
       )
       output << YAML.dump(component)
     end
@@ -142,8 +143,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
 
   # A component type another source set (a person or an earlier import) is kept; this import's own earlier
   # output is regenerated.
-  def curated_component_type?(comp_name)
-    existing = database&.instances_by_kind("ApplicationComponent")&.[](comp_name)
+  def curated_component_type?(existing)
     return false unless existing&.annotations&.key?("component/type")
 
     existing.annotations["generated/script"] != import_resource.name

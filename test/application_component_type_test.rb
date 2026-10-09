@@ -12,7 +12,7 @@ class ApplicationComponentTypeTest < Minitest::Test
       name: Lib:Shared
       annotations:
         component/type: library
-        component/tags: ecosystem:go,packaging:go-module
+        architecture/tags: ecosystem:go,packaging:go-module
     spec: {}
     ---
     apiVersion: architecture/v1alpha1
@@ -22,7 +22,7 @@ class ApplicationComponentTypeTest < Minitest::Test
       annotations:
         component/type: executable
         component/role: service
-        component/tags: ecosystem:go,entrypoint:cmd/api
+        architecture/tags: ecosystem:go,entrypoint:cmd/api
     spec:
       dependsOn:
         applicationComponents:
@@ -62,18 +62,12 @@ class ApplicationComponentTypeTest < Minitest::Test
     refute annotation("component/role").valid?("daemon")
   end
 
-  def test_tags_must_be_machine_tags
-    tags = annotation("component/tags")
+  def test_there_is_one_tag_annotation_and_it_takes_machine_tags
+    keys = Archsight::Resources::ApplicationComponent.annotations.map(&:key)
 
-    assert tags.valid?("ecosystem:go,packaging:go-module,entrypoint:cmd/api,linkage:header-only")
-    refute tags.valid?("go")
-    refute tags.valid?("Ecosystem:go")
-    refute tags.valid?("ecosystem:go,library")
-  end
-
-  def test_component_tags_are_a_list_apart_from_the_curated_tags
-    assert_predicate annotation("component/tags"), :list?
-    refute_equal annotation("architecture/tags"), annotation("component/tags")
+    assert_includes keys, "architecture/tags"
+    refute_includes keys, "component/tags"
+    assert annotation("architecture/tags").valid?("rest,ecosystem:go,entrypoint:cmd/api")
   end
 
   def test_summary_annotations_stay_within_the_limit
@@ -96,7 +90,7 @@ class ApplicationComponentTypeTest < Minitest::Test
   def test_components_can_be_found_by_type_and_by_machine_tag
     with_db do |db|
       by_type = db.query('ApplicationComponent: component/type == "library"').map(&:name)
-      by_tag = db.query('ApplicationComponent: component/tags == "entrypoint:cmd/api"').map(&:name)
+      by_tag = db.query('ApplicationComponent: architecture/tags == "entrypoint:cmd/api"').map(&:name)
 
       assert_equal ["Lib:Shared"], by_type
       assert_equal ["App:Api"], by_tag

@@ -7,12 +7,11 @@ metadata:
     architecture/description: |
       Model Context Protocol server exposing architecture query and
       analysis tools for AI assistants like Claude.
-    architecture/tags: mcp,ai,claude
+    architecture/tags: mcp,ai,claude,ecosystem:ruby,packaging:gem
     architecture/kind: hexagonal
     architecture/size: microservice
     component/type: executable
     component/role: service
-    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:
@@ -30,12 +29,11 @@ metadata:
     architecture/description: |
       REST API component serving the Vue SPA and providing JSON endpoints
       for kinds, instances, and search functionality with OpenAPI documentation.
-    architecture/tags: rest,api,json
+    architecture/tags: rest,api,json,ecosystem:ruby,packaging:gem
     architecture/kind: hexagonal
     architecture/size: microservice
     component/type: executable
     component/role: service
-    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:
@@ -53,11 +51,10 @@ metadata:
     architecture/description: |
       Query engine implementing the archsight query language with
       lexer, parser, AST, and evaluator components.
-    architecture/tags: query,parser,evaluator
+    architecture/tags: query,parser,evaluator,ecosystem:ruby,packaging:gem
     architecture/kind: hexagonal
     architecture/size: microservice
     component/type: library
-    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:
@@ -72,11 +69,10 @@ metadata:
     architecture/description: |
       In-memory database loading YAML resources from disk, managing
       instances, and providing query execution capabilities.
-    architecture/tags: database,yaml,loading
+    architecture/tags: database,yaml,loading,ecosystem:ruby,packaging:gem
     architecture/kind: hexagonal
     architecture/size: microservice
     component/type: library
-    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:

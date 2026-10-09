@@ -150,10 +150,10 @@ Model **software** that supports the business.
 
 Components are not all alike: some are run, some are only imported, some bundle both. Say which with `component/type`
 (`executable`, `library`, `module`, `plugin`, `frontend`, `other`) and, for executables and plugins, what they do with
-`component/role` (`service`, `cli`, `job`, `operator`, `agent`). Importers set `component/type` and `component/tags`
-(machine tags such as `ecosystem:go`, `packaging:go-module`, `entrypoint:cmd/api`, `linkage:shared`) from the manifests;
-`component/role` is set by hand and never overwritten. Machine tags are `namespace:value` and live in `component/tags`,
-apart from the free `architecture/tags`. The computed `component/dependents` counts the components that depend on a
+`component/role` (`service`, `cli`, `job`, `operator`, `agent`). Importers set `component/type` and add machine tags
+(`namespace:value`, such as `ecosystem:go`, `packaging:go-module`, `entrypoint:cmd/api`, `linkage:shared`) to the regular
+`architecture/tags` from the manifests; the tags a person set stay, and a re-import only replaces the machine tags of
+those namespaces. `component/role` is set by hand and never overwritten. The computed `component/dependents` counts the components that depend on a
 component, which shows how widely a library or module is shared.
 
 | Ecosystem | Executable | Library | Module (bundles both) |
