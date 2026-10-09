@@ -48,12 +48,12 @@ Icons and graph nodes take the colour of their layer.
 
 | Layer | Colour | Graph (light) | Icon |
 |-------|--------|---------------|------|
-| Strategy | orange | `#F4A261` | `#D4824A` |
 | Motivation | purple | `#CE93D8` | `#AB47BC` |
+| Strategy | orange | `#F4A261` | `#D4824A` |
+| Implementation & Migration | rose | `#F48FB1` | `#E0527F` |
 | Business | yellow | `#F9DC5C` | `#D4B83C` |
 | Application | blue | `#6CBEED` | `#4A9ECD` |
 | Technology | green | `#8AC926` | `#7AB316` |
-| Implementation & Migration | rose | `#F48FB1` | `#E0527F` |
 | Other | gray | `#CCCCCC` | `#999999` |
 
 ## Icon Categories

@@ -1,6 +1,7 @@
 <script setup>
 import { computed, inject } from 'vue'
 import { useRoute } from 'vue-router'
+import { LAYER_IDS } from '../../composables/useLayers.js'
 
 // How many hits each kind has (by_kind of the search response); a chip narrows the search to that kind.
 // The selected chip is outlined in its layer colour, like the selected kind in the sidebar.
@@ -9,7 +10,7 @@ const props = defineProps({
   selected: { type: String, default: null },
 })
 
-const LAYERS = ['strategy', 'motivation', 'business', 'application', 'technology', 'implementation', 'other']
+const LAYERS = LAYER_IDS
 
 const route = useRoute()
 const kinds = inject('kinds', null)
