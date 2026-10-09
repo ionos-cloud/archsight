@@ -21,20 +21,20 @@ class Archsight::Resources::ImplementationWorkPackage < Archsight::Resources::Ba
 
     - Projects and roadmap items that move the architecture from one plateau to the next
     - Measures and realisation plans of an ISMS (due date, status, owner)
-    - Remediation of a risk, vulnerability or audit finding (`mitigates` the `MotivationAssessment`)
+    - Remediation of a risk, vulnerability or audit finding (the `MotivationAssessment` is `mitigatedBy` the work package)
     - Audit programmes and recurring reviews
 
     ## How it connects
 
-    - `ownedBy` the accountable actor, `performedBy` the actors that carry it out
+    - `ownedBy` the accountable actor or role, `performedBy` the actors or roles that carry it out
     - `realizes` deliverables (its results), requirements and goals
-    - `mitigates` the assessments (risks, findings) it treats and `affects` the assets it changes
+    - `affects` the assets it changes; the assessments (risks, findings) it treats are `mitigatedBy` it (written on the assessment)
     - `triggers` the work packages that follow it; an `ImplementationEvent` can trigger it
     - A `ImplementationGap` is `closedBy` it
 
     ## Security and risk modelling
 
-    Set `workpackage/type` `remediation` and link `mitigates` to the risk or finding to see what is open; filter
+    Set `workpackage/type` `remediation` and list the work package under `mitigatedBy` of the risk or finding to see what is open; filter
     by `workpackage/status`, `workpackage/due` and `risk/domain` for the plan of one domain.
   MD
 
@@ -70,10 +70,11 @@ class Archsight::Resources::ImplementationWorkPackage < Archsight::Resources::Ba
 
   relation :ownedBy, :businessActors, :BusinessActor
   relation :performedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
+  relation :performedBy, :businessRoles, :BusinessRole
   relation :realizes, :implementationDeliverables, :ImplementationDeliverable
   relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :realizes, :goals, :MotivationGoal
-  relation :mitigates, :motivationAssessments, :MotivationAssessment
   relation :affects, :businessProcesses, :BusinessProcess
   relation :affects, :applicationComponents, :ApplicationComponent
   relation :affects, :applicationServices, :ApplicationService

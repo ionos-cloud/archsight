@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "tmpdir"
 
 class LinterTest < Minitest::Test
   def setup
@@ -21,6 +22,62 @@ class LinterTest < Minitest::Test
     errors = linter.validate
 
     assert_empty errors, "Example resources should have no validation errors: #{errors.join(", ")}"
+  end
+
+  def lint_yaml(yaml)
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "test.yaml"), yaml)
+      db = Archsight::Database.new(dir, verbose: false, compute_annotations: false)
+      db.reload!
+      Archsight::Linter.new(db).validate
+    end
+  end
+
+  def plateaus(*triggers)
+    triggers.map do |name, targets|
+      relations = targets.empty? ? "spec: {}" : "spec:\n  triggers:\n    implementationPlateaus:\n#{targets.map { |t| "      - #{t}" }.join("\n")}"
+      "---\napiVersion: architecture/v1alpha1\nkind: ImplementationPlateau\nmetadata:\n  name: #{name}\n#{relations}\n"
+    end.join
+  end
+
+  def test_validate_reports_a_relation_cycle_with_its_path
+    errors = lint_yaml(plateaus(["Plateau:A", ["Plateau:B"]], ["Plateau:B", ["Plateau:C"]], ["Plateau:C", ["Plateau:A"]]))
+
+    assert_equal 1, errors.length
+    assert_match(/ImplementationPlateau 'Plateau:\w' is part of a relation cycle \(Plateau:\w -triggers-> Plateau:\w -triggers-> Plateau:\w -triggers-> Plateau:\w\)/, errors.first)
+  end
+
+  def test_validate_reports_an_instance_that_points_at_itself
+    errors = lint_yaml(plateaus(["Plateau:A", ["Plateau:A"]]))
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "relation cycle (Plateau:A -triggers-> Plateau:A)"
+  end
+
+  def test_validate_accepts_a_chain_and_a_diamond
+    yaml = plateaus(["Plateau:A", %w[Plateau:B Plateau:C]], ["Plateau:B", ["Plateau:D"]], ["Plateau:C", ["Plateau:D"]], ["Plateau:D", []])
+
+    assert_empty lint_yaml(yaml)
+  end
+
+  def test_validate_allows_components_that_depend_on_each_other
+    component = lambda do |name, other|
+      "---\napiVersion: architecture/v1alpha1\nkind: ApplicationComponent\nmetadata:\n  name: #{name}\n" \
+        "spec:\n  dependsOn:\n    applicationComponents:\n      - #{other}\n"
+    end
+
+    assert_empty lint_yaml(component.call("Comp:A", "Comp:B") + component.call("Comp:B", "Comp:A"))
+  end
+
+  def test_validate_ignores_derived_relations_in_the_cycle_check
+    page = lambda do |name, other|
+      "---\napiVersion: architecture/v1alpha1\nkind: MotivationGoal\nmetadata:\n  name: #{name}\n  annotations:\n    " \
+        "architecture/description: see [[Goal:#{other}]]\nspec: {}\n"
+    end
+
+    errors = lint_yaml(page.call("Goal:A", "B") + page.call("Goal:B", "A"))
+
+    refute(errors.any? { |e| e.include?("relation cycle") }, errors.join(", "))
   end
 
   def test_valid_components_constant
@@ -200,6 +257,10 @@ class LinterTest < Minitest::Test
 
     def class
       self
+    end
+
+    def declared_relations
+      []
     end
 
     def annotation_matching(key)

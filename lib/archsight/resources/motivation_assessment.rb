@@ -39,9 +39,10 @@ class Archsight::Resources::MotivationAssessment < Archsight::Resources::Base
     - A `MotivationDriver` (the threat) `influences` the risk
     - The assessment `assesses` the assets it is about (applications, nodes, processes, data, suppliers)
     - A vulnerability `influences` the loss events it makes possible; a risk `influences` other risks
-    - A `MotivationGoal` (control objective), a `MotivationRequirement` (control measure) or a `BusinessControl`
-      `mitigates` it
-    - It is `ownedBy` the accountable actor
+    - It is `mitigatedBy` a `MotivationGoal` (control objective), a `MotivationRequirement` (control measure), a
+      `BusinessControl` or an `ImplementationWorkPackage` (remediation); read top-down: risk, objective, measure,
+      control
+    - It is `ownedBy` the accountable actor or role
   MD
 
   icon "stats-up-square"
@@ -102,6 +103,7 @@ class Archsight::Resources::MotivationAssessment < Archsight::Resources::Base
              summary: true
 
   relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
   relation :assesses, :businessProcesses, :BusinessProcess
   relation :assesses, :businessActors, :BusinessActor
   relation :assesses, :applicationComponents, :ApplicationComponent
@@ -112,4 +114,8 @@ class Archsight::Resources::MotivationAssessment < Archsight::Resources::Base
   relation :influences, :applicationEvents, :ApplicationEvent
   relation :influences, :technologyEvents, :TechnologyEvent
   relation :influences, :motivationAssessments, :MotivationAssessment
+  relation :mitigatedBy, :goals, :MotivationGoal
+  relation :mitigatedBy, :motivationRequirements, :MotivationRequirement
+  relation :mitigatedBy, :businessControls, :BusinessControl
+  relation :mitigatedBy, :implementationWorkPackages, :ImplementationWorkPackage
 end

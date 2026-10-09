@@ -38,8 +38,9 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
 
     ## Security and risk modelling
 
-    - **Control measure:** `requirement/type` `control-measure` is a measure that realizes a control objective
-      (`realizes` a `MotivationGoal`), `mitigates` a risk and is realized by the asset or control that implements it.
+    - **Control measure:** `requirement/type` `control-measure` is a measure that a control objective
+      (`MotivationGoal`) `realizes`; the risk is `mitigatedBy` the objective or directly by the measure, and the
+      asset or control that implements the measure `realizes` or `satisfies` it.
     - **Control requirement / catalogue control:** a control of a standard (C5, ISO 27001) is a requirement of type
       `compliance`, listed in `requirement/reference`.
     - **Policy:** a requirement can `realize` a `MotivationPrinciple` (the policy it implements).
@@ -72,7 +73,5 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
              format: :markdown
 
   relation :realizes, :outcomes, :MotivationOutcome
-  relation :realizes, :goals, :MotivationGoal
   relation :realizes, :motivationPrinciples, :MotivationPrinciple
-  relation :mitigates, :motivationAssessments, :MotivationAssessment
 end

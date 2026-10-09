@@ -129,7 +129,7 @@ The metamodel defines architectural entities and their relationships across all 
 
 - **Control**: a decision-making step with accountability and authority, applied to a process or function. ArchiMate has no element for it; Archsight models it as `BusinessControl`, which a `BusinessProcess` is `guidedBy`
 
-**Risk and security:** the Open Group overlay (*Modeling Enterprise Risk Management and Security with the ArchiMate Language*) maps threats to **Driver** (`MotivationDriver`), threat and loss events to **Business/Application/Technology Event**, risks and vulnerabilities to **Assessment** (`MotivationAssessment`), control objectives to **Goal**, control measures to **Requirement** and policies to **Principle** (`MotivationPrinciple`), each with a type annotation. See [Modeling Guide](modeling.md#security-and-risk).
+**Risk and security:** the Open Group overlay (*Modeling Enterprise Risk Management and Security with the ArchiMate Language*) maps threats to **Driver** (`MotivationDriver`), threat and loss events to **Business/Application/Technology Event**, risks and vulnerabilities to **Assessment** (`MotivationAssessment`), control objectives to **Goal**, control measures to **Requirement** and policies to **Principle** (`MotivationPrinciple`), each with a type annotation. See [Modeling Guide](modeling.md#security-and-risk). How relations are directed (top-down, DAG) is described under [Direction of Relations](modeling.md#direction-of-relations).
 
 ### Critical Relationships
 

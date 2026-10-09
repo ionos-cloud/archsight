@@ -27,7 +27,7 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
     ## How it connects
 
     - A `BusinessProcess` is `guidedBy` the control
-    - The control is `ownedBy` the actor that is accountable for it and `executedBy` the actors that carry it out
+    - The control is `ownedBy` the actor or role that is accountable for it and `executedBy` the actors or roles that carry it out
     - The control `satisfies` requirements and is `evidencedBy` compliance evidence
 
     A control addresses requirements from the **process side**. Whether an application implements a requirement is
@@ -40,8 +40,8 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
     ## Security and risk modelling
 
     A control is the process-side implementation of a control measure. `satisfies` the requirements (catalogue
-    controls and control measures) and `mitigates` the risks it reduces. Group controls with `risk/domain` and
-    `risk/category`.
+    controls and control measures); a risk it reduces is `mitigatedBy` the control (written on the assessment).
+    Group controls with `risk/domain` and `risk/category`.
   MD
 
   icon "shield-search"
@@ -81,7 +81,8 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
 
   relation :ownedBy, :businessActors, :BusinessActor
   relation :executedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
+  relation :executedBy, :businessRoles, :BusinessRole
   relation :satisfies, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
-  relation :mitigates, :motivationAssessments, :MotivationAssessment
 end

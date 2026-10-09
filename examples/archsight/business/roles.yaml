@@ -1,0 +1,26 @@
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessRole
+metadata:
+  name: Role:ControlOwner
+  annotations:
+    role/id: CO
+    role/type: owner
+    role/scope: |
+      Accountable for a control: decides how it is carried out and signs off the evidence.
+spec:
+  performedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessRole
+metadata:
+  name: Role:ReviewLead
+  annotations:
+    role/id: RL
+    role/type: executor
+spec:
+  performedBy:
+    businessActors:
+      - Archsight:Maintainers

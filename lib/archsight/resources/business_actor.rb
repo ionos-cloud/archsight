@@ -30,7 +30,7 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
 
     - **Threat agent:** an actor (also an external one, such as an attacker group or a supplier) can be the
       `causedBy` of a threat or loss event.
-    - **Owner and executor:** actors own risks (`MotivationAssessment` `ownedBy`), policies and controls.
+    - **Owner and executor:** actors own risks (`MotivationAssessment` `ownedBy`), policies and controls, directly or through a `BusinessRole` they `performedBy`.
     - **Asset:** a supplier or a team can be an asset at risk; set the `asset/*` profile and `assesses` it from a
       supplier assessment.
   MD

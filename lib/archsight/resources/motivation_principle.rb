@@ -31,7 +31,7 @@ class Archsight::Resources::MotivationPrinciple < Archsight::Resources::Base
 
     ## How it connects
 
-    - A principle is `ownedBy` the actor that issued it and `realizes` goals
+    - A principle is `ownedBy` the actor or role that issued it
     - A `MotivationRequirement` (control measure) `realizes` the principle
   MD
 
@@ -71,5 +71,5 @@ class Archsight::Resources::MotivationPrinciple < Archsight::Resources::Base
              filter: :list
 
   relation :ownedBy, :businessActors, :BusinessActor
-  relation :realizes, :goals, :MotivationGoal
+  relation :ownedBy, :businessRoles, :BusinessRole
 end
