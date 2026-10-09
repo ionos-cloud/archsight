@@ -122,7 +122,8 @@ The metamodel defines architectural entities and their relationships across all 
 
 **Cross-Cutting:**
 
-- **Principle**, **Constraint**, **Requirement**, **Gap**, **Work Package**, **Location**
+- **Principle**, **Constraint**, **Requirement**, **Location**
+- **Gap**, **Work Package**, **Deliverable**, **Plateau**, **Implementation Event**: the Implementation & Migration layer (`ImplementationGap`, `ImplementationWorkPackage`, `ImplementationDeliverable`, `ImplementationPlateau`, `ImplementationEvent`)
 
 **Governance:**
 

@@ -9,7 +9,7 @@ const props = defineProps({
   selected: { type: String, default: null },
 })
 
-const LAYERS = ['strategy', 'motivation', 'business', 'application', 'technology', 'other']
+const LAYERS = ['strategy', 'motivation', 'business', 'application', 'technology', 'implementation', 'other']
 
 const route = useRoute()
 const kinds = inject('kinds', null)

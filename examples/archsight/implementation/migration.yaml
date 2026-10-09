@@ -1,0 +1,98 @@
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationPlateau
+metadata:
+  name: Plateau:Baseline
+  annotations:
+    plateau/type: baseline
+    plateau/status: current
+spec:
+  triggers:
+    implementationPlateaus:
+      - Plateau:Target
+  contains:
+    applicationComponents:
+      - Archsight:Web:API
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationPlateau
+metadata:
+  name: Plateau:Target
+  annotations:
+    plateau/type: target
+    plateau/status: planned
+    plateau/from: '2027-01-01'
+spec:
+  contains:
+    applicationComponents:
+      - Archsight:Web:API
+    motivationRequirements:
+      - Measure:SanitizeMarkdown
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationGap
+metadata:
+  name: Gap:Sanitizing
+  annotations:
+    gap/status: closing
+    gap/impact: high
+spec:
+  compares:
+    implementationPlateaus:
+      - Plateau:Baseline
+      - Plateau:Target
+  closedBy:
+    implementationWorkPackages:
+      - WorkPackage:SanitizeMarkdown
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationWorkPackage
+metadata:
+  name: WorkPackage:SanitizeMarkdown
+  annotations:
+    workpackage/type: remediation
+    workpackage/status: in-progress
+    workpackage/priority: high
+    workpackage/start: '2026-10-01'
+    workpackage/due: '2026-12-15'
+    risk/domain: resource-files
+spec:
+  ownedBy:
+    businessActors:
+      - Archsight:Maintainers
+  mitigates:
+    motivationAssessments:
+      - Risk:ContentInjection
+  affects:
+    applicationComponents:
+      - Archsight:Web:API
+  realizes:
+    implementationDeliverables:
+      - Deliverable:SanitizerRelease
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationDeliverable
+metadata:
+  name: Deliverable:SanitizerRelease
+  annotations:
+    deliverable/type: system
+    deliverable/status: in-progress
+    deliverable/due: '2026-12-15'
+spec:
+  realizes:
+    implementationPlateaus:
+      - Plateau:Target
+    motivationRequirements:
+      - Measure:SanitizeMarkdown
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationEvent
+metadata:
+  name: Milestone:SanitizerGoLive
+  annotations:
+    event/type: go-live
+    event/occurred: '2026-12-15'
+spec:
+  triggers:
+    implementationPlateaus:
+      - Plateau:Target
