@@ -45,6 +45,7 @@ module Archsight
     def raise_for: (Resources::Base, String) -> bot
     def verify!: () -> void
     def verify_instance_relations!: (Resources::Base) -> void
+    def derive_references!: () -> void
     def compute_all_annotations!: () -> void
   end
 end

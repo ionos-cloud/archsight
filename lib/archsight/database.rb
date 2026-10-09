@@ -5,6 +5,7 @@ require_relative "graph"
 require_relative "resources"
 require_relative "page_loader"
 require_relative "query"
+require_relative "references"
 
 module Archsight
   # LineReference combines a path and line reference
@@ -76,6 +77,7 @@ module Archsight
       end
 
       verify! if @verify
+      derive_references! if @verify
       compute_all_annotations! if @verify && @compute_annotations
     rescue Psych::SyntaxError => e
       # Wrap YAML syntax errors in ResourceError for consistent handling
@@ -232,7 +234,7 @@ module Archsight
     end
 
     def verify_instance_relations!(inst)
-      inst.class.relations.each do |verb, kind, klass_name|
+      inst.class.declared_relations.each do |verb, kind, klass_name|
         rels = inst.relations(verb, kind).map do |rel_name|
           rel_klass = Archsight::Resources[klass_name] || raise_for(inst, "#{klass_name} is not a valid relation kind")
           kind_display = rel_klass.to_s.sub(/^Archsight::Resources::/, "")
@@ -241,6 +243,12 @@ module Archsight
         end
         inst.set_relations(verb, kind, rels) unless rels.empty?
       end
+    end
+
+    # Adds the relations that the text and the diagrams of the resources imply (`mentions`, `depicts`), after all
+    # written relations are resolved and before the computed annotations are calculated, which follow relations.
+    def derive_references!
+      Archsight::References.derive!(self)
     end
 
     # Compute all computed annotations for all instances

@@ -61,7 +61,7 @@ class Archsight::MCP::ResourceDocTool < FastMcp::Tool
         kind: kind_symbol.to_s,
         description: klass.description || "No description available",
         annotation_count: klass.annotations.count,
-        relation_count: klass.relations.count
+        relation_count: klass.declared_relations.count
       }
     end
 

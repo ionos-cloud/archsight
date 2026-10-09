@@ -64,6 +64,17 @@ module Archsight
         found.is_a?(Array) ? @database.instances_by_kind(found.first)[found.last] : nil
       end
 
+      # Like target_for, but only an exact name counts: a page by name or title, `Kind/Name`, or a resource name that
+      # exists in one kind. A target that only matches part of a name does not name anything. For relations that are
+      # derived from text, where a wrong guess would be a wrong relation.
+      def exact_target_for(target)
+        page = find_page(target)
+        return page if page
+
+        found = @resolver.find(target)
+        found.is_a?(Array) ? @database.instances_by_kind(found.first)[found.last] : nil
+      end
+
       # Page path for a page name, nil if there is no such page
       def page_path(page)
         "/pages/#{ERB::Util.url_encode(page.name)}"

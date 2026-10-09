@@ -175,6 +175,13 @@ Examples:
     # Find artifacts with NO maintainedBy relations
     TechnologyArtifact: -{maintainedBy}> none
 
+    # Pages that mention a component, and the components they depict
+    ApplicationComponent: <{mentions}- Page
+    Page: -{depicts}> ApplicationComponent
+
+    # Leave the derived relations (links in text, nodes of diagrams) out of a traversal
+    ApplicationComponent: ~{!mentions,depicts}> TechnologyArtifact
+
 ## Sub-Query Targets
 
 Use `$(expression)` to dynamically find relation targets based on a query:

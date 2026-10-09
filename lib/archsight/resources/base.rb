@@ -15,12 +15,21 @@ module Archsight
       end
 
       def self.relation(verb, kind, klass_name)
-        @relations ||= [] #: Array[[Symbol, Symbol, String]]
-        @relations << [verb, kind, klass_name]
+        @declared_relations ||= [] #: Array[[Symbol, Symbol, String]]
+        @declared_relations << [verb, kind, klass_name]
+        @relations = nil
       end
 
+      # The relations a resource of this kind may be written with in a file (`spec`)
+      def self.declared_relations
+        @declared_relations || []
+      end
+
+      # Every relation a resource of this kind can have: the declared ones and the derived ones (`mentions`,
+      # `depicts`, see Archsight::References). Everything that follows relations (queries, graphs, impact analysis)
+      # uses this; what lets a user write or choose relations uses declared_relations.
       def self.relations
-        @relations || []
+        @relations ||= (declared_relations + Archsight::Resources::DERIVED_RELATIONS).freeze
       end
 
       # A kind may mark at most this many annotations as summary (see Base.annotation)
@@ -242,15 +251,30 @@ module Archsight
       end
 
       def verb_allowed?(verb)
-        self.class.relations.any? { |v, _, _| v.to_s == verb.to_s }
+        self.class.declared_relations.any? { |v, _, _| v.to_s == verb.to_s }
       end
 
       def verb_kind_allowed?(verb, kind)
-        self.class.relations.any? { |v, k, _| v.to_s == verb.to_s && k.to_s == kind.to_s }
+        self.class.declared_relations.any? { |v, k, _| v.to_s == verb.to_s && k.to_s == kind.to_s }
       end
 
       def relations(verb, kind)
         (spec[verb.to_s] || {})[kind.to_s] || []
+      end
+
+      # Records a relation that is derived from this resource's text or diagram, not written in its file: the target
+      # goes into `spec` where the relations of this verb are read (so queries and graphs see it like any other) and
+      # learns about this resource as one that refers to it.
+      def add_derived_relation(verb, target)
+        key = Archsight::Resources::DERIVED_KEY.to_s
+        spec_root = (@raw["spec"] ||= {}) #: Hash[String, untyped]
+        by_key = (spec_root[verb.to_s] ||= {}) #: Hash[String, Array[Base]]
+        by_key[key] ||= [] #: Array[Base]
+        targets = by_key.fetch(key)
+        return if targets.any? { |known| known.equal?(target) }
+
+        targets << target
+        target.referenced_by(self, verb.to_sym)
       end
 
       def set_relations(verb, kind, rels)

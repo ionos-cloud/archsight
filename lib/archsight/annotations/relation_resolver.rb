@@ -11,6 +11,17 @@
 # - Symbol: Simple kind filter (e.g., :TechnologyArtifact)
 # - String: Query selector (e.g., 'TechnologyArtifact: activity/status == "active"')
 class Archsight::Annotations::ComputedRelationResolver
+  # The instances that refer to a resource through relations that are written in files. Computed annotations sum up the
+  # modelled architecture (costs, teams, repositories): what a page or a description merely mentions or depicts (see
+  # Archsight::References) must not change them, so they follow modelled relations only.
+  def self.modelled_references(inst)
+    (inst.references || []).filter_map do |ref|
+      next ref unless ref.is_a?(Hash)
+
+      ref[:instance] unless Archsight::Resources::DERIVED_VERBS.include?(ref[:verb])
+    end
+  end
+
   MAX_DEPTH = 10
 
   # TraversalCache holds what can be shared between all resolvers of one computation run: the unfiltered
@@ -83,9 +94,9 @@ class Archsight::Annotations::ComputedRelationResolver
 
     def neighbours(inst, direction)
       if direction == :outgoing
-        inst.class.relations.flat_map { |verb, kind_name, _klass_name| inst.relations(verb, kind_name) }
+        inst.class.declared_relations.flat_map { |verb, kind_name, _klass_name| inst.relations(verb, kind_name) }
       else
-        (inst.references || []).filter_map { |ref| ref.is_a?(Hash) ? ref[:instance] : ref }
+        Archsight::Annotations::ComputedRelationResolver.modelled_references(inst)
       end
     end
   end
@@ -103,7 +114,7 @@ class Archsight::Annotations::ComputedRelationResolver
   def outgoing(filter = nil)
     results = []
 
-    @instance.class.relations.each do |_verb, kind_name, _klass_name|
+    @instance.class.declared_relations.each do |_verb, kind_name, _klass_name|
       rels = @instance.relations(_verb, kind_name)
       rels.each do |rel|
         results << rel if matches_filter?(rel, filter)
@@ -127,9 +138,7 @@ class Archsight::Annotations::ComputedRelationResolver
   # @param filter [Symbol, String, nil] Optional kind filter (Symbol) or query selector (String)
   # @return [Array] Array of instances that reference this one
   def incoming(filter = nil)
-    refs = @instance.references || []
-    # Extract instances from reference hashes
-    instances = refs.map { |ref| ref.is_a?(Hash) ? ref[:instance] : ref }.compact
+    instances = self.class.modelled_references(@instance).compact
 
     if filter.nil?
       instances
