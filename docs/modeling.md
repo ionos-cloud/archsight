@@ -76,6 +76,22 @@ Model **who** does **what** in business terms.
 
 **Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Actor "Platform Team". How controls, requirements and evidence fit together is described under Relation Patterns below.
 
+### Implementation & Migration Layer
+
+Model **change**: what is done, what it delivers and how the architecture looks before and after.
+
+| Resource | When to Use |
+|----------|-------------|
+| ImplementationWorkPackage | For projects, measures, remediation of risks and findings, audit programmes (`workpackage/type`, status, due date) |
+| ImplementationDeliverable | For the results of work packages: documents, systems, process changes, evidence (`deliverable/type`) |
+| ImplementationEvent | For milestones, go-lives and deadlines (`event/type`) |
+| ImplementationPlateau | For a state of the architecture: baseline, transition, target (`plateau/type`) |
+| ImplementationGap | For the difference between two plateaus (`gap/status`, `gap/impact`) |
+
+**Migration path:** Plateau "Baseline" → triggers → Plateau "Target"; Gap → compares → both plateaus; Work Package → realizes → Deliverable → realizes → Plateau "Target"; Gap → closedBy → Work Package.
+
+**Remediation:** Assessment "Risk" ← mitigates ← Work Package → realizes → Deliverable (type `evidence`) → realizes → ComplianceEvidence. Group by `risk/domain` to see the plan of one domain, filter by `workpackage/status` and `workpackage/due` for what is open or late.
+
 ### Strategy Layer
 
 Model strategic **capabilities**.

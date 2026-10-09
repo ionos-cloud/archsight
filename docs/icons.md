@@ -20,8 +20,13 @@ Current icon assignments for each resource type:
 | DataObject | `database` | <i class="iconoir-database"></i> |
 | ApplicationComponent | `component` | <i class="iconoir-component"></i> |
 | TechnologySystemSoftware | `terminal-tag` | <i class="iconoir-terminal-tag"></i> |
-| MotivationAssessment | `clipboard-check` | <i class="iconoir-clipboard-check"></i> |
+| MotivationAssessment | `stats-up-square` | <i class="iconoir-stats-up-square"></i> |
 | MotivationDriver | `fire-flame` | <i class="iconoir-fire-flame"></i> |
+| ImplementationDeliverable | `package` | <i class="iconoir-package"></i> |
+| ImplementationEvent | `calendar-check` | <i class="iconoir-calendar-check"></i> |
+| ImplementationGap | `git-compare` | <i class="iconoir-git-compare"></i> |
+| ImplementationPlateau | `packages` | <i class="iconoir-packages"></i> |
+| ImplementationWorkPackage | `hammer` | <i class="iconoir-hammer"></i> |
 | MotivationGoal | `archery` | <i class="iconoir-archery"></i> |
 | MotivationOutcome | `badge-check` | <i class="iconoir-badge-check"></i> |
 | MotivationPrinciple | `book` | <i class="iconoir-book"></i> |
@@ -35,6 +40,20 @@ Current icon assignments for each resource type:
 | TechnologyInterface | `data-transfer-both` | <i class="iconoir-data-transfer-both"></i> |
 | TechnologyService | `cloud` | <i class="iconoir-cloud"></i> |
 | View | `view-grid` | <i class="iconoir-view-grid"></i> |
+
+## Layer Colours
+
+Icons and graph nodes take the colour of their layer.
+
+| Layer | Colour | Graph (light) | Icon |
+|-------|--------|---------------|------|
+| Strategy | orange | `#F4A261` | `#D4824A` |
+| Motivation | purple | `#CE93D8` | `#AB47BC` |
+| Business | yellow | `#F9DC5C` | `#D4B83C` |
+| Application | blue | `#6CBEED` | `#4A9ECD` |
+| Technology | green | `#8AC926` | `#7AB316` |
+| Implementation & Migration | rose | `#F48FB1` | `#E0527F` |
+| Other | gray | `#CCCCCC` | `#999999` |
 
 ## Icon Categories
 

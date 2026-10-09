@@ -44,7 +44,7 @@ class Archsight::Resources::MotivationAssessment < Archsight::Resources::Base
     - It is `ownedBy` the accountable actor
   MD
 
-  icon "clipboard-check"
+  icon "stats-up-square"
   layer "motivation"
 
   likelihood = %w[very-low low medium high very-high]

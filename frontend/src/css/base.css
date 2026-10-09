@@ -243,6 +243,12 @@ article>header h2 {
   color: var(--layer);
 }
 
+/* Implementation & Migration Layer - Rose */
+.icon-implementation {
+  --layer: #E0527F; /* also read by the sidebar rule and selection */
+  color: var(--layer);
+}
+
 /* Motivation Layer - Purple */
 .icon-motivation {
   --layer: #AB47BC; /* also read by the sidebar rule and selection */

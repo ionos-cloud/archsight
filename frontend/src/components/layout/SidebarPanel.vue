@@ -46,6 +46,7 @@ const LAYERS = [
   { id: 'business', title: 'Business' },
   { id: 'application', title: 'Application' },
   { id: 'technology', title: 'Technology' },
+  { id: 'implementation', title: 'Implementation' },
   { id: 'other', title: 'Other' },
 ]
 

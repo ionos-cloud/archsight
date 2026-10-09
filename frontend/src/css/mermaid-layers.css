@@ -94,6 +94,10 @@
   --layer-technology-fill: #C5E1A5;
   --layer-technology-stroke: #558B2F;
   --layer-technology-text: #000;
+  /* Implementation & Migration - rose */
+  --layer-implementation-fill: #F8BBD0;
+  --layer-implementation-stroke: #C2185B;
+  --layer-implementation-text: #000;
 }
 
 /* Dark mode - darker fills with light text */
@@ -119,6 +123,10 @@
     --layer-technology-fill: #33691E;
     --layer-technology-stroke: #AED581;
     --layer-technology-text: #F1F8E9;
+    /* Implementation & Migration - deep rose */
+    --layer-implementation-fill: #AD1457;
+    --layer-implementation-stroke: #F8BBD0;
+    --layer-implementation-text: #FCE4EC;
   }
 }
 
@@ -185,4 +193,17 @@
 .mermaid .node.technology .label * {
   fill: var(--layer-technology-text) !important;
   color: var(--layer-technology-text) !important;
+}
+
+/* Implementation & Migration layer nodes */
+.mermaid .node.implementation > rect,
+.mermaid .node.implementation > polygon,
+.mermaid .node.implementation > circle {
+  fill: var(--layer-implementation-fill) !important;
+  stroke: var(--layer-implementation-stroke) !important;
+}
+.mermaid .node.implementation .label,
+.mermaid .node.implementation .label * {
+  fill: var(--layer-implementation-text) !important;
+  color: var(--layer-implementation-text) !important;
 }

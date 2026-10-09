@@ -38,6 +38,12 @@
     fill: #8AC926 !important;
 }
 
+/* Implementation & Migration Layer - Rose */
+.layer-implementation path[fill="lightgrey"] {
+    stroke: #F48FB1 !important;
+    fill: #F48FB1 !important;
+}
+
 /* Motivation Layer - Purple */
 .layer-motivation path[fill="lightgrey"] {
     stroke: #CE93D8 !important;
@@ -91,6 +97,12 @@
     .layer-technology path[fill="lightgrey"] {
         stroke: #7AB316 !important;
         fill: #6A9916 !important;
+    }
+
+    /* Implementation & Migration Layer - Rose */
+    .layer-implementation path[fill="lightgrey"] {
+        stroke: #F06292 !important;
+        fill: #AD1457 !important;
     }
 
     /* Motivation Layer */
