@@ -7,16 +7,21 @@ This guide explains how to model your architecture using ArchiMate concepts and 
 Architecture modeling follows a layered approach, from business motivation down to technical implementation:
 
 ```
-Motivation Layer    Why we do things (goals, stakeholders, requirements)
+Motivation Layer              Why we do things (goals, stakeholders, requirements, risks, policies)
        |
-Strategy Layer      What capabilities we need
+Strategy Layer                What capabilities we need
        |
-Business Layer      How business operates (processes, actors, products)
+Implementation & Migration    How the change happens (work packages, plateaus, gaps)
        |
-Application Layer   What software supports the business
+Business Layer                How business operates (processes, actors, products)
        |
-Technology Layer    How software is built and deployed
+Application Layer             What software supports the business
+       |
+Technology Layer              How software is built and deployed
 ```
+
+The sidebar, the search facets, the metamodel diagram and these guides list the layers in this order, top to bottom;
+the tool's own kinds (pages, views, imports, analyses) come last under "Other".
 
 ## Direction of Relations
 
@@ -88,6 +93,32 @@ Model **why** the architecture exists.
 
 **Example chain:** Stakeholder "Security Team" → hasConcern → Goal "Achieve Compliance" → realizes → Requirement "Encrypt data at rest"
 
+### Strategy Layer
+
+Model strategic **capabilities**.
+
+| Resource | When to Use |
+|----------|-------------|
+| StrategyCapability | For abilities the organization needs ("Container Orchestration", "Data Analytics") |
+
+**Example chain:** Capability "Managed Kubernetes" → realizes → Requirement "Container Platform" and servedBy → Service "ManagedKubernetes"
+
+### Implementation & Migration Layer
+
+Model **change**: what is done, what it delivers and how the architecture looks before and after.
+
+| Resource | When to Use |
+|----------|-------------|
+| ImplementationWorkPackage | For projects, measures, remediation of risks and findings, audit programmes (`workpackage/type`, status, due date) |
+| ImplementationDeliverable | For the results of work packages: documents, systems, process changes, evidence (`deliverable/type`) |
+| ImplementationEvent | For milestones, go-lives and deadlines (`event/type`) |
+| ImplementationPlateau | For a state of the architecture: baseline, transition, target (`plateau/type`) |
+| ImplementationGap | For the difference between two plateaus (`gap/status`, `gap/impact`) |
+
+**Migration path:** Plateau "Baseline" → triggers → Plateau "Target"; Gap → compares → both plateaus; Work Package → realizes → Deliverable → realizes → Plateau "Target"; Gap → closedBy → Work Package.
+
+**Remediation:** Assessment "Risk" → mitigatedBy → Work Package → realizes → Deliverable (type `evidence`) → realizes → ComplianceEvidence. Group by `risk/domain` to see the plan of one domain, filter by `workpackage/status` and `workpackage/due` for what is open or late.
+
 ### Business Layer
 
 Model **who** does **what** in business terms.
@@ -106,32 +137,6 @@ Model **who** does **what** in business terms.
 **Roles:** Process "Incident Response" → performedBy → Role "Incident Manager" → performedBy → Actor "Platform Team". Controls, risks, policies and work packages use `ownedBy` (and controls `executedBy`) the same way. Use a role where the responsibility has a name of its own and should survive a change of team; pointing straight at an actor stays valid.
 
 **Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Role or Actor. How controls, requirements and evidence fit together is described under Relation Patterns below.
-
-### Implementation & Migration Layer
-
-Model **change**: what is done, what it delivers and how the architecture looks before and after.
-
-| Resource | When to Use |
-|----------|-------------|
-| ImplementationWorkPackage | For projects, measures, remediation of risks and findings, audit programmes (`workpackage/type`, status, due date) |
-| ImplementationDeliverable | For the results of work packages: documents, systems, process changes, evidence (`deliverable/type`) |
-| ImplementationEvent | For milestones, go-lives and deadlines (`event/type`) |
-| ImplementationPlateau | For a state of the architecture: baseline, transition, target (`plateau/type`) |
-| ImplementationGap | For the difference between two plateaus (`gap/status`, `gap/impact`) |
-
-**Migration path:** Plateau "Baseline" → triggers → Plateau "Target"; Gap → compares → both plateaus; Work Package → realizes → Deliverable → realizes → Plateau "Target"; Gap → closedBy → Work Package.
-
-**Remediation:** Assessment "Risk" → mitigatedBy → Work Package → realizes → Deliverable (type `evidence`) → realizes → ComplianceEvidence. Group by `risk/domain` to see the plan of one domain, filter by `workpackage/status` and `workpackage/due` for what is open or late.
-
-### Strategy Layer
-
-Model strategic **capabilities**.
-
-| Resource | When to Use |
-|----------|-------------|
-| StrategyCapability | For abilities the organization needs ("Container Orchestration", "Data Analytics") |
-
-**Example chain:** Capability "Managed Kubernetes" → realizes → Requirement "Container Platform" and servedBy → Service "ManagedKubernetes"
 
 ### Application Layer
 
