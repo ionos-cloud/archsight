@@ -46,5 +46,5 @@ class Archsight::Resources::DataObject < Archsight::Resources::Base
              title: "Schema Variants",
              sidebar: false
 
-  relation :realizes, :businessConstraints, :BusinessConstraint
+  relation :realizes, :motivationConstraints, :MotivationConstraint
 end

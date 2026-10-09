@@ -30,8 +30,8 @@ class Archsight::Resources::BusinessProcess < Archsight::Resources::Base
   icon "kanban-board"
   layer "business"
 
-  relation :realizes, :businessConstraints, :BusinessConstraint
-  relation :realizes, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationConstraints, :MotivationConstraint
+  relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :servedBy, :applicationServices, :ApplicationService
   relation :performedBy, :businessActors, :BusinessActor
   relation :guidedBy, :businessControls, :BusinessControl

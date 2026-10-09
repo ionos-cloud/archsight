@@ -19,7 +19,7 @@ class BusinessControlTest < Minitest::Test
     spec: {}
     ---
     apiVersion: architecture/v1alpha1
-    kind: BusinessRequirement
+    kind: MotivationRequirement
     metadata:
       name: Requirement:Documentation
     spec: {}
@@ -48,7 +48,7 @@ class BusinessControlTest < Minitest::Test
         businessActors:
           - Team:Operations
       satisfies:
-        businessRequirements:
+        motivationRequirements:
           - Requirement:Documentation
       evidencedBy:
         complianceEvidences:
@@ -114,7 +114,7 @@ class BusinessControlTest < Minitest::Test
     with_db do |db|
       control = db.instance_by_kind("BusinessControl", "Control:Documentation")
 
-      assert_equal ["Requirement:Documentation"], control.relations(:satisfies, :businessRequirements).map(&:name)
+      assert_equal ["Requirement:Documentation"], control.relations(:satisfies, :motivationRequirements).map(&:name)
       assert_equal ["Evidence:ModelHistory"], control.relations(:evidencedBy, :complianceEvidences).map(&:name)
     end
   end
@@ -133,7 +133,7 @@ class BusinessControlTest < Minitest::Test
   end
 
   def test_control_cannot_guide_a_process
-    yaml = changed("  satisfies:\n    businessRequirements:\n      - Requirement:Documentation",
+    yaml = changed("  satisfies:\n    motivationRequirements:\n      - Requirement:Documentation",
                    "  guidedBy:\n    businessControls:\n      - Control:Documentation")
 
     assert_raises(Archsight::ResourceError) { with_db(yaml) { nil } }

@@ -21,7 +21,7 @@ module Archsight
     def build_resource(kind:, name:, annotations: {}, relations: [])
       resource = {
         "apiVersion" => "architecture/v1alpha1",
-        "kind" => kind,
+        "kind" => Archsight::Resources.canonical(kind), # saving a resource that had the old name migrates it
         "metadata" => {
           "name" => name
         }

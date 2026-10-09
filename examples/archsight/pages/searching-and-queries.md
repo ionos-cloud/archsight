@@ -26,7 +26,7 @@ Reference: [Query Syntax](/doc/search).
 | annotation is missing | `! activity/status?` |
 | numeric comparison | `scc/language/Go/loc > 10000` |
 | has a relation to a kind | `-> ApplicationInterface` |
-| reaches something transitively | `ApplicationComponent: ~> BusinessRequirement` |
+| reaches something transitively | `ApplicationComponent: ~> MotivationRequirement` |
 | only follow one verb | `TechnologyArtifact: -{maintainedBy}> "Team:Platform"` |
 | orphans | `-> none & <- none` |
 | wiki pages by tag | `Page: page/tags == "concept"` |
@@ -55,7 +55,7 @@ Page: <- none
 Everything that ends up serving a compliance requirement:
 
 ```text
-~{realizedThrough,servedBy}> BusinessRequirement
+~{realizedThrough,servedBy}> MotivationRequirement
 ```
 
 Sub-queries let you ask about the target instead of naming it:

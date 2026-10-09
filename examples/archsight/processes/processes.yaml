@@ -15,7 +15,7 @@ spec:
     businessActors:
       - Archsight:Maintainers
   realizes:
-    businessRequirements:
+    motivationRequirements:
       - Requirement:QueryLanguage
   guidedBy:
     businessControls:

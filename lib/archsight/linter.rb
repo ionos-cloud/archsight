@@ -26,6 +26,12 @@ module Archsight
       @errors
     end
 
+    # Things that still work but should be changed: renamed kinds and relation keys that the files still use.
+    # They are not errors, so they do not make `archsight lint` fail.
+    def warnings
+      @database.respond_to?(:deprecations) ? @database.deprecations.map(&:to_s) : []
+    end
+
     private
 
     # Pages need exactly one menu and their [[links]] must resolve

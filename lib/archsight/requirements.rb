@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Archsight
-  # The business requirements of a selection of resources, as the "Business Requirements" table of an instance page
-  # shows them, merged over all resources of the selection: one entry per BusinessRequirement, with the status the
+  # The requirements of a selection of resources, as the "Requirements" table of an instance page
+  # shows them, merged over all resources of the selection: one entry per MotivationRequirement, with the status the
   # resources give it (`realizes` = implemented, `partiallyRealizes` = partial, `plans` = planned).
   #
   #   Requirements.collect(db, of: 'ApplicationService: name =~ "Backup"', priority: ["must"])
@@ -12,7 +12,7 @@ module Archsight
     # Relation verb -> status, best first
     STATUSES = { "realizes" => "implemented", "partiallyRealizes" => "partial", "plans" => "planned" }.freeze
     PRIORITIES = %w[must should may].freeze
-    RELATION = :businessRequirements
+    RELATION = :motivationRequirements
 
     module_function
 
@@ -52,7 +52,7 @@ module Archsight
         row << cell.new(text: e[:by].map { |b| b[:name] }.join("\n")) if with_by
         row
       end
-      ViewTable::Table.new(title: spec[:title].to_s.empty? ? "Business Requirements" : spec[:title],
+      ViewTable::Table.new(title: spec[:title].to_s.empty? ? "Requirements" : spec[:title],
                            columns: ["Status", "Name", "Priority", "Story", ("Realized by" if with_by)].compact, rows: rows, total: entries.length)
     end
 

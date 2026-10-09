@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch, inject } from 'vue'
+import { useRouter } from 'vue-router'
 import { getInstance } from '../../api/client.js'
 import InstanceDetail from './InstanceDetail.vue'
 import ViewDetail from './ViewDetail.vue'
@@ -12,6 +13,7 @@ const props = defineProps({
   instance: String,
 })
 
+const router = useRouter()
 const kinds = inject('kinds')
 const data = ref(null)
 const loading = ref(true)
@@ -22,6 +24,10 @@ async function load() {
   error.value = null
   try {
     data.value = await getInstance(props.kind, props.instance)
+    // a renamed kind opened under its old name (an old link): carry on under the current name
+    if (data.value.kind && data.value.kind !== props.kind) {
+      router.replace({ name: 'instance', params: { kind: data.value.kind, instance: props.instance } })
+    }
   } catch (e) {
     error.value = e.message
   } finally {

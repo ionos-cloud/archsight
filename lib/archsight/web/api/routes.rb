@@ -112,7 +112,7 @@ module Archsight::Web::API::Routes
     end
   end
 
-  # GET /api/v1/requirements - The business requirements of the resources a query selects (see Archsight::Requirements)
+  # GET /api/v1/requirements - The requirements of the resources a query selects (see Archsight::Requirements)
   get "/api/v1/requirements" do
     query = params[:of]
     json_error("Query parameter 'of' is required", status: 400, error_type: "BadRequest") unless query

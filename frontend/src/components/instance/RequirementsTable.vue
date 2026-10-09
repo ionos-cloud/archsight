@@ -1,5 +1,5 @@
 <script setup>
-// The table of business requirements (instance page section and `requirements` blocks of pages).
+// The table of requirements (instance page section and `requirements` blocks of pages).
 // items: [{ name, status: 'implemented'|'partial'|'planned', priority, story (html), by: [{ kind, name, status }] }]
 // priorityLink: priority -> route location of the search for it; showBy adds the "Realized by" column.
 defineProps({
@@ -35,7 +35,7 @@ function statusIcon(status) {
           <i :class="[statusIcon(req.status), `status-${req.status}`]" class="requirement-status-icon" :title="req.status"></i>
         </td>
         <td>
-          <router-link :to="{ name: 'instance', params: { kind: 'BusinessRequirement', instance: req.name } }">
+          <router-link :to="{ name: 'instance', params: { kind: 'MotivationRequirement', instance: req.name } }">
             {{ req.name }}
           </router-link>
         </td>

@@ -30,8 +30,8 @@ class Archsight::Resources::StrategyCapability < Archsight::Resources::Base
   icon "strategy"
   layer "strategy"
 
-  relation :realizes, :businessConstraints, :BusinessConstraint
-  relation :realizes, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationConstraints, :MotivationConstraint
+  relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :servedBy, :businessActors, :BusinessActor
   relation :servedBy, :applicationServices, :ApplicationService
   relation :servedBy, :businessProcesses, :BusinessProcess

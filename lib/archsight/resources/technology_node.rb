@@ -36,7 +36,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
              enum: %w[vm bare-metal kubernetes-node network-appliance storage-array],
              summary: true
 
-  relation :realizes, :businessConstraints, :BusinessConstraint
+  relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :servedBy, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
 end

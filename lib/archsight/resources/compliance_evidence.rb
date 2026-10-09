@@ -47,5 +47,5 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
              enum: %w[implemented partial not-implemented],
              summary: true
 
-  relation :satisfies, :businessRequirements, :BusinessRequirement
+  relation :satisfies, :motivationRequirements, :MotivationRequirement
 end

@@ -5,7 +5,7 @@ require_relative "fenced_blocks"
 
 module Archsight
   module Helpers
-    # Turns ```requirements fenced blocks in rendered markdown into the table of business requirements of a
+    # Turns ```requirements fenced blocks in rendered markdown into the table of requirements of a
     # selection of resources (see Archsight::Requirements):
     #
     #   ```requirements

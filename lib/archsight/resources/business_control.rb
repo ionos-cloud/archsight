@@ -28,7 +28,7 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
 
     - A `BusinessProcess` is `guidedBy` the control
     - The control is `ownedBy` the actor that is accountable for it and `executedBy` the actors that carry it out
-    - The control `satisfies` business requirements and is `evidencedBy` compliance evidence
+    - The control `satisfies` requirements and is `evidencedBy` compliance evidence
 
     A control addresses requirements from the **process side**. Whether an application implements a requirement is
     stated on the application (`realizes`, `plans`, `evidencedBy`), not on the control. Link evidence to a control
@@ -75,6 +75,6 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
 
   relation :ownedBy, :businessActors, :BusinessActor
   relation :executedBy, :businessActors, :BusinessActor
-  relation :satisfies, :businessRequirements, :BusinessRequirement
+  relation :satisfies, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
 end

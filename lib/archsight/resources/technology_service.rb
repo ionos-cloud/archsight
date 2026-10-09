@@ -37,8 +37,8 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
 
   relation :suppliedBy, :technologyComponents, :TechnologySystemSoftware
   relation :servedBy, :businessActors, :BusinessActor
-  relation :realizes, :businessRequirements, :BusinessRequirement
-  relation :partiallyRealizes, :businessRequirements, :BusinessRequirement
-  relation :plans, :businessRequirements, :BusinessRequirement
+  relation :realizes, :motivationRequirements, :MotivationRequirement
+  relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
+  relation :plans, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
 end

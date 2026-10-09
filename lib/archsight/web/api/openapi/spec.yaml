@@ -705,9 +705,9 @@ paths:
 
   /api/v1/requirements:
     get:
-      summary: Business requirements of a selection of resources
+      summary: Requirements of a selection of resources
       description: |
-        The business requirements that the resources selected by `of` realize (`implemented`), partially realize
+        The requirements that the resources selected by `of` realize (`implemented`), partially realize
         (`partial`) or plan (`planned`), merged over all of them: one entry per requirement with the best status and
         the resources it comes from (`by`). Sorted by priority (must, should, may, none), then name. `story` is
         rendered HTML.

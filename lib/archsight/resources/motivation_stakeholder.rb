@@ -32,7 +32,7 @@ class Archsight::Resources::MotivationStakeholder < Archsight::Resources::Base
   layer "motivation"
 
   relation :hasConcern, :strategyCapabilities, :StrategyCapability
-  relation :hasConcern, :businessRequirements, :BusinessRequirement
-  relation :hasConcern, :businessConstraints, :BusinessConstraint
+  relation :hasConcern, :motivationRequirements, :MotivationRequirement
+  relation :hasConcern, :motivationConstraints, :MotivationConstraint
   relation :hasConcern, :goals, :MotivationGoal
 end
