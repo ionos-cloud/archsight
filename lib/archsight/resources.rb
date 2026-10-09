@@ -14,6 +14,12 @@ module Archsight
       "BusinessConstraint" => "MotivationConstraint"
     }.freeze
 
+    # Annotations that were renamed: the old key is rewritten to the new one when a document is loaded (see
+    # Database#accept_old_names) and reported as deprecated by `archsight lint`.
+    ANNOTATION_ALIASES = {
+      "page/confluence" => "link/confluence"
+    }.freeze
+
     # Relation keys (the plural kind names under `spec.<verb>`) that were renamed together with their kind
     RELATION_KEY_ALIASES = {
       "businessRequirements" => "motivationRequirements",

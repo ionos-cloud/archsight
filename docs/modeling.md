@@ -46,6 +46,50 @@ Rules:
   (never written in a file) and show how things are linked sideways, in prose and pictures. They neither follow nor
   contradict the direction above and are left out of the cycle check.
 
+## Identity and Links
+
+A resource has one **name**, the key everything refers to (relations, `[[wiki links]]`, URLs). Two annotations say more
+about who it is and where else it lives. Both are available on every resource kind (pages have the links too).
+
+### Aliases
+
+`architecture/aliases` holds the other identifiers of a resource, comma-separated: `ApplicationService:Foo` can also be
+`ITGS:A001`. Aliases are **unique among the resources of a kind** (`archsight lint` reports a duplicate with both
+resources); the same alias on resources of different kinds is fine, like names. They are found, not resolved:
+
+```
+ITGS:A001                                              # the search box: the name shortcut also tests aliases
+ApplicationService: architecture/aliases == "ITGS:A001"
+name == "ITGS:A001"
+```
+
+An alias is an identifier, so it is shown as plain text and is not a facet in the sidebar (it would only ever point at
+one resource). It is not a name: it cannot be used in a relation, a `[[wiki link]]` or a URL. When two documents describe
+the same resource, their aliases (and tags) are added together instead of one replacing the other.
+
+For kind authors: `annotation "key", unique: true` makes any annotation an identifier of this kind: unique per kind,
+checked by `archsight lint`, shown as plain text.
+
+### Links
+
+`link/<name>` holds a URL on any resource. The name says which system: `link/confluence`, `link/jira`,
+`link/servicenow`; a second link into the same system gets another name (`link/confluence-isms`). A link has **no
+direction**: it is where the resource comes from, where it was published to, or just a related page. A page writes them
+as `links:` in its frontmatter (see [Pages](/doc/pages)):
+
+```yaml
+kind: ApplicationService
+metadata:
+  name: Foo
+  annotations:
+    architecture/aliases: ITGS:A001
+    link/confluence: https://confluence.example.com/spaces/ARCH/pages/12345/Foo
+    link/jira: https://jira.example.com/browse/ARCH-12
+```
+
+Links render with the icon of their system wherever a resource or page is shown. Artifacts also carry many generated
+`link/*` entries (links found in the README); they are listed apart from the ones you write.
+
 ## Starting Points
 
 ### Top-Down Modeling

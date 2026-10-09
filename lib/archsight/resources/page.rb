@@ -6,6 +6,8 @@ require "time"
 # Page is a wiki page authored as a markdown file with YAML frontmatter.
 # It is sourced by Archsight::PageLoader and arranged in a tree by PageMenu.
 class Archsight::Resources::Page < Archsight::Resources::Base
+  include_annotations :links
+
   description <<~MD
     Represents a wiki page authored as a markdown file with YAML frontmatter.
 
@@ -18,8 +20,8 @@ class Archsight::Resources::Page < Archsight::Resources::Base
 
     ## Frontmatter
 
-    `title`, `author`, `owner`, `status`, `tags` (comma-separated), `toc` (yes/no), `confluence`
-    (URL of the linked Confluence page) and an optional `name` (defaults to the file path).
+    `title`, `author`, `owner`, `status`, `tags` (comma-separated), `toc` (yes/no), `links` (a mapping of
+    names to URLs, e.g. `confluence`, `jira`) and an optional `name` (defaults to the file path).
 
     ## Security and risk modelling
 
@@ -58,11 +60,6 @@ class Archsight::Resources::Page < Archsight::Resources::Base
              description: "Show a table of contents (yes/no)",
              title: "Table of Contents",
              enum: %w[yes no],
-             sidebar: false
-  annotation "page/confluence",
-             description: "URL of the corresponding Confluence page (used for a later export)",
-             title: "Confluence",
-             type: URI,
              sidebar: false
   annotation "page/created",
              description: "When the page was created (ISO 8601 date or time)",

@@ -37,10 +37,13 @@ module Archsight
 
       # Define an annotation using the Annotation class
       # `summary: true` marks it as a summary attribute: it is returned with every search hit of this kind.
+      # `unique: true` makes it an identifier: its values (each element of a list) are unique among the resources
+      # of the kind, which `archsight lint` checks, and it is shown as plain text, not as tags.
       def self.annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil, sidebar: true,
-                          type: nil, summary: false, editor: true, validator: nil)
+                          type: nil, summary: false, editor: true, validator: nil, unique: false)
         options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, summary: summary, editor: editor, validator: validator }
+                    sidebar: sidebar, type: type, summary: summary, editor: editor, validator: validator,
+                    unique: unique }
         register_annotation(Archsight::Annotations::Annotation.new(key, options))
       end
 
@@ -338,7 +341,29 @@ module Archsight
 
       def merge!(inst)
         # NOTE: path reference is preserved from the original instance
-        @raw = Archsight::Helpers.deep_merge(@raw, inst.raw)
+        merged = Archsight::Helpers.deep_merge(@raw, inst.raw)
+        union_list_annotations!(merged, inst.raw)
+        @raw = merged
+      end
+
+      # Annotations hold strings, which replace each other on merge. The values of a list annotation (tags, aliases)
+      # are joined instead, so two documents of one resource can each add to it.
+      def union_list_annotations!(merged, other_raw)
+        mine = @raw.dig("metadata", "annotations")
+        theirs = other_raw.dig("metadata", "annotations")
+        return unless mine.is_a?(Hash) && theirs.is_a?(Hash)
+
+        theirs.each do |key, value|
+          next unless mine[key].is_a?(String) && value.is_a?(String)
+          next unless self.class.annotation_matching(key)&.list?
+
+          values = (split_list(mine[key]) + split_list(value)).uniq
+          merged["metadata"]["annotations"][key] = values.join(",")
+        end
+      end
+
+      def split_list(text)
+        text.split(/,|\n/).map(&:strip).reject(&:empty?)
       end
 
       # raise provides a helper for better error messages including current path and line no

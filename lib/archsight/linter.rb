@@ -29,6 +29,7 @@ module Archsight
         end
       end
       validate_relation_cycles
+      validate_unique_annotations
 
       @errors
     end
@@ -84,6 +85,30 @@ module Archsight
         return found if found
       end
       nil
+    end
+
+    # The values of a unique annotation (aliases) must not be shared by two resources of a kind
+    def validate_unique_annotations
+      @database.instances.each do |klass, instances_hash|
+        next unless klass.respond_to?(:annotations)
+
+        klass.annotations.select(&:unique?).reject(&:pattern?).each do |annotation|
+          owners = {}
+          instances_hash.each_value { |instance| check_unique_values(annotation, instance, owners) }
+        end
+      end
+    end
+
+    def check_unique_values(annotation, instance, owners)
+      Array(annotation.value_for(instance)).each do |value|
+        owner = owners[value]
+        if owner.nil?
+          owners[value] = instance
+        elsif !owner.equal?(instance)
+          @errors << "#{instance.path_ref}: #{instance.klass} '#{instance.name}': #{annotation.key} '#{value}' " \
+                     "is already used by '#{owner.name}' (#{owner.path_ref})"
+        end
+      end
     end
 
     # Declared relations must not lead back to where they started (see the "Direction of Relations" modeling guide)

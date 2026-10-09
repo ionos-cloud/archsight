@@ -39,9 +39,6 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
              enum: %w[repo container chart deb rpm]
 
   # Dynamic annotations (patterns with *)
-  annotation "link/*",
-             description: "Documentation and resource links",
-             sidebar: false
   annotation "scc/language/*/loc",
              description: "Lines of code per programming language",
              sidebar: false

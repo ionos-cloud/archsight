@@ -62,10 +62,21 @@ module Archsight
       meta.each do |key, value|
         next if value.nil?
 
-        result["page/#{key}"] = format_value(key, value)
+        if key == "links" && value.is_a?(Hash)
+          links(value).each { |name, url| result["link/#{name}"] = url }
+        else
+          result["page/#{key}"] = format_value(key, value)
+        end
       end
       result["page/content"] = body
       result
+    end
+
+    # `links: { confluence: <url> }` of the frontmatter: one link/<name> annotation per entry
+    def links(mapping)
+      mapping.each_with_object({}) do |(name, url), result|
+        result[name.to_s] = url.to_s unless url.nil?
+      end
     end
 
     def format_value(key, value)
