@@ -90,7 +90,8 @@ module Archsight::Web::API::JsonHelpers
     {
       kind: Archsight::Resources.canonical(kind),
       name: instance.name,
-      metadata: { annotations: render_annotations(instance.annotations, base: Archsight::Assets.base_dir_for(instance, resources_dir: Archsight.resources_dir)) },
+      metadata: { annotations: render_annotations(instance.annotations, base: Archsight::Assets.base_dir_for(instance, resources_dir: Archsight.resources_dir), kind: kind) },
+      annotation_formats: Archsight::Resources[kind]&.annotation_formats(instance.annotations.keys) || {},
       spec: serialize_spec(instance.spec),
       relations: extract_relations(instance),
       references: extract_references(instance),
@@ -106,10 +107,14 @@ module Archsight::Web::API::JsonHelpers
     Archsight::Helpers::DiagramBlocks.render_diagram(source, resolver: Archsight::Helpers::ResourceResolver.new(db))
   end
 
+  # The values of markdown annotations are rendered to HTML: architecture/description and every annotation the
+  # kind defines with `format: :markdown`.
   # @param base [String, nil] directory of the file the resource comes from, for the images of its markdown
-  def render_annotations(annotations, base: nil)
+  # @param kind [String, nil] the kind of the resource, to find which of its annotations are markdown
+  def render_annotations(annotations, base: nil, kind: nil)
+    klass = kind && Archsight::Resources[kind]
     annotations.each_with_object({}) do |(key, value), result|
-      result[key] = if MARKDOWN_ANNOTATION_KEYS.include?(key) && value.is_a?(String)
+      result[key] = if value.is_a?(String) && (MARKDOWN_ANNOTATION_KEYS.include?(key) || klass&.annotation_format(key) == :markdown)
                       markdown(value, base: base)
                     else
                       value

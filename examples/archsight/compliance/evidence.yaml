@@ -8,6 +8,19 @@ metadata:
       query parsing, evaluation, resource loading, and edge cases.
     evidence/type: technical-control
     evidence/status: implemented
+    evidence/mechanism: |
+      - Minitest suite run in CI on every push (`bundle exec rake test`).
+      - Tests cover query parsing, evaluation and resource loading.
+    evidence/coverage: |
+      The query language and the resource loader. The **web frontend** is not covered by automated tests.
+    evidence/operatorView: |
+      Not applicable: the tests run in CI, not against operator access paths.
+    evidence/verification: |
+      Test results are published by the CI workflow for each pull request.
+    evidence/gaps: |
+      No browser-level tests of the web UI.
+    evidence/sources: |
+      `test/` directory and `.github/workflows/ci.yml`.
     architecture/tags: testing,quality
 spec:
   satisfies:
