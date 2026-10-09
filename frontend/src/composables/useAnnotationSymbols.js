@@ -27,6 +27,7 @@ const LABELS = {
 
 // Annotations shown first in the Details table: how a resource is classified, before the rest
 export const LEAD_KEYS = [
+  'architecture/aliases',
   'component/type',
   'component/role',
   'architecture/kind',
