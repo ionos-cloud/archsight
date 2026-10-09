@@ -5,16 +5,21 @@ require_relative "ast"
 
 # Recursive descent parser for the architecture query language.
 class Archsight::Query::Parser
-  def initialize(tokens)
+  # Characters a resource name is made of, as the lexer reads an identifier
+  NAME_CHAR = %r{[a-zA-Z0-9_\-/.]}
+
+  # @param source [String, nil] the query text; with it, names that contain colons (`Archsight:CLI`, `ITGS:A001`)
+  #   are read as one name instead of a kind prefix and a condition
+  def initialize(tokens, source: nil)
     @tokens = tokens
+    @source = source
     @position = 0
   end
 
   def parse
     # Check for kind filter prefix: "Kind: expression"
     kind_filter = nil
-    # Check it's a valid Kind (starts with capital letter)
-    if current_token.type == :IDENTIFIER && peek_token&.type == :COLON && (current_token.value =~ /^[A-Z]/)
+    if kind_prefix?
       kind_filter = current_token.value
       advance # consume identifier
       advance # consume colon
@@ -256,8 +261,7 @@ class Archsight::Query::Parser
 
     # Parse inner query: optional kind filter + optional expression
     kind_filter = nil
-    # Check it's a valid Kind (starts with capital letter)
-    if current_token.type == :IDENTIFIER && peek_token&.type == :COLON && (current_token.value =~ /^[A-Z]/)
+    if kind_prefix?
       kind_filter = current_token.value
       advance # consume identifier
       advance # consume colon
@@ -395,8 +399,71 @@ class Archsight::Query::Parser
       Archsight::Query::AST::AnnotationExistsCondition.new(path)
     else
       # Bare identifier - treat as name =~ "identifier"
-      Archsight::Query::AST::NameCondition.new("=~", Archsight::Query::AST::StringValue.new(path))
+      Archsight::Query::AST::NameCondition.new("=~", Archsight::Query::AST::StringValue.new(glue_name(path)))
     end
+  end
+
+  # Names contain colons (`Archsight:CLI`, `ITGS:A001`). A bare name written without spaces around its colons is
+  # one word: `ApplicationService:ITGS:A001` is the kind and the name `ITGS:A001`.
+  def glue_name(first)
+    name = first
+    while (word = word_after_colon)
+      name += ":#{word}"
+      advance # consume the colon
+      advance while current_token.type != :EOF && current_token.position < @colon_end
+    end
+    name
+  end
+
+  # The name word right after the current colon token, when the colon touches a name character on both sides
+  def word_after_colon
+    return nil unless @source && current_token.type == :COLON
+
+    colon = current_token.position
+    return nil unless colon.positive? && @source[colon - 1]&.match?(NAME_CHAR)
+
+    word = @source[(colon + 1)..].to_s[/\A#{NAME_CHAR}+/]
+    @colon_end = colon + 1 + word.length if word
+    word
+  end
+
+  # `Kind: expression` or `Kind:`. The prefix is a kind when it starts with a capital letter and the colon is followed
+  # by a space or nothing; `Name:Word` without a space, where the prefix is no kind, is a name with a colon
+  # (`ITGS:A001`) that the bare word search handles.
+  def kind_prefix?
+    return false unless current_token.type == :IDENTIFIER && peek_token&.type == :COLON && current_token.value =~ /^[A-Z]/
+    return true if known_kind?(current_token.value)
+
+    !colon_glued?
+  end
+
+  def known_kind?(name)
+    defined?(Archsight::Resources) && !Archsight::Resources[name].nil?
+  end
+
+  # Whether the current token starts a name with colons (`ITGS:A001`) that is a bare word, not the start of a
+  # condition: the colons touch name characters, and no operator or `?` follows the name
+  def colon_glued?
+    return false unless @source
+
+    stop = name_run_end(peek_token.position)
+    return false unless stop
+
+    following = @tokens.find { |token| token.position >= stop }
+    !(following && %i[EQ NEQ MATCH GT LT GTE LTE IN QUESTION].include?(following.type))
+  end
+
+  # Where `a:b:c` ends, starting at its first colon; nil when that colon does not touch a name character on both sides
+  def name_run_end(colon)
+    stop = nil
+    while @source[colon] == ":" && colon.positive? && @source[colon - 1].match?(NAME_CHAR)
+      word = @source[(colon + 1)..].to_s[/\A#{NAME_CHAR}+/]
+      break unless word
+
+      stop = colon + 1 + word.length
+      colon = stop
+    end
+    stop
   end
 
   def parse_quoted_annotation_path

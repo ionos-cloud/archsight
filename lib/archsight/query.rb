@@ -52,7 +52,7 @@ module Archsight
       def parse(source)
         lexer = Lexer.new(source)
         tokens = lexer.tokenize
-        parser = Parser.new(tokens)
+        parser = Parser.new(tokens, source: source)
         parser.parse
       rescue LexerError, ParseError, InvalidRegexError => e
         # Re-raise with source context
