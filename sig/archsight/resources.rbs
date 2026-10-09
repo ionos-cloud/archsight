@@ -66,6 +66,8 @@ module Archsight
       def relations_grouped: () -> Hash[String, Hash[String, Array[Base]]]
       def verify!: () -> void
       def merge!: (Base) -> Hash[String, untyped]
+      def union_list_annotations!: (Hash[String, untyped], Hash[String, untyped]) -> void
+      def split_list: (String) -> Array[String]
 
       private
 

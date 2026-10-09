@@ -41,7 +41,7 @@ module Archsight::Web::API::PageHelpers
       created: annotations["page/created"],
       updated: annotations["page/updated"],
       properties: page.properties.map { |key, value| { key: key, value: value, html: inline_markdown(value, page) } },
-      confluence: annotations["page/confluence"],
+      links: annotations.select { |key, _| key.start_with?("link/") }.transform_keys { |key| key.delete_prefix("link/") },
       tags: Archsight::Resources::Page.annotation_matching("page/tags")&.value_for(page) || [],
       toc: annotations["page/toc"] == "yes" ? Archsight::PageTree.toc(body) : [],
       breadcrumb: tree.breadcrumb(page),

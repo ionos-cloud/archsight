@@ -254,7 +254,7 @@ paths:
         Returns one page with its metadata and its body rendered to HTML.
 
         **Metadata** comes from the frontmatter: `title` (falls back to the name), `status`, `author` and
-        `owner` (`Name <email>`, split into `name` and `email`), `tags` and the `confluence` URL.
+        `owner` (`Name <email>`, split into `name` and `email`), `tags` and the `links` (name and URL, e.g. `confluence`).
 
         **`html`** is the markdown body rendered once per request:
         - GitHub-flavoured markdown (tables, fenced code, task lists).
@@ -309,7 +309,7 @@ paths:
                 owner:
                   name: Jane Doe
                   email: jane.doe@example.com
-                confluence: null
+                links: {}
                 tags:
                   - howto
                   - wiki
@@ -1869,7 +1869,7 @@ components:
 
     PageResponse:
       type: object
-      required: [name, title, status, author, owner, created, updated, properties, confluence, tags, toc, breadcrumb, html, backlinks]
+      required: [name, title, status, author, owner, created, updated, properties, links, tags, toc, breadcrumb, html, backlinks]
       properties:
         name:
           type: string
@@ -1909,10 +1909,12 @@ components:
               html:
                 type: string
                 description: The value rendered as inline markdown (links, emphasis, `{macros}`, `[[wiki links]]`), without a paragraph around it
-        confluence:
-          type: [string, 'null']
-          format: uri
-          description: URL of the corresponding Confluence page
+        links:
+          type: object
+          description: Links of the page to other systems, by name (`confluence`, `jira`, ...)
+          additionalProperties:
+            type: string
+            format: uri
         tags:
           type: array
           items:

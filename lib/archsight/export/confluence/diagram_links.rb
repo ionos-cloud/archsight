@@ -26,7 +26,7 @@ module Archsight
 
         # @return [String, nil] where the page lives in Confluence, nil if it has no Confluence page
         def self.confluence_url(page)
-          link = page&.annotations&.fetch("page/confluence", nil).to_s.strip
+          link = page&.annotations&.fetch("link/confluence", nil).to_s.strip
           return nil if link.empty?
 
           parsed = PageUrl.parse(link)

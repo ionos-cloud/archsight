@@ -18,6 +18,7 @@ class Archsight::Annotations::Annotation
     @summary = options.fetch(:summary, false)
     @editor = options.fetch(:editor, true)
     @type = options[:type]
+    @unique = options[:unique] == true
 
     # Auto-add filter if enum present
     @filter ||= :word if @enum
@@ -49,6 +50,11 @@ class Archsight::Annotations::Annotation
 
   def list?
     @filter == :list
+  end
+
+  # A unique annotation holds identifiers: no two resources of a kind share a value (checked by `archsight lint`)
+  def unique?
+    @unique
   end
 
   # Summary annotations are returned with every search hit (at most MAX_SUMMARY per kind)
@@ -203,6 +209,8 @@ class Archsight::Annotations::Annotation
   end
 
   def derive_format
+    return :identifier if unique?
+
     case @filter
     when :word then :tag_word
     when :list then :tag_list

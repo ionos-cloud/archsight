@@ -60,5 +60,5 @@ Both files sit in the same folder as this page (`pages/`). `..` works too (`../d
 
 ## Migrating from Confluence
 
-Set `confluence:` to the URL of the old page. The page shows a link to it, so readers can compare while you
-migrate. Draw.io drawings become [[Diagrams in Pages]].
+Add `links: { confluence: <URL of the old page> }` to the frontmatter. The page shows a link to it, so readers can
+compare while you migrate. Draw.io drawings become [[Diagrams in Pages]].

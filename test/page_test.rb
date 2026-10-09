@@ -518,7 +518,7 @@ class PageDatabaseTest < Minitest::Test
       assert_equal(%w[Handbook Strategy], data["breadcrumb"].map { |b| b["name"] })
       assert_equal(%w[Options Decision Overview], data["toc"].map { |e| e["text"] })
       refute_includes data["html"], "<h1"
-      assert_includes data["confluence"], "confluence.example.com"
+      assert_includes data["links"]["confluence"], "confluence.example.com"
       assert_equal({ "name" => "John Smith", "email" => "john.smith@example.com" }, data["author"])
 
       get "/api/v1/pages/missing"
@@ -545,10 +545,12 @@ class PageDatabaseTest < Minitest::Test
     elsif schema["type"] == "object"
       assert_kind_of Hash, data, path
       Array(schema["required"]).each { |key| assert data.key?(key), "#{path} lacks required key #{key}" }
+      additional = schema["additionalProperties"].is_a?(Hash) ? schema["additionalProperties"] : nil
       extra = data.keys - schema.fetch("properties", {}).keys
 
-      assert_empty extra, "#{path} has keys the spec does not declare"
-      data.each { |key, value| assert_matches_schema(schema["properties"][key], value, spec, "#{path}.#{key}") }
+      assert_empty extra, "#{path} has keys the spec does not declare" unless additional
+
+      data.each { |key, value| assert_matches_schema(schema.dig("properties", key) || additional, value, spec, "#{path}.#{key}") }
     elsif schema["type"] == "array"
       assert_kind_of Array, data, path
       data.each_with_index { |item, i| assert_matches_schema(schema["items"], item, spec, "#{path}[#{i}]") }
