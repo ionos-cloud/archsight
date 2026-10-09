@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { getPage } from '../../api/client.js'
 import { searchParams } from '../../composables/useSearchScope.js'
 import WikiPage from './WikiPage.vue'
+import ResourceLinks from '../common/ResourceLinks.vue'
 
 const props = defineProps({
   name: String,
@@ -12,7 +13,7 @@ const page = ref(null)
 const error = ref(null)
 const hasProperties = computed(() => {
   const p = page.value
-  return !!(p && (p.status || p.author || p.owner || p.created || p.updated || p.tags.length || p.properties?.length || p.confluence))
+  return !!(p && (p.status || p.author || p.owner || p.created || p.updated || p.tags.length || p.properties?.length || Object.keys(p.links || {}).length))
 })
 
 async function load() {
@@ -94,13 +95,9 @@ function tagQuery(tag) {
           <dt>{{ property.key }}</dt>
           <dd v-html="property.html"></dd>
         </div>
-        <div v-if="page.confluence" class="prop">
-          <dt>Confluence</dt>
-          <dd>
-            <a :href="page.confluence" target="_blank" rel="noopener">
-              <i class="iconoir-open-new-window"></i> Open in Confluence
-            </a>
-          </dd>
+        <div v-if="Object.keys(page.links || {}).length" class="prop">
+          <dt>Links</dt>
+          <dd><ResourceLinks :links="page.links" /></dd>
         </div>
       </dl>
     </template>

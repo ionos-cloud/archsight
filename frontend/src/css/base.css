@@ -439,3 +439,13 @@ main .canvas a {
   color: var(--pico-muted-color);
   border-right: 1px solid var(--line);
 }
+
+/* ===== Links: a chip per link, with the icon of its system and the host it points to ===== */
+.link-icon {
+  font-size: 1.15em;
+}
+
+.link-host {
+  color: var(--pico-muted-color);
+  font-size: var(--fs-2xs);
+}
