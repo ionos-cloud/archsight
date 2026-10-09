@@ -87,9 +87,14 @@ class Archsight::Web::Application < Sinatra::Base
     mcp_server.register_tool(Archsight::MCP::ResourceDocTool)
     mcp_server.register_tool(Archsight::MCP::ExecuteAnalysisTool)
 
+    # The server is meant to be deployed (behind an ingress under its own hostname), and the web UI and API do not
+    # restrict who may reach them either. FastMcp's default would only accept the Origin / Host `localhost`
+    # (DNS-rebinding protection) and answer every other hostname with 403, so the check is switched off: an empty
+    # list of allowed origins disables it.
     use FastMcp::Transports::RackTransport, mcp_server,
         path_prefix: "/mcp",
-        localhost_only: false
+        localhost_only: false,
+        allowed_origins: []
   end
 
   helpers Archsight::GraphvisRenderer, Archsight::Helpers

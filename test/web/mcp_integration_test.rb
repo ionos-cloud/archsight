@@ -8,10 +8,8 @@ require "json"
 class McpIntegrationTest < Minitest::Test
   include Rack::Test::Methods
 
-  # Headers required for MCP requests (FastMcp validates Origin for security)
   MCP_HEADERS = {
-    "CONTENT_TYPE" => "application/json",
-    "HTTP_ORIGIN" => "localhost"
+    "CONTENT_TYPE" => "application/json"
   }.freeze
 
   def app
@@ -37,7 +35,7 @@ class McpIntegrationTest < Minitest::Test
   end
 
   def test_mcp_sse_endpoint_exists
-    get "/mcp/sse", {}, { "HTTP_ORIGIN" => "localhost" }
+    get "/mcp/sse"
 
     # SSE endpoint should return 200 (streaming response in real server)
     refute_equal 404, last_response.status
@@ -55,15 +53,29 @@ class McpIntegrationTest < Minitest::Test
     assert_equal(-32_601, response["error"]["code"])
   end
 
-  def test_mcp_origin_validation
-    # Without proper origin header, should be forbidden
-    post "/mcp/messages", {}.to_json, { "CONTENT_TYPE" => "application/json" }
+  # The server is deployed under its own hostname, so no Origin or Host is rejected (FastMcp would otherwise
+  # only accept `localhost`).
+  def test_mcp_accepts_any_origin_and_host
+    [
+      {},
+      { "HTTP_ORIGIN" => "localhost" },
+      { "HTTP_ORIGIN" => "https://arch.example.test" },
+      { "HTTP_HOST" => "arch.example.test" },
+      { "HTTP_HOST" => "arch.example.test", "HTTP_ORIGIN" => "https://arch.example.test" },
+      { "HTTP_REFERER" => "https://other.example.test/page" }
+    ].each do |headers|
+      post "/mcp/messages", {}.to_json, MCP_HEADERS.merge(headers)
 
-    assert_equal 403, last_response.status
-    response = JSON.parse(last_response.body)
+      assert_equal 200, last_response.status, headers.inspect
+      refute_includes last_response.body, "Origin validation failed", headers.inspect
+    end
+  end
 
-    assert response.key?("error")
-    assert_match(/Origin validation failed/, response["error"]["message"])
+  def test_mcp_sse_is_reachable_under_another_hostname
+    get "/mcp/sse", {}, { "HTTP_HOST" => "arch.example.test", "HTTP_ORIGIN" => "https://arch.example.test" }
+
+    refute_equal 403, last_response.status
+    refute_includes last_response.body, "Origin validation failed"
   end
 
   def test_setup_mcp_registers_tools

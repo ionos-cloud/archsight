@@ -91,6 +91,11 @@ archsight web
 claude mcp add --transport sse ionos-architecture http://localhost:4567/mcp/sse
 ```
 
+For a deployed server use its address, for example `claude mcp add --transport sse archsight https://archsight.example.com/mcp/sse`.
+The MCP endpoint accepts any hostname, like the web UI and the API, and has no authentication of its own: if the
+ingress requires a token, pass it with `--header "Authorization: Bearer <token>"`. The ingress must not buffer or
+time out the long-lived SSE connection.
+
 **Available tools:**
 
 - `query` - Search and filter resources using the query language
