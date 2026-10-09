@@ -146,6 +146,31 @@ Model **software** that supports the business.
 
 **Example chain:** Service "ManagedKubernetes" → realizedThrough → Component "kube-apiserver" → exposes → Interface "Kubernetes:RestAPI"
 
+#### Classifying components
+
+Components are not all alike: some are run, some are only imported, some bundle both. Say which with `component/type`
+(`executable`, `library`, `module`, `plugin`, `frontend`, `other`) and, for executables and plugins, what they do with
+`component/role` (`service`, `cli`, `job`, `operator`, `agent`). Importers set `component/type` and `component/tags`
+(machine tags such as `ecosystem:go`, `packaging:go-module`, `entrypoint:cmd/api`, `linkage:shared`) from the manifests;
+`component/role` is set by hand and never overwritten. Machine tags are `namespace:value` and live in `component/tags`,
+apart from the free `architecture/tags`. The computed `component/dependents` counts the components that depend on a
+component, which shows how widely a library or module is shared.
+
+| Ecosystem | Executable | Library | Module (bundles both) |
+|-----------|------------|---------|-----------------------|
+| Go | `package main` (`entrypoint:` per main package) | no `main` package | main packages plus importable packages outside `internal/` and `cmd/` |
+| JavaScript, TypeScript | `bin`, a server entry point | `main`, `exports`, `types` | `workspaces` root |
+| Ruby | gemspec `executables`, Rails app | gem without executables | monorepo of gems |
+| Python | `[project.scripts]`, `__main__.py` | package published to an index | distribution of several packages |
+| Rust | `[[bin]]`, `src/main.rs` | `[lib]` | Cargo workspace |
+| Java | `Main-Class`, Spring Boot, application plugin | plain jar | Maven or Gradle multi-module parent |
+| C, C++ | `add_executable`, `bin_PROGRAMS` | `add_library`, `lib_LTLIBRARIES` (`linkage:` shared, static, header-only) | none |
+| Shell, Perl | scripts (`bin/`) | `.pm` distributions, sourced files | none |
+
+Today the Go importer sets the type of the components it generates; the other ecosystems are classified by hand until
+their importers emit components. Deployable forms (container image, Helm chart, deb, rpm) are `TechnologyArtifact`s
+(`artifact/type`), not component types.
+
 ### Technology Layer
 
 Model **infrastructure** and **code**.

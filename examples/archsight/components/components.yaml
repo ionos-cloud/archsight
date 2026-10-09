@@ -10,6 +10,9 @@ metadata:
     architecture/tags: mcp,ai,claude
     architecture/kind: hexagonal
     architecture/size: microservice
+    component/type: executable
+    component/role: service
+    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:
@@ -30,6 +33,9 @@ metadata:
     architecture/tags: rest,api,json
     architecture/kind: hexagonal
     architecture/size: microservice
+    component/type: executable
+    component/role: service
+    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:
@@ -50,6 +56,8 @@ metadata:
     architecture/tags: query,parser,evaluator
     architecture/kind: hexagonal
     architecture/size: microservice
+    component/type: library
+    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:
@@ -67,6 +75,8 @@ metadata:
     architecture/tags: database,yaml,loading
     architecture/kind: hexagonal
     architecture/size: microservice
+    component/type: library
+    component/tags: ecosystem:ruby,packaging:gem
 spec:
   realizedThrough:
     technologyArtifacts:

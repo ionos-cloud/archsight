@@ -25,6 +25,13 @@ require_relative "../registry"
 class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grapher
   include Archsight::Import::Handlers::GoModuleParser
 
+  # Directories not scanned for Go packages
+  PACKAGE_SKIP_DIRS = %w[vendor testdata node_modules].freeze
+  # Packages below these directories are not meant to be imported by other modules
+  NON_LIBRARY_DIRS = %w[internal cmd hack tools examples example e2e test tests].freeze
+  MAX_ENTRYPOINTS = 10
+  IGNORED_BUILD = %r{^(//go:build\s+ignore\b|//\s*\+build\s+ignore\b)}
+
   OPENAPI_FILENAMES = %w[openapi.yaml openapi.yml openapi.json swagger.yaml swagger.yml swagger.json].freeze
   OPENAPI_SUBDIRS   = %w[api docs spec].freeze
 
@@ -64,6 +71,8 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
       interface_names = specs.filter_map { |s| interface_name_from_spec(s, visibility: visibility) }
                              .select { |n| existing_interfaces.key?(n) }
 
+      facts = curated_component_type?(comp_name) ? {} : component_facts(path, rel_dir, mod_name)
+
       comp_spec = { "realizedThrough" => { "technologyArtifacts" => [artifact_name] } }
       comp_spec["exposes"] = { "applicationInterfaces" => interface_names } if interface_names.any?
 
@@ -73,7 +82,8 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
       component = untracked_resource_yaml(
         kind: "ApplicationComponent",
         name: comp_name,
-        spec: comp_spec
+        spec: comp_spec,
+        annotations: component_annotations(facts)
       )
       output << YAML.dump(component)
     end
@@ -130,7 +140,84 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
 
   # ── OpenAPI detection ─────────────────────────────────────────────────────
 
-  def untracked_resource_yaml(kind:, name:, spec: {})
+  # A component type another source set (a person or an earlier import) is kept; this import's own earlier
+  # output is regenerated.
+  def curated_component_type?(comp_name)
+    existing = database&.instances_by_kind("ApplicationComponent")&.[](comp_name)
+    return false unless existing&.annotations&.key?("component/type")
+
+    existing.annotations["generated/script"] != import_resource.name
+  end
+
+  # Classify a go.mod module from its packages: with `package main` it is an executable, without it a library,
+  # and a module with both main packages and importable packages is a module.
+  def component_facts(repo_root, rel_dir, _mod_name)
+    mod_dir = rel_dir == "." ? repo_root : File.join(repo_root, rel_dir)
+    mains, libraries = scan_go_packages(mod_dir)
+    type = if mains.empty?
+             "library"
+           elsif libraries.empty?
+             "executable"
+           else
+             "module"
+           end
+
+    { type: type,
+      tags: %w[ecosystem:go packaging:go-module] + mains.first(MAX_ENTRYPOINTS).map { |dir| "entrypoint:#{dir}" } }
+  end
+
+  # @return [Array<Array<String>>] [main package dirs, importable library package dirs], relative to mod_dir
+  def scan_go_packages(mod_dir)
+    mains = []
+    libraries = []
+
+    Find.find(mod_dir) do |path|
+      if File.directory?(path)
+        Find.prune if path != mod_dir && skip_go_dir?(path)
+        next
+      end
+      next unless go_source?(path)
+
+      name = go_package_name(path)
+      next unless name
+
+      dir = File.dirname(path).delete_prefix(mod_dir).delete_prefix("/")
+      dir = "." if dir.empty?
+      if name == "main"
+        mains << dir
+      elsif !dir.split("/").intersect?(NON_LIBRARY_DIRS)
+        libraries << dir
+      end
+    end
+
+    [mains.uniq.sort, libraries.uniq.sort]
+  end
+
+  # Hidden and vendored directories, and nested modules (they are components of their own)
+  def skip_go_dir?(path)
+    base = File.basename(path)
+    PACKAGE_SKIP_DIRS.include?(base) || base.start_with?(".") || File.exist?(File.join(path, "go.mod"))
+  end
+
+  def go_source?(path)
+    path.end_with?(".go") && !path.end_with?("_test.go")
+  end
+
+  # Package name of a Go file, nil for a file that is excluded from normal builds (`//go:build ignore`)
+  def go_package_name(path)
+    head = File.foreach(path, encoding: "utf-8").first(40)
+    return nil if head.any? { |line| line.match?(IGNORED_BUILD) }
+
+    head.each do |line|
+      match = line.match(/\Apackage\s+(\w+)/)
+      return match[1] if match
+    end
+    nil
+  rescue SystemCallError, ArgumentError
+    nil
+  end
+
+  def untracked_resource_yaml(kind:, name:, spec: {}, annotations: {})
     {
       "apiVersion" => "architecture/v1alpha1",
       "kind" => kind,
@@ -139,7 +226,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
         "annotations" => {
           "generated/script" => import_resource.name,
           "generated/at" => Time.now.utc.iso8601
-        }
+        }.merge(annotations)
       },
       "spec" => spec
     }

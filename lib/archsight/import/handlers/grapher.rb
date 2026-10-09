@@ -123,6 +123,23 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
     raise NotImplementedError, "#{self.class}#collect_packages must be implemented"
   end
 
+  # Hook: subclasses that emit ApplicationComponents describe each module here.
+  # @param _repo_root [String] Absolute path to the repository root
+  # @param _rel_dir [String] Directory of the module relative to the root ("." for the root)
+  # @param _mod_name [String] Module name from discover_modules
+  # @return [Hash] { type: "executable|library|module|...", tags: ["ecosystem:go", ...] }, empty when unknown
+  def component_facts(_repo_root, _rel_dir, _mod_name)
+    {}
+  end
+
+  # component/type and component/tags annotations for the facts of component_facts
+  def component_annotations(facts)
+    annotations = {}
+    annotations["component/type"] = facts[:type] if facts[:type]
+    annotations["component/tags"] = facts[:tags].join(",") if facts[:tags]&.any?
+    annotations
+  end
+
   # ── Module coloring ───────────────────────────────────────────────────────
 
   def build_module_colors(modules)
