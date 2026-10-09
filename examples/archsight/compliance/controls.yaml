@@ -36,8 +36,8 @@ metadata:
     architecture/tags: documentation,architecture
 spec:
   ownedBy:
-    businessActors:
-      - Archsight:Maintainers
+    businessRoles:
+      - Role:ControlOwner
   executedBy:
     businessActors:
       - Archsight:Maintainers

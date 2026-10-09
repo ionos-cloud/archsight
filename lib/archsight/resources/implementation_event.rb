@@ -46,6 +46,7 @@ class Archsight::Resources::ImplementationEvent < Archsight::Resources::Base
              validator: ->(value) { Archsight::Resources::Page.timestamp_error(value) }
 
   relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
   relation :triggers, :implementationWorkPackages, :ImplementationWorkPackage
   relation :triggers, :implementationPlateaus, :ImplementationPlateau
 end

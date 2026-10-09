@@ -14,6 +14,7 @@ Current icon assignments for each resource type:
 | ApplicationEvent | `bell-notification` | <i class="iconoir-bell-notification"></i> |
 | BusinessControl | `shield-search` | <i class="iconoir-shield-search"></i> |
 | BusinessEvent | `flash` | <i class="iconoir-flash"></i> |
+| BusinessRole | `user-badge-check` | <i class="iconoir-user-badge-check"></i> |
 | BusinessProcess | `kanban-board` | <i class="iconoir-kanban-board"></i> |
 | BusinessProduct | `box-iso` | <i class="iconoir-box-iso"></i> |
 | ComplianceEvidence | `shield-check` | <i class="iconoir-shield-check"></i> |

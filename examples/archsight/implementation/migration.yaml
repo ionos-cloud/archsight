@@ -60,9 +60,6 @@ spec:
   ownedBy:
     businessActors:
       - Archsight:Maintainers
-  mitigates:
-    motivationAssessments:
-      - Risk:ContentInjection
   affects:
     applicationComponents:
       - Archsight:Web:API

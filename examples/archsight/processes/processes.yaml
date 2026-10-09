@@ -12,8 +12,8 @@ spec:
     applicationServices:
       - Archsight:CLI
   performedBy:
-    businessActors:
-      - Archsight:Maintainers
+    businessRoles:
+      - Role:ReviewLead
   realizes:
     motivationRequirements:
       - Requirement:QueryLanguage

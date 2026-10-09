@@ -8,6 +8,12 @@ module Archsight
     # Valid @component references in View annotations
     VALID_COMPONENTS = %w[activity git jira languages owner repositories status].freeze
 
+    # Relations the cycle check leaves out. Relations are followed from the dependent to what it relies on, so
+    # the declared ones form a DAG; `dependsOn` is the exception because components may depend on each other at
+    # runtime. The derived relations (`mentions`, `depicts`) are sideways views and are not declared, so they
+    # never enter the check.
+    CYCLE_EXEMPT_VERBS = %i[dependsOn].freeze
+
     def initialize(database)
       @database = database
       @errors = []
@@ -22,6 +28,7 @@ module Archsight
           validate_menu(instance) if instance.klass == "PageMenu"
         end
       end
+      validate_relation_cycles
 
       @errors
     end
@@ -77,6 +84,103 @@ module Archsight
         return found if found
       end
       nil
+    end
+
+    # Declared relations must not lead back to where they started (see the "Direction of Relations" modeling guide)
+    def validate_relation_cycles
+      graph = relation_graph
+      strongly_connected_groups(graph).each do |group|
+        cycle = cycle_through(group.first, group, graph)
+        names = cycle.map { |step| step[:to].name }
+        start = group.first
+        path = ([start.name] + names).zip(cycle.map { |step| step[:verb] }).flat_map { |name, verb| [name, verb && "-#{verb}->"] }.compact
+        @errors << "#{start.path_ref}: #{start.klass} '#{start.name}' is part of a relation cycle (#{path.join(" ")})"
+      end
+    end
+
+    # { instance => [{ verb:, to: }] } over the declared relations
+    def relation_graph
+      graph = {}
+      @database.instances.each_value do |instances_hash|
+        instances_hash.each_value do |instance|
+          graph[instance] = instance.class.declared_relations.flat_map do |verb, key, _kind|
+            next [] if CYCLE_EXEMPT_VERBS.include?(verb)
+
+            instance.relations(verb, key).map { |target| { verb: verb, to: target } }
+          end
+        end
+      end
+      graph
+    end
+
+    # Groups of instances that reach each other (iterative Tarjan, the graph can be deep); a single instance counts
+    # only when it points at itself
+    def strongly_connected_groups(graph)
+      index = {}
+      lowlink = {}
+      on_stack = {}
+      stack = []
+      groups = []
+      counter = 0
+
+      graph.each_key do |root|
+        next if index.key?(root)
+
+        work = [[root, 0]]
+        until work.empty?
+          node, edge = work.last
+          if edge.zero?
+            index[node] = lowlink[node] = counter
+            counter += 1
+            stack << node
+            on_stack[node] = true
+          end
+
+          edges = graph[node] || []
+          if edge < edges.length
+            work.last[1] += 1
+            target = edges[edge][:to]
+            if !index.key?(target)
+              work << [target, 0]
+            elsif on_stack[target]
+              lowlink[node] = [lowlink[node], index[target]].min
+            end
+          else
+            work.pop
+            lowlink[work.last.first] = [lowlink[work.last.first], lowlink[node]].min unless work.empty?
+            next unless lowlink[node] == index[node]
+
+            group = []
+            loop do
+              member = stack.pop
+              on_stack[member] = false
+              group << member
+              break if member.equal?(node)
+            end
+            groups << group if group.length > 1 || edges.any? { |e| e[:to].equal?(node) }
+          end
+        end
+      end
+      groups
+    end
+
+    # One concrete cycle through `start` inside its group: [{ verb:, to: }, ...] ending at `start`
+    def cycle_through(start, group, graph)
+      members = group.to_h { |member| [member, true] }
+      queue = [[start, []]]
+      seen = { start => true }
+      until queue.empty?
+        node, path = queue.shift
+        graph[node].each do |edge|
+          next unless members[edge[:to]]
+          return path + [edge] if edge[:to].equal?(start)
+          next if seen[edge[:to]]
+
+          seen[edge[:to]] = true
+          queue << [edge[:to], path + [edge]]
+        end
+      end
+      []
     end
 
     def validate_instance_annotations(instance)

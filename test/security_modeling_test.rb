@@ -53,6 +53,11 @@ class SecurityModelingTest < Minitest::Test
       assesses:
         technologyNodes:
           - Node:Web1
+      mitigatedBy:
+        goals:
+          - Objective:ReduceExposure
+        businessControls:
+          - Control:FirewallReview
     ---
     apiVersion: architecture/v1alpha1
     kind: MotivationAssessment
@@ -115,9 +120,9 @@ class SecurityModelingTest < Minitest::Test
       annotations:
         goal/type: control-objective
     spec:
-      mitigates:
-        motivationAssessments:
-          - Risk:Intrusion
+      realizes:
+        motivationRequirements:
+          - Measure:Firewall
     ---
     apiVersion: architecture/v1alpha1
     kind: MotivationPrinciple
@@ -131,9 +136,6 @@ class SecurityModelingTest < Minitest::Test
       ownedBy:
         businessActors:
           - Team:Security
-      realizes:
-        goals:
-          - Objective:ReduceExposure
     ---
     apiVersion: architecture/v1alpha1
     kind: MotivationRequirement
@@ -143,13 +145,8 @@ class SecurityModelingTest < Minitest::Test
         requirement/type: control-measure
     spec:
       realizes:
-        goals:
-          - Objective:ReduceExposure
         motivationPrinciples:
           - Policy:AccessControl
-      mitigates:
-        motivationAssessments:
-          - Risk:Intrusion
     ---
     apiVersion: architecture/v1alpha1
     kind: BusinessControl
@@ -159,9 +156,6 @@ class SecurityModelingTest < Minitest::Test
       satisfies:
         motivationRequirements:
           - Measure:Firewall
-      mitigates:
-        motivationAssessments:
-          - Risk:Intrusion
   YAML
 
   def with_db(yaml = CHAIN)
@@ -195,11 +189,11 @@ class SecurityModelingTest < Minitest::Test
       control = db.instance_by_kind("BusinessControl", "Control:FirewallReview")
 
       assert_equal [risk], threat.relations(:influences, :motivationAssessments)
-      assert_equal [risk], goal.relations(:mitigates, :motivationAssessments)
-      assert_equal [goal], measure.relations(:realizes, :goals)
+      assert_equal [goal], risk.relations(:mitigatedBy, :goals)
+      assert_equal [control], risk.relations(:mitigatedBy, :businessControls)
+      assert_equal [measure], goal.relations(:realizes, :motivationRequirements)
       assert_equal [measure], control.relations(:satisfies, :motivationRequirements)
-      assert_equal %w[BusinessControl MotivationGoal MotivationRequirement],
-                   risk.references_grouped.map { |kind, verbs| kind if verbs.key?(:mitigates) }.compact.sort
+      assert_equal [risk], goal.references_grouped.dig("MotivationAssessment", :mitigatedBy)
     end
   end
 
@@ -250,6 +244,20 @@ class SecurityModelingTest < Minitest::Test
                    "kind: MotivationAssessment\nmetadata:\n  name: Risk:Intrusion",
                    "  triggers:\n    businessProcesses:\n      - Loss:DataLeak\n---\napiVersion: architecture/v1alpha1\n" \
                    "kind: MotivationAssessment\nmetadata:\n  name: Risk:Intrusion")
+
+    assert_raises(Archsight::ResourceError) { with_db(yaml) { nil } }
+  end
+
+  def test_a_requirement_cannot_realize_a_goal
+    yaml = changed("spec:\n  realizes:\n    motivationPrinciples:",
+                   "spec:\n  realizes:\n    goals:\n      - Objective:ReduceExposure\n    motivationPrinciples:")
+
+    assert_raises(Archsight::ResourceError) { with_db(yaml) { nil } }
+  end
+
+  def test_a_principle_cannot_realize_a_goal
+    yaml = changed("      - Team:Security\n---\napiVersion: architecture/v1alpha1\nkind: MotivationRequirement",
+                   "      - Team:Security\n  realizes:\n    goals:\n      - Objective:ReduceExposure\n---\napiVersion: architecture/v1alpha1\nkind: MotivationRequirement")
 
     assert_raises(Archsight::ResourceError) { with_db(yaml) { nil } }
   end

@@ -30,8 +30,8 @@ class Archsight::Resources::MotivationGoal < Archsight::Resources::Base
     ## Security and risk modelling
 
     In the Open Group risk and security overlay a goal with `goal/type` `control-objective` states what a control
-    achieves against a risk: it `mitigates` the risk (`MotivationAssessment`) and is realized by the
-    requirements that are the control measures.
+    achieves against a risk. The risk (`MotivationAssessment`) is `mitigatedBy` the goal, and the goal `realizes` the
+    requirements that are the control measures: risk, then objective, then measure, read top-down.
   MD
 
   icon "archery"
@@ -43,7 +43,6 @@ class Archsight::Resources::MotivationGoal < Archsight::Resources::Base
              filter: :word,
              summary: true
 
-  relation :mitigates, :motivationAssessments, :MotivationAssessment
   relation :realizes, :outcomes, :MotivationOutcome
   relation :refinedBy, :goals, :MotivationGoal
   relation :realizes, :motivationRequirements, :MotivationRequirement

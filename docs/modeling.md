@@ -18,6 +18,34 @@ Application Layer   What software supports the business
 Technology Layer    How software is built and deployed
 ```
 
+## Direction of Relations
+
+Model and read the architecture **top-down**: Motivation, Strategy, Business, Application, Technology; the
+Implementation & Migration layer describes change across all of them. A relation is written on an element and points
+to what that element depends on, is served by, or is answered by. Following relations from a high-level element
+therefore walks down to people, code and infrastructure, and the relations form a DAG: nothing may lead back to where
+it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components may depend on each
+other at runtime).
+
+There are two families of verbs:
+
+| Family | Verbs | Written on | Points to |
+|--------|-------|------------|-----------|
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `realizedThrough`, `exposes`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
+
+Rules:
+
+- A pair of kinds never has the same relation in both directions: a goal `realizes` a requirement, a requirement does not
+  `realize` a goal. Reverse relations are shown for free as incoming relations.
+- Responsibility ends at the actor: process, control, risk, policy, work package point to a `BusinessRole`, the role
+  points to the `BusinessActor` that holds it, and the actor points to nothing further.
+- The docs draw realization chains top-down ("Requirement, down to Service") while the data is stored on the concrete
+  element, so the file of a service says what it realizes.
+- `mentions` and `depicts` are not part of this structure. They are derived from the text and diagrams of a resource
+  (never written in a file) and show how things are linked sideways, in prose and pictures. They neither follow nor
+  contradict the direction above and are left out of the cycle check.
+
 ## Starting Points
 
 ### Top-Down Modeling
@@ -67,14 +95,17 @@ Model **who** does **what** in business terms.
 | Resource | When to Use |
 |----------|-------------|
 | BusinessActor | For teams, departments, or organizations |
+| BusinessRole | For responsibilities held by actors: control owner, risk owner, information security officer (`role/type`) |
 | BusinessProcess | For workflows that produce business value |
 | BusinessProduct | For offerings to customers (cloud services, APIs) |
 | BusinessControl | For controls that guide a process (access review, change approval), with an owner and executors |
 | BusinessEvent | For things that happen in the business: threat events, loss events, incidents, triggers (`event/type`) |
 
-**Example chain:** Actor "Platform Team" → performedBy → Process "Incident Response" → servedBy → Service "Monitoring"
+**Example chain:** Process "Incident Response" → performedBy → Actor "Platform Team"; Process "Incident Response" → servedBy → Service "Monitoring"
 
-**Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Actor "Platform Team". How controls, requirements and evidence fit together is described under Relation Patterns below.
+**Roles:** Process "Incident Response" → performedBy → Role "Incident Manager" → performedBy → Actor "Platform Team". Controls, risks, policies and work packages use `ownedBy` (and controls `executedBy`) the same way. Use a role where the responsibility has a name of its own and should survive a change of team; pointing straight at an actor stays valid.
+
+**Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Role or Actor. How controls, requirements and evidence fit together is described under Relation Patterns below.
 
 ### Implementation & Migration Layer
 
@@ -90,7 +121,7 @@ Model **change**: what is done, what it delivers and how the architecture looks 
 
 **Migration path:** Plateau "Baseline" → triggers → Plateau "Target"; Gap → compares → both plateaus; Work Package → realizes → Deliverable → realizes → Plateau "Target"; Gap → closedBy → Work Package.
 
-**Remediation:** Assessment "Risk" ← mitigates ← Work Package → realizes → Deliverable (type `evidence`) → realizes → ComplianceEvidence. Group by `risk/domain` to see the plan of one domain, filter by `workpackage/status` and `workpackage/due` for what is open or late.
+**Remediation:** Assessment "Risk" → mitigatedBy → Work Package → realizes → Deliverable (type `evidence`) → realizes → ComplianceEvidence. Group by `risk/domain` to see the plan of one domain, filter by `workpackage/status` and `workpackage/due` for what is open or late.
 
 ### Strategy Layer
 
@@ -224,8 +255,8 @@ separate security layer: a concept is an ordinary element that carries a **type*
 | Loss event, incident | the three event kinds | `event/type: loss-event` or `incident` | the layer says where it happens |
 | Risk | `MotivationAssessment` | `assessment/type: risk` | initial and residual profile, `risk/treatment` |
 | Vulnerability | `MotivationAssessment` | `assessment/type: vulnerability` | `assesses` the assets it is found on |
-| Control objective | `MotivationGoal` | `goal/type: control-objective` | `mitigates` the risk |
-| Control measure | `MotivationRequirement` | `requirement/type: control-measure` | `realizes` the objective, `mitigates` the risk |
+| Control objective | `MotivationGoal` | `goal/type: control-objective` | the risk is `mitigatedBy` it |
+| Control measure | `MotivationRequirement` | `requirement/type: control-measure` | a goal `realizes` it; the risk can be `mitigatedBy` it |
 | Control implementation | `BusinessControl`, applications, nodes, processes | none | `satisfies` / `realizes` the measure |
 | Proof of the control | `ComplianceEvidence` | `evidence/type` | `evidence/status: not-applicable` where the requirement does not apply |
 | Asset at risk | any application, technology, data or process kind | `asset/value`, `asset/confidentiality`, `asset/integrity`, `asset/availability` | the protection need (BSI Schutzbedarf) |
@@ -236,12 +267,12 @@ separate security layer: a concept is an ordinary element that carries a **type*
 The chain, as in the paper's Coldhard Steel example:
 
 ```
-MotivationDriver (threat) ──influences──→ MotivationAssessment (risk) ←──mitigates── MotivationGoal (control objective)
-        │ triggers                                  ↑ assesses                              ↑ realizes
-        ↓                                           │                              MotivationRequirement (control measure)
-BusinessEvent (loss event) ←──influences── MotivationAssessment (vulnerability)             ↑ satisfies
-        ↑ triggers                                                                 BusinessControl / asset ──evidencedBy──→ ComplianceEvidence
-TechnologyEvent / ApplicationEvent (threat event, attack)
+MotivationDriver (threat) ──influences──→ MotivationAssessment (risk) ──mitigatedBy──→ MotivationGoal (control objective)
+        │ triggers                                  │ assesses                                      │ realizes
+        ↓                                           ↓                                               ↓
+BusinessEvent (loss event) ←──influences── MotivationAssessment (vulnerability)      MotivationRequirement (control measure)
+        ↑ triggers                                                                                  ↑ satisfies / realizes
+TechnologyEvent / ApplicationEvent (threat event, attack)                         BusinessControl / asset ──evidencedBy──→ ComplianceEvidence
 ```
 
 ```yaml
@@ -261,25 +292,24 @@ metadata:
     risk/treatment: mitigate
     risk/domain: customer-data
 spec:
-  ownedBy: { businessActors: [Team:Security] }
+  ownedBy: { businessRoles: [Role:RiskOwner] }
   assesses: { technologyNodes: [Node:Web1] }
+  mitigatedBy: { goals: [Objective:ReduceExposure], businessControls: [Control:FirewallReview] }
 ---
 kind: MotivationGoal
 metadata: { name: Objective:ReduceExposure, annotations: { goal/type: control-objective } }
 spec:
-  mitigates: { motivationAssessments: [Risk:Intrusion] }
+  realizes: { motivationRequirements: [Measure:Firewall] }
 ---
 kind: MotivationRequirement
 metadata: { name: Measure:Firewall, annotations: { requirement/type: control-measure } }
-spec:
-  realizes: { goals: [Objective:ReduceExposure] }
-  mitigates: { motivationAssessments: [Risk:Intrusion] }
+spec: {}
 ---
 kind: BusinessControl
 metadata: { name: Control:FirewallReview }
 spec:
+  ownedBy: { businessRoles: [Role:ControlOwner] }
   satisfies: { motivationRequirements: [Measure:Firewall] }
-  mitigates: { motivationAssessments: [Risk:Intrusion] }
 ```
 
 How to model it:

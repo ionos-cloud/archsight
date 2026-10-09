@@ -22,7 +22,10 @@ class ImplementationLayerTest < Minitest::Test
       name: Risk:Intrusion
       annotations:
         assessment/type: risk
-    spec: {}
+    spec:
+      mitigatedBy:
+        implementationWorkPackages:
+          - WorkPackage:Firewall
     ---
     apiVersion: architecture/v1alpha1
     kind: ComplianceEvidence
@@ -76,9 +79,6 @@ class ImplementationLayerTest < Minitest::Test
       ownedBy:
         businessActors:
           - Team:Security
-      mitigates:
-        motivationAssessments:
-          - Risk:Intrusion
       realizes:
         implementationDeliverables:
           - Deliverable:FirewallRules
@@ -134,7 +134,7 @@ class ImplementationLayerTest < Minitest::Test
       target = db.instance_by_kind("ImplementationPlateau", "Plateau:Target")
 
       assert_equal [deliverable], work.relations(:realizes, :implementationDeliverables)
-      assert_equal ["Risk:Intrusion"], work.relations(:mitigates, :motivationAssessments).map(&:name)
+      assert_equal ["Risk:Intrusion"], work.references_grouped.dig("MotivationAssessment", :mitigatedBy).map(&:name)
       assert_equal [work], gap.relations(:closedBy, :implementationWorkPackages)
       assert_equal %w[Plateau:Baseline Plateau:Target], gap.relations(:compares, :implementationPlateaus).map(&:name).sort
       assert_equal %w[ImplementationDeliverable ImplementationGap ImplementationPlateau],
@@ -153,7 +153,7 @@ class ImplementationLayerTest < Minitest::Test
   end
 
   def test_a_work_package_cannot_compare_plateaus
-    yaml = RESOURCES.sub("  mitigates:\n    motivationAssessments:\n      - Risk:Intrusion",
+    yaml = RESOURCES.sub("  realizes:\n    implementationDeliverables:\n      - Deliverable:FirewallRules",
                          "  compares:\n    implementationPlateaus:\n      - Plateau:Target")
 
     refute_equal RESOURCES, yaml

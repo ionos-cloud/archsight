@@ -53,6 +53,7 @@ class Archsight::Resources::ImplementationDeliverable < Archsight::Resources::Ba
              validator: ->(value) { Archsight::Resources::Page.timestamp_error(value) }
 
   relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
   relation :realizes, :implementationPlateaus, :ImplementationPlateau
   relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :realizes, :goals, :MotivationGoal
