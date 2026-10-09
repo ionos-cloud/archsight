@@ -2,7 +2,7 @@
 
 # BusinessActor represents teams or organizational units
 class Archsight::Resources::BusinessActor < Archsight::Resources::Base
-  include_annotations :git, :architecture, :generated
+  include_annotations :git, :architecture, :generated, :asset, :risk
 
   description <<~MD
     Represents a team, organizational unit, or external entity that performs business behavior.
@@ -25,6 +25,14 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
     - External vendors or partners
     - Support organizations
     - Cross-functional groups
+
+    ## Security and risk modelling
+
+    - **Threat agent:** an actor (also an external one, such as an attacker group or a supplier) can be the
+      `causedBy` of a threat or loss event.
+    - **Owner and executor:** actors own risks (`MotivationAssessment` `ownedBy`), policies and controls.
+    - **Asset:** a supplier or a team can be an asset at risk; set the `asset/*` profile and `assesses` it from a
+      supplier assessment.
   MD
 
   icon "community"

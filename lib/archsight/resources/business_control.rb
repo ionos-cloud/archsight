@@ -2,7 +2,7 @@
 
 # BusinessControl represents a control that guides a business process
 class Archsight::Resources::BusinessControl < Archsight::Resources::Base
-  include_annotations :git, :architecture
+  include_annotations :git, :architecture, :risk
 
   description <<~MD
     Represents a control: a safeguard or decision step with an owner that guides how a business process is carried out.
@@ -36,6 +36,12 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
     `evidence/type` of that evidence to `process`, `documentation` or `audit-log`.
 
     Put the best practices and the evidence requirements of a control in the description.
+
+    ## Security and risk modelling
+
+    A control is the process-side implementation of a control measure. `satisfies` the requirements (catalogue
+    controls and control measures) and `mitigates` the risks it reduces. Group controls with `risk/domain` and
+    `risk/category`.
   MD
 
   icon "shield-search"
@@ -77,4 +83,5 @@ class Archsight::Resources::BusinessControl < Archsight::Resources::Base
   relation :executedBy, :businessActors, :BusinessActor
   relation :satisfies, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
+  relation :mitigates, :motivationAssessments, :MotivationAssessment
 end

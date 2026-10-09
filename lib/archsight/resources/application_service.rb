@@ -2,7 +2,7 @@
 
 # ApplicationService represents the high level application service that implements capabilities
 class Archsight::Resources::ApplicationService < Archsight::Resources::Base
-  include_annotations :git, :architecture, :generated, :backup
+  include_annotations :git, :architecture, :generated, :backup, :asset, :risk
 
   description <<~MD
     Represents a high-level application service that implements business capabilities.
@@ -24,6 +24,11 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
     - Logical groupings of application components
     - Services exposed to business processes
     - APIs and their implementations as a cohesive unit
+
+    ## Security and risk modelling
+
+    A service is an asset at risk (`asset/*` profile, protection needs) that loss events `affects`, a trigger target
+    for `ApplicationEvent`s, and the place where requirements are realized and evidenced.
   MD
 
   icon "cube"

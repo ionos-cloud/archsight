@@ -2,7 +2,7 @@
 
 # DataObject represents data structured for automated processing (ArchiMate Application Layer)
 class Archsight::Resources::DataObject < Archsight::Resources::Base
-  include_annotations :git, :architecture, :generated
+  include_annotations :git, :architecture, :generated, :asset, :risk
 
   description <<~MD
     Represents data structured for automated processing by applications.
@@ -25,6 +25,11 @@ class Archsight::Resources::DataObject < Archsight::Resources::Base
     - Message payloads
     - Configuration structures
     - Domain models
+
+    ## Security and risk modelling
+
+    Data objects carry the information assets: set `asset/value` and the protection needs
+    (`asset/confidentiality`, `asset/integrity`, `asset/availability`, BSI Schutzbedarf), and `risk/domain`.
   MD
 
   icon "database"

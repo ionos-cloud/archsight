@@ -2,7 +2,7 @@
 
 # ApplicationComponent a part of the ApplicationService
 class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
-  include_annotations :git, :architecture, :generated, :backup
+  include_annotations :git, :architecture, :generated, :backup, :asset, :risk
 
   description <<~MD
     Represents a logical part of an application service that can be deployed independently.
@@ -24,6 +24,13 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     - Backend components
     - Frontend applications
     - Background workers
+
+    ## Security and risk modelling
+
+    - **Asset at risk:** set `asset/value` and the protection needs; `assesses` from a vulnerability or risk.
+    - **Control implementation:** a component that implements a control measure `realizes` the requirement and is
+      `evidencedBy` evidence.
+    - **Threat agent:** a component can be the `causedBy` of an event (a compromised service).
   MD
 
   icon "component"

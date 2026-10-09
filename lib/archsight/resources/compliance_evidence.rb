@@ -9,7 +9,7 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
 
     ## ArchiMate Definition
 
-    **Layer:** Implementation & Migration
+    **Layer:** Business (as a kind; ArchiMate would place evidence in Implementation & Migration)
     **Aspect:** Passive Structure
 
     Compliance evidence represents tangible proof that a system or process meets specific
@@ -32,6 +32,12 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
       that resource meets the requirement it `satisfies`
     - **Of a control:** linked with `evidencedBy` from a `BusinessControl`; the records the control produces
       (reviews, diagrams, change history, audit logs). Use `evidence/type` `process`, `documentation` or `audit-log`
+
+    ## Security and risk modelling
+
+    Evidence is the proof that a control measure works. Use `evidence/status` `not-applicable` when the requirement
+    does not apply (BSI "entbehrlich"). Evidence of risk treatment (a test, a review, an audit report) is linked
+    from the control or application it is about.
   MD
 
   icon "shield-check"
@@ -44,7 +50,7 @@ class Archsight::Resources::ComplianceEvidence < Archsight::Resources::Base
 
   annotation "evidence/status",
              description: "Current status of evidence",
-             enum: %w[implemented partial not-implemented],
+             enum: %w[implemented partial not-implemented not-applicable],
              summary: true
 
   # The structured answer to "how does the evidenced resource meet the requirement": one markdown field per

@@ -1,0 +1,84 @@
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationDriver
+metadata:
+  name: Threat:UntrustedResources
+  annotations:
+    driver/type: threat
+    risk/domain: resource-files
+    risk/category: security
+    architecture/description: Resource files of a third party can carry content that is rendered in the web UI.
+spec:
+  influences:
+    motivationAssessments:
+      - Risk:ContentInjection
+  triggers:
+    applicationEvents:
+      - Event:MaliciousMarkdown
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationEvent
+metadata:
+  name: Event:MaliciousMarkdown
+  annotations:
+    event/type: attack
+    event/severity: high
+    risk/domain: resource-files
+spec:
+  affects:
+    applicationComponents:
+      - Archsight:Web:API
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationAssessment
+metadata:
+  name: Risk:ContentInjection
+  annotations:
+    assessment/id: R-001
+    assessment/type: risk
+    assessment/status: treating
+    risk/initial-likelihood: medium
+    risk/initial-impact: high
+    risk/residual-likelihood: low
+    risk/residual-impact: high
+    risk/treatment: mitigate
+    risk/domain: resource-files
+    risk/category: security
+spec:
+  ownedBy:
+    businessActors:
+      - Archsight:Maintainers
+  assesses:
+    applicationComponents:
+      - Archsight:Web:API
+  influences:
+    applicationEvents:
+      - Event:MaliciousMarkdown
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationGoal
+metadata:
+  name: Objective:SafeRendering
+  annotations:
+    goal/type: control-objective
+    risk/domain: resource-files
+spec:
+  mitigates:
+    motivationAssessments:
+      - Risk:ContentInjection
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationRequirement
+metadata:
+  name: Measure:SanitizeMarkdown
+  annotations:
+    requirement/type: control-measure
+    requirement/priority: must
+    risk/domain: resource-files
+spec:
+  realizes:
+    goals:
+      - Objective:SafeRendering
+  mitigates:
+    motivationAssessments:
+      - Risk:ContentInjection
