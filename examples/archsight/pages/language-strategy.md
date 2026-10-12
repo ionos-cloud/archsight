@@ -5,6 +5,8 @@ author: Vincent Landgraf <vincent.landgraf@ionos.com>
 owner: Vincent Landgraf <vincent.landgraf@ionos.com>
 status: approved
 toc: yes
+links:
+  confluence: https://confluence.example.com/spaces/ARCH/pages/12345/Language+Strategy
 ---
 
 # Language Strategy
