@@ -5,3 +5,11 @@ metadata:
   annotations:
     architecture/description: Source repository of the payments API.
     architecture/tags: example,payments
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Repo:refunds-worker
+  annotations:
+    architecture/description: Source repository of the refunds worker.
+    architecture/tags: example,payments

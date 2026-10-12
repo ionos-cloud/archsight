@@ -31,7 +31,7 @@ Model and read the architecture **top-down**: Motivation, Strategy, Business, Ap
 Implementation & Migration layer describes change across all of them. A relation is written on an element and points
 to what that element depends on, is served by, or is answered by. Following relations from a high-level element
 therefore walks down to people, code and infrastructure, and the relations form a DAG: nothing may lead back to where
-it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components may depend on each
+it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components and services may depend on each
 other at runtime).
 
 There are two families of verbs:
@@ -83,8 +83,8 @@ Each answers one question. The test decides the kind, not the name.
 1. One path up: Product `realizes` Capability, Product `servedBy` Service, Service `realizedThrough` Component,
    Component `realizedThrough` Artifact. Capability `servedBy` Service only for internal capabilities that no product
    carries.
-2. A component belongs to exactly one service. One service using another is a relation between the services, not the
-   same component listed twice.
+2. A component belongs to exactly one service; one service using another is `dependsOn` between the services (see
+   [Service Chain](#service-chain)), not the same component listed twice.
 3. An artifact is realized by exactly one component. Larger logical components group finer ones with `dependsOn`.
 4. A service whose only component has the same name is a smell: name the service by its function, or fold it into the
    service it belongs to.
@@ -370,11 +370,19 @@ Shows how services depend on each other:
 
 ```
 ApplicationService
+       ↓ dependsOn            (another ApplicationService)
+ApplicationService
        ↓ servedBy
 TechnologyService
        ↓ suppliedBy
 TechnologySystemSoftware
 ```
+
+A service that uses another one says so with `dependsOn` on the service, the same verb components use between each
+other. Do not add the other service's components to your own `realizedThrough`: the component would then belong to
+two services, its owner is ambiguous and every rollup over the service's components counts it twice. Two services may
+depend on each other, so `dependsOn` is exempt from the cycle check. In `examples/archsight`, "Refunds" depends on "Payment Authorization" (it refunds an authorized payment) and
+"Payment Authorization" depends on "Refunds" (it asks to reverse a payment it cannot complete).
 
 ### Requirements, Controls and Evidence
 

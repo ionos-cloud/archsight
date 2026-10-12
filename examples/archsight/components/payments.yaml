@@ -13,3 +13,18 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:payments-api
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Refunds:Worker
+  annotations:
+    architecture/description: |
+      Background worker that executes refunds, named by its runtime role.
+    architecture/tags: example,payments
+    component/type: executable
+    component/role: job
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:refunds-worker
