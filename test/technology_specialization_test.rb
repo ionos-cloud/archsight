@@ -180,28 +180,28 @@ class TechnologySpecializationTest < Minitest::Test
     errors = lint(with_spec("Node:Cluster", "  specializes:\n    technologyNodes:\n      - Node:ClusterX"))
 
     assert_equal 1, errors.length
-    assert_match(/TechnologyNode 'Node:Cluster\w*' is part of a specializes cycle \(Node:Cluster\w* -specializes-> Node:Cluster\w* -specializes-> Node:Cluster\w*\)/, errors.first)
+    assert_match(/TechnologyNode 'Node:Cluster\w*' is part of a cycle of specializes relations \(Node:Cluster\w* -specializes-> Node:Cluster\w* -specializes-> Node:Cluster\w*\)/, errors.first)
   end
 
   def test_node_specializing_itself_is_reported
     errors = lint(with_spec("Node:Cluster", "  specializes:\n    technologyNodes:\n      - Node:Cluster"))
 
     assert_equal 1, errors.length
-    assert_includes errors.first, "specializes cycle (Node:Cluster -specializes-> Node:Cluster)"
+    assert_includes errors.first, "cycle of specializes relations (Node:Cluster -specializes-> Node:Cluster)"
   end
 
   def test_composed_of_cycle_is_reported
     errors = lint(with_spec("Node:Host", "  composedOf:\n    technologyNodes:\n      - Node:ClusterX"))
 
     assert_equal 1, errors.length
-    assert_includes errors.first, "composedOf cycle"
+    assert_includes errors.first, "cycle of composedOf relations"
   end
 
   def test_system_software_cycle_is_reported
     errors = lint(with_spec("Soft:Platform", "  specializes:\n    technologySystemSoftware:\n      - Soft:PlatformX"))
 
     assert_equal 1, errors.length
-    assert_includes errors.first, "specializes cycle"
+    assert_includes errors.first, "cycle of specializes relations"
   end
 
   def test_different_verbs_between_two_elements_are_no_cycle

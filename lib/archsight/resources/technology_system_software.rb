@@ -30,6 +30,11 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
 
     System software is `locatedAt` the `Facility` (or facilities) it runs in.
 
+    ## Deployment
+
+    System software `assignedTo` the artifacts it executes (ArchiMate assignment), written on the system software.
+    The artifact's page shows it as incoming "deployed on".
+
     ## Concept and implementation
 
     System software can `specialize` other system software (ArchiMate specialization): the general one is the
@@ -44,6 +49,7 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
   relation :realizedBy, :technologyComponents, :TechnologyNode
   relation :specializes, :technologySystemSoftware, :TechnologySystemSoftware
   relation :composedOf, :technologySystemSoftware, :TechnologySystemSoftware
+  relation :assignedTo, :technologyArtifacts, :TechnologyArtifact
   relation :realizedThrough, :technologyArtifacts, :TechnologyArtifact
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface

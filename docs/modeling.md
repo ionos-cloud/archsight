@@ -32,7 +32,7 @@ Implementation & Migration layer describes change across all of them. A relation
 to what that element depends on, is served by, or is answered by. Following relations from a high-level element
 therefore walks down to people, code and infrastructure, and the relations form a DAG: nothing may lead back to where
 it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components and services may depend on each
-other at runtime). `specializes` and `composedOf` are checked per verb, see "Concept and Implementation".
+other at runtime). `specializes`, `composedOf` and `aggregates` are checked per verb, see "Concept and Implementation" and "Deployment".
 
 There are two families of verbs:
 
@@ -320,7 +320,7 @@ Model **infrastructure** and **code**.
 
 | Resource | When to Use |
 |----------|-------------|
-| TechnologyArtifact | For source code repositories, packages, images and binaries (`artifact/type`) |
+| TechnologyArtifact | For source code repositories, packages, images and binaries (`artifact/type`); `aggregates` its contents, nodes are `assignedTo` it |
 | TechnologyService | For infrastructure services (Postgres, Redis, Kubernetes platform) |
 | TechnologySystemSoftware | For logical infrastructure (database cluster, message queue) |
 | TechnologyNode | For infrastructure instances; `specializes` / `composedOf` another node |
@@ -442,7 +442,38 @@ The page of the concept shows the implementations as incoming `specializes`, the
 `specializes` or `composedOf` chain that leads back to where it started. Do not use `realizedBy` between elements of
 one kind: realization goes from concrete to abstract across layers. See `examples/archsight/technology/platforms.yaml`.
 
-### Requirements, Controls and Evidence
+### Deployment
+
+An artifact (`TechnologyArtifact`) describes what reaches a host; three relations connect it to the rest:
+
+| Kind | Verb | Target | ArchiMate | Meaning |
+|------|------|--------|-----------|---------|
+| `TechnologyArtifact` | `aggregates` | `TechnologyArtifact` | aggregation | an image contains packages, a chart references container images |
+| `TechnologyNode` | `assignedTo` | `TechnologyArtifact` | assignment | the artifact is deployed on the node |
+| `TechnologySystemSoftware` | `assignedTo` | `TechnologyArtifact` | assignment | the artifact is executed by the system software |
+
+`assignedTo` is written on the node or system software, which owns the deployment. A bootable OS image, VM template or
+disk image is an artifact of `artifact/type: image` (`binary` and `archive` exist as well).
+
+```
+ApplicationComponent
+       ↓ realizedThrough       (what the component is built from)
+TechnologyArtifact (image)
+       ↓ aggregates            (what the image contains)
+TechnologyArtifact (package)
+
+TechnologyNode
+       ↓ assignedTo            (where the artifact is deployed)
+TechnologyArtifact
+```
+
+The artifact's page shows `aggregates` as incoming "contained in" and `assignedTo` as incoming "deployed on"; the node's
+page shows what it `assignedTo`. This answers "which hosts get package X" with a reverse lookup instead of a package list in
+an annotation. `archsight lint` reports an `aggregates` chain that leads back to where it started. Example: a host role
+boots an image that contains two packages, and configuration management installs a third on the same hosts, see
+`examples/archsight/technology/deployment.yaml`. Do not use `servedBy` between artifacts for contents: it reads as
+"is served by", not "contains".
+
 
 A requirement is the point where the process side and the application side of compliance meet:
 

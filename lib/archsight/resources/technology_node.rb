@@ -37,6 +37,12 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     A node made of other nodes (a cluster of hosts) is `composedOf` them (ArchiMate composition). Both only point at
     nodes, and neither may form a cycle.
 
+    ## Deployment
+
+    A node `assignedTo` the artifacts that are deployed on it (ArchiMate assignment): the image it boots, the
+    packages installed on it. The relation is written on the node, which owns the deployment; the artifact's page
+    shows the nodes as incoming "deployed on".
+
     ## Security and risk modelling
 
     A node is the typical asset of a vulnerability assessment: a scan result is a `MotivationAssessment` of type
@@ -59,4 +65,5 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   relation :locatedAt, :facilities, :Facility
   relation :specializes, :technologyNodes, :TechnologyNode
   relation :composedOf, :technologyNodes, :TechnologyNode
+  relation :assignedTo, :technologyArtifacts, :TechnologyArtifact
 end
