@@ -24,9 +24,17 @@ Type any word to search by name (case-insensitive regex match):
     name != "OldService"    # not equal
     name in ("a", "b")      # name is one of several options
 
+Names often contain colons (`Archsight:CLI`) and so do [aliases](/doc/modeling#identity-and-links) (`ITGS:A001`). Typed
+without spaces they are one word, found by name or alias like any other bare word:
+
+    Archsight:CLI           # the resources named Archsight:CLI
+    ITGS:A001               # the resource with the alias ITGS:A001
+    ApplicationService:ITGS:A001   # the same, in one kind
+
 ## Kind Filter
 
-Prefix your query with `Kind:` to filter by resource type:
+Prefix your query with `Kind:` to filter by resource type (a capitalised word that is a kind, followed by a space or
+nothing; `Kind:Name` without a space is the kind and a name):
 
     TechnologyArtifact:                              # all of this kind
     TechnologyArtifact: activity/status == "active"  # filtered
