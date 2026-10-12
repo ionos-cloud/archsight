@@ -56,4 +56,5 @@ for `complete` output: it returns the whole markdown of every match. Details and
 
 An `Analysis` resource holds a Ruby script that runs in a sandbox against the loaded database. Use it for
 questions a query cannot express, such as scoring or cross-checks. Run with `archsight analyze` or through
-the MCP `execute_analysis` tool. An example is in `examples/archsight/analyses/sample.yaml`.
+the MCP `execute_analysis` tool. `archsight analyze --format typst -o report.typ` writes the results as a Typst
+document, see [[Running Archsight]]. An example is in `examples/archsight/analyses/sample.yaml`.
