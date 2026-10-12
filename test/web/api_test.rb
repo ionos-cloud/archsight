@@ -204,6 +204,14 @@ class APITest < Minitest::Test
     assert_equal "technical-control", annotations["evidence/type"]
   end
 
+  def test_get_instance_links_resource_annotations
+    get "/api/v1/kinds/ApplicationComponent/instances/Archsight:Render:GraphViz"
+
+    assert_equal "resource", json_response["annotation_formats"]["lifecycle/replacedBy"]
+    assert_equal "/kinds/ApplicationComponent/instances/Archsight:Render:Diagram",
+                 json_response["annotation_links"]["lifecycle/replacedBy"]
+  end
+
   def test_get_instance_reports_the_annotation_formats
     get "/api/v1/kinds/ComplianceEvidence/instances/Archsight:TestCoverage"
 

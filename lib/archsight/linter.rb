@@ -226,10 +226,18 @@ module Archsight
         next unless annotation.has_validation?
 
         # Validate value against annotation schema (type and enum constraints)
-        annotation.validate(value).each do |error|
-          @errors << "#{instance.path_ref}: Annotation '#{key}' #{error}"
-        end
+        errors = annotation.validate(value)
+        errors.each { |error| @errors << "#{instance.path_ref}: Annotation '#{key}' #{error}" }
+        validate_resource_reference(instance, key, value) if annotation.resource? && errors.empty?
       end
+    end
+
+    # The resource a `Name` / `Kind/Name` annotation points to must exist; a bare `Name` means the same kind
+    def validate_resource_reference(instance, key, value)
+      return if Archsight::Helpers::ResourceResolver.new(@database).find_annotated(value, instance.klass).is_a?(Array)
+
+      hint = value.to_s.include?("/") ? "" : " (a name without Kind/ is a #{instance.klass}, use Kind/Name for another kind)"
+      @errors << "#{instance.path_ref}: Annotation '#{key}' resource '#{value}' not found#{hint}"
     end
 
     def validate_markdown(instance, key, value)

@@ -65,3 +65,38 @@ metadata:
         text("The component dependency graph is well connected.")
       end
 spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Analysis
+metadata:
+  name: Analysis:Lifecycle:Dependents
+  annotations:
+    analysis/handler: ruby
+    analysis/description: Lists deprecated, sunset and end-of-life resources and what still depends on them
+    analysis/timeout: 30s
+    analysis/script: |
+      retiring = query('lifecycle/status == "deprecated" | lifecycle/status == "sunset" | lifecycle/status == "end-of-life"')
+
+      heading("Lifecycle")
+
+      if retiring.empty?
+        info("Nothing is deprecated")
+      else
+        text("**#{retiring.count}** resources are deprecated, in sunset or at end-of-life.")
+
+        rows = retiring.sort_by { |res| [kind(res), name(res)] }.map do |res|
+          dependents = incoming(res).map { |dep| name(dep) }
+          [
+            name(res),
+            kind(res),
+            annotation(res, "lifecycle/status"),
+            annotation(res, "lifecycle/replacedBy").to_s,
+            dependents.join(", ")
+          ]
+        end
+        table(headers: ["Name", "Kind", "Status", "Replaced by", "Still used by"], rows: rows)
+
+        with_dependents = rows.reject { |row| row.last.empty? }
+        warning("#{with_dependents.count} of them are still referenced by other resources") if with_dependents.any?
+      end
+spec: {}

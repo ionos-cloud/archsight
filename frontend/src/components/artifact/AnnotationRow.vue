@@ -10,6 +10,7 @@ const props = defineProps({
   value: [String, Number, Boolean],
   kind: String,
   format: { type: String, default: null },
+  link: { type: String, default: null },
 })
 
 const mdEl = ref(null)

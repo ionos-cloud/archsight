@@ -429,6 +429,38 @@ main .canvas a {
   outline-offset: 2px;
 }
 
+.chip-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.chip-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chip-warning {
+    background-color: #78350f;
+    color: #fef3c7;
+  }
+
+  :root:not([data-theme="light"]) .chip-danger {
+    background-color: #7f1d1d;
+    color: #fee2e2;
+  }
+}
+
+:root[data-theme="dark"] .chip-warning {
+  background-color: #78350f;
+  color: #fef3c7;
+}
+
+:root[data-theme="dark"] .chip-danger {
+  background-color: #7f1d1d;
+  color: #fee2e2;
+}
+
 .chip-symbol {
   font-size: 1.3em;
 }

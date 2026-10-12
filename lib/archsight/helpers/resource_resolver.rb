@@ -32,6 +32,31 @@ module Archsight
         matches.first
       end
 
+      # What an annotation that names another resource (`lifecycle/replacedBy`) refers to. A bare `Name` is a
+      # resource of the same kind as the annotated one, another kind needs `Kind/Name`.
+      # @param value [String] the annotation value
+      # @param kind [String] the kind of the annotated resource
+      # @return [Array(String, String), Symbol] `[kind, name]`, or `:missing`
+      def find_annotated(value, kind)
+        reference = value.to_s.strip
+        found = find(reference.include?("/") ? reference : "#{kind}/#{reference}")
+        found.is_a?(Array) ? found : :missing
+      end
+
+      # Where the annotations of a resource that name another resource point to:
+      # `{ key => page path }`, `nil` for a reference that does not resolve.
+      # @param kind [String] the kind of the annotated resource, which knows the annotation formats
+      # @param annotations [Hash]
+      def annotation_links(kind, annotations)
+        klass = Archsight::Resources[kind]
+        annotations.each_with_object({}) do |(key, value), links|
+          next unless klass&.annotation_format(key) == :resource
+
+          found = find_annotated(value, kind)
+          links[key] = found.is_a?(Array) ? path(*found) : nil
+        end
+      end
+
       private
 
       def in_kind(kind, name)

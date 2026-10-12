@@ -107,6 +107,11 @@ metadata:
     architecture/tags: graphviz,svg,visualization
     architecture/kind: hexagonal
     architecture/size: microservice
+    lifecycle/status: deprecated
+    lifecycle/replacedBy: Archsight:Render:Diagram
+    lifecycle/reason: |
+      Hand-drawn architecture diagrams use the `.asd` diagram DSL. The DOT renderer stays for the
+      generated dependency graphs only, do not build new diagrams on it.
 spec:
   realizedThrough:
     technologyArtifacts:
