@@ -115,9 +115,9 @@ class PythonGrapherTest < Minitest::Test
     assert_raises(RuntimeError) { handler.execute }
   end
 
-  def test_nonexistent_path_raises_error
+  def test_nonexistent_path_is_skipped
     handler = create_handler(path: "/nonexistent/path/that/does/not/exist")
-    assert_raises(RuntimeError) { handler.execute }
+    handler.execute # repository not cloned (yet): warns and writes nothing
   end
 
   def test_trivial_init_files_not_shown_as_nodes

@@ -2,6 +2,7 @@
 
 require_relative "email_recipient"
 require_relative "person"
+require_relative "resource_reference"
 
 # Annotation represents a single annotation definition with its schema and behavior
 class Archsight::Annotations::Annotation
@@ -55,6 +56,11 @@ class Archsight::Annotations::Annotation
   # A unique annotation holds identifiers: no two resources of a kind share a value (checked by `archsight lint`)
   def unique?
     @unique
+  end
+
+  # @return [Boolean] true if the value names another resource (`Name` or `Kind/Name`)
+  def resource?
+    @format == :resource
   end
 
   # Summary annotations are returned with every search hit (at most MAX_SUMMARY per kind)
@@ -150,6 +156,7 @@ class Archsight::Annotations::Annotation
     when "Float" then "Expected a float value"
     when "Archsight::Annotations::EmailRecipient" then 'Expected email format: "Name <email@domain.com>" or "email@domain.com"'
     when "Archsight::Annotations::Person" then 'Expected "Name", "Name <email@domain.com>" or "email@domain.com"'
+    when "Archsight::Annotations::ResourceReference" then "Expected a resource name of the same kind (Archsight:Web) or Kind/Name (ApplicationService/Archsight:Web)"
     else "Invalid value for type #{@type}"
     end
   end
@@ -190,6 +197,7 @@ class Archsight::Annotations::Annotation
     when "URI" then valid_uri?(string_value)
     when "Archsight::Annotations::EmailRecipient" then Archsight::Annotations::EmailRecipient.valid?(string_value)
     when "Archsight::Annotations::Person" then Archsight::Annotations::Person.valid?(string_value)
+    when "Archsight::Annotations::ResourceReference" then Archsight::Annotations::ResourceReference.valid?(string_value)
     else true
     end
   end
@@ -210,6 +218,7 @@ class Archsight::Annotations::Annotation
 
   def derive_format
     return :identifier if unique?
+    return :resource if @type == Archsight::Annotations::ResourceReference
 
     case @filter
     when :word then :tag_word

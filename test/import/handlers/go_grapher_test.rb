@@ -182,7 +182,8 @@ class GoGrapherTest < Minitest::Test
       annotations = annotations_of(component_of(run_full_handler(repo), "example:svc"))
 
       assert_equal "executable", annotations["component/type"]
-      assert_equal "ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+      assert_equal "ecosystem:go,packaging:go-module", annotations["architecture/tags"]
+      assert_equal ".", annotations["component/entrypoints"]
     end
   end
 
@@ -208,8 +209,8 @@ class GoGrapherTest < Minitest::Test
       annotations = annotations_of(component_of(run_full_handler(repo), "example:platform"))
 
       assert_equal "module", annotations["component/type"]
-      assert_equal "ecosystem:go,packaging:go-module,entrypoint:cmd/api,entrypoint:cmd/worker",
-                   annotations["architecture/tags"]
+      assert_equal "ecosystem:go,packaging:go-module", annotations["architecture/tags"]
+      assert_equal "cmd/api,cmd/worker", annotations["component/entrypoints"]
     end
   end
 
@@ -249,7 +250,8 @@ class GoGrapherTest < Minitest::Test
 
       annotations = annotations_of(component_of(run_full_handler(repo), "example:many"))
 
-      assert_equal(10, annotations["architecture/tags"].split(",").count { |t| t.start_with?("entrypoint:") })
+      assert_equal 10, annotations["component/entrypoints"].split(",").size
+      refute_includes annotations["architecture/tags"], "entrypoint:"
       assert annotations.key?("generated/script")
     end
   end
@@ -279,11 +281,11 @@ class GoGrapherTest < Minitest::Test
       handler.execute
       annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
 
-      assert_equal "billing,payments,ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+      assert_equal "billing,payments,ecosystem:go,packaging:go-module", annotations["architecture/tags"]
     end
   end
 
-  def test_machine_tags_of_an_earlier_run_are_replaced
+  def test_machine_tags_of_an_earlier_run_are_replaced_and_old_entrypoint_tags_removed
     with_repo do |repo|
       write(repo, "go.mod", "module github.com/example/svc\n\ngo 1.21\n")
       write(repo, "main.go", "package main\n")
@@ -294,7 +296,8 @@ class GoGrapherTest < Minitest::Test
       handler.execute
       annotations = annotations_of(component_of(YAML.load_stream(File.read(output_path)), "example:svc"))
 
-      assert_equal "billing,team:red,ecosystem:go,packaging:go-module,entrypoint:.", annotations["architecture/tags"]
+      assert_equal "billing,team:red,ecosystem:go,packaging:go-module", annotations["architecture/tags"]
+      assert_equal ".", annotations["component/entrypoints"]
     end
   end
 
@@ -319,9 +322,9 @@ class GoGrapherTest < Minitest::Test
     assert_raises(RuntimeError) { handler.execute }
   end
 
-  def test_nonexistent_path_raises_error
+  def test_nonexistent_path_is_skipped
     handler = create_handler(path: "/nonexistent/path/does/not/exist")
-    assert_raises(RuntimeError) { handler.execute }
+    handler.execute # repository not cloned (yet): warns and writes nothing
   end
 
   private

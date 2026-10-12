@@ -254,6 +254,14 @@ Active containerized services:
 
     TechnologyArtifact: activity/status == "active" & repository/artifacts == "container"
 
+Everything that is on its way out:
+
+    lifecycle/status in ("deprecated", "sunset", "end-of-life")
+
+Resources that are not retiring (a missing status counts as active):
+
+    ! lifecycle/status? | lifecycle/status == "active"
+
 Services exposing APIs:
 
     ApplicationComponent: -> ApplicationInterface

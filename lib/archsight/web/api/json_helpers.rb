@@ -92,6 +92,7 @@ module Archsight::Web::API::JsonHelpers
       name: instance.name,
       metadata: { annotations: render_annotations(instance.annotations, base: Archsight::Assets.base_dir_for(instance, resources_dir: Archsight.resources_dir), kind: kind) },
       annotation_formats: Archsight::Resources[kind]&.annotation_formats(instance.annotations.keys) || {},
+      annotation_links: Archsight::Helpers::ResourceResolver.new(db).annotation_links(kind, instance.annotations),
       spec: serialize_spec(instance.spec),
       relations: extract_relations(instance),
       references: extract_references(instance),

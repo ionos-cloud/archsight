@@ -21,6 +21,7 @@ module Archsight
       def filterable?: () -> boolish
       def list?: () -> bool
       def unique?: () -> bool
+      def resource?: () -> bool
       def summary?: () -> bool
       def has_validation?: () -> boolish
       def value_for: (Resources::Base) -> untyped
@@ -161,6 +162,12 @@ module Archsight
 
     class Person
       NAME: Regexp
+
+      def self.valid?: (untyped) -> bool
+    end
+
+    class ResourceReference
+      FORMAT: Regexp
 
       def self.valid?: (untyped) -> bool
     end

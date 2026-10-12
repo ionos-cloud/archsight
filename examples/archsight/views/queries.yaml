@@ -39,3 +39,17 @@ metadata:
     view/sort: name
     architecture/tags: mcp,interfaces
 spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: View:Lifecycle
+  annotations:
+    architecture/description: |
+      Everything that is deprecated, in sunset or at end-of-life, with the date it goes away and what replaces it.
+    view/query: 'lifecycle/status == "deprecated" | lifecycle/status == "sunset" | lifecycle/status == "end-of-life"'
+    view/fields: name,lifecycle/status,lifecycle/sunsetAt,lifecycle/replacedBy
+    view/type: list:name+kind
+    view/sort: name
+    architecture/tags: lifecycle,overview
+spec: {}

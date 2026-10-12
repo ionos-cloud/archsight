@@ -11,6 +11,9 @@ const props = defineProps({
   values: { type: Array, required: true },
 })
 
+// lifecycle states that call for attention get a tone: deprecated warns, sunset and end-of-life are over
+const LIFECYCLE_TONES = { deprecated: 'chip-warning', sunset: 'chip-danger', 'end-of-life': 'chip-danger' }
+
 const MACHINE_TAG = /^([a-z][a-z0-9-]*):(.+)$/
 
 function quote(value) {
@@ -24,6 +27,7 @@ const chips = computed(() => props.values.map((value) => {
     namespace: machine ? machine[1] : null,
     label: machine ? machine[2] : value,
     symbol: symbolFor(props.annotationKey, value),
+    tone: props.annotationKey === 'lifecycle/status' ? LIFECYCLE_TONES[value] || null : null,
     to: { name: 'search', query: searchParams(`${props.kind}: ${props.annotationKey} == "${quote(value)}"`) },
   }
 }))
@@ -35,6 +39,7 @@ const chips = computed(() => props.values.map((value) => {
       v-for="chip in chips"
       :key="chip.value"
       class="chip"
+      :class="chip.tone"
       :to="chip.to"
       :title="`Show ${kind} resources with ${annotationKey} = ${chip.value}`"
     >

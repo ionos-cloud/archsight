@@ -48,12 +48,18 @@ Also available as [Docker](docs/docker.md) image and [Helm chart](docs/kubernete
 archsight web [OPTIONS]      # Start web server
 archsight lint               # Validate YAML and relations
 archsight import             # Execute pending imports
-archsight analyze            # Execute analysis scripts
+archsight analyze            # Execute analysis scripts (--format typst -o out.typ for Typst source)
 archsight template KIND      # Generate YAML template for a resource type
 archsight diagram FILE.asd   # Render a diagram DSL file to SVG
 archsight console            # Interactive Ruby console
 archsight version            # Show version
 ```
+
+### Analysis as Typst
+
+`archsight analyze --format typst [-o report.typ] [-f REGEX] [-v]` writes the results of all (or the filtered) analyses as one [Typst](https://typst.app) document instead of the terminal rendering: a summary, a section per analysis with its tables, lists, text and messages, and `asd` code sections as inline SVG diagrams. Without `-o` the source goes to stdout; paste it into typst.app or run `typst compile report.typ`. `-v` keeps all rows (otherwise tables and lists are cut after 10) and the error backtraces.
+
+`--template layout.typ` replaces the built-in layout with your own. The document then imports the template and calls two functions it must define: `archsight-report` as a show rule (`count`, `passed`, `failed`, `findings`), and `analysis-result(name:, description:, state:, duration:, data:)[body]` once per analysis, where `body` is the rendered sections and `data` is a dictionary of what the script passed to `data(key, value)`. `data` sections appear only here (not in the web UI or terminal), so a script can hand structured values (for example a matrix) to a template while keeping its tables for the web. With a template, tables and lists are never cut.
 
 ### Web Server Options
 

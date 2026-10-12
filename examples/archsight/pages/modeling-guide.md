@@ -49,6 +49,8 @@ comp -> art { relation "implements" }
 ## Keeping the model honest
 
 - Mark retired things with `activity/status: abandoned` instead of deleting, so history stays queryable.
+- Mark products, components and services that are on their way out with `lifecycle/status`, see
+  [Lifecycle](#lifecycle).
 - Use a [[Searching and Queries|query]] as a health check, for example unowned artifacts:
   `TechnologyArtifact: -{maintainedBy}> none`.
 - Save such checks as `View` resources so they show up in the sidebar.
@@ -56,3 +58,37 @@ comp -> art { relation "implements" }
   every time this page opens:
 
 ![[Analysis/Analysis:Component:Relations]]
+
+## Lifecycle
+
+Every resource that carries `architecture/*` annotations can say where it is in its life with `lifecycle/status`:
+
+| Status | Meaning |
+|--------|---------|
+| `active` | In use, no restriction (the default when the annotation is missing) |
+| `deprecated` | Still works, but do not start new uses |
+| `sunset` | Being phased out, there is a date after which it goes away |
+| `end-of-life` | No longer operated or supported |
+
+The status is shown as a coloured badge, yellow for `deprecated`, red for `sunset` and `end-of-life`. Companions record
+the story: `lifecycle/deprecatedAt`, `lifecycle/sunsetAt` and `lifecycle/endOfLifeAt` (ISO 8601 dates),
+`lifecycle/replacedBy` (the replacing resource, a name for the same kind or `Kind/Name` for another kind such as a component replaced by a service; shown as a link, `archsight lint` checks that it exists) and
+`lifecycle/reason`.
+
+```yaml
+metadata:
+  name: Billing:Legacy:Export
+  annotations:
+    lifecycle/status: sunset
+    lifecycle/sunsetAt: 2027-03-31
+    lifecycle/replacedBy: ApplicationService/Billing:Export:v2
+    lifecycle/reason: The v2 export covers all formats.
+```
+
+Find them with the query `lifecycle/status == "deprecated"` or the sidebar filter. This view lists all of them:
+
+![[View/View:Lifecycle]]
+
+The analysis also shows what still depends on each:
+
+![[Analysis/Analysis:Lifecycle:Dependents]]

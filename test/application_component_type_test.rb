@@ -22,7 +22,8 @@ class ApplicationComponentTypeTest < Minitest::Test
       annotations:
         component/type: executable
         component/role: service
-        architecture/tags: ecosystem:go,entrypoint:cmd/api
+        architecture/tags: ecosystem:go
+        component/entrypoints: cmd/api,cmd/worker
     spec:
       dependsOn:
         applicationComponents:
@@ -67,7 +68,15 @@ class ApplicationComponentTypeTest < Minitest::Test
 
     assert_includes keys, "architecture/tags"
     refute_includes keys, "component/tags"
-    assert annotation("architecture/tags").valid?("rest,ecosystem:go,entrypoint:cmd/api")
+    assert annotation("architecture/tags").valid?("rest,ecosystem:go")
+  end
+
+  def test_entrypoints_are_a_list_but_not_a_sidebar_filter
+    filterable = Archsight::Resources::ApplicationComponent.filterable_annotations.map(&:key)
+
+    assert_predicate annotation("component/entrypoints"), :list?
+    refute_includes filterable, "component/entrypoints"
+    assert_includes filterable, "architecture/tags"
   end
 
   def test_summary_annotations_stay_within_the_limit
@@ -87,10 +96,10 @@ class ApplicationComponentTypeTest < Minitest::Test
     end
   end
 
-  def test_components_can_be_found_by_type_and_by_machine_tag
+  def test_components_can_be_found_by_type_and_by_entry_point
     with_db do |db|
       by_type = db.query('ApplicationComponent: component/type == "library"').map(&:name)
-      by_tag = db.query('ApplicationComponent: architecture/tags == "entrypoint:cmd/api"').map(&:name)
+      by_tag = db.query('ApplicationComponent: component/entrypoints == "cmd/api"').map(&:name)
 
       assert_equal ["Lib:Shared"], by_type
       assert_equal ["App:Api"], by_tag

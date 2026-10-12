@@ -9,3 +9,4 @@ end
 require_relative "analysis/result"
 require_relative "analysis/sandbox"
 require_relative "analysis/executor"
+require_relative "analysis/typst_renderer"

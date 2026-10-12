@@ -200,14 +200,16 @@ Model **software** that supports the business.
 Components are not all alike: some are run, some are only imported, some bundle both. Say which with `component/type`
 (`executable`, `library`, `module`, `plugin`, `frontend`, `other`) and, for executables and plugins, what they do with
 `component/role` (`service`, `cli`, `job`, `operator`, `agent`). Importers set `component/type` and add machine tags
-(`namespace:value`, such as `ecosystem:go`, `packaging:go-module`, `entrypoint:cmd/api`, `linkage:shared`) to the regular
+(`namespace:value`, such as `ecosystem:go`, `packaging:go-module`, `linkage:shared`) to the regular
 `architecture/tags` from the manifests; the tags a person set stay, and a re-import only replaces the machine tags of
-those namespaces. `component/role` is set by hand and never overwritten. The computed `component/dependents` counts the components that depend on a
+those namespaces. The entry points (main packages such as `cmd/api`) are written to `component/entrypoints`, a list
+you query like a tag (`component/entrypoints == "cmd/api"`) that is not a sidebar filter, because there are too many
+distinct values. `component/role` is set by hand and never overwritten. The computed `component/dependents` counts the components that depend on a
 component, which shows how widely a library or module is shared.
 
 | Ecosystem | Executable | Library | Module (bundles both) |
 |-----------|------------|---------|-----------------------|
-| Go | `package main` (`entrypoint:` per main package) | no `main` package | main packages plus importable packages outside `internal/` and `cmd/` |
+| Go | `package main` (`component/entrypoints`: one per main package) | no `main` package | main packages plus importable packages outside `internal/` and `cmd/` |
 | JavaScript, TypeScript | `bin`, a server entry point | `main`, `exports`, `types` | `workspaces` root |
 | Ruby | gemspec `executables`, Rails app | gem without executables | monorepo of gems |
 | Python | `[project.scripts]`, `__main__.py` | package published to an index | distribution of several packages |
@@ -472,6 +474,30 @@ Use annotations to capture metadata:
 - `requirement/reference` - Link to compliance standards (C5, GDPR, etc.)
 - `architecture/diagram` - A hand-drawn [`.asd` diagram](diagram.md#the-architecturediagram-annotation), shown next to the generated dependency graph
   (`.asd` code blocks also render inside `architecture/description` markdown). Nodes can link to resources with `resource "Name"`.
+
+### Lifecycle
+
+`lifecycle/status` marks any resource with `architecture/*` annotations (products, components, services, artifacts, ...) as
+`active`, `deprecated` (do not start new uses), `sunset` (being phased out) or `end-of-life` (no longer operated or
+supported). A missing annotation means `active`. The status shows as a badge (yellow for `deprecated`, red for `sunset` and
+`end-of-life`) and is a sidebar filter and query term (`lifecycle/status == "deprecated"`).
+
+| Annotation | Purpose |
+|------------|---------|
+| `lifecycle/status` | The state above |
+| `lifecycle/deprecatedAt`, `lifecycle/sunsetAt`, `lifecycle/endOfLifeAt` | When it happened or will happen (ISO 8601 date or time, checked by `archsight lint`) |
+| `lifecycle/replacedBy` | The resource that replaces it: a name for a resource of the same kind, `Kind/Name` for another kind (a component replaced by an `ApplicationService/...`). Shown as a link, `archsight lint` checks that it exists |
+| `lifecycle/reason` | Why, in markdown |
+
+```yaml
+kind: ApplicationService
+metadata:
+  name: LegacyExport
+  annotations:
+    lifecycle/status: sunset
+    lifecycle/sunsetAt: 2027-03-31
+    lifecycle/replacedBy: ApplicationService/ExportV2
+```
 
 ## Common Patterns
 

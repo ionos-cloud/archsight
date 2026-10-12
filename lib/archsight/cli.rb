@@ -231,6 +231,11 @@ module Archsight
     option :verbose, aliases: "-v", type: :boolean, default: false, desc: "Verbose output"
     option :dry_run, aliases: "-n", type: :boolean, default: false, desc: "List analyses without running"
     option :filter, aliases: "-f", type: :string, desc: "Filter analyses by name (regex pattern)"
+    option :format, type: :string, default: "terminal", enum: %w[terminal typst],
+                    desc: "Output format: terminal rendering or Typst source (https://typst.app)"
+    option :output, aliases: "-o", type: :string, desc: "Write the Typst source to this file instead of stdout"
+    option :template, type: :string,
+                      desc: "Typst file to import for the layout; it must define archsight-report and analysis-result"
     def analyze
       configure_resources
       require "archsight/database"
@@ -243,7 +248,7 @@ module Archsight
       return print_analysis_dry_run(analyses) if options[:dry_run]
 
       results = execute_analyses(db, analyses)
-      print_analysis_results(results)
+      options[:format] == "typst" ? write_analysis_typst(results) : print_analysis_results(results)
       exit 1 if results.any?(&:failed?)
     end
 
@@ -374,12 +379,12 @@ module Archsight
     def filter_analyses(db)
       analyses = db.instances_by_kind("Analysis").values
       analyses = analyses.select { |a| Regexp.new(options[:filter], Regexp::IGNORECASE).match?(a.name) } if options[:filter]
-      analyses
+      analyses.sort_by(&:name) # same order as the dry run, independent of file layout
     end
 
     def print_analysis_dry_run(analyses)
       puts "Analyses to run#{" (filter: #{options[:filter]})" if options[:filter]}:"
-      analyses.sort_by(&:name).each_with_index do |analysis, idx|
+      analyses.each_with_index do |analysis, idx|
         timeout = analysis.annotations["analysis/timeout"] || "30s"
         desc = analysis.annotations["analysis/description"] || "(no description)"
         puts "  #{idx + 1}. #{analysis.name} [#{timeout}]"
@@ -390,6 +395,26 @@ module Archsight
     def execute_analyses(db, analyses)
       executor = Archsight::Analysis::Executor.new(db)
       analyses.map { |analysis| executor.execute(analysis) }
+    end
+
+    def write_analysis_typst(results)
+      typst = Archsight::Analysis::TypstRenderer.new(results, verbose: options[:verbose],
+                                                              template: typst_template_path).render
+      if options[:output]
+        File.write(options[:output], typst)
+        warn "Wrote #{options[:output]}"
+      else
+        puts typst
+      end
+    end
+
+    # Typst resolves imports relative to the importing file, so point from the output file to the template
+    def typst_template_path
+      return unless options[:template]
+
+      require "pathname"
+      base = Pathname.new(File.expand_path(File.dirname(options[:output] || ".")))
+      Pathname.new(File.expand_path(options[:template])).relative_path_from(base).to_s
     end
 
     def print_analysis_results(results)

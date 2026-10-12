@@ -7,6 +7,7 @@ require "open3"
 require "rbconfig"
 require "tempfile"
 require "tmpdir"
+require "fileutils"
 
 class CLITest < Minitest::Test
   def setup
@@ -178,6 +179,42 @@ class CLITest < Minitest::Test
       # Should format line numbers with proper width
       assert_match(/\s+\d+\s+\|/, output)
     end
+  end
+
+  def test_analyze_writes_typst_source
+    Dir.mktmpdir do |dir|
+      out = File.join(dir, "analysis.typ")
+
+      capture_stdout { Archsight::CLI.start(["analyze", "-r", @resources_dir, "--format", "typst", "-o", out]) }
+
+      typst = File.read(out)
+
+      assert_includes typst, "#set page("
+      assert_includes typst, "#heading(level: 1)"
+    end
+  end
+
+  def test_analyze_imports_template_relative_to_output_file
+    Dir.mktmpdir do |dir|
+      out = File.join(dir, "out", "analysis.typ")
+      FileUtils.mkdir_p(File.dirname(out))
+
+      capture_stdout do
+        Archsight::CLI.start(["analyze", "-r", @resources_dir, "--format", "typst", "-o", out,
+                              "--template", File.join(dir, "tpl", "vsa.typ")])
+      end
+
+      typst = File.read(out)
+
+      assert_includes typst, '#import "../tpl/vsa.typ": *'
+      assert_includes typst, "#analysis-result("
+    end
+  end
+
+  def test_analyze_prints_typst_to_stdout_without_output_file
+    output = capture_stdout { Archsight::CLI.start(["analyze", "-r", @resources_dir, "--format", "typst"]) }
+
+    assert_includes output, "#set document("
   end
 
   def test_diagram_renders_asd_files_to_svg

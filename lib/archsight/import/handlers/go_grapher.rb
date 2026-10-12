@@ -163,7 +163,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
            end
 
     { type: type,
-      tags: %w[ecosystem:go packaging:go-module] + mains.first(MAX_ENTRYPOINTS).map { |dir| "entrypoint:#{dir}" } }
+      tags: %w[ecosystem:go packaging:go-module], entrypoints: mains.first(MAX_ENTRYPOINTS) }
   end
 
   # @return [Array<Array<String>>] [main package dirs, importable library package dirs], relative to mod_dir

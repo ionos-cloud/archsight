@@ -229,6 +229,7 @@ function initPanZoomOnGraph() {
           :value="value"
           :kind="kind"
           :format="data.annotation_formats?.[key] || null"
+          :link="data.annotation_links?.[key] ?? null"
         />
       </tbody>
     </table>
