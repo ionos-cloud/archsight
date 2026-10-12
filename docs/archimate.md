@@ -198,6 +198,8 @@ ArchiMate organizes elements into distinct layers:
 6. **Physical Layer** - Where: facilities, equipment, materials, distribution networks (archsight: `Facility`, `Equipment`, `Location`)
 7. **Implementation & Migration Layer** - When: work packages, plateaus, gaps
 
+Capability, Product, Application Service and Application Component are easily mixed up in practice; [Choosing the Kind](modeling.md#choosing-the-kind) gives the question, test and naming for each.
+
 ## Key Concepts
 
 ### Active vs Passive Structure

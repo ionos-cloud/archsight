@@ -1,0 +1,17 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessProduct
+metadata:
+  name: Online Checkout
+  annotations:
+    architecture/description: |
+      What a shop contracts to take payments on its website. It appears on
+      the price list, realizes the capability and is served by the
+      application service behind it.
+    architecture/tags: example,payments
+spec:
+  realizes:
+    strategyCapabilities:
+      - Payment Processing
+  servedBy:
+    applicationServices:
+      - Payment Authorization

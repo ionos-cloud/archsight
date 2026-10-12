@@ -25,6 +25,15 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
     - Kubernetes services
     - Enterprise support packages
     - API products
+
+    ## Choosing this kind
+
+    **Question:** What does a customer buy or contract?
+    **Test:** It appears on a price list, catalog or customer documentation.
+    **Name:** The market name ("Online Checkout").
+
+    A product `realizes` a capability and is `servedBy` the services that deliver it. A product that nearly every
+    service serves is a catalog, not a product. See the modeling guide, "Choosing the Kind".
   MD
 
   icon "box-iso"

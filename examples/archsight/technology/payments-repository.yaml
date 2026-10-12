@@ -1,0 +1,7 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Repo:payments-api
+  annotations:
+    architecture/description: Source repository of the payments API.
+    architecture/tags: example,payments
