@@ -6,6 +6,7 @@ import PageTree from '../page/PageTree.vue'
 import NavActions from './NavActions.vue'
 import { useSidebarTab } from '../../composables/useSidebarTab.js'
 import { searchParams } from '../../composables/useSearchScope.js'
+import { LAYERS } from '../../composables/useLayers.js'
 
 const props = defineProps({
   kinds: Object,
@@ -39,16 +40,7 @@ function onTabKeydown(event) {
   selectTab(TABS[(index + step + TABS.length) % TABS.length].id, { focus: true })
 }
 
-// kinds grouped by ArchiMate layer; "other" holds the tool's own kinds (pages, views, imports, ...)
-const LAYERS = [
-  { id: 'strategy', title: 'Strategy' },
-  { id: 'motivation', title: 'Motivation' },
-  { id: 'business', title: 'Business' },
-  { id: 'application', title: 'Application' },
-  { id: 'technology', title: 'Technology' },
-  { id: 'implementation', title: 'Implementation' },
-  { id: 'other', title: 'Other' },
-]
+// kinds grouped by ArchiMate layer (see useLayers for the order); "other" holds the tool's own kinds
 
 const kindGroups = computed(() => {
   const all = props.kinds?.kinds || []

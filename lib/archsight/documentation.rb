@@ -7,16 +7,16 @@ module Archsight
   # Documentation generates markdown documentation for architecture resources
   class Documentation
     # Layer display order (top to bottom)
-    LAYER_ORDER = %w[motivation strategy business application technology implementation].freeze
+    LAYER_ORDER = %w[motivation strategy implementation business application technology].freeze
 
     # Layer display names
     LAYER_NAMES = {
       "motivation" => "Motivation Layer",
       "strategy" => "Strategy Layer",
+      "implementation" => "Implementation & Migration Layer",
       "business" => "Business Layer",
       "application" => "Application Layer",
-      "technology" => "Technology Layer",
-      "implementation" => "Implementation & Migration Layer"
+      "technology" => "Technology Layer"
     }.freeze
 
     # Resource kinds to exclude from the diagram
