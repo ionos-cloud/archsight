@@ -217,6 +217,144 @@ class LinterTest < Minitest::Test
     assert_empty lint("architecture/diagram" => "not valid ((\n", "generated/script" => "x")
   end
 
+  # Structural modeling warnings (Linter::Structure): rules 1 to 4 of "Choosing the Kind"
+
+  def resource(kind, name, spec = {})
+    relations = spec.map do |verb, kinds|
+      lines = kinds.flat_map { |key, targets| ["    #{key}:"] + targets.map { |t| "      - #{t}" } }
+      "  #{verb}:\n#{lines.join("\n")}"
+    end
+    "---\napiVersion: architecture/v1alpha1\nkind: #{kind}\nmetadata:\n  name: #{name}\n" + (relations.empty? ? "spec: {}\n" : "spec:\n#{relations.join("\n")}\n")
+  end
+
+  def structural_warnings(*resources)
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "test.yaml"), resources.join)
+      db = Archsight::Database.new(dir, verbose: false, compute_annotations: false)
+      db.reload!
+      linter = Archsight::Linter.new(db)
+
+      assert_empty linter.validate, "structural findings are warnings, not errors"
+      linter.structural_warnings
+    end
+  end
+
+  def realized_through(components)
+    { realizedThrough: { applicationComponents: components } }
+  end
+
+  def test_structure_warns_about_a_component_in_more_than_one_service
+    warnings = structural_warnings(
+      resource("ApplicationService", "Payment Authorization", realized_through(["Payments:API"])),
+      resource("ApplicationService", "Refunds", realized_through(["Payments:API"])),
+      resource("ApplicationComponent", "Payments:API")
+    )
+
+    assert_equal(1, warnings.count { |w| w.include?("ApplicationComponent 'Payments:API' is realized by 2 services: 'Payment Authorization', 'Refunds'") })
+    assert_match(/\Atest\.yaml.*:\d+: ApplicationComponent|\A.*test\.yaml:\d+: ApplicationComponent/, warnings.grep(/Payments:API/).first)
+  end
+
+  def test_structure_accepts_a_component_in_one_service_and_services_that_depend_on_each_other
+    warnings = structural_warnings(
+      resource("ApplicationService", "Payment Authorization", realized_through(["Payments:API"])),
+      resource("ApplicationService", "Refunds", realized_through(["Refunds:Worker"]).merge(dependsOn: { applicationServices: ["Payment Authorization"] })),
+      resource("ApplicationComponent", "Payments:API"), resource("ApplicationComponent", "Refunds:Worker")
+    )
+
+    refute(warnings.any? { |w| w.include?("is realized by") }, warnings.join(", "))
+  end
+
+  def test_structure_warns_about_an_artifact_realized_by_more_than_one_component
+    artifacts = { realizedThrough: { technologyArtifacts: ["Repo:payments-api"] } }
+    warnings = structural_warnings(
+      resource("ApplicationComponent", "Payments:API", artifacts), resource("ApplicationComponent", "Payments:Worker", artifacts),
+      resource("TechnologyArtifact", "Repo:payments-api")
+    )
+
+    assert_includes warnings.join("\n"), "TechnologyArtifact 'Repo:payments-api' is realized by 2 components: 'Payments:API', 'Payments:Worker'"
+  end
+
+  def test_structure_accepts_a_monorepo_grouped_by_a_module_component
+    warnings = structural_warnings(
+      resource("ApplicationComponent", "Payments:Module", realizedThrough: { technologyArtifacts: ["Repo:payments"] }),
+      resource("ApplicationComponent", "Payments:API", dependsOn: { applicationComponents: ["Payments:Module"] }),
+      resource("ApplicationComponent", "Payments:Worker", dependsOn: { applicationComponents: ["Payments:Module"] }),
+      resource("TechnologyArtifact", "Repo:payments")
+    )
+
+    refute(warnings.any? { |w| w.include?("TechnologyArtifact") }, warnings.join(", "))
+  end
+
+  def test_structure_warns_about_a_service_whose_only_component_has_the_same_name
+    warnings = structural_warnings(resource("ApplicationService", "Billing", realized_through(["Billing"])), resource("ApplicationComponent", "Billing"))
+
+    assert_includes warnings.join("\n"), "ApplicationService 'Billing' has one component with the same name"
+  end
+
+  def test_structure_accepts_a_service_with_a_differently_named_or_several_components
+    warnings = structural_warnings(
+      resource("ApplicationService", "Billing", realized_through(["Billing:API"])),
+      resource("ApplicationService", "Ledger", realized_through(%w[Ledger Ledger:Worker])),
+      resource("ApplicationComponent", "Billing:API"), resource("ApplicationComponent", "Ledger"), resource("ApplicationComponent", "Ledger:Worker")
+    )
+
+    refute(warnings.any? { |w| w.include?("same name") }, warnings.join(", "))
+  end
+
+  def test_structure_warns_about_a_product_without_a_service
+    warnings = structural_warnings(resource("BusinessProduct", "Online Checkout"))
+
+    assert_includes warnings.join("\n"), "BusinessProduct 'Online Checkout' is served by no ApplicationService"
+  end
+
+  def test_structure_accepts_a_product_with_a_service
+    warnings = structural_warnings(
+      resource("BusinessProduct", "Online Checkout", servedBy: { applicationServices: ["Payment Authorization"] }),
+      resource("ApplicationService", "Payment Authorization")
+    )
+
+    refute(warnings.any? { |w| w.include?("is served by no ApplicationService") }, warnings.join(", "))
+  end
+
+  def test_structure_warns_about_a_service_that_no_product_or_process_is_served_by
+    warnings = structural_warnings(
+      resource("ApplicationService", "Ledger"),
+      resource("StrategyCapability", "Accounting", servedBy: { applicationServices: ["Ledger"] })
+    )
+
+    assert_includes warnings.join("\n"), "ApplicationService 'Ledger' is not served to any product or process"
+  end
+
+  def test_structure_accepts_a_service_reached_by_a_product_a_process_or_a_service_depending_on_it
+    warnings = structural_warnings(
+      resource("BusinessProduct", "Online Checkout", servedBy: { applicationServices: ["Payment Authorization"] }),
+      resource("BusinessProcess", "Month End", servedBy: { applicationServices: ["Ledger"] }),
+      resource("ApplicationService", "Payment Authorization", dependsOn: { applicationServices: ["Fraud Check"] }),
+      resource("ApplicationService", "Fraud Check"), resource("ApplicationService", "Ledger")
+    )
+
+    refute(warnings.any? { |w| w.include?("is not served to any") }, warnings.join(", "))
+  end
+
+  def test_structure_warns_about_a_capability_that_no_product_realizes
+    warnings = structural_warnings(resource("StrategyCapability", "Payment Processing"))
+
+    assert_includes warnings.join("\n"), "StrategyCapability 'Payment Processing' is realized by no product"
+  end
+
+  def test_structure_accepts_a_capability_that_a_product_realizes
+    warnings = structural_warnings(
+      resource("StrategyCapability", "Payment Processing"),
+      resource("BusinessProduct", "Online Checkout", realizes: { strategyCapabilities: ["Payment Processing"] })
+    )
+
+    refute(warnings.any? { |w| w.include?("is realized by no product") }, warnings.join(", "))
+  end
+
+  def test_structural_findings_are_not_errors_and_the_examples_have_none
+    assert_empty Archsight::Linter.new(@db).structural_warnings
+  end
+
   private
 
   def lint(annotations)

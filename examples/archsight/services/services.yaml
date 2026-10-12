@@ -14,9 +14,11 @@ metadata:
     architecture/tags: cli,thor
     architecture/plane: control
 spec:
+  dependsOn:
+    applicationServices:
+      - Archsight:Core
   realizedThrough:
     applicationComponents:
-      - Archsight:Core:Database
       - Archsight:Util:Linter
       - Archsight:Util:Template
       - Archsight:Render:Diagram
@@ -37,14 +39,36 @@ metadata:
     architecture/tags: web,sinatra,vue
     architecture/plane: control
 spec:
+  dependsOn:
+    applicationServices:
+      - Archsight:Core
   realizedThrough:
     applicationComponents:
-      - Archsight:Core:Database
       - Archsight:Render:GraphViz
       - Archsight:Query:Engine
       - Archsight:Query:MCP
       - Archsight:Web:API
       - Archsight:Web:Frontend
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationService
+metadata:
+  name: Archsight:Core
+  annotations:
+    architecture/abbr: Core
+    architecture/description: |
+      Loading, resolving and querying the architecture resources. The CLI
+      and the web UI use it by `dependsOn` on the service instead of each
+      listing its database component.
+    architecture/tags: core,database
+    architecture/plane: control
+spec:
+  realizedThrough:
+    applicationComponents:
+      - Archsight:Core:Database
   servedBy:
     businessActors:
       - Archsight:Maintainers

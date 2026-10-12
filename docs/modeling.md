@@ -85,7 +85,9 @@ Each answers one question. The test decides the kind, not the name.
    carries.
 2. A component belongs to exactly one service; one service using another is `dependsOn` between the services (see
    [Service Chain](#service-chain)), not the same component listed twice.
-3. An artifact is realized by exactly one component. Larger logical components group finer ones with `dependsOn`.
+3. An artifact is realized by exactly one component. When one repository holds several finer components (a monorepo),
+   the larger logical component (`component/type: module`) is realized by the artifact and the finer components
+   `dependsOn` it; the services use the finer components, and their rollups still reach the repository.
 4. A service whose only component has the same name is a smell: name the service by its function, or fold it into the
    service it belongs to.
 5. Test, tooling and infrastructure-as-code repositories are not components of their own. They go on the component
@@ -96,6 +98,24 @@ Each answers one question. The test decides the kind, not the name.
    capabilities.
 8. Other identifiers of an element (register ids, wiki or ticket pages) are `architecture/aliases` and `link/*` on the
    element itself, never a parallel element.
+
+**Checked by `archsight lint`**
+
+Rules 1 to 4 are checked on every `archsight lint` run and reported as **warnings** (section "Modeling warnings"),
+never as errors, so they do not make the lint fail: they point at decisions to review and have legitimate exceptions,
+such as an internal service or a capability that no product carries yet.
+
+| Warning | Rule |
+|---------|------|
+| `ApplicationComponent 'Payments:API' is realized by 2 services: 'Payment Authorization', 'Refunds'` | 2 |
+| `TechnologyArtifact 'Repo:payments-api' is realized by 2 components: ...` | 3 |
+| `ApplicationService 'Billing' has one component with the same name` | 4 |
+| `BusinessProduct 'Online Checkout' is served by no ApplicationService` | 1 |
+| `ApplicationService 'Ledger' is not served to any product or process` | 1 |
+| `StrategyCapability 'Payment Processing' is realized by no product` | 1 |
+
+A service counts as served when a product or a process is `servedBy` it, directly or through other services that
+`dependsOn` it. Each finding starts with the file and line of the resource, like the errors.
 
 **Example chain**
 

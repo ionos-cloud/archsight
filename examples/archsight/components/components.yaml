@@ -13,9 +13,9 @@ metadata:
     component/type: executable
     component/role: service
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
   exposes:
     applicationInterfaces:
       - Public:Archsight:v1:MCP
@@ -35,9 +35,9 @@ metadata:
     component/type: executable
     component/role: service
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
   exposes:
     applicationInterfaces:
       - Public:Archsight:v1:RestAPI
@@ -56,9 +56,9 @@ metadata:
     architecture/size: microservice
     component/type: library
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -74,9 +74,9 @@ metadata:
     architecture/size: microservice
     component/type: library
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -91,9 +91,9 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -113,9 +113,9 @@ metadata:
       Hand-drawn architecture diagrams use the `.asd` diagram DSL. The DOT renderer stays for the
       generated dependency graphs only, do not build new diagrams on it.
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
   servedBy:
     technologyComponents:
       - Tech:GraphViz
@@ -135,9 +135,9 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -152,9 +152,9 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -169,9 +169,9 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -186,9 +186,9 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -203,9 +203,9 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
   exposes:
     applicationInterfaces:
       - Public:Archsight:v1:CLI
@@ -223,10 +223,27 @@ metadata:
     architecture/kind: hexagonal
     architecture/size: microservice
 spec:
-  realizedThrough:
-    technologyArtifacts:
-      - Repo:ionos-cloud:archsight
+  dependsOn:
+    applicationComponents:
+      - Archsight:Gem
   servedBy:
     technologyComponents:
       - Tech:Vue
       - Tech:Vite
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Archsight:Gem
+  annotations:
+    architecture/description: |
+      The archsight gem as one unit of versioning: the logical component
+      that is built from the repository. The finer components of the
+      services depend on it, so the repository is realized by exactly one
+      component and still counts for every service that uses them.
+    architecture/tags: ecosystem:ruby,packaging:gem
+    component/type: module
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
