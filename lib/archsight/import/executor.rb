@@ -249,15 +249,26 @@ class Archsight::Import::Executor
     to_run
   end
 
-  # Check if all dependencies of an import are satisfied (executed successfully this run)
+  # Check if all dependencies of an import are satisfied (executed successfully this run).
+  # A parent that can never run (no handler or disabled, e.g. the repository was
+  # deleted upstream and only its generated `generates` entry is left) is not
+  # waited for, otherwise its children would deadlock the run.
   def dependencies_satisfied?(import)
-    dep_names = import_dependency_names(import)
+    dep_names = runnable_dependency_names(import)
     return true if dep_names.empty?
 
     @mutex.synchronize do
       dep_names.all? do |dep_name|
         @executed_this_run.include?(dep_name) && !@failed_imports.key?(dep_name)
       end
+    end
+  end
+
+  def runnable_dependency_names(import)
+    imports_by_name = (database.instances_by_kind("Import")&.values || []).to_h { |imp| [imp.name, imp] }
+    import_dependency_names(import).select do |dep_name|
+      parent = imports_by_name[dep_name]
+      parent && import_enabled?(parent)
     end
   end
 

@@ -108,6 +108,18 @@ class ExecutorTest < Minitest::Test
     end
   end
 
+  def test_does_not_wait_for_parent_that_can_never_run
+    # Parent left over from a deleted upstream repo: generates the child but has no handler
+    create_import("Import:Orphan", handler: nil, generates: ["Import:Child"])
+    create_import("Import:Child", handler: "test")
+
+    db = create_database
+    executor = Archsight::Import::Executor.new(database: db, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
+    executor.run!
+
+    assert_includes TestExecutionHandler.execution_log, "Import:Child"
+  end
+
   def test_fails_on_handler_error
     Archsight::Import::Registry.register("failing", FailingHandler)
     create_import("Import:Failing", handler: "failing")
