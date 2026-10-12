@@ -221,6 +221,14 @@ module Archsight
         @sections << { type: :code, content: content, lang: lang }
       end
 
+      # Attach structured data for document templates (archsight analyze --format typst --template).
+      # Not shown in the web UI or the terminal; a template renders it instead of the other sections.
+      # @param key [String, Symbol] Name the template looks the data up by
+      # @param value [Hash, Array, String, Numeric, Boolean, nil] JSON-like value
+      def data(key, value)
+        @sections << { type: :data, key: key.to_s, value: value }
+      end
+
       # Legacy output methods - still supported for backward compatibility
 
       # Report findings (legacy method - creates appropriate section based on data type)
