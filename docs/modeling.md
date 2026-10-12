@@ -32,7 +32,7 @@ Implementation & Migration layer describes change across all of them. A relation
 to what that element depends on, is served by, or is answered by. Following relations from a high-level element
 therefore walks down to people, code and infrastructure, and the relations form a DAG: nothing may lead back to where
 it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components and services may depend on each
-other at runtime).
+other at runtime). `specializes` and `composedOf` are checked per verb, see "Concept and Implementation".
 
 There are two families of verbs:
 
@@ -323,7 +323,7 @@ Model **infrastructure** and **code**.
 | TechnologyArtifact | For source code repositories, packages, images and binaries (`artifact/type`) |
 | TechnologyService | For infrastructure services (Postgres, Redis, Kubernetes platform) |
 | TechnologySystemSoftware | For logical infrastructure (database cluster, message queue) |
-| TechnologyNode | For infrastructure instances |
+| TechnologyNode | For infrastructure instances; `specializes` / `composedOf` another node |
 | TechnologyInterface | For technical protocols and endpoints |
 
 **Example chain:** Component "Payments:API" → realizedThrough → Artifact "Repo:payments-api" → maintainedBy → Actor "Platform Team"
@@ -403,6 +403,44 @@ other. Do not add the other service's components to your own `realizedThrough`: 
 two services, its owner is ambiguous and every rollup over the service's components counts it twice. Two services may
 depend on each other, so `dependsOn` is exempt from the cycle check. In `examples/archsight`, "Refunds" depends on "Payment Authorization" (it refunds an authorized payment) and
 "Payment Authorization" depends on "Refunds" (it asks to reverse a payment it cannot complete).
+
+### Concept and Implementation
+
+One technology *concept* often has several *implementations*: a "regional cluster" is implemented by a hypervisor
+platform on some sites and by bare metal on others. Model the concept as an element and let every implementation
+**specialize** it (ArchiMate specialization). The specialization is written on the specific element and always points
+to an element of the **same kind**:
+
+| Kind | Verb | Target | ArchiMate |
+|------|------|--------|-----------|
+| `TechnologyNode` | `specializes` | `TechnologyNode` | specialization |
+| `TechnologySystemSoftware` | `specializes` | `TechnologySystemSoftware` | specialization |
+| `TechnologyService` | `specializes` | `TechnologyService` | specialization |
+| `TechnologyNode` | `composedOf` | `TechnologyNode` | composition (a cluster made of hosts) |
+| `TechnologySystemSoftware` | `composedOf` | `TechnologySystemSoftware` | composition (a platform bundles components) |
+
+```yaml
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster          # the concept
+spec: {}
+---
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster:Hypervisor   # one implementation
+spec:
+  specializes:
+    technologyNodes:
+      - Tech:RegionalCluster
+  composedOf:
+    technologyNodes:
+      - Tech:RegionalCluster:Host
+```
+
+The page of the concept shows the implementations as incoming `specializes`, the implementation shows what it
+`specializes`. A target of another kind is rejected when the resources are loaded, and `archsight lint` reports a
+`specializes` or `composedOf` chain that leads back to where it started. Do not use `realizedBy` between elements of
+one kind: realization goes from concrete to abstract across layers. See `examples/archsight/technology/platforms.yaml`.
 
 ### Requirements, Controls and Evidence
 

@@ -29,12 +29,21 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
     ## Location
 
     System software is `locatedAt` the `Facility` (or facilities) it runs in.
+
+    ## Concept and implementation
+
+    System software can `specialize` other system software (ArchiMate specialization): the general one is the
+    concept, the specific ones are its implementations, listed as incoming "specializes" on the concept's page.
+    A platform that bundles components is `composedOf` them (ArchiMate composition). Both only point at system
+    software, and neither may form a cycle.
   MD
 
   icon "terminal-tag"
   layer "technology"
 
   relation :realizedBy, :technologyComponents, :TechnologyNode
+  relation :specializes, :technologySystemSoftware, :TechnologySystemSoftware
+  relation :composedOf, :technologySystemSoftware, :TechnologySystemSoftware
   relation :realizedThrough, :technologyArtifacts, :TechnologyArtifact
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface

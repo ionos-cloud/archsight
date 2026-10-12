@@ -15,6 +15,11 @@ module Archsight
     # never enter the check.
     CYCLE_EXEMPT_VERBS = %i[dependsOn].freeze
 
+    # Structure relations between elements of one kind (specialization, composition, aggregation). Each verb is
+    # checked on its own: a chain of one of them must not lead back to where it started. They stay out of the
+    # general check above so that a cycle is reported once.
+    HIERARCHY_VERBS = %i[specializes composedOf].freeze
+
     def initialize(database)
       @database = database
       @errors = []
@@ -30,6 +35,7 @@ module Archsight
         end
       end
       validate_relation_cycles
+      validate_hierarchy_cycles
       validate_unique_annotations
 
       @errors
@@ -119,23 +125,36 @@ module Archsight
 
     # Declared relations must not lead back to where they started (see the "Direction of Relations" modeling guide)
     def validate_relation_cycles
-      graph = relation_graph
-      strongly_connected_groups(graph).each do |group|
-        cycle = cycle_through(group.first, group, graph)
-        names = cycle.map { |step| step[:to].name }
-        start = group.first
-        path = ([start.name] + names).zip(cycle.map { |step| step[:verb] }).flat_map { |name, verb| [name, verb && "-#{verb}->"] }.compact
-        @errors << "#{start.path_ref}: #{start.klass} '#{start.name}' is part of a relation cycle (#{path.join(" ")})"
+      graph = relation_graph { |verb| !CYCLE_EXEMPT_VERBS.include?(verb) && !HIERARCHY_VERBS.include?(verb) }
+      report_cycles(graph) { |start, path| "#{start.path_ref}: #{start.klass} '#{start.name}' is part of a relation cycle (#{path})" }
+    end
+
+    # `specializes` and `composedOf` (one chain per verb) must not lead back to where they started
+    def validate_hierarchy_cycles
+      HIERARCHY_VERBS.each do |hierarchy_verb|
+        graph = relation_graph { |verb| verb == hierarchy_verb }
+        report_cycles(graph) { |start, path| "#{start.path_ref}: #{start.klass} '#{start.name}' is part of a #{hierarchy_verb} cycle (#{path})" }
       end
     end
 
-    # { instance => [{ verb:, to: }] } over the declared relations
+    # Adds one error per group of instances that reach each other; the block builds the message from the first
+    # instance of the group and the path of one concrete cycle
+    def report_cycles(graph)
+      strongly_connected_groups(graph).each do |group|
+        cycle = cycle_through(group.first, group, graph)
+        start = group.first
+        path = ([start.name] + cycle.map { |step| step[:to].name }).zip(cycle.map { |step| step[:verb] }).flat_map { |name, verb| [name, verb && "-#{verb}->"] }.compact
+        @errors << yield(start, path.join(" "))
+      end
+    end
+
+    # { instance => [{ verb:, to: }] } over the declared relations whose verb the block accepts
     def relation_graph
       graph = {}
       @database.instances.each_value do |instances_hash|
         instances_hash.each_value do |instance|
           graph[instance] = instance.class.declared_relations.flat_map do |verb, key, _kind|
-            next [] if CYCLE_EXEMPT_VERBS.include?(verb)
+            next [] unless yield(verb)
 
             instance.relations(verb, key).map { |target| { verb: verb, to: target } }
           end

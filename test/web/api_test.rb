@@ -731,4 +731,18 @@ class APITest < Minitest::Test
 
     assert_equal 400, last_response.status
   end
+
+  def test_get_instance_shows_specializations_as_incoming_and_outgoing_relations
+    get "/api/v1/kinds/TechnologyNode/instances/Tech:RegionalCluster"
+
+    assert_predicate last_response, :ok?
+    assert_equal %w[Tech:RegionalCluster:BareMetal Tech:RegionalCluster:Hypervisor], json_response["references"].dig("TechnologyNode", "specializes").sort
+
+    get "/api/v1/kinds/TechnologyNode/instances/Tech:RegionalCluster:Hypervisor"
+
+    assert_predicate last_response, :ok?
+    targets = json_response["spec"].dig("specializes", "technologyNodes").map { |t| t.is_a?(Hash) ? t["name"] : t }
+
+    assert_equal ["Tech:RegionalCluster"], targets
+  end
 end

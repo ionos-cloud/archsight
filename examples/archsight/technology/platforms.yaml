@@ -1,0 +1,95 @@
+# One technology concept (the regional cluster) with several implementations
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster
+  annotations:
+    architecture/description: |
+      The concept of a regional cluster: a group of hosts that runs the workloads of one region.
+      The implementations differ per site and specialize this node.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster:Hypervisor
+  annotations:
+    architecture/description: Regional cluster implemented with a hypervisor and a cluster API.
+    infrastructure/type: vm
+spec:
+  specializes:
+    technologyNodes:
+      - Tech:RegionalCluster
+  composedOf:
+    technologyNodes:
+      - Tech:RegionalCluster:Host
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster:BareMetal
+  annotations:
+    architecture/description: Regional cluster implemented on bare metal servers.
+    infrastructure/type: bare-metal
+spec:
+  specializes:
+    technologyNodes:
+      - Tech:RegionalCluster
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster:Host
+  annotations:
+    architecture/description: A single host of a hypervisor based regional cluster.
+    infrastructure/type: bare-metal
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:ClusterPlatform
+  annotations:
+    architecture/description: The concept of the software platform that runs a regional cluster.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:ClusterPlatform:Hypervisor
+  annotations:
+    architecture/description: Hypervisor with a cluster API; bundles the hypervisor and the cluster controller.
+spec:
+  specializes:
+    technologySystemSoftware:
+      - Tech:ClusterPlatform
+  composedOf:
+    technologySystemSoftware:
+      - Tech:ClusterPlatform:Controller
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:ClusterPlatform:Controller
+  annotations:
+    architecture/description: Cluster controller, a component of the hypervisor platform.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Tech:Compute
+  annotations:
+    architecture/description: The concept of a compute service.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Tech:Compute:VirtualMachines
+  annotations:
+    architecture/description: Compute service that hands out virtual machines.
+spec:
+  specializes:
+    technologyServices:
+      - Tech:Compute

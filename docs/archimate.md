@@ -39,6 +39,13 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 |--------------|-------------|
 | **Specialization** | Represents that an element is a particular kind of another element. |
 
+### Support in archsight
+
+| Relationship | Supported as |
+|--------------|--------------|
+| **Specialization** | `specializes` between technology elements of one kind (node, system software, service), see "Concept and Implementation" in the modeling guide |
+| **Composition** | `composedOf` between nodes and between system software |
+
 ### Relationship Connectors
 
 | Connector | Description |

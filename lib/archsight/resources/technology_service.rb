@@ -30,6 +30,12 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
 
     A service that runs in several data centers is one service that is `locatedAt` each `Facility`, not one service
     per site.
+
+    ## Concept and implementation
+
+    A service can `specialize` another service (ArchiMate specialization): the general service is the concept, the
+    specific ones are its implementations, listed as incoming "specializes" on the concept's page. The target must be
+    a TechnologyService and the chain must not form a cycle.
   MD
 
   icon "cloud"
@@ -41,6 +47,7 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
              format: :markdown
 
   relation :suppliedBy, :technologyComponents, :TechnologySystemSoftware
+  relation :specializes, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
   relation :locatedAt, :facilities, :Facility
   relation :realizes, :motivationRequirements, :MotivationRequirement

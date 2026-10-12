@@ -30,6 +30,13 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
     A node is `locatedAt` the `Facility` (or facilities) it stands in; see `Facility`.
 
+    ## Concept and implementation
+
+    A node can `specialize` another node (ArchiMate specialization): the general node is the concept (a regional
+    cluster), the specific nodes are its implementations. The concept's page lists them as incoming "specializes".
+    A node made of other nodes (a cluster of hosts) is `composedOf` them (ArchiMate composition). Both only point at
+    nodes, and neither may form a cycle.
+
     ## Security and risk modelling
 
     A node is the typical asset of a vulnerability assessment: a scan result is a `MotivationAssessment` of type
@@ -50,4 +57,6 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   relation :servedBy, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
   relation :locatedAt, :facilities, :Facility
+  relation :specializes, :technologyNodes, :TechnologyNode
+  relation :composedOf, :technologyNodes, :TechnologyNode
 end
