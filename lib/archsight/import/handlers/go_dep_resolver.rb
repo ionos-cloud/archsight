@@ -26,7 +26,11 @@ class Archsight::Import::Handlers::GoDepResolver < Archsight::Import::Handler
   def execute
     @path = config_path("path")
     raise "Missing required config: path" unless @path
-    raise "Directory not found: #{@path}" unless File.directory?(@path)
+
+    unless File.directory?(@path)
+      progress.warn("Skipping, repository not cloned: #{@path}")
+      return
+    end
 
     import_resource.annotations["import/outputPath"] ||= "generated/relationships.yaml"
 

@@ -54,7 +54,13 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   def execute
     @path = config_path("path")
     raise "Missing required config: path" unless @path
-    raise "Directory not found: #{@path}" unless File.directory?(@path)
+
+    unless File.directory?(@path)
+      # The clone is the repository import's job (it reports its own failure);
+      # no marker is written, so this runs again once the clone exists.
+      progress.warn("Skipping, repository not cloned: #{@path}")
+      return
+    end
 
     # Consolidate all grapher output into a single shared file unless an
     # explicit output path is already set (e.g. via grapherOutputPath on the
