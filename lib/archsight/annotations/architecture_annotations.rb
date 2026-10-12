@@ -36,6 +36,12 @@ module Archsight::Annotations::Architecture
                  description: "Comma-separated tags",
                  filter: :list,
                  title: "Tags"
+    end
+    define_lifecycle(base)
+  end
+
+  def self.define_lifecycle(base)
+    base.class_eval do
       annotation "lifecycle/status",
                  description: "Lifecycle state: active, deprecated (do not start new uses), sunset (being phased out) " \
                               "or end-of-life (no longer operated or supported)",
