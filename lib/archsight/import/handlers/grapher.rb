@@ -35,7 +35,9 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
     []
   end
 
-  # Namespaces of the machine tags (namespace:value) that importers write into architecture/tags
+  # Namespaces of the machine tags (namespace:value) that importers write into architecture/tags.
+  # `entrypoint` is no longer written (see component/entrypoints) but stays listed so a re-import
+  # removes the tags of earlier runs.
   MACHINE_TAG_NAMESPACES = %w[ecosystem packaging entrypoint linkage].freeze
 
   PALETTE = [
@@ -136,16 +138,19 @@ class Archsight::Import::Handlers::Grapher < Archsight::Import::Handler
   # @param _repo_root [String] Absolute path to the repository root
   # @param _rel_dir [String] Directory of the module relative to the root ("." for the root)
   # @param _mod_name [String] Module name from discover_modules
-  # @return [Hash] { type: "executable|library|module|...", tags: ["ecosystem:go", ...] }, empty when unknown
+  # @return [Hash] { type: "executable|library|module|...", tags: ["ecosystem:go", ...],
+  #   entrypoints: ["cmd/api", ...] }, empty when unknown
   def component_facts(_repo_root, _rel_dir, _mod_name)
     {}
   end
 
-  # component/type and the machine tags (namespace:value) in architecture/tags for the facts of component_facts.
+  # component/type, component/entrypoints and the machine tags (namespace:value) in architecture/tags for the
+  # facts of component_facts.
   # The tags a person set stay; machine tags of the importer's namespaces from an earlier run are replaced.
   def component_annotations(facts, existing_tags: nil)
     annotations = {}
     annotations["component/type"] = facts[:type] if facts[:type]
+    annotations["component/entrypoints"] = facts[:entrypoints].join(",") if facts[:entrypoints]&.any?
     annotations["architecture/tags"] = merge_machine_tags(existing_tags, facts[:tags]).join(",") if facts[:tags]&.any?
     annotations
   end

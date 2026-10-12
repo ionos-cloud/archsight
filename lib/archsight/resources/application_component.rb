@@ -40,8 +40,9 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     `component/role` refines an executable or plugin (`service`, `cli`, `job`, `operator`, `agent`); importers cannot
     tell these apart, so it is set by hand and never overwritten. Importers also add machine tags
     (`namespace:value`) to the regular `architecture/tags`: `ecosystem:go`, `packaging:go-module`,
-    `entrypoint:cmd/api`, `linkage:shared`; the tags a person set stay, and a re-import only replaces the machine
-    tags of these namespaces. Deployable forms (container image, chart, package) are `TechnologyArtifact`s, not
+    `linkage:shared`; the tags a person set stay, and a re-import only replaces the machine tags of these
+    namespaces. The entry points (main packages such as `cmd/api`) go to `component/entrypoints`, a list that
+    works in queries like a tag but is not a sidebar filter, as there are too many distinct values. Deployable forms (container image, chart, package) are `TechnologyArtifact`s, not
     component types.
 
     The computed `component/dependents` counts the components that depend on this one, which tells shared libraries
@@ -162,6 +163,12 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              title: "Supportability",
              enum: ["no support", "support by dev", "support by ops", "support by api",
                     "self service support via a frontend"]
+
+  annotation "component/entrypoints",
+             description: "Comma-separated entry points (main packages or commands such as cmd/api), set by importers",
+             title: "Entry points",
+             sidebar: false,
+             filter: :list
 
   # Deployment (from ArgoCD/cluster)
   annotation "deployment/images",
