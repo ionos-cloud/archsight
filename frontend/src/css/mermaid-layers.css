@@ -94,6 +94,10 @@
   --layer-technology-fill: #C5E1A5;
   --layer-technology-stroke: #558B2F;
   --layer-technology-text: #000;
+  /* Physical - teal */
+  --layer-physical-fill: #B2DFDB;
+  --layer-physical-stroke: #00796B;
+  --layer-physical-text: #000;
   /* Implementation & Migration - rose */
   --layer-implementation-fill: #F8BBD0;
   --layer-implementation-stroke: #C2185B;
@@ -123,6 +127,10 @@
     --layer-technology-fill: #33691E;
     --layer-technology-stroke: #AED581;
     --layer-technology-text: #F1F8E9;
+    /* Physical - deep teal */
+    --layer-physical-fill: #00695C;
+    --layer-physical-stroke: #80CBC4;
+    --layer-physical-text: #E0F2F1;
     /* Implementation & Migration - deep rose */
     --layer-implementation-fill: #AD1457;
     --layer-implementation-stroke: #F8BBD0;
@@ -193,6 +201,19 @@
 .mermaid .node.technology .label * {
   fill: var(--layer-technology-text) !important;
   color: var(--layer-technology-text) !important;
+}
+
+/* Physical layer nodes */
+.mermaid .node.physical > rect,
+.mermaid .node.physical > polygon,
+.mermaid .node.physical > circle {
+  fill: var(--layer-physical-fill) !important;
+  stroke: var(--layer-physical-stroke) !important;
+}
+.mermaid .node.physical .label,
+.mermaid .node.physical .label * {
+  fill: var(--layer-physical-text) !important;
+  color: var(--layer-physical-text) !important;
 }
 
 /* Implementation & Migration layer nodes */

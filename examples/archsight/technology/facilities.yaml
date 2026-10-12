@@ -1,0 +1,114 @@
+apiVersion: architecture/v1alpha1
+kind: Location
+metadata:
+  name: Location:Germany:Frankfurt
+  annotations:
+    architecture/description: |
+      Metro area of the example data centers.
+    location/country: Germany
+    location/city: Frankfurt
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Location
+metadata:
+  name: Location:Spain:Madrid
+  annotations:
+    architecture/description: |
+      Second metro area of the example data centers.
+    location/country: Spain
+    location/city: Madrid
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Facility
+metadata:
+  name: Facility:Frankfurt:Campus
+  annotations:
+    architecture/description: |
+      Campus with two data center halls. A campus is a facility that is `composedOf` the halls.
+    facility/type: data-center
+    facility/stage: productive
+spec:
+  locatedAt:
+    locations:
+      - Location:Germany:Frankfurt
+  composedOf:
+    facilities:
+      - Facility:Frankfurt:HallA
+      - Facility:Frankfurt:HallB
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: Facility
+metadata:
+  name: Facility:Frankfurt:HallA
+  annotations:
+    architecture/description: Data center hall A of the Frankfurt campus.
+    facility/type: data-center
+    facility/stage: productive
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Facility
+metadata:
+  name: Facility:Frankfurt:HallB
+  annotations:
+    architecture/description: Data center hall B of the Frankfurt campus.
+    facility/type: data-center
+    facility/stage: in build
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: Facility
+metadata:
+  name: Facility:Madrid:DC
+  annotations:
+    architecture/description: Colocation data center in Madrid.
+    facility/type: colocation
+    facility/stage: productive
+spec:
+  locatedAt:
+    locations:
+      - Location:Spain:Madrid
+---
+apiVersion: architecture/v1alpha1
+kind: Equipment
+metadata:
+  name: Equipment:Frankfurt:HallA:Rack01
+  annotations:
+    architecture/description: Rack 01 in hall A, holding the web servers.
+    equipment/type: rack
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:HallA
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Node:Frankfurt:Web01
+  annotations:
+    architecture/description: Example web server of the archsight demo deployment.
+    infrastructure/type: bare-metal
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:HallA
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:Puma:Cluster
+  annotations:
+    architecture/description: |
+      The Puma web server cluster of the demo deployment. It is one element that runs in
+      three places: two halls and a second site.
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:HallA
+      - Facility:Frankfurt:HallB
+      - Facility:Madrid:DC

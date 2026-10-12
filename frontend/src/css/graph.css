@@ -38,6 +38,12 @@
     fill: #8AC926 !important;
 }
 
+/* Physical Layer - Teal */
+.layer-physical path[fill="lightgrey"] {
+    stroke: #80CBC4 !important;
+    fill: #80CBC4 !important;
+}
+
 /* Implementation & Migration Layer - Rose */
 .layer-implementation path[fill="lightgrey"] {
     stroke: #F48FB1 !important;
@@ -97,6 +103,12 @@
     .layer-technology path[fill="lightgrey"] {
         stroke: #7AB316 !important;
         fill: #6A9916 !important;
+    }
+
+    /* Physical Layer - Teal */
+    .layer-physical path[fill="lightgrey"] {
+        stroke: #26A69A !important;
+        fill: #00796B !important;
     }
 
     /* Implementation & Migration Layer - Rose */
