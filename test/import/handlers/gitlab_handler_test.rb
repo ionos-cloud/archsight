@@ -70,6 +70,8 @@ class GitlabHandlerTest < Minitest::Test
       gitlab_dir = File.join(cache_root, "gitlab")
       FileUtils.mkdir_p(File.join(gitlab_dir, "my-group.stale-service"))
       FileUtils.mkdir_p(File.join(gitlab_dir, "my-group.my-service"))
+      old = Time.now - 7200
+      File.utime(old, old, File.join(gitlab_dir, "my-group.stale-service"))
 
       stub_groups_request
       stub_projects_request
@@ -79,6 +81,46 @@ class GitlabHandlerTest < Minitest::Test
 
       refute_path_exists File.join(gitlab_dir, "my-group.stale-service")
       assert_path_exists File.join(gitlab_dir, "my-group.my-service")
+    ensure
+      FileUtils.rm_rf(cache_root)
+    end
+  end
+
+  def test_pruning_keeps_recently_touched_directories
+    cache_root = Dir.mktmpdir
+    begin
+      gitlab_dir = File.join(cache_root, "gitlab")
+      in_progress = File.join(gitlab_dir, "my-group.being-cloned")
+      FileUtils.mkdir_p(in_progress)
+
+      stub_groups_request
+      stub_projects_request
+
+      create_handler(host: "gitlab.example.com", cache_root: cache_root).execute
+
+      assert_path_exists in_progress
+    ensure
+      FileUtils.rm_rf(cache_root)
+    end
+  end
+
+  def test_pruning_refuses_to_wipe_cache_on_incomplete_listing
+    cache_root = Dir.mktmpdir
+    begin
+      gitlab_dir = File.join(cache_root, "gitlab")
+      old = Time.now - 7200
+      dirs = Array.new(30) { |i| File.join(gitlab_dir, "other.repo#{i}") }
+      dirs.each do |d|
+        FileUtils.mkdir_p(d)
+        File.utime(old, old, d)
+      end
+
+      stub_groups_request
+      stub_projects_request
+
+      create_handler(host: "gitlab.example.com", cache_root: cache_root).execute
+
+      assert(dirs.all? { |d| File.directory?(d) })
     ensure
       FileUtils.rm_rf(cache_root)
     end

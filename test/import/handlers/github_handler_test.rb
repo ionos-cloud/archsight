@@ -200,6 +200,8 @@ class GithubHandlerTest < Minitest::Test
       org_dir = File.join(cache_root, "github", "test-org")
       FileUtils.mkdir_p(File.join(org_dir, "stale-repo"))
       FileUtils.mkdir_p(File.join(org_dir, "repo1"))
+      old = Time.now - 7200
+      File.utime(old, old, File.join(org_dir, "stale-repo"))
 
       stub_request(:get, "https://api.github.com/orgs/test-org/repos?page=1&per_page=100")
         .to_return(
