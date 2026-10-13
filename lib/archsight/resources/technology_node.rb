@@ -26,6 +26,14 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     - Network appliances
     - Storage arrays
 
+    ## Not this kind
+
+    - A building or data center is a `Facility`; a rack or fabric is `Equipment`
+    - Software running on the node (database, routing stack) is `TechnologySystemSoftware`
+    - One node per host role is often enough; many identical hosts are one node `locatedAt` several facilities
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## Location
 
     A node is `locatedAt` the `Facility` (or facilities) it stands in; see `Facility`.

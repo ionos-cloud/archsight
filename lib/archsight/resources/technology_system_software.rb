@@ -26,6 +26,14 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
     - Load balancers
     - Service meshes
 
+    ## Not this kind
+
+    - The machine it runs on is a `TechnologyNode`
+    - What consumers use from it is a `TechnologyService`
+    - A routing stack that implements a network realizes a `CommunicationNetwork`
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## Location
 
     System software is `locatedAt` the `Facility` (or facilities) it runs in.

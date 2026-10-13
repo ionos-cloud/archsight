@@ -43,7 +43,9 @@ class ChoosingTheKindTest < Minitest::Test
   def test_guide_has_no_duplicate_row_and_no_upward_example
     guide = File.read(File.join(ROOT, "docs/modeling.md"))
 
-    assert_equal 1, guide.scan("| TechnologyArtifact |").size
+    technology_layer = guide[/^### Technology Layer\n.*?(?=^### )/m]
+
+    assert_equal 1, technology_layer.scan("| TechnologyArtifact |").size
     refute_includes guide, "ManagedKubernetes"
   end
 

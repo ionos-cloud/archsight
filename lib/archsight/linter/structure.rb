@@ -2,10 +2,13 @@
 
 module Archsight
   class Linter
-    # Structural checks over the declared relations, the rules of "Choosing the Kind" in the modeling guide. All
-    # findings are warnings: they point at modeling decisions to review and have legitimate exceptions (internal
-    # services, capabilities that no product carries yet).
+    # Structural checks over the declared relations, the rules of "Choosing the Kind" and "Choosing the Kind:
+    # Infrastructure" in the modeling guide. All findings are warnings: they point at modeling decisions to review and
+    # have legitimate exceptions (internal services, capabilities that no product carries yet).
     class Structure
+      # Network types that run over another network and need one that serves them
+      OVERLAY_TYPES = %w[overlay vpn].freeze
+
       def initialize(database)
         @database = database
       end
@@ -18,7 +21,11 @@ module Archsight
           service_with_same_named_component,
           product_without_service,
           service_reached_from_nothing,
-          capability_without_product
+          capability_without_product,
+          link_not_between_two_facilities,
+          overlay_without_underlay,
+          facility_without_location,
+          equipment_without_facility
         ].flatten.sort
       end
 
@@ -109,6 +116,51 @@ module Archsight
           next if realized.key?(capability)
 
           warning(capability, "is realized by no product")
+        end
+      end
+
+      # ---- infrastructure
+
+      def link_not_between_two_facilities
+        instances("Equipment").filter_map do |equipment|
+          next unless equipment.annotations["equipment/type"] == "link"
+
+          count = targets(equipment, :locatedAt, :facilities).length
+          next if count == 2
+
+          warning(equipment, "is a link located at #{count} #{count == 1 ? "facility" : "facilities"}, not 2")
+        end
+      end
+
+      def overlay_without_underlay
+        instances("CommunicationNetwork").filter_map do |network|
+          type = network.annotations["network/type"]
+          next unless OVERLAY_TYPES.include?(type)
+          next unless targets(network, :servedBy, :communicationNetworks).empty?
+
+          warning(network, "is #{type == "overlay" ? "an" : "a"} #{type} network served by no network")
+        end
+      end
+
+      # Only the outermost facility needs a location; nested halls inherit it from their campus
+      def facility_without_location
+        nested = owners_by_target("Facility", :composedOf, :facilities)
+        instances("Facility").filter_map do |facility|
+          next if nested.key?(facility) || targets(facility, :locatedAt, :locations).any?
+
+          warning(facility, "is located at no Location")
+        end
+      end
+
+      # Equipment that is part of other equipment is placed through its whole, and a whole (a backbone) through its
+      # parts (the links)
+      def equipment_without_facility
+        parts = owners_by_target("Equipment", :composedOf, :equipment)
+        instances("Equipment").filter_map do |equipment|
+          next if parts.key?(equipment) || targets(equipment, :composedOf, :equipment).any?
+          next if targets(equipment, :locatedAt, :facilities).any?
+
+          warning(equipment, "is located at no Facility")
         end
       end
     end

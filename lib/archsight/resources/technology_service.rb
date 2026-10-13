@@ -26,6 +26,14 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     - CI/CD pipeline services
     - Monitoring and logging platforms
 
+    ## Not this kind
+
+    - The software that provides it is `TechnologySystemSoftware`, the machines are `TechnologyNode`s
+    - A network is a `CommunicationNetwork`; a physical link is `Equipment`
+    - One service for all sites, `locatedAt` each `Facility`, not a copy per site
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## Location
 
     A service that runs in several data centers is one service that is `locatedAt` each `Facility`, not one service

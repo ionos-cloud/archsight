@@ -24,6 +24,14 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
     - Edge sites
     - Parts of a site (campus, building, hall), nested with `composedOf`
 
+    ## Not this kind
+
+    - A country, metro or region is a `Location`
+    - A rack, cage or fabric inside the site is `Equipment`; a server is a `TechnologyNode` `locatedAt` the facility
+    - A data center is never a `TechnologyNode` and never an annotation on other elements
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## How it connects
 
     - Things that run at a facility point to it with `locatedAt`: `TechnologyNode`, `TechnologyService`,
