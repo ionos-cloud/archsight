@@ -370,6 +370,32 @@ TechnologyService: -> "DC:Alpha"
 Facility: <- "Orders:Cluster"
 ```
 
+#### Backbone and links between facilities
+
+The physical network between sites is `Equipment`. A **link** (fibre route, carrier circuit) is one Equipment with
+`equipment/type: link` that is `locatedAt` **both** end facilities. A **backbone** is an Equipment that is `composedOf`
+its links (composition only points at Equipment and must not form a cycle). The logical network is a
+`TechnologyService` (and routers are `TechnologyNode`s) that is `realizedBy` the Equipment it runs over, and is
+`locatedAt` the facilities it reaches:
+
+```
+TechnologyService "Network:Backbone"  --realizedBy-->  Equipment "Equipment:Backbone"
+                                                            --composedOf-->  Equipment "Equipment:Link:Frankfurt-Madrid" (link)
+                                                                                 --locatedAt-->  Facility Frankfurt, Facility Madrid
+```
+
+```
+# all links between facilities
+Equipment: equipment/type == "link"
+
+# links that end in Facility X
+Equipment: equipment/type == "link" & -> "Facility:Madrid:DC"
+```
+
+The Equipment page lists what is realized by it (incoming `realizedBy`) and the backbones it belongs to (incoming
+`composedOf`). A link has no endpoints of its own: it is placed at its facilities, so keep to two `locatedAt` targets
+per link. See `examples/archsight/technology/facilities.yaml`.
+
 ## Relation Patterns
 
 ### Realization Chain

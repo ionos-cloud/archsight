@@ -30,6 +30,10 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
     A node is `locatedAt` the `Facility` (or facilities) it stands in; see `Facility`.
 
+    ## Physical realization
+
+    A node is `realizedBy` the `Equipment` it consists of or stands on (a router on its rack); see `Equipment`.
+
     ## Concept and implementation
 
     A node can `specialize` another node (ArchiMate specialization): the general node is the concept (a regional
@@ -63,6 +67,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   relation :servedBy, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
   relation :locatedAt, :facilities, :Facility
+  relation :realizedBy, :equipment, :Equipment
   relation :specializes, :technologyNodes, :TechnologyNode
   relation :composedOf, :technologyNodes, :TechnologyNode
   relation :assignedTo, :technologyArtifacts, :TechnologyArtifact

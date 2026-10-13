@@ -31,6 +31,11 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     A service that runs in several data centers is one service that is `locatedAt` each `Facility`, not one service
     per site.
 
+    ## Physical realization
+
+    A service is `realizedBy` the `Equipment` it runs over: a backbone network service is realized by the links
+    between the facilities (`equipment/type: link`).
+
     ## Concept and implementation
 
     A service can `specialize` another service (ArchiMate specialization): the general service is the concept, the
@@ -50,6 +55,7 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
   relation :specializes, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
   relation :locatedAt, :facilities, :Facility
+  relation :realizedBy, :equipment, :Equipment
   relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
   relation :plans, :motivationRequirements, :MotivationRequirement
