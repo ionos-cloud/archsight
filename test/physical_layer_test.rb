@@ -345,4 +345,93 @@ class PhysicalLayerTest < Minitest::Test
 
     assert_equal 3, cluster.relations(:locatedAt, :facilities).length
   end
+
+  # --- backbone: links between facilities as Equipment ---
+
+  LINK = "Equipment:Link:AB"
+
+  def backbone_yaml
+    RESOURCES +
+      extra("Equipment", LINK, "locatedAt:\n  facilities:\n    - Facility:HallA\n    - Facility:HallB").sub("name: #{LINK}", "name: #{LINK}\n  annotations:\n    equipment/type: link") +
+      extra("Equipment", "Equipment:Backbone", "composedOf:\n  equipment:\n    - #{LINK}") +
+      extra("TechnologyService", "Network:Backbone", "realizedBy:\n  equipment:\n    - Equipment:Backbone") +
+      extra("TechnologyNode", "Node:Router", "realizedBy:\n  equipment:\n    - Equipment:Rack01")
+  end
+
+  def test_link_is_an_equipment_type_and_unknown_types_stay_invalid
+    type = Archsight::Resources::Equipment.annotations.find { |a| a.key == "equipment/type" }
+
+    assert type.valid?("link")
+    refute type.valid?("cable-tray")
+  end
+
+  def test_a_link_is_located_at_both_end_facilities
+    with_db(backbone_yaml) do |db|
+      link = db.instance_by_kind("Equipment", LINK)
+
+      assert_equal %w[Facility:HallA Facility:HallB], link.relations(:locatedAt, :facilities).map(&:name)
+      hall = db.instance_by_kind("Facility", "Facility:HallB")
+
+      assert_equal [link], hall.references_grouped.dig("Equipment", :locatedAt)
+    end
+  end
+
+  def test_a_backbone_is_composed_of_links
+    with_db(backbone_yaml) do |db|
+      backbone = db.instance_by_kind("Equipment", "Equipment:Backbone")
+      link = db.instance_by_kind("Equipment", LINK)
+
+      assert_equal [link], backbone.relations(:composedOf, :equipment)
+      assert_equal [backbone], link.references_grouped.dig("Equipment", :composedOf)
+    end
+  end
+
+  def test_services_and_nodes_are_realized_by_equipment
+    with_db(backbone_yaml) do |db|
+      backbone = db.instance_by_kind("Equipment", "Equipment:Backbone")
+      rack = db.instance_by_kind("Equipment", "Equipment:Rack01")
+
+      assert_equal %w[Network:Backbone], backbone.references_grouped.dig("TechnologyService", :realizedBy).map(&:name)
+      assert_equal %w[Node:Router], rack.references_grouped.dig("TechnologyNode", :realizedBy).map(&:name)
+    end
+  end
+
+  def test_equipment_composed_of_a_non_equipment_is_rejected
+    yaml = RESOURCES + extra("Equipment", "Equipment:Wrong", "composedOf:\n  equipment:\n    - Facility:HallA")
+
+    assert_includes load_error(yaml), "Facility:HallA is not defined as kind"
+  end
+
+  def test_realized_by_equipment_needs_equipment
+    yaml = RESOURCES + extra("TechnologyService", "Service:Wrong", "realizedBy:\n  equipment:\n    - Facility:HallA")
+
+    assert_includes load_error(yaml), "Facility:HallA is not defined as kind"
+  end
+
+  def test_equipment_composed_of_cycles_are_reported
+    yaml = RESOURCES + extra("Equipment", "Equipment:A", "composedOf:\n  equipment:\n    - Equipment:B") +
+           extra("Equipment", "Equipment:B", "composedOf:\n  equipment:\n    - Equipment:A")
+
+    assert_predicate lint(yaml).grep(/cycle of composedOf relations/), :any?
+  end
+
+  def test_the_instance_api_shows_what_is_realized_by_the_backbone
+    use_examples
+    get "/api/v1/kinds/Equipment/instances/Equipment:Backbone"
+
+    assert_predicate last_response, :ok?
+    references = JSON.parse(last_response.body)["references"]
+
+    assert_includes references.dig("TechnologyService", "realizedBy"), "Network:Backbone"
+  end
+
+  def test_the_examples_model_a_backbone_between_facilities
+    db = Archsight::Database.new(EXAMPLES, verbose: false, compute_annotations: false)
+    db.reload!
+    link = db.instance_by_kind("Equipment", "Equipment:Link:Frankfurt-Madrid")
+
+    assert_equal 2, link.relations(:locatedAt, :facilities).length
+    assert_equal 2, db.instance_by_kind("Equipment", "Equipment:Backbone").relations(:composedOf, :equipment).length
+    assert_equal %w[link], db.query('Equipment: equipment/type == "link"').map { |e| e.annotations["equipment/type"] }.uniq
+  end
 end

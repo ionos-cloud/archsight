@@ -112,3 +112,59 @@ spec:
       - Facility:Frankfurt:HallA
       - Facility:Frankfurt:HallB
       - Facility:Madrid:DC
+---
+apiVersion: architecture/v1alpha1
+kind: Equipment
+metadata:
+  name: Equipment:Link:Frankfurt-Madrid
+  annotations:
+    architecture/description: |
+      Fibre route between Frankfurt and Madrid. A link is one Equipment that is `locatedAt` both end facilities.
+    equipment/type: link
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:Campus
+      - Facility:Madrid:DC
+---
+apiVersion: architecture/v1alpha1
+kind: Equipment
+metadata:
+  name: Equipment:Link:HallA-HallB
+  annotations:
+    architecture/description: Link between the two halls of the Frankfurt campus.
+    equipment/type: link
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:HallA
+      - Facility:Frankfurt:HallB
+---
+apiVersion: architecture/v1alpha1
+kind: Equipment
+metadata:
+  name: Equipment:Backbone
+  annotations:
+    architecture/description: The backbone, the physical links between the facilities as one composed Equipment.
+    equipment/type: network-fabric
+spec:
+  composedOf:
+    equipment:
+      - Equipment:Link:Frankfurt-Madrid
+      - Equipment:Link:HallA-HallB
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Network:Backbone
+  annotations:
+    architecture/description: |
+      The logical backbone network. It runs in the facilities it reaches and is `realizedBy` the physical backbone.
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:Campus
+      - Facility:Madrid:DC
+  realizedBy:
+    equipment:
+      - Equipment:Backbone
