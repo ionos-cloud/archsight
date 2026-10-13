@@ -25,13 +25,6 @@
 .prose h5 { font-size: var(--fs-xs); }
 .prose h6 { font-size: var(--fs-xs); color: var(--pico-muted-color); }
 
-/* keep prose lines readable; tables, code and diagrams may use the full width */
-.prose p,
-.prose li,
-.prose blockquote {
-  max-width: 75ch;
-}
-
 .prose p,
 .prose ul,
 .prose ol,
