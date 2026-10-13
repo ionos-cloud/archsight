@@ -43,6 +43,8 @@ class Archsight::Import::Handlers::GoDepResolver < Archsight::Import::Handler
     output = +""
 
     modules.each do |rel_dir, mod_name|
+      next if copied_module?(rel_dir, mod_name, config("artifact"))
+
       mod_dir = rel_dir == "." ? @path : File.join(@path, rel_dir)
       dep_names = compute_deps(mod_dir, mod_name, existing_components)
       next if dep_names.empty?

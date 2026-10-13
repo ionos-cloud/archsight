@@ -394,6 +394,75 @@ class GoGrapherTest < Minitest::Test
     end
   end
 
+  # ── A copy of another repository's module (issue #157) ───────────────────
+
+  LIBRARY = "acme:library"
+
+  # acme/library declares github.com/acme/library; acme/app-poc embeds a copy of it in a subdirectory
+  def library_repo(repo, name, copy_dir: nil)
+    write(repo, ".git/config", "[remote \"origin\"]\n\turl = git@github.com:acme/#{name}.git\n")
+    dir = copy_dir ? "#{copy_dir}/" : ""
+    write(repo, "#{dir}go.mod", "module github.com/acme/library\n\ngo 1.21\n")
+    write(repo, "#{dir}library.go", "package library\n")
+  end
+
+  def merged_library(realized_by, artifacts = { "Repo:acme:library" => {}, "Repo:acme:app-poc" => {} })
+    MockDatabase.new({ LIBRARY => GENERATED },
+                     { specs: { LIBRARY => { "realizedThrough" => { "technologyArtifacts" => realized_by } } }, artifacts: artifacts })
+  end
+
+  def test_the_repository_the_module_path_names_keeps_the_name_although_it_sorts_last
+    with_repo do |repo|
+      library_repo(repo, "library")
+
+      assert_equal [LIBRARY], component_names_for(repo, merged_library(%w[Repo:acme:app-poc Repo:acme:library]))
+    end
+    with_repo do |repo|
+      library_repo(repo, "app-poc")
+
+      assert_equal ["acme:library@acme:app-poc"], component_names_for(repo, merged_library(%w[Repo:acme:app-poc Repo:acme:library]))
+    end
+  end
+
+  def test_the_module_path_wins_over_the_archived_state
+    archived = { "Repo:acme:library" => { "activity/status" => "archived" }, "Repo:acme:app-poc" => {} }
+    with_repo do |repo|
+      library_repo(repo, "app-poc")
+
+      assert_equal ["acme:library@acme:app-poc"], component_names_for(repo, merged_library(%w[Repo:acme:app-poc Repo:acme:library], archived))
+    end
+  end
+
+  def test_a_nested_copy_of_another_repositorys_module_gets_no_component
+    with_repo do |repo|
+      library_repo(repo, "app-poc", copy_dir: "third_party/library")
+      # the copy owned the plain name before; importing only this repository again gives it up
+      output = run_full_handler(repo, database: merged_library(%w[Repo:acme:app-poc]))
+
+      assert_empty(output.select { |r| r["kind"] == "ApplicationComponent" })
+    end
+  end
+
+  def test_a_nested_module_is_kept_while_its_repository_is_unknown
+    with_repo do |repo|
+      library_repo(repo, "app-poc", copy_dir: "third_party/library")
+
+      assert_equal [LIBRARY], component_names_for(repo, MockDatabase.new({}, { artifacts: { "Repo:acme:app-poc" => {} } }))
+    end
+  end
+
+  def test_the_module_path_names_a_repository
+    parser = Object.new.extend(Archsight::Import::Handlers::GoModuleParser)
+
+    assert parser.module_path_of_repository?("github.com/acme/library", "Repo:acme:library")
+    assert parser.module_path_of_repository?("github.com/acme/library/v2/client", "Repo:acme:library")
+    assert parser.module_path_of_repository?("github.com/acme/library", "Repo:library")
+    assert parser.module_path_of_repository?("go.example.com/library", "Repo:acme:library")
+    refute parser.module_path_of_repository?("github.com/acme/library", "Repo:acme:app-poc")
+    refute parser.module_path_of_repository?("github.com/alice/shop", "Repo:acme:shop")
+    refute parser.module_path_of_repository?("github.com/acme/library", "Repo:acme")
+  end
+
   def test_the_dependency_resolver_import_knows_the_artifact
     with_repo do |repo|
       shop_repo(repo, "shop")
@@ -458,8 +527,8 @@ class GoGrapherTest < Minitest::Test
     File.join(@resources_dir, "generated", "modules.yaml")
   end
 
-  def run_full_handler(path)
-    handler = create_handler(path: path)
+  def run_full_handler(path, database: nil)
+    handler = create_handler(path: path, database: database)
     handler.execute
     YAML.load_stream(File.read(output_path))
   end
