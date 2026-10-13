@@ -27,6 +27,15 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
     - Container images
     - Build artifacts
     - Configuration packages
+    - Images (OS, VM template, disk or boot image, `artifact/type: image`)
+
+    ## Contents and deployment
+
+    An artifact that contains other artifacts `aggregates` them (ArchiMate aggregation): an image contains packages,
+    a chart references container images. A node or system software that runs an artifact `assignedTo` it (ArchiMate
+    assignment, written on the node). The artifact's page shows both as incoming relations ("contained in" and
+    "deployed on"). `ApplicationComponent realizedThrough TechnologyArtifact` says what a component is built from,
+    not where the artifact runs.
   MD
 
   icon "puzzle"
@@ -36,7 +45,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   annotation "artifact/type",
              description: "Type of technology artifact",
              title: "Artifact Type",
-             enum: %w[repo container chart deb rpm]
+             enum: %w[repo container chart deb rpm image binary archive]
 
   # Dynamic annotations (patterns with *)
   annotation "scc/language/*/loc",
@@ -237,6 +246,7 @@ class Archsight::Resources::TechnologyArtifact < Archsight::Resources::Base
   end
 
   relation :servedBy, :technologyComponents, :TechnologyArtifact
+  relation :aggregates, :technologyArtifacts, :TechnologyArtifact
   relation :suppliedBy, :technologyComponents, :TechnologyService
   relation :maintainedBy, :businessActors, :BusinessActor
   relation :contributedBy, :businessActors, :BusinessActor

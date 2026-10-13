@@ -246,7 +246,7 @@ class PhysicalLayerTest < Minitest::Test
   def test_composed_of_cycles_are_reported
     errors = lint(RESOURCES + extra("Facility", "Facility:HallA", "composedOf:\n  facilities:\n    - Facility:Campus"))
 
-    assert_predicate errors.grep(/relation cycle.*composedOf/), :any?
+    assert_predicate errors.grep(/cycle of composedOf relations/), :any?
   end
 
   # --- incoming: what is located here, grouped by kind ---

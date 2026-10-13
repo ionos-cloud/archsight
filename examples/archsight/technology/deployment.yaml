@@ -1,0 +1,66 @@
+# How software reaches a host: a host role boots an image, the image contains packages, a configuration
+# management role installs one more package on the same hosts.
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Tech:Host:Hypervisor
+  annotations:
+    architecture/description: |
+      Host role "hypervisor". The nodes boot the OS image and get the metrics agent installed on top.
+    infrastructure/type: bare-metal
+spec:
+  assignedTo:
+    technologyArtifacts:
+      - Tech:Image:Hypervisor
+      - Tech:Package:MetricsAgent
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Tech:Image:Hypervisor
+  annotations:
+    architecture/description: Bootable OS image of the hypervisor hosts.
+    artifact/type: image
+spec:
+  aggregates:
+    technologyArtifacts:
+      - Tech:Package:VirtAgent
+      - Tech:Package:NetAgent
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Tech:Package:VirtAgent
+  annotations:
+    architecture/description: Agent that manages virtual machines on a host.
+    artifact/type: deb
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Tech:Package:NetAgent
+  annotations:
+    architecture/description: Agent that configures the host network.
+    artifact/type: deb
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyArtifact
+metadata:
+  name: Tech:Package:MetricsAgent
+  annotations:
+    architecture/description: Metrics agent, installed on the hosts by configuration management.
+    artifact/type: rpm
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:ConfigManagement
+  annotations:
+    architecture/description: Configuration management that executes the metrics agent playbook artifact.
+spec:
+  assignedTo:
+    technologyArtifacts:
+      - Tech:Package:MetricsAgent

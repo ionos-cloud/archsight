@@ -731,4 +731,36 @@ class APITest < Minitest::Test
 
     assert_equal 400, last_response.status
   end
+
+  def test_get_instance_shows_specializations_as_incoming_and_outgoing_relations
+    get "/api/v1/kinds/TechnologyNode/instances/Tech:RegionalCluster"
+
+    assert_predicate last_response, :ok?
+    assert_equal %w[Tech:RegionalCluster:BareMetal Tech:RegionalCluster:Hypervisor], json_response["references"].dig("TechnologyNode", "specializes").sort
+
+    get "/api/v1/kinds/TechnologyNode/instances/Tech:RegionalCluster:Hypervisor"
+
+    assert_predicate last_response, :ok?
+    targets = json_response["spec"].dig("specializes", "technologyNodes").map { |t| t.is_a?(Hash) ? t["name"] : t }
+
+    assert_equal ["Tech:RegionalCluster"], targets
+  end
+
+  def test_get_artifact_shows_where_it_is_contained_and_deployed
+    get "/api/v1/kinds/TechnologyArtifact/instances/Tech:Package:VirtAgent"
+
+    assert_predicate last_response, :ok?
+    assert_equal ["Tech:Image:Hypervisor"], json_response["references"].dig("TechnologyArtifact", "aggregates")
+
+    get "/api/v1/kinds/TechnologyArtifact/instances/Tech:Image:Hypervisor"
+
+    assert_predicate last_response, :ok?
+    assert_equal ["Tech:Host:Hypervisor"], json_response["references"].dig("TechnologyNode", "assignedTo")
+    assert_equal %w[Tech:Package:NetAgent Tech:Package:VirtAgent], json_response["relations"].dig("aggregates", "TechnologyArtifact").sort
+
+    get "/api/v1/kinds/TechnologyNode/instances/Tech:Host:Hypervisor"
+
+    assert_predicate last_response, :ok?
+    assert_includes json_response["relations"].dig("assignedTo", "TechnologyArtifact"), "Tech:Image:Hypervisor"
+  end
 end
