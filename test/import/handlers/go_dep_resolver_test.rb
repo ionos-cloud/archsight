@@ -199,6 +199,38 @@ class GoDepResolverTest < Minitest::Test
     end
   end
 
+  # A copy of another repository's module (issue #157): the copy in acme/app-poc gets no dependencies, the
+  # repository the module path names keeps the plain name
+
+  def library_database
+    mock_database({ "acme:library" => {}, "acme:util" => {} },
+                  { "acme:library" => { "generated/script" => "Import:GoGrapher:acme:app-poc" } },
+                  %w[Repo:acme:library Repo:acme:app-poc])
+  end
+
+  def test_a_nested_copy_of_another_repositorys_module_gets_no_dependencies
+    with_repo do |repo|
+      write(repo, "third_party/library/go.mod", "module github.com/acme/library\n\ngo 1.21\n\nrequire github.com/acme/util v1.0.0\n")
+      create_handler(path: repo, database: library_database, artifact: "Repo:acme:app-poc").execute
+
+      assert_equal(["Import"], YAML.load_stream(File.read(output_path)).map { |r| r["kind"] })
+    end
+  end
+
+  def test_the_repository_the_module_path_names_gets_the_dependencies_on_the_plain_name
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/acme/library\n\ngo 1.21\n\nrequire github.com/acme/util v1.0.0\n")
+      library = { "realizedThrough" => { "technologyArtifacts" => %w[Repo:acme:app-poc Repo:acme:library] } }
+      db = mock_database({ "acme:library" => library, "acme:util" => {} },
+                         { "acme:library" => { "generated/script" => "Import:GoGrapher:acme:app-poc" } })
+      create_handler(path: repo, database: db, artifact: "Repo:acme:library").execute
+      component = YAML.load_stream(File.read(output_path)).find { |r| r["kind"] == "ApplicationComponent" }
+
+      assert_equal "acme:library", component.dig("metadata", "name")
+      assert_equal ["acme:util"], component.dig("spec", "dependsOn", "applicationComponents")
+    end
+  end
+
   def test_missing_path_raises_error
     handler = create_handler(path: nil)
     assert_raises(RuntimeError) { handler.execute }
@@ -254,20 +286,22 @@ class GoDepResolverTest < Minitest::Test
   end
 
   # Minimal database stub that returns ApplicationComponent instances keyed by name.
-  def mock_database(components_by_name, annotations_by_name = {})
+  # artifact_names: the TechnologyArtifacts of the database
+  def mock_database(components_by_name, annotations_by_name = {}, artifact_names = [])
     instances = components_by_name.to_h do |name, spec|
       [name, MockComponent.new(spec, annotations_by_name.fetch(name, {}))]
     end
-    MockDatabase.new(instances)
+    MockDatabase.new(instances, artifact_names.to_h { |name| [name, MockComponent.new({})] })
   end
 
   class MockDatabase
-    def initialize(instances)
+    def initialize(instances, artifacts = {})
       @instances = instances
+      @artifacts = artifacts
     end
 
     def instances_by_kind(kind)
-      kind == "ApplicationComponent" ? @instances : {}
+      { "ApplicationComponent" => @instances, "TechnologyArtifact" => @artifacts }.fetch(kind, {})
     end
   end
 

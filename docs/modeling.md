@@ -394,11 +394,13 @@ those namespaces. The entry points (main packages such as `cmd/api`) are written
 you query like a tag (`component/entrypoints == "cmd/api"`) that is not a sidebar filter, because there are too many
 distinct values. `component/role` is set by hand and never overwritten. A generated component is named after its module path (`github.com/alice/shop` → `alice:shop`). When
 two repositories declare the same module path (a prototype and its successor, a fork), each gets its own component:
-the repository that is not archived (then the first by name) keeps the plain name, the other gets its repository
-appended (`alice:shop@acme:shop-prototype`), and a dependency on the module path points at the plain name. The
-importer only sees the other repository once both were imported, so the names separate on the import after that;
-until then `archsight lint` warns about the merged component. A hand-written component that lists several
-repositories is left as it is. The computed `component/dependents` counts the components that depend on a
+the repository the module path names keeps the plain name (`github.com/acme/library` names `Repo:acme:library`),
+then the one that is not archived, then the first by name; the other gets its repository appended
+(`alice:shop@acme:shop-prototype`), and a dependency on the module path points at the plain name. A `go.mod` in a
+subdirectory whose module path names another known repository is a copy of that repository's module and gets no
+component at all. The importer only sees the other repository once both were imported, so the names separate on the
+import after that; until then `archsight lint` warns about the merged component. A hand-written component that lists
+several repositories is left as it is. The computed `component/dependents` counts the components that depend on a
 component, which shows how widely a library or module is shared.
 
 | Ecosystem | Executable | Library | Module (bundles both) |

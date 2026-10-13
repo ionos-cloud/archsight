@@ -62,6 +62,11 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     output = +""
 
     modules.each do |rel_dir, mod_name|
+      if copied_module?(rel_dir, mod_name, artifact_name)
+        progress.warn("Skipping copied go.mod at #{rel_dir}: module #{mod_name} belongs to another repository")
+        next
+      end
+
       comp_name = owned_component_name(mod_name, artifact_name)
       next unless comp_name
 

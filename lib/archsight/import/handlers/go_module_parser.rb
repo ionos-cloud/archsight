@@ -143,9 +143,10 @@ module Archsight::Import::Handlers::GoModuleParser
   end
 
   # The name of the component that the module of one repository gets. Two repositories may declare the same module
-  # path (a prototype and its successor, a fork); without care both would emit the same component and the loader
-  # would merge them into one. The repository that owns the plain name is the one that is not archived, then the
-  # first by name; the others get the repository appended (`alice:shop@acme:shop-prototype`).
+  # path (a prototype and its successor, a fork, a copy of the module); without care both would emit the same
+  # component and the loader would merge them into one. The repository that owns the plain name is the one the module
+  # path names (see #module_path_of_repository?), then the one that is not archived, then the first by name; the others
+  # get the repository appended (`alice:shop@acme:shop-prototype`).
   #
   # The other repositories are found through the existing component of the plain name, so a collision is resolved on
   # the import after both repositories were imported once. A component without `generated/script` is curated: a
@@ -158,8 +159,44 @@ module Archsight::Import::Handlers::GoModuleParser
     others = colliding_artifacts(base, artifact_name)
     return base if others.empty?
 
-    owner = ([artifact_name] + others).min_by { |name| [archived_artifact?(name) ? 1 : 0, name] }
+    owner = ([artifact_name] + others).min_by do |name|
+      [module_path_of_repository?(mod_name, name) ? 0 : 1, archived_artifact?(name) ? 1 : 0, name]
+    end
     owner == artifact_name ? base : "#{base}@#{artifact_name.delete_prefix("Repo:")}"
+  end
+
+  # Whether the module path names the repository: the repository is the module itself or a module below it.
+  # `github.com/acme/library` and `github.com/acme/library/v2/client` belong to `Repo:acme:library` (and to
+  # `Repo:library`, an artifact named after its directory), not to `Repo:acme:app-poc`. The segments the artifact name
+  # and the module path both have must agree, so `github.com/alice/shop` does not name `Repo:acme:shop`.
+  # @return [Boolean]
+  def module_path_of_repository?(mod_name, artifact_name)
+    repo = artifact_name.delete_prefix("Repo:").split(":").reject(&:empty?)
+    path = module_path_segments(mod_name)
+    return false if repo.empty? || path.empty?
+
+    path.each_index.any? do |i|
+      next false if i.zero? && path.length > 1 # the first segment is the owner, never the repository
+
+      overlap = [repo.length, i + 1].min
+      repo.last(overlap) == path[(i + 1 - overlap)..i]
+    end
+  end
+
+  # A module in a subdirectory of `artifact_name` that is a copy of another repository's module: its path does not
+  # name this repository, but it names another repository of the database. It gets no component; the repository it
+  # was copied from has it.
+  # @return [Boolean]
+  def copied_module?(rel_dir, mod_name, artifact_name)
+    return false if rel_dir == "." || artifact_name.nil? || module_path_of_repository?(mod_name, artifact_name)
+
+    artifacts = database&.instances_by_kind("TechnologyArtifact") || {}
+    artifacts.keys.any? { |name| name.start_with?("Repo:") && name != artifact_name && module_path_of_repository?(mod_name, name) }
+  end
+
+  # Path segments of a module without the host and without a major version suffix (`/v2`)
+  def module_path_segments(mod_name)
+    mod_name.split("/").drop(1).grep_v(/\Av\d+\z/)
   end
 
   # Repository artifacts other than `artifact_name` that a generated component of this name is realized through
