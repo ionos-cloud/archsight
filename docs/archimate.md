@@ -149,7 +149,7 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | **Path** | A link between two or more technology internal active structure elements, through which these elements can exchange data, energy, or material. |
 | **Communication Network** | A set of structures and behaviors that connects devices or system software for transmission, routing, and reception of data. |
 
-**Supported in archsight:** Communication Network (`CommunicationNetwork`) is modelled in the Technology layer. Path is not: a link between facilities is `Equipment`. See [Logical Networks](/doc/modeling) in the modeling guide.
+**Supported in archsight:** Communication Network (`CommunicationNetwork`) is modelled in the Technology layer. Path is not: a link between facilities is `Equipment`. See [Logical Networks](/doc/modeling) and, for which kind to pick, [Choosing the Kind: Infrastructure](modeling.md#choosing-the-kind-infrastructure).
 
 ### Behavior Elements
 
@@ -176,7 +176,7 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | **Distribution Network** | A physical network used to transport materials or energy. |
 | **Material** | Tangible physical matter or energy. |
 
-**Supported in archsight:** Equipment (`Equipment`) and Facility (`Facility`) are modelled, in the Physical layer. Distribution Network and Material are not. See [Where Technology Runs](/doc/modeling) in the modeling guide.
+**Supported in archsight:** Equipment (`Equipment`) and Facility (`Facility`) are modelled, in the Physical layer. Distribution Network and Material are not. See [Where Technology Runs](/doc/modeling) and, for which kind to pick, [Choosing the Kind: Infrastructure](modeling.md#choosing-the-kind-infrastructure).
 
 ## Implementation and Migration Layer Elements
 
@@ -209,7 +209,7 @@ ArchiMate organizes elements into distinct layers:
 6. **Physical Layer** - Where: facilities, equipment, materials, distribution networks (archsight: `Facility`, `Equipment`, `Location`)
 7. **Implementation & Migration Layer** - When: work packages, plateaus, gaps
 
-Capability, Product, Application Service and Application Component are easily mixed up in practice; [Choosing the Kind](modeling.md#choosing-the-kind) gives the question, test and naming for each.
+Capability, Product, Application Service and Application Component are easily mixed up in practice; [Choosing the Kind](modeling.md#choosing-the-kind) gives the question, test and naming for each; [Choosing the Kind: Infrastructure](modeling.md#choosing-the-kind-infrastructure) does the same for locations, facilities, equipment, networks and compute.
 
 ## Key Concepts
 

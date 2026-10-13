@@ -25,6 +25,7 @@ spec:
   contains:
     pages:
       - modeling-guide
+      - infrastructure-modeling
       - searching-and-queries
 ---
 apiVersion: architecture/v1alpha1

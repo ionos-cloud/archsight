@@ -26,6 +26,14 @@ class Archsight::Resources::Equipment < Archsight::Resources::Base
 
     Model individual servers and VMs as `TechnologyNode`; use Equipment only when the physical grouping matters.
 
+    ## Not this kind
+
+    - A machine that runs software (server, VM, appliance) is a `TechnologyNode`
+    - The network that runs over the links is a `CommunicationNetwork` `realizedBy` the equipment
+    - A link is one element `locatedAt` its two facilities, not a `TechnologyService`
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## How it connects
 
     - Equipment is `locatedAt` the facilities it stands in. A link between facilities is one Equipment that is

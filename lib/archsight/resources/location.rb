@@ -23,6 +23,13 @@ class Archsight::Resources::Location < Archsight::Resources::Base
     - Metro areas and cities (Frankfurt)
     - Conceptual places (a cloud region, a jurisdiction)
 
+    ## Not this kind
+
+    - A building, campus or hall is a `Facility` that is `locatedAt` the location
+    - A cloud region that is really a set of data centers: a location, with the data centers as facilities in it
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## How it connects
 
     - A `Facility` is `locatedAt` a location (many facilities, one location)

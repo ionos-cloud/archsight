@@ -28,6 +28,15 @@ class Archsight::Resources::CommunicationNetwork < Archsight::Resources::Base
     Do not model a network per customer or tenant: the overlay is one network, its tenants are instances of it.
     Physical links and fabrics are `Equipment`.
 
+    ## Not this kind
+
+    - Cables, fibre routes and switch fabrics are `Equipment`; the network is `realizedBy` them
+    - The routing or VPN software is `TechnologySystemSoftware` that realizes the network
+    - A network offered as a product to consumers can additionally be a `TechnologyService` realized by it
+    - No network per tenant, no element per pair of sites in a mesh
+
+    Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
+
     ## How it connects
 
     - A network is `composedOf` other networks (a metro network of its site networks); the target must be a network
