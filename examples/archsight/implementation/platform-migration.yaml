@@ -1,0 +1,103 @@
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Platform:Legacy:Hosting
+  annotations:
+    architecture/description: Hosting service of the old platform (retired in the past plateau).
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Platform:Container:Hosting
+  annotations:
+    architecture/description: Container hosting service of the new platform.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Platform:Legacy:Runtime
+  annotations:
+    architecture/description: Runtime of the old platform.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Platform:Container:Runtime
+  annotations:
+    architecture/description: Container orchestrator of the new platform.
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationPlateau
+metadata:
+  name: Plateau:Platform:Past
+  annotations:
+    plateau/type: baseline
+    plateau/status: past
+    plateau/until: '2026-06-30'
+spec:
+  triggers:
+    implementationPlateaus:
+      - Plateau:Platform:Current
+  contains:
+    technologyServices:
+      - Platform:Legacy:Hosting
+    technologySystemSoftware:
+      - Platform:Legacy:Runtime
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationPlateau
+metadata:
+  name: Plateau:Platform:Current
+  annotations:
+    plateau/type: transition
+    plateau/status: current
+    plateau/from: '2026-07-01'
+    plateau/until: '2027-06-30'
+spec:
+  triggers:
+    implementationPlateaus:
+      - Plateau:Platform:Target
+  contains:
+    technologyServices:
+      - Platform:Legacy:Hosting
+      - Platform:Container:Hosting
+    technologySystemSoftware:
+      - Platform:Legacy:Runtime
+      - Platform:Container:Runtime
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationPlateau
+metadata:
+  name: Plateau:Platform:Target
+  annotations:
+    plateau/type: target
+    plateau/status: planned
+    plateau/from: '2027-07-01'
+spec:
+  contains:
+    technologyServices:
+      - Platform:Container:Hosting
+    technologySystemSoftware:
+      - Platform:Container:Runtime
+    technologyArtifacts:
+      - Repo:ionos-cloud:archsight
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationGap
+metadata:
+  name: Gap:Platform:Retire:Legacy
+  annotations:
+    gap/status: closing
+    gap/impact: medium
+spec:
+  compares:
+    implementationPlateaus:
+      - Plateau:Platform:Current
+      - Plateau:Platform:Target

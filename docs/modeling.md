@@ -253,6 +253,8 @@ Model **change**: what is done, what it delivers and how the architecture looks 
 
 **Migration path:** Plateau "Baseline" → triggers → Plateau "Target"; Gap → compares → both plateaus; Work Package → realizes → Deliverable → realizes → Plateau "Target"; Gap → closedBy → Work Package.
 
+**Platform migration:** a plateau `contains` the technology elements of its state: `technologyServices`, `technologySystemSoftware`, `technologyNodes` and (optionally) `technologyArtifacts`, next to application components and requirements. Model the past, current and target platform as three plateaus chained with `triggers`, with a Gap per step; the plateau page lists what it contains, the technology element shows (reverse lookup) in which plateaus it appears, and comparing the plateaus of a gap shows what is added or removed. See `examples/archsight/implementation/platform-migration.yaml`.
+
 **Remediation:** Assessment "Risk" → mitigatedBy → Work Package → realizes → Deliverable (type `evidence`) → realizes → ComplianceEvidence. Group by `risk/domain` to see the plan of one domain, filter by `workpackage/status` and `workpackage/due` for what is open or late.
 
 ### Business Layer

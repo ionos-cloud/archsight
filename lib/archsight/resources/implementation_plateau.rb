@@ -25,9 +25,12 @@ class Archsight::Resources::ImplementationPlateau < Archsight::Resources::Base
 
     ## How it connects
 
-    - A plateau `contains` the components, services, nodes, processes and requirements that belong to it
+    - A plateau `contains` the application components and services, technology nodes, services, system
+      software and artifacts, business processes and requirements that belong to it. Listing the technology
+      elements lets a platform migration (platform A to platform B) be described state by state
     - It `triggers` the next plateau (migration path)
-    - A `ImplementationDeliverable` `realizes` it; a `ImplementationGap` `compares` two plateaus
+    - A `ImplementationDeliverable` `realizes` it; a `ImplementationGap` `compares` two plateaus, so
+      the elements added, kept or removed between them show up per plateau
   MD
 
   icon "packages"
@@ -55,6 +58,9 @@ class Archsight::Resources::ImplementationPlateau < Archsight::Resources::Base
   relation :contains, :applicationComponents, :ApplicationComponent
   relation :contains, :applicationServices, :ApplicationService
   relation :contains, :technologyNodes, :TechnologyNode
+  relation :contains, :technologyServices, :TechnologyService
+  relation :contains, :technologySystemSoftware, :TechnologySystemSoftware
+  relation :contains, :technologyArtifacts, :TechnologyArtifact
   relation :contains, :businessProcesses, :BusinessProcess
   relation :contains, :motivationRequirements, :MotivationRequirement
   relation :triggers, :implementationPlateaus, :ImplementationPlateau
