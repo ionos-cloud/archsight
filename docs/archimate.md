@@ -165,6 +165,8 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | **Distribution Network** | A physical network used to transport materials or energy. |
 | **Material** | Tangible physical matter or energy. |
 
+**Supported in archsight:** Equipment (`Equipment`) and Facility (`Facility`) are modelled, in the Physical layer. Distribution Network and Material are not. See [Where Technology Runs](/doc/modeling) in the modeling guide.
+
 ## Implementation and Migration Layer Elements
 
 | Element | Definition |
@@ -182,6 +184,8 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | **Grouping** | Aggregates or composes concepts that belong together based on some common characteristic. |
 | **Location** | A conceptual or physical place or position where concepts are located (structure elements) or performed (behavior elements). |
 
+**Supported in archsight:** Location (`Location`) is modelled and shown in the Physical layer. Grouping is not.
+
 ## ArchiMate Layers
 
 ArchiMate organizes elements into distinct layers:
@@ -191,7 +195,7 @@ ArchiMate organizes elements into distinct layers:
 3. **Business Layer** - What: business processes, actors, services, objects
 4. **Application Layer** - How: application components, services, data objects
 5. **Technology Layer** - How: infrastructure, nodes, devices, networks
-6. **Physical Layer** - Where: facilities, equipment, materials, distribution networks
+6. **Physical Layer** - Where: facilities, equipment, materials, distribution networks (archsight: `Facility`, `Equipment`, `Location`)
 7. **Implementation & Migration Layer** - When: work packages, plateaus, gaps
 
 ## Key Concepts

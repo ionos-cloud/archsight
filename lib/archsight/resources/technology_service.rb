@@ -25,6 +25,11 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     - Managed database services
     - CI/CD pipeline services
     - Monitoring and logging platforms
+
+    ## Location
+
+    A service that runs in several data centers is one service that is `locatedAt` each `Facility`, not one service
+    per site.
   MD
 
   icon "cloud"
@@ -37,6 +42,7 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
 
   relation :suppliedBy, :technologyComponents, :TechnologySystemSoftware
   relation :servedBy, :businessActors, :BusinessActor
+  relation :locatedAt, :facilities, :Facility
   relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
   relation :plans, :motivationRequirements, :MotivationRequirement

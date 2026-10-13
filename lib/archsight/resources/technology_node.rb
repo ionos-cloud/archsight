@@ -26,6 +26,10 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     - Network appliances
     - Storage arrays
 
+    ## Location
+
+    A node is `locatedAt` the `Facility` (or facilities) it stands in; see `Facility`.
+
     ## Security and risk modelling
 
     A node is the typical asset of a vulnerability assessment: a scan result is a `MotivationAssessment` of type
@@ -45,4 +49,5 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :servedBy, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
+  relation :locatedAt, :facilities, :Facility
 end

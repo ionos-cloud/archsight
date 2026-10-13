@@ -6,7 +6,7 @@ require "tmpdir"
 class ImplementationLayerTest < Minitest::Test
   KINDS = %w[ImplementationWorkPackage ImplementationDeliverable ImplementationEvent ImplementationPlateau
              ImplementationGap].freeze
-  LAYERS = %w[strategy motivation business application technology implementation other].freeze
+  LAYERS = %w[strategy motivation business application technology physical implementation other].freeze
 
   RESOURCES = <<~YAML
     ---

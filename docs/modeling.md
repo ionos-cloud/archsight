@@ -18,6 +18,8 @@ Business Layer                How business operates (processes, actors, products
 Application Layer             What software supports the business
        |
 Technology Layer              How software is built and deployed
+       |
+Physical Layer                Where it runs (locations, facilities, equipment)
 ```
 
 The sidebar, the search facets, the metamodel diagram and these guides list the layers in this order, top to bottom;
@@ -236,6 +238,46 @@ Model **infrastructure** and **code**.
 | TechnologyInterface | For technical protocols and endpoints |
 
 **Example chain:** Component "kube-apiserver" → realizedThrough → Artifact "kubernetes/kubernetes" → maintainedBy → Actor "Platform Team"
+
+### Physical Layer: Where Technology Runs
+
+Model **where** technology runs with `Facility` (a building, data center or site, nested with `composedOf`),
+`Location` (a country, metro or region) and, when the physical grouping matters, `Equipment` (racks, fabrics,
+physical clusters). Do not model sites as annotations, as one service per site, or as `TechnologyNode`s: a data
+center is not a computational resource.
+
+| Resource | When to Use |
+|----------|-------------|
+| Location | For a country, metro or region |
+| Facility | For a data center, colocation, office or edge site (`facility/type`), also a campus or hall inside one |
+| Equipment | Optional: racks, network fabrics, physical clusters inside a facility (`equipment/type`) |
+
+Relations are written on the element that is placed (see [Direction of Relations](#direction-of-relations)):
+
+| From | Verb | To |
+|------|------|----|
+| `TechnologyNode`, `TechnologyService`, `TechnologySystemSoftware`, `Equipment` | `locatedAt` | `Facility` (many) |
+| `Facility` | `locatedAt` | `Location` |
+| `Facility` | `composedOf` | `Facility` (nested sites) |
+| `Facility` | `servedBy` | `BusinessActor` (the operator) |
+
+`locatedAt` with many targets is the point: a service that runs in three data centers is **one** service with three
+`locatedAt` relations. A `locatedAt` target that is not a Facility (or, from a facility, a Location) is rejected by
+`archsight lint`. Facility and Location pages list what is located there (incoming `locatedAt`), grouped by kind.
+
+A service may run on different platforms in different facilities (a managed platform in site A, a self-hosted one in
+site B). There is no qualifier on the relation: locate the nodes or system software of each platform at its
+facilities too, and the pair (platform, facility) is derivable.
+
+Queries:
+
+```
+# all technology services in Facility X
+TechnologyService: -> "DC:Alpha"
+
+# facilities that host service Y
+Facility: <- "Orders:Cluster"
+```
 
 ## Relation Patterns
 

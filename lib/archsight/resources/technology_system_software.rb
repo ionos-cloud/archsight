@@ -25,6 +25,10 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
     - Cache clusters
     - Load balancers
     - Service meshes
+
+    ## Location
+
+    System software is `locatedAt` the `Facility` (or facilities) it runs in.
   MD
 
   icon "terminal-tag"
@@ -38,4 +42,5 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
   relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
   relation :plans, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
+  relation :locatedAt, :facilities, :Facility
 end
