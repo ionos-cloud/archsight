@@ -149,6 +149,8 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | **Path** | A link between two or more technology internal active structure elements, through which these elements can exchange data, energy, or material. |
 | **Communication Network** | A set of structures and behaviors that connects devices or system software for transmission, routing, and reception of data. |
 
+**Supported in archsight:** Communication Network (`CommunicationNetwork`) is modelled in the Technology layer. Path is not: a link between facilities is `Equipment`. See [Logical Networks](/doc/modeling) in the modeling guide.
+
 ### Behavior Elements
 
 | Element | Definition |

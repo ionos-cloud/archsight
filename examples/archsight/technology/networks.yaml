@@ -1,0 +1,112 @@
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:Public
+  annotations:
+    architecture/description: The public network, reaching every facility of the example.
+    network/type: public
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:Campus
+      - Facility:Madrid:DC
+---
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:Management
+  annotations:
+    architecture/description: |
+      The management network, a concept that each site implements with its own network (`specializes`).
+    network/type: management
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:Management:Frankfurt
+  annotations:
+    architecture/description: Management network of the Frankfurt campus.
+    network/type: management
+spec:
+  specializes:
+    communicationNetworks:
+      - Network:Management
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:Campus
+---
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:Underlay:Frankfurt-Madrid
+  annotations:
+    architecture/description: Routed underlay between Frankfurt and Madrid.
+    network/type: underlay
+    network/topology: point-to-point
+spec:
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:Campus
+      - Facility:Madrid:DC
+---
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:Overlay:EVPN
+  annotations:
+    architecture/description: |
+      The BGP-EVPN overlay that carries the private workloads. One network, not one per customer: it is served by
+      the underlay and realized by the routing software.
+    network/type: overlay
+    network/topology: mesh
+spec:
+  servedBy:
+    communicationNetworks:
+      - Network:Underlay:Frankfurt-Madrid
+  locatedAt:
+    facilities:
+      - Facility:Frankfurt:Campus
+      - Facility:Madrid:DC
+  realizedBy:
+    technologySystemSoftware:
+      - Tech:Routing:EVPN
+---
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:VPN:Office
+  annotations:
+    architecture/description: A VPN that tunnels through the public network.
+    network/type: vpn
+    network/topology: hub-and-spoke
+spec:
+  servedBy:
+    communicationNetworks:
+      - Network:Public
+  locatedAt:
+    facilities:
+      - Facility:Madrid:DC
+---
+apiVersion: architecture/v1alpha1
+kind: CommunicationNetwork
+metadata:
+  name: Network:Metro:Frankfurt
+  annotations:
+    architecture/description: Network that supports the Frankfurt metro region, composed of the networks of its sites.
+    network/type: underlay
+spec:
+  locatedAt:
+    locations:
+      - Location:Germany:Frankfurt
+  composedOf:
+    communicationNetworks:
+      - Network:Management:Frankfurt
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:Routing:EVPN
+  annotations:
+    architecture/description: Routing software that implements the BGP-EVPN overlay.
+spec: {}

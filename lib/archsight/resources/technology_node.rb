@@ -30,6 +30,10 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
     A node is `locatedAt` the `Facility` (or facilities) it stands in; see `Facility`.
 
+    ## Networks
+
+    A node is `servedBy` the `CommunicationNetwork`s it is attached to (management, public, an overlay).
+
     ## Physical realization
 
     A node is `realizedBy` the `Equipment` it consists of or stands on (a router on its rack); see `Equipment`.
@@ -65,6 +69,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
   relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :servedBy, :technologyServices, :TechnologyService
+  relation :servedBy, :communicationNetworks, :CommunicationNetwork
   relation :servedBy, :businessActors, :BusinessActor
   relation :locatedAt, :facilities, :Facility
   relation :realizedBy, :equipment, :Equipment

@@ -34,6 +34,7 @@ Current icon assignments for each resource type:
 | MotivationRequirement | `task-list` | <i class="iconoir-task-list"></i> |
 | MotivationConstraint | `prohibition` | <i class="iconoir-prohibition"></i> |
 | MotivationStakeholder | `user-crown` | <i class="iconoir-user-crown"></i> |
+| CommunicationNetwork | `network` | <i class="iconoir-network"></i> |
 | Equipment | `cpu` | <i class="iconoir-cpu"></i> |
 | Facility | `building` | <i class="iconoir-building"></i> |
 | Location | `map-pin` | <i class="iconoir-map-pin"></i> |
