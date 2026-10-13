@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# CommunicationNetwork represents a logical network that connects nodes and system software
-class Archsight::Resources::CommunicationNetwork < Archsight::Resources::Base
+# TechnologyCommunicationNetwork represents a logical network that connects nodes and system software
+class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resources::Base
   include_annotations :git, :architecture
 
   description <<~MD
@@ -18,7 +18,7 @@ class Archsight::Resources::CommunicationNetwork < Archsight::Resources::Base
 
     ## Usage
 
-    Use CommunicationNetwork to represent:
+    Use TechnologyCommunicationNetwork to represent:
 
     - Underlay networks (the routed fabric) and overlay networks that run on them (BGP-EVPN, VXLAN)
     - Management, storage and public networks
@@ -26,11 +26,11 @@ class Archsight::Resources::CommunicationNetwork < Archsight::Resources::Base
     - Networks that support a metro region, made of the networks of its sites
 
     Do not model a network per customer or tenant: the overlay is one network, its tenants are instances of it.
-    Physical links and fabrics are `Equipment`.
+    Physical links and fabrics are `TechnologyEquipment`.
 
     ## Not this kind
 
-    - Cables, fibre routes and switch fabrics are `Equipment`; the network is `realizedBy` them
+    - Cables, fibre routes and switch fabrics are `TechnologyEquipment`; the network is `realizedBy` them
     - The routing or VPN software is `TechnologySystemSoftware` that realizes the network
     - A network offered as a product to consumers can additionally be a `TechnologyService` realized by it
     - No network per tenant, no element per pair of sites in a mesh
@@ -45,7 +45,7 @@ class Archsight::Resources::CommunicationNetwork < Archsight::Resources::Base
     - A network is `servedBy` the network it runs over: the underlay serves the overlay, a VPN is served by the
       network it tunnels through
     - A network is `locatedAt` the facilities and locations it spans, many of them for one network
-    - A network is `realizedBy` the `Equipment` it runs over and the `TechnologySystemSoftware` that implements it
+    - A network is `realizedBy` the `TechnologyEquipment` it runs over and the `TechnologySystemSoftware` that implements it
       (the routing stack, the VPN software)
     - A `TechnologyNode` is `servedBy` the networks it is attached to; the network page lists them
   MD
@@ -67,11 +67,11 @@ class Archsight::Resources::CommunicationNetwork < Archsight::Resources::Base
              filter: :word,
              summary: true
 
-  relation :composedOf, :communicationNetworks, :CommunicationNetwork
-  relation :specializes, :communicationNetworks, :CommunicationNetwork
-  relation :servedBy, :communicationNetworks, :CommunicationNetwork
-  relation :locatedAt, :facilities, :Facility
+  relation :composedOf, :technologyCommunicationNetworks, :TechnologyCommunicationNetwork
+  relation :specializes, :technologyCommunicationNetworks, :TechnologyCommunicationNetwork
+  relation :servedBy, :technologyCommunicationNetworks, :TechnologyCommunicationNetwork
+  relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :locatedAt, :locations, :Location
-  relation :realizedBy, :equipment, :Equipment
+  relation :realizedBy, :technologyEquipment, :TechnologyEquipment
   relation :realizedBy, :technologySystemSoftware, :TechnologySystemSoftware
 end

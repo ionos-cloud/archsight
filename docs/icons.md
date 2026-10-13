@@ -34,9 +34,9 @@ Current icon assignments for each resource type:
 | MotivationRequirement | `task-list` | <i class="iconoir-task-list"></i> |
 | MotivationConstraint | `prohibition` | <i class="iconoir-prohibition"></i> |
 | MotivationStakeholder | `user-crown` | <i class="iconoir-user-crown"></i> |
-| CommunicationNetwork | `network` | <i class="iconoir-network"></i> |
-| Equipment | `cpu` | <i class="iconoir-cpu"></i> |
-| Facility | `building` | <i class="iconoir-building"></i> |
+| TechnologyCommunicationNetwork | `network` | <i class="iconoir-network"></i> |
+| TechnologyEquipment | `cpu` | <i class="iconoir-cpu"></i> |
+| TechnologyFacility | `building` | <i class="iconoir-building"></i> |
 | Location | `map-pin` | <i class="iconoir-map-pin"></i> |
 | TechnologyNode | `server-connection` | <i class="iconoir-server-connection"></i> |
 | StrategyCapability | `strategy` | <i class="iconoir-strategy"></i> |
@@ -58,7 +58,6 @@ Icons and graph nodes take the colour of their layer.
 | Business | yellow | `#F9DC5C` | `#D4B83C` |
 | Application | blue | `#6CBEED` | `#4A9ECD` |
 | Technology | green | `#8AC926` | `#7AB316` |
-| Physical | teal | `#80CBC4` | `#26A69A` |
 | Other | gray | `#CCCCCC` | `#999999` |
 
 ## Icon Categories

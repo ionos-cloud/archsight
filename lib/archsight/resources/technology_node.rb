@@ -28,7 +28,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
     ## Not this kind
 
-    - A building or data center is a `Facility`; a rack or fabric is `Equipment`
+    - A building or data center is a `TechnologyFacility`; a rack or fabric is `TechnologyEquipment`
     - Software running on the node (database, routing stack) is `TechnologySystemSoftware`
     - One node per host role is often enough; many identical hosts are one node `locatedAt` several facilities
 
@@ -36,15 +36,15 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
     ## Location
 
-    A node is `locatedAt` the `Facility` (or facilities) it stands in; see `Facility`.
+    A node is `locatedAt` the `TechnologyFacility` (or facilities) it stands in; see `TechnologyFacility`.
 
     ## Networks
 
-    A node is `servedBy` the `CommunicationNetwork`s it is attached to (management, public, an overlay).
+    A node is `servedBy` the `TechnologyCommunicationNetwork`s it is attached to (management, public, an overlay).
 
     ## Physical realization
 
-    A node is `realizedBy` the `Equipment` it consists of or stands on (a router on its rack); see `Equipment`.
+    A node is `realizedBy` the `TechnologyEquipment` it consists of or stands on (a router on its rack); see `TechnologyEquipment`.
 
     ## Concept and implementation
 
@@ -77,10 +77,10 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
   relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :servedBy, :technologyServices, :TechnologyService
-  relation :servedBy, :communicationNetworks, :CommunicationNetwork
+  relation :servedBy, :technologyCommunicationNetworks, :TechnologyCommunicationNetwork
   relation :servedBy, :businessActors, :BusinessActor
-  relation :locatedAt, :facilities, :Facility
-  relation :realizedBy, :equipment, :Equipment
+  relation :locatedAt, :technologyFacilities, :TechnologyFacility
+  relation :realizedBy, :technologyEquipment, :TechnologyEquipment
   relation :specializes, :technologyNodes, :TechnologyNode
   relation :composedOf, :technologyNodes, :TechnologyNode
   relation :assignedTo, :technologyArtifacts, :TechnologyArtifact

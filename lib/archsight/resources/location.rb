@@ -9,7 +9,7 @@ class Archsight::Resources::Location < Archsight::Resources::Base
 
     ## ArchiMate Definition
 
-    **Layer:** Physical (ArchiMate: composite element)
+    **Layer:** Other (ArchiMate: composite element)
     **Aspect:** Composite
 
     A location is a conceptual or physical place or position where concepts are located (structure elements)
@@ -25,22 +25,22 @@ class Archsight::Resources::Location < Archsight::Resources::Base
 
     ## Not this kind
 
-    - A building, campus or hall is a `Facility` that is `locatedAt` the location
+    - A building, campus or hall is a `TechnologyFacility` that is `locatedAt` the location
     - A cloud region that is really a set of data centers: a location, with the data centers as facilities in it
 
     Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
 
     ## How it connects
 
-    - A `Facility` is `locatedAt` a location (many facilities, one location)
+    - A `TechnologyFacility` is `locatedAt` a location (many facilities, one location)
     - Everything located at a facility of the location is found through the facility; the location page lists the
       facilities that are located there, grouped by kind
 
-    Model the sites themselves as `Facility`, not as locations: a data center is a physical structure.
+    Model the sites themselves as `TechnologyFacility`, not as locations: a data center is a physical structure.
   MD
 
   icon "map-pin"
-  layer "physical"
+  layer "other"
 
   annotation "location/country",
              description: "Country of the location (name or ISO 3166 code)",

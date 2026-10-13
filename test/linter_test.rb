@@ -362,64 +362,64 @@ class LinterTest < Minitest::Test
   end
 
   def facilities(*names)
-    names.map { |name| resource("Facility", name, { locatedAt: { locations: ["Metro"] } }) }.join + resource("Location", "Metro")
+    names.map { |name| resource("TechnologyFacility", name, { locatedAt: { locations: ["Metro"] } }) }.join + resource("Location", "Metro")
   end
 
   def test_structure_warns_about_a_link_not_between_two_facilities
-    link = annotated(resource("Equipment", "Link:AB", { locatedAt: { facilities: ["DC:A"] } }), "equipment/type" => "link")
+    link = annotated(resource("TechnologyEquipment", "Link:AB", { locatedAt: { technologyFacilities: ["DC:A"] } }), "equipment/type" => "link")
     warnings = structural_warnings(link, facilities("DC:A"))
 
-    assert_includes warnings.join("\n"), "Equipment 'Link:AB' is a link located at 1 facility, not 2"
+    assert_includes warnings.join("\n"), "TechnologyEquipment 'Link:AB' is a link located at 1 facility, not 2"
   end
 
   def test_structure_accepts_a_link_between_two_facilities
-    link = annotated(resource("Equipment", "Link:AB", { locatedAt: { facilities: %w[DC:A DC:B] } }), "equipment/type" => "link")
+    link = annotated(resource("TechnologyEquipment", "Link:AB", { locatedAt: { technologyFacilities: %w[DC:A DC:B] } }), "equipment/type" => "link")
 
     assert_empty structural_warnings(link, facilities("DC:A", "DC:B"))
   end
 
   def test_structure_warns_about_an_overlay_without_underlay
-    overlay = annotated(resource("CommunicationNetwork", "Net:EVPN"), "network/type" => "overlay")
-    vpn = annotated(resource("CommunicationNetwork", "Net:VPN"), "network/type" => "vpn")
+    overlay = annotated(resource("TechnologyCommunicationNetwork", "Net:EVPN"), "network/type" => "overlay")
+    vpn = annotated(resource("TechnologyCommunicationNetwork", "Net:VPN"), "network/type" => "vpn")
     warnings = structural_warnings(overlay, vpn).join("\n")
 
-    assert_includes warnings, "CommunicationNetwork 'Net:EVPN' is an overlay network served by no network"
-    assert_includes warnings, "CommunicationNetwork 'Net:VPN' is a vpn network served by no network"
+    assert_includes warnings, "TechnologyCommunicationNetwork 'Net:EVPN' is an overlay network served by no network"
+    assert_includes warnings, "TechnologyCommunicationNetwork 'Net:VPN' is a vpn network served by no network"
   end
 
   def test_structure_accepts_an_overlay_served_by_an_underlay_and_other_network_types
-    underlay = annotated(resource("CommunicationNetwork", "Net:Underlay"), "network/type" => "underlay")
-    overlay = annotated(resource("CommunicationNetwork", "Net:EVPN", { servedBy: { communicationNetworks: ["Net:Underlay"] } }), "network/type" => "overlay")
+    underlay = annotated(resource("TechnologyCommunicationNetwork", "Net:Underlay"), "network/type" => "underlay")
+    overlay = annotated(resource("TechnologyCommunicationNetwork", "Net:EVPN", { servedBy: { technologyCommunicationNetworks: ["Net:Underlay"] } }), "network/type" => "overlay")
 
     assert_empty structural_warnings(underlay, overlay)
   end
 
   def test_structure_warns_about_a_facility_without_location
-    warnings = structural_warnings(resource("Facility", "DC:A"))
+    warnings = structural_warnings(resource("TechnologyFacility", "DC:A"))
 
-    assert_includes warnings.join("\n"), "Facility 'DC:A' is located at no Location"
+    assert_includes warnings.join("\n"), "TechnologyFacility 'DC:A' is located at no Location"
   end
 
   def test_structure_accepts_nested_facilities_whose_whole_has_a_location
-    campus = resource("Facility", "Campus", { locatedAt: { locations: ["Metro"] }, composedOf: { facilities: ["Hall"] } })
+    campus = resource("TechnologyFacility", "Campus", { locatedAt: { locations: ["Metro"] }, composedOf: { technologyFacilities: ["Hall"] } })
 
-    assert_empty structural_warnings(campus, resource("Facility", "Hall"), resource("Location", "Metro"))
+    assert_empty structural_warnings(campus, resource("TechnologyFacility", "Hall"), resource("Location", "Metro"))
   end
 
   def test_structure_warns_about_equipment_without_facility
-    warnings = structural_warnings(resource("Equipment", "Rack01"))
+    warnings = structural_warnings(resource("TechnologyEquipment", "Rack01"))
 
-    assert_includes warnings.join("\n"), "Equipment 'Rack01' is located at no Facility"
+    assert_includes warnings.join("\n"), "TechnologyEquipment 'Rack01' is located at no TechnologyFacility"
   end
 
   def test_structure_accepts_equipment_placed_directly_or_through_its_whole_or_parts
     warnings = structural_warnings(
       facilities("DC:A"),
-      resource("Equipment", "Rack01", { locatedAt: { facilities: ["DC:A"] } }),
-      resource("Equipment", "Backbone", { composedOf: { equipment: ["Link"] } }),
-      resource("Equipment", "Link", { locatedAt: { facilities: ["DC:A"] } }),
-      resource("Equipment", "Cage", { composedOf: { equipment: ["Switch"] }, locatedAt: { facilities: ["DC:A"] } }),
-      resource("Equipment", "Switch")
+      resource("TechnologyEquipment", "Rack01", { locatedAt: { technologyFacilities: ["DC:A"] } }),
+      resource("TechnologyEquipment", "Backbone", { composedOf: { technologyEquipment: ["Link"] } }),
+      resource("TechnologyEquipment", "Link", { locatedAt: { technologyFacilities: ["DC:A"] } }),
+      resource("TechnologyEquipment", "Cage", { composedOf: { technologyEquipment: ["Switch"] }, locatedAt: { technologyFacilities: ["DC:A"] } }),
+      resource("TechnologyEquipment", "Switch")
     )
 
     assert_empty warnings

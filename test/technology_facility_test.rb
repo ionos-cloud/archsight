@@ -7,8 +7,9 @@ require "archsight/web/application"
 require "archsight/cli"
 require "json"
 
-# Location, Facility and Equipment (physical layer) and the locatedAt / composedOf relations (issue #135)
-class PhysicalLayerTest < Minitest::Test
+# Location (other), TechnologyFacility and TechnologyEquipment (technology layer) and the locatedAt / composedOf relations
+# (issue #135)
+class TechnologyFacilityTest < Minitest::Test
   include Rack::Test::Methods
 
   def app
@@ -33,7 +34,7 @@ class PhysicalLayerTest < Minitest::Test
     spec: {}
     ---
     apiVersion: architecture/v1alpha1
-    kind: Facility
+    kind: TechnologyFacility
     metadata:
       name: Facility:Campus
       annotations:
@@ -44,7 +45,7 @@ class PhysicalLayerTest < Minitest::Test
         locations:
           - Location:Germany
       composedOf:
-        facilities:
+        technologyFacilities:
           - Facility:HallA
           - Facility:HallB
       servedBy:
@@ -52,26 +53,26 @@ class PhysicalLayerTest < Minitest::Test
           - Team:Ops
     ---
     apiVersion: architecture/v1alpha1
-    kind: Facility
+    kind: TechnologyFacility
     metadata:
       name: Facility:HallA
     spec: {}
     ---
     apiVersion: architecture/v1alpha1
-    kind: Facility
+    kind: TechnologyFacility
     metadata:
       name: Facility:HallB
     spec: {}
     ---
     apiVersion: architecture/v1alpha1
-    kind: Equipment
+    kind: TechnologyEquipment
     metadata:
       name: Equipment:Rack01
       annotations:
         equipment/type: rack
     spec:
       locatedAt:
-        facilities:
+        technologyFacilities:
           - Facility:HallA
     ---
     apiVersion: architecture/v1alpha1
@@ -80,7 +81,7 @@ class PhysicalLayerTest < Minitest::Test
       name: Node:Web01
     spec:
       locatedAt:
-        facilities:
+        technologyFacilities:
           - Facility:HallA
     ---
     apiVersion: architecture/v1alpha1
@@ -89,7 +90,7 @@ class PhysicalLayerTest < Minitest::Test
       name: Software:Cluster
     spec:
       locatedAt:
-        facilities:
+        technologyFacilities:
           - Facility:HallA
           - Facility:HallB
     ---
@@ -99,7 +100,7 @@ class PhysicalLayerTest < Minitest::Test
       name: Service:Orders
     spec:
       locatedAt:
-        facilities:
+        technologyFacilities:
           - Facility:HallA
           - Facility:HallB
   YAML
@@ -144,12 +145,14 @@ class PhysicalLayerTest < Minitest::Test
 
   # --- the kinds load, lint and render with icons ---
 
+  LAYERS = { "Location" => "other", "TechnologyFacility" => "technology", "TechnologyEquipment" => "technology" }.freeze
+
   def test_the_three_kinds_are_registered_with_icon_and_layer
-    { "Location" => "map-pin", "Facility" => "building", "Equipment" => "cpu" }.each do |kind, icon|
+    { "Location" => "map-pin", "TechnologyFacility" => "building", "TechnologyEquipment" => "cpu" }.each do |kind, icon|
       klass = Archsight::Resources[kind]
 
       assert_equal icon, klass.icon, kind
-      assert_equal "physical", klass.layer, kind
+      assert_equal LAYERS.fetch(kind), klass.layer, kind
       refute_empty klass.description.to_s, kind
     end
   end
@@ -159,56 +162,58 @@ class PhysicalLayerTest < Minitest::Test
     get "/api/v1/kinds"
     kinds = JSON.parse(last_response.body)["kinds"].to_h { |k| [k["kind"], k] }
 
-    %w[Location Facility Equipment].each do |kind|
-      assert_equal "physical", kinds.fetch(kind)["layer"]
+    %w[Location TechnologyFacility TechnologyEquipment].each do |kind|
+      assert_equal LAYERS.fetch(kind), kinds.fetch(kind)["layer"]
       assert kinds.fetch(kind)["icon"]
       assert_predicate kinds.fetch(kind)["instance_count"], :positive?, "#{kind} has an example"
     end
   end
 
-  def test_physical_layer_is_known_to_the_frontend_and_the_documentation
+  # The kinds were added as Facility, Equipment and CommunicationNetwork in a separate physical layer and renamed before
+  # any release: the technology kinds carry the Technology prefix, and there is no physical layer
+  def test_old_names_and_the_physical_layer_are_gone
+    %w[Facility Equipment CommunicationNetwork].each { |old| assert_nil Archsight::Resources[old], old }
+    assert_equal "technology", Archsight::Resources["TechnologyCommunicationNetwork"].layer
     root = File.expand_path("..", __dir__)
 
-    assert_includes File.read(File.join(root, "frontend/src/composables/useLayers.js")), "id: 'physical'"
-    assert_includes File.read(File.join(root, "frontend/src/css/base.css")), ".icon-physical"
-    assert_includes File.read(File.join(root, "frontend/src/css/graph.css")), ".layer-physical"
-    assert_includes Archsight::Documentation::LAYER_ORDER, "physical"
+    refute_includes File.read(File.join(root, "frontend/src/composables/useLayers.js")), "physical"
+    refute_includes Archsight::Documentation::LAYER_ORDER, "physical"
   end
 
   def test_the_model_loads_and_lints_clean
     with_db do |db|
       assert_empty Archsight::Linter.new(db).validate
-      assert_equal 3, db.instances_by_kind("Facility").length
+      assert_equal 3, db.instances_by_kind("TechnologyFacility").length
     end
   end
 
   def test_annotations
-    facility_type = Archsight::Resources::Facility.annotations.find { |a| a.key == "facility/type" }
+    facility_type = Archsight::Resources::TechnologyFacility.annotations.find { |a| a.key == "facility/type" }
 
     assert facility_type.valid?("colocation")
     refute facility_type.valid?("castle")
-    assert(Archsight::Resources::Facility.annotations.any? { |a| a.key == "facility/stage" })
-    assert(Archsight::Resources::Facility.annotations.any? { |a| a.key == "architecture/aliases" })
+    assert(Archsight::Resources::TechnologyFacility.annotations.any? { |a| a.key == "facility/stage" })
+    assert(Archsight::Resources::TechnologyFacility.annotations.any? { |a| a.key == "architecture/aliases" })
     assert_equal %w[location/city location/country], Archsight::Resources::Location.annotations.map(&:key).grep(%r{\Alocation/}).sort
-    assert Archsight::Resources::Equipment.annotations.find { |a| a.key == "equipment/type" }.valid?("rack")
+    assert Archsight::Resources::TechnologyEquipment.annotations.find { |a| a.key == "equipment/type" }.valid?("rack")
   end
 
   # --- locatedAt, every source to its target ---
 
   def test_each_source_kind_can_be_located_at_a_facility
     with_db do |db|
-      hall = db.instance_by_kind("Facility", "Facility:HallA")
+      hall = db.instance_by_kind("TechnologyFacility", "Facility:HallA")
 
-      [["Equipment", "Equipment:Rack01"], ["TechnologyNode", "Node:Web01"],
+      [["TechnologyEquipment", "Equipment:Rack01"], ["TechnologyNode", "Node:Web01"],
        ["TechnologySystemSoftware", "Software:Cluster"], ["TechnologyService", "Service:Orders"]].each do |kind, name|
-        assert_includes db.instance_by_kind(kind, name).relations(:locatedAt, :facilities), hall, kind
+        assert_includes db.instance_by_kind(kind, name).relations(:locatedAt, :technologyFacilities), hall, kind
       end
     end
   end
 
   def test_a_facility_is_located_at_a_location
     with_db do |db|
-      campus = db.instance_by_kind("Facility", "Facility:Campus")
+      campus = db.instance_by_kind("TechnologyFacility", "Facility:Campus")
 
       assert_equal ["Location:Germany"], campus.relations(:locatedAt, :locations).map(&:name)
     end
@@ -218,14 +223,14 @@ class PhysicalLayerTest < Minitest::Test
     with_db do |db|
       service = db.instance_by_kind("TechnologyService", "Service:Orders")
 
-      assert_equal %w[Facility:HallA Facility:HallB], service.relations(:locatedAt, :facilities).map(&:name)
+      assert_equal %w[Facility:HallA Facility:HallB], service.relations(:locatedAt, :technologyFacilities).map(&:name)
       assert_equal 1, db.instances_by_kind("TechnologyService").length
     end
   end
 
   def test_a_facility_is_served_by_its_operator
     with_db do |db|
-      campus = db.instance_by_kind("Facility", "Facility:Campus")
+      campus = db.instance_by_kind("TechnologyFacility", "Facility:Campus")
 
       assert_equal ["Team:Ops"], campus.relations(:servedBy, :businessActors).map(&:name)
     end
@@ -235,16 +240,16 @@ class PhysicalLayerTest < Minitest::Test
 
   def test_facilities_nest_with_composed_of
     with_db do |db|
-      campus = db.instance_by_kind("Facility", "Facility:Campus")
-      hall = db.instance_by_kind("Facility", "Facility:HallA")
+      campus = db.instance_by_kind("TechnologyFacility", "Facility:Campus")
+      hall = db.instance_by_kind("TechnologyFacility", "Facility:HallA")
 
-      assert_equal %w[Facility:HallA Facility:HallB], campus.relations(:composedOf, :facilities).map(&:name)
-      assert_equal [campus], hall.references_grouped.dig("Facility", :composedOf)
+      assert_equal %w[Facility:HallA Facility:HallB], campus.relations(:composedOf, :technologyFacilities).map(&:name)
+      assert_equal [campus], hall.references_grouped.dig("TechnologyFacility", :composedOf)
     end
   end
 
   def test_composed_of_cycles_are_reported
-    errors = lint(RESOURCES + extra("Facility", "Facility:HallA", "composedOf:\n  facilities:\n    - Facility:Campus"))
+    errors = lint(RESOURCES + extra("TechnologyFacility", "Facility:HallA", "composedOf:\n  technologyFacilities:\n    - Facility:Campus"))
 
     assert_predicate errors.grep(/cycle of composedOf relations/), :any?
   end
@@ -253,9 +258,9 @@ class PhysicalLayerTest < Minitest::Test
 
   def test_a_facility_lists_what_is_located_there_grouped_by_kind
     with_db do |db|
-      grouped = db.instance_by_kind("Facility", "Facility:HallA").references_grouped
+      grouped = db.instance_by_kind("TechnologyFacility", "Facility:HallA").references_grouped
 
-      assert_equal %w[Equipment:Rack01], grouped.dig("Equipment", :locatedAt).map(&:name)
+      assert_equal %w[Equipment:Rack01], grouped.dig("TechnologyEquipment", :locatedAt).map(&:name)
       assert_equal %w[Node:Web01], grouped.dig("TechnologyNode", :locatedAt).map(&:name)
       assert_equal %w[Software:Cluster], grouped.dig("TechnologySystemSoftware", :locatedAt).map(&:name)
       assert_equal %w[Service:Orders], grouped.dig("TechnologyService", :locatedAt).map(&:name)
@@ -266,25 +271,25 @@ class PhysicalLayerTest < Minitest::Test
     with_db do |db|
       grouped = db.instance_by_kind("Location", "Location:Germany").references_grouped
 
-      assert_equal %w[Facility:Campus], grouped.dig("Facility", :locatedAt).map(&:name)
+      assert_equal %w[Facility:Campus], grouped.dig("TechnologyFacility", :locatedAt).map(&:name)
     end
   end
 
   def test_the_instance_api_returns_the_incoming_references
     use_examples
-    get "/api/v1/kinds/Facility/instances/Facility:Frankfurt:HallA"
+    get "/api/v1/kinds/TechnologyFacility/instances/Facility:Frankfurt:HallA"
 
     assert_predicate last_response, :ok?
     references = JSON.parse(last_response.body)["references"]
 
     assert_includes references.dig("TechnologySystemSoftware", "locatedAt"), "Tech:Puma:Cluster"
-    assert_includes references.dig("Equipment", "locatedAt"), "Equipment:Frankfurt:HallA:Rack01"
+    assert_includes references.dig("TechnologyEquipment", "locatedAt"), "Equipment:Frankfurt:HallA:Rack01"
   end
 
   # --- wrong targets ---
 
   def test_a_located_at_target_that_is_not_a_facility_is_rejected
-    yaml = RESOURCES + extra("TechnologyService", "Service:Wrong", "locatedAt:\n  facilities:\n    - Node:Web01")
+    yaml = RESOURCES + extra("TechnologyService", "Service:Wrong", "locatedAt:\n  technologyFacilities:\n    - Node:Web01")
 
     assert_includes load_error(yaml), "Node:Web01 is not defined as kind"
   end
@@ -296,13 +301,13 @@ class PhysicalLayerTest < Minitest::Test
   end
 
   def test_a_facility_cannot_be_located_at_a_facility
-    yaml = RESOURCES + extra("Facility", "Facility:Wrong", "locatedAt:\n  facilities:\n    - Facility:HallA")
+    yaml = RESOURCES + extra("TechnologyFacility", "Facility:Wrong", "locatedAt:\n  technologyFacilities:\n    - Facility:HallA")
 
-    assert_match(%r{unknown verb locatedAt / kind facilities}, load_error(yaml))
+    assert_match(%r{unknown verb locatedAt / kind technologyFacilities}, load_error(yaml))
   end
 
   def test_archsight_lint_fails_for_a_wrong_located_at_target
-    yaml = RESOURCES + extra("Equipment", "Equipment:Wrong", "locatedAt:\n  facilities:\n    - Location:Germany")
+    yaml = RESOURCES + extra("TechnologyEquipment", "Equipment:Wrong", "locatedAt:\n  technologyFacilities:\n    - Location:Germany")
     original = Archsight.resources_dir
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "test.yaml"), yaml)
@@ -328,7 +333,7 @@ class PhysicalLayerTest < Minitest::Test
 
   def test_query_facilities_that_host_a_service
     with_db do |db|
-      query = Archsight::Query::Query.new('Facility: <- "Service:Orders"')
+      query = Archsight::Query::Query.new('TechnologyFacility: <- "Service:Orders"')
 
       assert_equal %w[Facility:HallA Facility:HallB], query.filter(db).map(&:name).sort
     end
@@ -343,23 +348,23 @@ class PhysicalLayerTest < Minitest::Test
     assert_empty Archsight::Linter.new(db).validate
     cluster = db.instance_by_kind("TechnologySystemSoftware", "Tech:Puma:Cluster")
 
-    assert_equal 3, cluster.relations(:locatedAt, :facilities).length
+    assert_equal 3, cluster.relations(:locatedAt, :technologyFacilities).length
   end
 
-  # --- backbone: links between facilities as Equipment ---
+  # --- backbone: links between facilities as TechnologyEquipment ---
 
   LINK = "Equipment:Link:AB"
 
   def backbone_yaml
     RESOURCES +
-      extra("Equipment", LINK, "locatedAt:\n  facilities:\n    - Facility:HallA\n    - Facility:HallB").sub("name: #{LINK}", "name: #{LINK}\n  annotations:\n    equipment/type: link") +
-      extra("Equipment", "Equipment:Backbone", "composedOf:\n  equipment:\n    - #{LINK}") +
-      extra("TechnologyService", "Network:Backbone", "realizedBy:\n  equipment:\n    - Equipment:Backbone") +
-      extra("TechnologyNode", "Node:Router", "realizedBy:\n  equipment:\n    - Equipment:Rack01")
+      extra("TechnologyEquipment", LINK, "locatedAt:\n  technologyFacilities:\n    - Facility:HallA\n    - Facility:HallB").sub("name: #{LINK}", "name: #{LINK}\n  annotations:\n    equipment/type: link") +
+      extra("TechnologyEquipment", "Equipment:Backbone", "composedOf:\n  technologyEquipment:\n    - #{LINK}") +
+      extra("TechnologyService", "Network:Backbone", "realizedBy:\n  technologyEquipment:\n    - Equipment:Backbone") +
+      extra("TechnologyNode", "Node:Router", "realizedBy:\n  technologyEquipment:\n    - Equipment:Rack01")
   end
 
   def test_link_is_an_equipment_type_and_unknown_types_stay_invalid
-    type = Archsight::Resources::Equipment.annotations.find { |a| a.key == "equipment/type" }
+    type = Archsight::Resources::TechnologyEquipment.annotations.find { |a| a.key == "equipment/type" }
 
     assert type.valid?("link")
     refute type.valid?("cable-tray")
@@ -367,29 +372,29 @@ class PhysicalLayerTest < Minitest::Test
 
   def test_a_link_is_located_at_both_end_facilities
     with_db(backbone_yaml) do |db|
-      link = db.instance_by_kind("Equipment", LINK)
+      link = db.instance_by_kind("TechnologyEquipment", LINK)
 
-      assert_equal %w[Facility:HallA Facility:HallB], link.relations(:locatedAt, :facilities).map(&:name)
-      hall = db.instance_by_kind("Facility", "Facility:HallB")
+      assert_equal %w[Facility:HallA Facility:HallB], link.relations(:locatedAt, :technologyFacilities).map(&:name)
+      hall = db.instance_by_kind("TechnologyFacility", "Facility:HallB")
 
-      assert_equal [link], hall.references_grouped.dig("Equipment", :locatedAt)
+      assert_equal [link], hall.references_grouped.dig("TechnologyEquipment", :locatedAt)
     end
   end
 
   def test_a_backbone_is_composed_of_links
     with_db(backbone_yaml) do |db|
-      backbone = db.instance_by_kind("Equipment", "Equipment:Backbone")
-      link = db.instance_by_kind("Equipment", LINK)
+      backbone = db.instance_by_kind("TechnologyEquipment", "Equipment:Backbone")
+      link = db.instance_by_kind("TechnologyEquipment", LINK)
 
-      assert_equal [link], backbone.relations(:composedOf, :equipment)
-      assert_equal [backbone], link.references_grouped.dig("Equipment", :composedOf)
+      assert_equal [link], backbone.relations(:composedOf, :technologyEquipment)
+      assert_equal [backbone], link.references_grouped.dig("TechnologyEquipment", :composedOf)
     end
   end
 
   def test_services_and_nodes_are_realized_by_equipment
     with_db(backbone_yaml) do |db|
-      backbone = db.instance_by_kind("Equipment", "Equipment:Backbone")
-      rack = db.instance_by_kind("Equipment", "Equipment:Rack01")
+      backbone = db.instance_by_kind("TechnologyEquipment", "Equipment:Backbone")
+      rack = db.instance_by_kind("TechnologyEquipment", "Equipment:Rack01")
 
       assert_equal %w[Network:Backbone], backbone.references_grouped.dig("TechnologyService", :realizedBy).map(&:name)
       assert_equal %w[Node:Router], rack.references_grouped.dig("TechnologyNode", :realizedBy).map(&:name)
@@ -397,27 +402,27 @@ class PhysicalLayerTest < Minitest::Test
   end
 
   def test_equipment_composed_of_a_non_equipment_is_rejected
-    yaml = RESOURCES + extra("Equipment", "Equipment:Wrong", "composedOf:\n  equipment:\n    - Facility:HallA")
+    yaml = RESOURCES + extra("TechnologyEquipment", "Equipment:Wrong", "composedOf:\n  technologyEquipment:\n    - Facility:HallA")
 
     assert_includes load_error(yaml), "Facility:HallA is not defined as kind"
   end
 
   def test_realized_by_equipment_needs_equipment
-    yaml = RESOURCES + extra("TechnologyService", "Service:Wrong", "realizedBy:\n  equipment:\n    - Facility:HallA")
+    yaml = RESOURCES + extra("TechnologyService", "Service:Wrong", "realizedBy:\n  technologyEquipment:\n    - Facility:HallA")
 
     assert_includes load_error(yaml), "Facility:HallA is not defined as kind"
   end
 
   def test_equipment_composed_of_cycles_are_reported
-    yaml = RESOURCES + extra("Equipment", "Equipment:A", "composedOf:\n  equipment:\n    - Equipment:B") +
-           extra("Equipment", "Equipment:B", "composedOf:\n  equipment:\n    - Equipment:A")
+    yaml = RESOURCES + extra("TechnologyEquipment", "Equipment:A", "composedOf:\n  technologyEquipment:\n    - Equipment:B") +
+           extra("TechnologyEquipment", "Equipment:B", "composedOf:\n  technologyEquipment:\n    - Equipment:A")
 
     assert_predicate lint(yaml).grep(/cycle of composedOf relations/), :any?
   end
 
   def test_the_instance_api_shows_what_is_realized_by_the_backbone
     use_examples
-    get "/api/v1/kinds/Equipment/instances/Equipment:Backbone"
+    get "/api/v1/kinds/TechnologyEquipment/instances/Equipment:Backbone"
 
     assert_predicate last_response, :ok?
     references = JSON.parse(last_response.body)["references"]
@@ -428,10 +433,10 @@ class PhysicalLayerTest < Minitest::Test
   def test_the_examples_model_a_backbone_between_facilities
     db = Archsight::Database.new(EXAMPLES, verbose: false, compute_annotations: false)
     db.reload!
-    link = db.instance_by_kind("Equipment", "Equipment:Link:Frankfurt-Madrid")
+    link = db.instance_by_kind("TechnologyEquipment", "Equipment:Link:Frankfurt-Madrid")
 
-    assert_equal 2, link.relations(:locatedAt, :facilities).length
-    assert_equal 2, db.instance_by_kind("Equipment", "Equipment:Backbone").relations(:composedOf, :equipment).length
-    assert_equal %w[link], db.query('Equipment: equipment/type == "link"').map { |e| e.annotations["equipment/type"] }.uniq
+    assert_equal 2, link.relations(:locatedAt, :technologyFacilities).length
+    assert_equal 2, db.instance_by_kind("TechnologyEquipment", "Equipment:Backbone").relations(:composedOf, :technologyEquipment).length
+    assert_equal %w[link], db.query('TechnologyEquipment: equipment/type == "link"').map { |e| e.annotations["equipment/type"] }.uniq
   end
 end

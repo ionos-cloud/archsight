@@ -1,6 +1,6 @@
 // The ArchiMate layers in the order they are shown, top to bottom: why (motivation), what we want to become
 // (strategy), how the change happens (implementation and migration), then the architecture it changes (business,
-// application, technology, physical). "other" holds the tool's own kinds (pages, views, imports, ...) and stays last.
+// application, technology). "other" holds the tool's own kinds (pages, views, imports, ...) and stays last.
 // Sidebar and search facets both use this order.
 export const LAYERS = [
   { id: 'motivation', title: 'Motivation' },
@@ -9,7 +9,6 @@ export const LAYERS = [
   { id: 'business', title: 'Business' },
   { id: 'application', title: 'Application' },
   { id: 'technology', title: 'Technology' },
-  { id: 'physical', title: 'Physical' },
   { id: 'other', title: 'Other' },
 ]
 

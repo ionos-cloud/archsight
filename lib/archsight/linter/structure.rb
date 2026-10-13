@@ -137,10 +137,10 @@ module Archsight
       # ---- infrastructure
 
       def link_not_between_two_facilities
-        instances("Equipment").filter_map do |equipment|
+        instances("TechnologyEquipment").filter_map do |equipment|
           next unless equipment.annotations["equipment/type"] == "link"
 
-          count = targets(equipment, :locatedAt, :facilities).length
+          count = targets(equipment, :locatedAt, :technologyFacilities).length
           next if count == 2
 
           warning(equipment, "is a link located at #{count} #{count == 1 ? "facility" : "facilities"}, not 2")
@@ -148,10 +148,10 @@ module Archsight
       end
 
       def overlay_without_underlay
-        instances("CommunicationNetwork").filter_map do |network|
+        instances("TechnologyCommunicationNetwork").filter_map do |network|
           type = network.annotations["network/type"]
           next unless OVERLAY_TYPES.include?(type)
-          next unless targets(network, :servedBy, :communicationNetworks).empty?
+          next unless targets(network, :servedBy, :technologyCommunicationNetworks).empty?
 
           warning(network, "is #{type == "overlay" ? "an" : "a"} #{type} network served by no network")
         end
@@ -159,23 +159,23 @@ module Archsight
 
       # Only the outermost facility needs a location; nested halls inherit it from their campus
       def facility_without_location
-        nested = owners_by_target("Facility", :composedOf, :facilities)
-        instances("Facility").filter_map do |facility|
+        nested = owners_by_target("TechnologyFacility", :composedOf, :technologyFacilities)
+        instances("TechnologyFacility").filter_map do |facility|
           next if nested.key?(facility) || targets(facility, :locatedAt, :locations).any?
 
           warning(facility, "is located at no Location")
         end
       end
 
-      # Equipment that is part of other equipment is placed through its whole, and a whole (a backbone) through its
+      # TechnologyEquipment that is part of other equipment is placed through its whole, and a whole (a backbone) through its
       # parts (the links)
       def equipment_without_facility
-        parts = owners_by_target("Equipment", :composedOf, :equipment)
-        instances("Equipment").filter_map do |equipment|
-          next if parts.key?(equipment) || targets(equipment, :composedOf, :equipment).any?
-          next if targets(equipment, :locatedAt, :facilities).any?
+        parts = owners_by_target("TechnologyEquipment", :composedOf, :technologyEquipment)
+        instances("TechnologyEquipment").filter_map do |equipment|
+          next if parts.key?(equipment) || targets(equipment, :composedOf, :technologyEquipment).any?
+          next if targets(equipment, :locatedAt, :technologyFacilities).any?
 
-          warning(equipment, "is located at no Facility")
+          warning(equipment, "is located at no TechnologyFacility")
         end
       end
     end

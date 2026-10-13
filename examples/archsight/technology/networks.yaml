@@ -1,5 +1,5 @@
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Public
   annotations:
@@ -7,12 +7,12 @@ metadata:
     network/type: public
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:Campus
       - Facility:Madrid:DC
 ---
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Management
   annotations:
@@ -22,7 +22,7 @@ metadata:
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Management:Frankfurt
   annotations:
@@ -30,14 +30,14 @@ metadata:
     network/type: management
 spec:
   specializes:
-    communicationNetworks:
+    technologyCommunicationNetworks:
       - Network:Management
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:Campus
 ---
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Underlay:Frankfurt-Madrid
   annotations:
@@ -46,12 +46,12 @@ metadata:
     network/topology: point-to-point
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:Campus
       - Facility:Madrid:DC
 ---
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Overlay:EVPN
   annotations:
@@ -62,10 +62,10 @@ metadata:
     network/topology: mesh
 spec:
   servedBy:
-    communicationNetworks:
+    technologyCommunicationNetworks:
       - Network:Underlay:Frankfurt-Madrid
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:Campus
       - Facility:Madrid:DC
   realizedBy:
@@ -73,7 +73,7 @@ spec:
       - Tech:Routing:EVPN
 ---
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:VPN:Office
   annotations:
@@ -82,14 +82,14 @@ metadata:
     network/topology: hub-and-spoke
 spec:
   servedBy:
-    communicationNetworks:
+    technologyCommunicationNetworks:
       - Network:Public
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Madrid:DC
 ---
 apiVersion: architecture/v1alpha1
-kind: CommunicationNetwork
+kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Metro:Frankfurt
   annotations:
@@ -100,7 +100,7 @@ spec:
     locations:
       - Location:Germany:Frankfurt
   composedOf:
-    communicationNetworks:
+    technologyCommunicationNetworks:
       - Network:Management:Frankfurt
 ---
 apiVersion: architecture/v1alpha1

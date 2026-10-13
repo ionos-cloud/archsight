@@ -30,13 +30,13 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
 
     - The machine it runs on is a `TechnologyNode`
     - What consumers use from it is a `TechnologyService`
-    - A routing stack that implements a network realizes a `CommunicationNetwork`
+    - A routing stack that implements a network realizes a `TechnologyCommunicationNetwork`
 
     Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
 
     ## Location
 
-    System software is `locatedAt` the `Facility` (or facilities) it runs in.
+    System software is `locatedAt` the `TechnologyFacility` (or facilities) it runs in.
 
     ## Deployment
 
@@ -65,5 +65,5 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
   relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
   relation :plans, :motivationRequirements, :MotivationRequirement
   relation :evidencedBy, :complianceEvidences, :ComplianceEvidence
-  relation :locatedAt, :facilities, :Facility
+  relation :locatedAt, :technologyFacilities, :TechnologyFacility
 end
