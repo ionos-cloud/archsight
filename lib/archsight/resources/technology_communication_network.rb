@@ -47,6 +47,8 @@ class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resource
     - A network is `locatedAt` the facilities and locations it spans, many of them for one network
     - A network is `realizedBy` the `TechnologyEquipment` it runs over and the `TechnologySystemSoftware` that implements it
       (the routing stack, the VPN software)
+    - An overlay that software builds is `realizedBy` that `ApplicationComponent` or `ApplicationService` (an SDN agent,
+      a network operator, a load-balancer controller), also when the software runs on the nodes the network serves
     - A `TechnologyNode` is `servedBy` the networks it is attached to; the network page lists them
   MD
 
@@ -74,4 +76,6 @@ class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resource
   relation :locatedAt, :locations, :Location
   relation :realizedBy, :technologyEquipment, :TechnologyEquipment
   relation :realizedBy, :technologySystemSoftware, :TechnologySystemSoftware
+  relation :realizedBy, :applicationComponents, :ApplicationComponent
+  relation :realizedBy, :applicationServices, :ApplicationService
 end

@@ -195,6 +195,66 @@ class TechnologyCommunicationNetworkTest < Minitest::Test
     assert_empty lint(yaml)
   end
 
+  # --- realized by application software (issue #154) ---
+
+  APPS = <<~YAML
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ApplicationComponent
+    metadata:
+      name: App:SDNAgent
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ApplicationService
+    metadata:
+      name: Service:TenantNetworking
+    spec: {}
+  YAML
+
+  def test_an_overlay_is_realized_by_application_components_and_services
+    rel = "realizedBy:\n  applicationComponents:\n    - App:SDNAgent\n  applicationServices:\n    - Service:TenantNetworking"
+    with_db(BASE + APPS + network("Net:Tenant", rel)) do |db|
+      net = db.instance_by_kind("TechnologyCommunicationNetwork", "Net:Tenant")
+      agent = db.instance_by_kind("ApplicationComponent", "App:SDNAgent")
+
+      assert_equal [agent], net.relations(:realizedBy, :applicationComponents)
+      assert_equal %w[Service:TenantNetworking], net.relations(:realizedBy, :applicationServices).map(&:name)
+      assert_equal [net], agent.references_grouped.dig("TechnologyCommunicationNetwork", :realizedBy)
+    end
+  end
+
+  def test_realized_by_application_needs_the_right_kind
+    yaml = BASE + APPS + network("Net:Wrong", "realizedBy:\n  applicationComponents:\n    - Service:TenantNetworking")
+
+    assert_includes load_error(yaml), "Service:TenantNetworking is not defined as kind"
+  end
+
+  # The software runs on the nodes the network serves: realized by the component, the model has no cycle
+  def test_software_on_the_served_nodes_realizes_the_network_without_a_cycle
+    nodes = BASE.sub("name: Node:Router\nspec: {}", "name: Node:Router\nspec:\n  servedBy:\n    technologyCommunicationNetworks:\n      - Net:Tenant")
+    yaml = nodes + APPS + network("Net:Tenant", "realizedBy:\n  applicationComponents:\n    - App:SDNAgent")
+
+    assert_empty lint(yaml)
+  end
+
+  # Realized by the node's system software instead, the realization closes a cycle that lint reports
+  def test_realized_by_the_served_nodes_system_software_is_a_cycle
+    nodes = BASE.sub("name: Node:Router\nspec: {}", "name: Node:Router\nspec:\n  servedBy:\n    technologyCommunicationNetworks:\n      - Net:Tenant")
+                .sub("name: Tech:Routing\nspec: {}", "name: Tech:Routing\nspec:\n  realizedBy:\n    technologyComponents:\n      - Node:Router")
+    yaml = nodes + network("Net:Tenant", "realizedBy:\n  technologySystemSoftware:\n    - Tech:Routing")
+
+    assert_predicate lint(yaml).grep(/relation cycle/), :any?
+  end
+
+  def test_the_example_tenant_overlay_is_realized_by_its_software
+    db = Archsight::Database.new(EXAMPLES, verbose: false, compute_annotations: false)
+    db.reload!
+    tenant = db.instance_by_kind("TechnologyCommunicationNetwork", "Network:Overlay:Tenant")
+
+    assert_equal %w[Network:Operator Network:SDNAgent], tenant.relations(:realizedBy, :applicationComponents).map(&:name)
+  end
+
   # --- the example ---
 
   def use_examples
@@ -224,7 +284,7 @@ class TechnologyCommunicationNetworkTest < Minitest::Test
     metro = db.instance_by_kind("TechnologyCommunicationNetwork", "Network:Metro:Frankfurt")
 
     assert_equal %w[Location:Germany:Frankfurt], metro.relations(:locatedAt, :locations).map(&:name)
-    assert_equal %w[Network:Overlay:EVPN], db.query('TechnologyCommunicationNetwork: network/type == "overlay"').map(&:name)
+    assert_equal %w[Network:Overlay:EVPN Network:Overlay:Tenant], db.query('TechnologyCommunicationNetwork: network/type == "overlay"').map(&:name).sort
     assert_equal %w[Network:Overlay:EVPN], db.query('TechnologyCommunicationNetwork: network/topology == "mesh"').map(&:name)
   end
 end

@@ -186,6 +186,11 @@ TechnologyArtifact). The same principle holds as above: the test decides the kin
    with `composedOf` (metro network → site networks, campus → halls, backbone → links).
 7. A network that supports a metro region is `locatedAt` the Location and `composedOf` the networks of its sites.
 8. Nodes attach to networks with `servedBy` and stand in facilities with `locatedAt`.
+9. An overlay that software builds (an SDN agent wiring tenant networks on each host, an operator creating VXLAN
+   segments, a load-balancer controller announcing public addresses) is `realizedBy` that `ApplicationComponent` or
+   `ApplicationService` (ArchiMate cross-layer realization). This holds even when the software runs on the nodes the
+   network serves: point at the application component, not at the node's system software, which would close a cycle
+   (network → system software → node → network).
 
 **Checked by `archsight lint`**
 
@@ -438,6 +443,7 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 | `TechnologyCommunicationNetwork` | `servedBy` | `TechnologyCommunicationNetwork` (the network it runs over) |
 | `TechnologyCommunicationNetwork` | `locatedAt` | `TechnologyFacility`, `Location` (many) |
 | `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyEquipment` (the fabric), `TechnologySystemSoftware` (routing stack, VPN software) |
+| `TechnologyCommunicationNetwork` | `realizedBy` | `ApplicationComponent`, `ApplicationService` (software that builds the network: an SDN agent, a network operator) |
 | `TechnologyNode` | `servedBy` | `TechnologyCommunicationNetwork` |
 
 - **Underlay and overlay:** the underlay *serves* the overlay, so the overlay is `servedBy` the underlay. A BGP-EVPN

@@ -110,3 +110,41 @@ metadata:
   annotations:
     architecture/description: Routing software that implements the BGP-EVPN overlay.
 spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyCommunicationNetwork
+metadata:
+  name: Network:Overlay:Tenant
+  annotations:
+    architecture/description: |
+      The tenant network overlay. It is built by software: the network operator creates the VXLAN segments and the
+      SDN agent on each host wires the virtual machines into them, so it is `realizedBy` those components.
+    network/type: overlay
+spec:
+  servedBy:
+    technologyCommunicationNetworks:
+      - Network:Underlay:Frankfurt-Madrid
+  realizedBy:
+    applicationComponents:
+      - Network:Operator
+      - Network:SDNAgent
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Network:Operator
+  annotations:
+    architecture/description: Operator that creates the VXLAN segments of the tenant networks.
+    component/type: executable
+    component/role: operator
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Network:SDNAgent
+  annotations:
+    architecture/description: Agent on every host that wires the virtual machines into the tenant network segments.
+    component/type: executable
+    component/role: agent
+spec: {}
