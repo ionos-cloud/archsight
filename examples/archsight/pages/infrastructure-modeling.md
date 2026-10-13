@@ -62,6 +62,9 @@ A rack such as [[TechnologyEquipment/Equipment:Frankfurt:HallA:Rack01]] is `loca
 - [[TechnologyCommunicationNetwork/Network:Underlay:Frankfurt-Madrid]] is the routed underlay between the sites.
 - [[TechnologyCommunicationNetwork/Network:Overlay:EVPN]] is the overlay that carries private workloads: one network, not one
   per customer. It is `servedBy` the underlay and `realizedBy` the routing software [[TechnologySystemSoftware/Tech:Routing:EVPN]].
+- [[TechnologyCommunicationNetwork/Network:Overlay:Tenant]] is built by software: it is `realizedBy` the
+  [[ApplicationComponent/Network:Operator]] that creates the VXLAN segments and the [[ApplicationComponent/Network:SDNAgent]]
+  on every host, not by the system software of the nodes it serves.
 - [[TechnologyCommunicationNetwork/Network:Management]] is the concept; [[TechnologyCommunicationNetwork/Network:Management:Frankfurt]]
   `specializes` it for one site.
 - [[TechnologyCommunicationNetwork/Network:VPN:Office]] tunnels through [[TechnologyCommunicationNetwork/Network:Public]].
