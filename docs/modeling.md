@@ -398,7 +398,9 @@ the repository the module path names keeps the plain name (`github.com/acme/libr
 then the one that is not archived, then the first by name; the other gets its repository appended
 (`alice:shop@acme:shop-prototype`), and a dependency on the module path points at the plain name. A `go.mod` in a
 subdirectory whose module path names another known repository is a copy of that repository's module and gets no
-component at all. The importer only sees the other repository once both were imported, so the names separate on the
+component at all. Neither does a nested `go.mod` below a test, tool, example or benchmark directory (`test/e2e`,
+`tools`, `hack`, `examples/foo`, `internal/systemtest`): nothing realizes such code or depends on it, so its packages
+only appear in the repository's module graph; `cmd/<name>/go.mod` stays a component. The importer only sees the other repository once both were imported, so the names separate on the
 import after that; until then `archsight lint` warns about the merged component. A hand-written component that lists
 several repositories is left as it is. The computed `component/dependents` counts the components that depend on a
 component, which shows how widely a library or module is shared.

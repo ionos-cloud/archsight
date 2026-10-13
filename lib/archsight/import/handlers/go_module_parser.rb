@@ -7,6 +7,13 @@ require "find"
 # Provides go.mod discovery, module name reading, require parsing, and the
 # component_name convention (strip SCM host, join path segments with ":").
 module Archsight::Import::Handlers::GoModuleParser
+  # Directories whose nested modules hold code that never runs in production: tests, pinned tooling, examples and
+  # benchmarks. Whole path segments only, so `pkg/latest` is not a test directory.
+  NON_RUNTIME_MODULE_DIRS = %w[
+    hack tools examples example bench benchmarks
+    test tests e2e e2etest e2etests systemtest systemtests integrationtest integrationtests fullstack
+  ].freeze
+
   # Discover all Go modules in a repository root.
   # Handles go.work workspaces, single-module repos, and multi-module monorepos
   # (root go.mod plus subdirectory go.mod files without go.work).
@@ -192,6 +199,16 @@ module Archsight::Import::Handlers::GoModuleParser
 
     artifacts = database&.instances_by_kind("TechnologyArtifact") || {}
     artifacts.keys.any? { |name| name.start_with?("Repo:") && name != artifact_name && module_path_of_repository?(mod_name, name) }
+  end
+
+  # A nested module below a test, tool, example or benchmark directory (`test/e2e`, `build/tools`,
+  # `internal/systemtest`). It gets no component, since nothing realizes it or depends on it; its packages stay in
+  # the module graph of the repository. `cmd/<name>` and `internal/` hold runtime code and are not matched.
+  # @return [Boolean]
+  def non_runtime_module?(rel_dir)
+    return false if rel_dir == "."
+
+    rel_dir.split("/").intersect?(NON_RUNTIME_MODULE_DIRS)
   end
 
   # Path segments of a module without the host and without a major version suffix (`/v2`)

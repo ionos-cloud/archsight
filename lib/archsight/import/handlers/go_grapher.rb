@@ -62,6 +62,8 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     output = +""
 
     modules.each do |rel_dir, mod_name|
+      next if non_runtime_module?(rel_dir)
+
       if copied_module?(rel_dir, mod_name, artifact_name)
         progress.warn("Skipping copied go.mod at #{rel_dir}: module #{mod_name} belongs to another repository")
         next

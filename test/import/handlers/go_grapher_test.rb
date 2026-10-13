@@ -58,6 +58,60 @@ class GoGrapherTest < Minitest::Test
     end
   end
 
+  # ── Nested test, tool and example modules (issue #156) ───────────────────
+
+  def component_names(resources)
+    resources.select { |r| r["kind"] == "ApplicationComponent" }.map { |c| c.dig("metadata", "name") }.sort
+  end
+
+  def test_nested_test_tool_and_example_modules_emit_no_component
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      %w[test/e2e tools hack/gen examples/foo internal/systemtest tools/bench].each do |dir|
+        write(repo, "#{dir}/go.mod", "module github.com/example/myapp/#{dir}\n\ngo 1.21\n")
+        write(repo, "#{dir}/main.go", "package main\n")
+      end
+
+      assert_equal ["example:myapp"], component_names(run_full_handler(repo))
+    end
+  end
+
+  def test_a_binary_in_its_own_module_below_cmd_is_still_a_component
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
+      write(repo, "lib.go", "package myapp\n")
+      write(repo, "cmd/api/go.mod", "module github.com/example/myapp/cmd/api\n\ngo 1.21\n")
+      write(repo, "cmd/api/main.go", "package main\n")
+
+      assert_equal %w[example:myapp example:myapp:cmd:api], component_names(run_full_handler(repo))
+    end
+  end
+
+  def test_a_skipped_module_stays_in_the_module_graph
+    skip "needs the go toolchain" unless system("go version", out: File::NULL, err: File::NULL)
+
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/myapp\n\ngo 1.21\n")
+      write(repo, "main.go", "package main\n")
+      write(repo, "test/e2e/go.mod", "module github.com/example/myapp/test/e2e\n\ngo 1.21\n")
+      write(repo, "test/e2e/e2e.go", "package e2e\n")
+      artifact = run_full_handler(repo).find { |r| r["kind"] == "TechnologyArtifact" }
+
+      assert_includes artifact.dig("metadata", "annotations", "architecture/go/modules"), "e2e"
+    end
+  end
+
+  def test_non_runtime_module_directories
+    parser = Object.new.extend(Archsight::Import::Handlers::GoModuleParser)
+
+    non_runtime = %w[test/e2e build/tools internal/systemtest tools/bench tests/fullstack]
+    runtime = %w[. cmd/api pkg/client pkg/latest internal/store]
+
+    assert_equal non_runtime, non_runtime.select { |dir| parser.non_runtime_module?(dir) }
+    assert_empty runtime.select { |dir| parser.non_runtime_module?(dir) }
+  end
+
   def test_go_work_with_multiple_modules_emits_multiple_components
     with_repo do |repo|
       write(repo, "go.work", "go 1.21\n\nuse (\n  ./service\n  ./shared\n)\n")

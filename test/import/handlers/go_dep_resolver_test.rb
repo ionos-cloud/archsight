@@ -124,6 +124,18 @@ class GoDepResolverTest < Minitest::Test
     end
   end
 
+  def test_a_nested_test_module_gets_no_dependencies
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/example/app\n\ngo 1.21\n")
+      write(repo, "test/e2e/go.mod", "module github.com/example/app/test/e2e\n\ngo 1.21\n\nrequire github.com/example/lib v1.0.0\n")
+
+      db = mock_database("example:app" => {}, "example:app:test:e2e" => {}, "example:lib" => {})
+      create_handler(path: repo, database: db).execute
+
+      assert_equal(["Import"], YAML.load_stream(File.read(output_path)).map { |r| r["kind"] })
+    end
+  end
+
   def test_writes_only_self_marker_when_no_deps
     with_repo do |repo|
       write(repo, "go.mod", "module github.com/example/app\n\ngo 1.21\n")
