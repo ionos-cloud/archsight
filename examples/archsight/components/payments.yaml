@@ -1,0 +1,15 @@
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Payments:API
+  annotations:
+    architecture/description: |
+      The API of the payments backend, named by its runtime role. It is
+      built from one repository and belongs to exactly one service.
+    architecture/tags: example,payments
+    component/type: executable
+    component/role: service
+spec:
+  realizedThrough:
+    technologyArtifacts:
+      - Repo:payments-api

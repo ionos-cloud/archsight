@@ -20,10 +20,20 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
 
     Use ApplicationService to represent:
 
-    - Complete product offerings (ManagedKubernetes, DBaaS PostgreSQL)
+    - Behaviour software offers to a user or another system ("Payment Authorization", "Document Search")
     - Logical groupings of application components
     - Services exposed to business processes
     - APIs and their implementations as a cohesive unit
+
+    ## Choosing this kind
+
+    **Question:** What behaviour does software offer a consumer?
+    **Test:** It can be described without naming repositories, deployments or runtime objects, and has one owning actor.
+    **Name:** The function, not the technology or a deployment object ("Payment Authorization").
+
+    A component belongs to exactly one service. A service that is called by or shared with others is a service of its
+    own that is modeled once; products reference it. A service whose only component has the same name is a smell. See
+    the modeling guide, "Choosing the Kind".
 
     ## Security and risk modelling
 

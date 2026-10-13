@@ -1,0 +1,16 @@
+apiVersion: architecture/v1alpha1
+kind: ApplicationService
+metadata:
+  name: Payment Authorization
+  annotations:
+    architecture/description: |
+      Authorizes a card payment for a consumer. Named by its function, not
+      by the API or deployment that implements it.
+    architecture/tags: example,payments
+spec:
+  realizedThrough:
+    applicationComponents:
+      - Payments:API
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers

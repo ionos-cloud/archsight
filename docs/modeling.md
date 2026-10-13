@@ -53,6 +53,76 @@ Rules:
   (never written in a file) and show how things are linked sideways, in prose and pictures. They neither follow nor
   contradict the direction above and are left out of the cycle check.
 
+## Choosing the Kind
+
+Four kinds carry most of a model: StrategyCapability, BusinessProduct, ApplicationService and ApplicationComponent.
+Each answers one question. The test decides the kind, not the name.
+
+| Kind | Question | Test | Name |
+|------|----------|------|------|
+| StrategyCapability | What must the organization be *able* to do? | Survives swapping product, team and technology; not a certificate or quality | ability noun phrase ("Payment Processing"), never a product, team or technology |
+| BusinessProduct | What does a customer buy or contract? | Appears on a price list, catalog or customer documentation | market name ("Online Checkout") |
+| ApplicationService | What behaviour does software offer a consumer? | Describable without naming repos, deployments or runtime objects; one owning actor | the function, not the technology or deployment object ("Payment Authorization") |
+| ApplicationComponent | What is built, deployed and versioned? | Has artifacts and a `component/type`; can be deployed or linked | the part, by runtime role (API, Operator, Worker), not by repo category ("Payments:API") |
+
+**Decision questions**, asked in order for any new element:
+
+1. Is it something the organization must be able to do, whoever or whatever does it? Capability.
+2. Is it something a customer selects, buys or signs a contract for? Product.
+3. Is it a function another system or a user calls or consumes, nameable without saying how it is built? Service.
+4. Is it something that is built, versioned and deployed or linked? Component.
+5. Is it a repository, package, image or binary? Artifact.
+6. Is it a proof, rule or obligation (certificate, regulation, policy)? Motivation or Compliance, not one of the above.
+7. Is it another name or id of something already modeled? `architecture/aliases` or `link/*` on that element, not a
+   new element.
+8. Does the same name already exist as a different kind? Check whether the two are really different. If they are not,
+   keep the element at the highest level where the test holds and link the others to it.
+
+**Rules**
+
+1. One path up: Product `realizes` Capability, Product `servedBy` Service, Service `realizedThrough` Component,
+   Component `realizedThrough` Artifact. Capability `servedBy` Service only for internal capabilities that no product
+   carries.
+2. A component belongs to exactly one service. One service using another is a relation between the services, not the
+   same component listed twice.
+3. An artifact is realized by exactly one component. Larger logical components group finer ones with `dependsOn`.
+4. A service whose only component has the same name is a smell: name the service by its function, or fold it into the
+   service it belongs to.
+5. Test, tooling and infrastructure-as-code repositories are not components of their own. They go on the component
+   they build, test or deploy.
+6. A product served by nearly every service is a catalog, not a product. A service that serves many products is a
+   shared service and is modeled once.
+7. Certifications and regulations are Motivation (requirement or constraint) with Compliance evidence, not
+   capabilities.
+8. Other identifiers of an element (register ids, wiki or ticket pages) are `architecture/aliases` and `link/*` on the
+   element itself, never a parallel element.
+
+**Example chain**
+
+```
+StrategyCapability "Payment Processing"
+       ↑ realizes
+BusinessProduct "Online Checkout"
+       ↓ servedBy
+ApplicationService "Payment Authorization"
+       ↓ realizedThrough
+ApplicationComponent "Payments:API"
+       ↓ realizedThrough
+TechnologyArtifact "Repo:payments-api"
+```
+
+The chain is part of `examples/archsight` (`strategy/`, `business/`, `services/`, `components/`, `technology/`).
+
+**Anti-patterns**
+
+| Anti-pattern | Fix |
+|--------------|-----|
+| A service named after a deployment object (ingress route, Helm release, admin endpoint) | Name it by the function it offers; the deployment object is part of the component or artifact |
+| Components named after repo categories ("Testing", "Tools", "Infrastructure") | Name components by runtime role; put test, tooling and infrastructure repositories on the component they belong to |
+| A catalog product that everything serves | Model the products customers really buy; the catalog is a view or page |
+| A certificate modeled as a capability | Requirement or constraint with Compliance evidence |
+| A parallel set of services that re-groups the same components for an inventory or register | `architecture/aliases` and `link/*` on the real service |
+
 ## Identity and Links
 
 A resource has one **name**, the key everything refers to (relations, `[[wiki links]]`, URLs). Two annotations say more
@@ -145,9 +215,9 @@ Model strategic **capabilities**.
 
 | Resource | When to Use |
 |----------|-------------|
-| StrategyCapability | For abilities the organization needs ("Container Orchestration", "Data Analytics") |
+| StrategyCapability | For abilities the organization needs ("Payment Processing", "Data Analytics"); not a product, team or certificate |
 
-**Example chain:** Capability "Managed Kubernetes" → realizes → Requirement "Container Platform" and servedBy → Service "ManagedKubernetes"
+**Example chain:** Product "Online Checkout" → realizes → Capability "Payment Processing" → realizes → Requirement "Card Payments" (see [Choosing the Kind](#choosing-the-kind))
 
 ### Implementation & Migration Layer
 
@@ -174,7 +244,7 @@ Model **who** does **what** in business terms.
 | BusinessActor | For teams, departments, or organizations |
 | BusinessRole | For responsibilities held by actors: control owner, risk owner, information security officer (`role/type`) |
 | BusinessProcess | For workflows that produce business value |
-| BusinessProduct | For offerings to customers (cloud services, APIs) |
+| BusinessProduct | For what a customer buys or contracts, as on a price list ("Online Checkout", "Premium Support") |
 | BusinessControl | For controls that guide a process (access review, change approval), with an owner and executors |
 | BusinessEvent | For things that happen in the business: threat events, loss events, incidents, triggers (`event/type`) |
 
@@ -190,12 +260,12 @@ Model **software** that supports the business.
 
 | Resource | When to Use |
 |----------|-------------|
-| ApplicationService | For high-level services (ManagedKubernetes, ObjectStorage) |
-| ApplicationComponent | For deployable parts of services (API server, worker, scheduler) |
+| ApplicationService | For behaviour software offers to a consumer, named by its function ("Payment Authorization", "Document Search") |
+| ApplicationComponent | For what is built, deployed and versioned, by runtime role ("Payments:API", "Payments:Worker") |
 | ApplicationInterface | For APIs and integration points |
 | DataObject | For data structures and schemas |
 
-**Example chain:** Service "ManagedKubernetes" → realizedThrough → Component "kube-apiserver" → exposes → Interface "Kubernetes:RestAPI"
+**Example chain:** Service "Payment Authorization" → realizedThrough → Component "Payments:API" → exposes → Interface "Payments:RestAPI"
 
 #### Classifying components
 
@@ -230,14 +300,13 @@ Model **infrastructure** and **code**.
 
 | Resource | When to Use |
 |----------|-------------|
-| TechnologyArtifact | For source code repositories |
+| TechnologyArtifact | For source code repositories, packages, images and binaries (`artifact/type`) |
 | TechnologyService | For infrastructure services (Postgres, Redis, Kubernetes platform) |
 | TechnologySystemSoftware | For logical infrastructure (database cluster, message queue) |
-| TechnologyArtifact | For deployed containers/binaries |
 | TechnologyNode | For infrastructure instances |
 | TechnologyInterface | For technical protocols and endpoints |
 
-**Example chain:** Component "kube-apiserver" → realizedThrough → Artifact "kubernetes/kubernetes" → maintainedBy → Actor "Platform Team"
+**Example chain:** Component "Payments:API" → realizedThrough → Artifact "Repo:payments-api" → maintainedBy → Actor "Platform Team"
 
 ### Physical Layer: Where Technology Runs
 

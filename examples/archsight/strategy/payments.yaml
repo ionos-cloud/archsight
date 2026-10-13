@@ -1,0 +1,10 @@
+apiVersion: architecture/v1alpha1
+kind: StrategyCapability
+metadata:
+  name: Payment Processing
+  annotations:
+    architecture/description: |
+      Ability to accept, authorize and settle customer payments, whoever
+      sells them and whatever technology does the work. Example chain for
+      the modeling guide, "Choosing the Kind".
+    architecture/tags: example,payments

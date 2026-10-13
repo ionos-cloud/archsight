@@ -25,6 +25,16 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     - Frontend applications
     - Background workers
 
+    ## Choosing this kind
+
+    **Question:** What is built, deployed and versioned?
+    **Test:** It has artifacts and a `component/type`, and can be deployed or linked.
+    **Name:** The part, by runtime role (API, Operator, Worker) as in "Payments:API", not by repository category
+    ("Testing", "Tools", "Infrastructure"). Test, tooling and infrastructure-as-code repositories belong to the
+    component they build, test or deploy.
+
+    A component belongs to exactly one service. See the modeling guide, "Choosing the Kind".
+
     ## Component types
 
     Set `component/type` to say what the component is built as; importers set it from the manifests:
