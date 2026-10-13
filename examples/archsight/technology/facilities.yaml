@@ -21,7 +21,7 @@ metadata:
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
-kind: Facility
+kind: TechnologyFacility
 metadata:
   name: Facility:Frankfurt:Campus
   annotations:
@@ -34,7 +34,7 @@ spec:
     locations:
       - Location:Germany:Frankfurt
   composedOf:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:HallA
       - Facility:Frankfurt:HallB
   servedBy:
@@ -42,7 +42,7 @@ spec:
       - Archsight:Maintainers
 ---
 apiVersion: architecture/v1alpha1
-kind: Facility
+kind: TechnologyFacility
 metadata:
   name: Facility:Frankfurt:HallA
   annotations:
@@ -52,7 +52,7 @@ metadata:
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
-kind: Facility
+kind: TechnologyFacility
 metadata:
   name: Facility:Frankfurt:HallB
   annotations:
@@ -62,7 +62,7 @@ metadata:
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
-kind: Facility
+kind: TechnologyFacility
 metadata:
   name: Facility:Madrid:DC
   annotations:
@@ -75,7 +75,7 @@ spec:
       - Location:Spain:Madrid
 ---
 apiVersion: architecture/v1alpha1
-kind: Equipment
+kind: TechnologyEquipment
 metadata:
   name: Equipment:Frankfurt:HallA:Rack01
   annotations:
@@ -83,7 +83,7 @@ metadata:
     equipment/type: rack
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:HallA
 ---
 apiVersion: architecture/v1alpha1
@@ -95,10 +95,10 @@ metadata:
     infrastructure/type: bare-metal
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:HallA
   servedBy:
-    communicationNetworks:
+    technologyCommunicationNetworks:
       - Network:Management:Frankfurt
 ---
 apiVersion: architecture/v1alpha1
@@ -111,27 +111,27 @@ metadata:
       three places: two halls and a second site.
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:HallA
       - Facility:Frankfurt:HallB
       - Facility:Madrid:DC
 ---
 apiVersion: architecture/v1alpha1
-kind: Equipment
+kind: TechnologyEquipment
 metadata:
   name: Equipment:Link:Frankfurt-Madrid
   annotations:
     architecture/description: |
-      Fibre route between Frankfurt and Madrid. A link is one Equipment that is `locatedAt` both end facilities.
+      Fibre route between Frankfurt and Madrid. A link is one TechnologyEquipment that is `locatedAt` both end facilities.
     equipment/type: link
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:Campus
       - Facility:Madrid:DC
 ---
 apiVersion: architecture/v1alpha1
-kind: Equipment
+kind: TechnologyEquipment
 metadata:
   name: Equipment:Link:HallA-HallB
   annotations:
@@ -139,20 +139,20 @@ metadata:
     equipment/type: link
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:HallA
       - Facility:Frankfurt:HallB
 ---
 apiVersion: architecture/v1alpha1
-kind: Equipment
+kind: TechnologyEquipment
 metadata:
   name: Equipment:Backbone
   annotations:
-    architecture/description: The backbone, the physical links between the facilities as one composed Equipment.
+    architecture/description: The backbone, the physical links between the facilities as one composed TechnologyEquipment.
     equipment/type: network-fabric
 spec:
   composedOf:
-    equipment:
+    technologyEquipment:
       - Equipment:Link:Frankfurt-Madrid
       - Equipment:Link:HallA-HallB
 ---
@@ -165,9 +165,9 @@ metadata:
       The logical backbone network. It runs in the facilities it reaches and is `realizedBy` the physical backbone.
 spec:
   locatedAt:
-    facilities:
+    technologyFacilities:
       - Facility:Frankfurt:Campus
       - Facility:Madrid:DC
   realizedBy:
-    equipment:
+    technologyEquipment:
       - Equipment:Backbone

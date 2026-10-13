@@ -243,12 +243,6 @@ article>header h2 {
   color: var(--layer);
 }
 
-/* Physical Layer - Teal */
-.icon-physical {
-  --layer: #26A69A; /* also read by the sidebar rule and selection */
-  color: var(--layer);
-}
-
 /* Implementation & Migration Layer - Rose */
 .icon-implementation {
   --layer: #E0527F; /* also read by the sidebar rule and selection */

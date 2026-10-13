@@ -29,19 +29,19 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     ## Not this kind
 
     - The software that provides it is `TechnologySystemSoftware`, the machines are `TechnologyNode`s
-    - A network is a `CommunicationNetwork`; a physical link is `Equipment`
-    - One service for all sites, `locatedAt` each `Facility`, not a copy per site
+    - A network is a `TechnologyCommunicationNetwork`; a physical link is `TechnologyEquipment`
+    - One service for all sites, `locatedAt` each `TechnologyFacility`, not a copy per site
 
     Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
 
     ## Location
 
-    A service that runs in several data centers is one service that is `locatedAt` each `Facility`, not one service
+    A service that runs in several data centers is one service that is `locatedAt` each `TechnologyFacility`, not one service
     per site.
 
     ## Physical realization
 
-    A service is `realizedBy` the `Equipment` it runs over: a backbone network service is realized by the links
+    A service is `realizedBy` the `TechnologyEquipment` it runs over: a backbone network service is realized by the links
     between the facilities (`equipment/type: link`).
 
     ## Concept and implementation
@@ -62,8 +62,8 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
   relation :suppliedBy, :technologyComponents, :TechnologySystemSoftware
   relation :specializes, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
-  relation :locatedAt, :facilities, :Facility
-  relation :realizedBy, :equipment, :Equipment
+  relation :locatedAt, :technologyFacilities, :TechnologyFacility
+  relation :realizedBy, :technologyEquipment, :TechnologyEquipment
   relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement
   relation :plans, :motivationRequirements, :MotivationRequirement

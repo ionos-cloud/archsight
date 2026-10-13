@@ -15,19 +15,19 @@ over it and what runs on them. The rules behind it are in "Choosing the Kind: In
 layer "where" {
   label "Where"
   component "metro" { label "Frankfurt metro"; resource "Location/Location:Germany:Frankfurt" }
-  component "campus" { label "Frankfurt campus"; resource "Facility/Facility:Frankfurt:Campus" }
-  component "madrid" { label "Madrid DC"; resource "Facility/Facility:Madrid:DC" }
+  component "campus" { label "Frankfurt campus"; resource "TechnologyFacility/Facility:Frankfurt:Campus" }
+  component "madrid" { label "Madrid DC"; resource "TechnologyFacility/Facility:Madrid:DC" }
 }
 layer "physical" {
   label "Physical"
-  component "link" { label "Link Frankfurt-Madrid"; resource "Equipment/Equipment:Link:Frankfurt-Madrid"; shape "pipe" }
-  component "backbone" { label "Backbone"; resource "Equipment/Equipment:Backbone" }
+  component "link" { label "Link Frankfurt-Madrid"; resource "TechnologyEquipment/Equipment:Link:Frankfurt-Madrid"; shape "pipe" }
+  component "backbone" { label "Backbone"; resource "TechnologyEquipment/Equipment:Backbone" }
 }
 layer "network" {
   label "Networks"
-  component "underlay" { label "Underlay"; resource "CommunicationNetwork/Network:Underlay:Frankfurt-Madrid" }
-  component "evpn" { label "EVPN overlay"; resource "CommunicationNetwork/Network:Overlay:EVPN" }
-  component "mgmt" { label "Management Frankfurt"; resource "CommunicationNetwork/Network:Management:Frankfurt" }
+  component "underlay" { label "Underlay"; resource "TechnologyCommunicationNetwork/Network:Underlay:Frankfurt-Madrid" }
+  component "evpn" { label "EVPN overlay"; resource "TechnologyCommunicationNetwork/Network:Overlay:EVPN" }
+  component "mgmt" { label "Management Frankfurt"; resource "TechnologyCommunicationNetwork/Network:Management:Frankfurt" }
 }
 layer "compute" {
   label "Compute"
@@ -46,26 +46,26 @@ web01 -> campus { label "locatedAt (hall A)" }
 
 ## Where: locations and facilities
 
-[[Location/Location:Germany:Frankfurt]] is the metro area, [[Facility/Facility:Frankfurt:Campus]] the campus in it.
-The campus is `composedOf` its halls, so only the campus needs a location. [[Facility/Facility:Madrid:DC]] is a
+[[Location/Location:Germany:Frankfurt]] is the metro area, [[TechnologyFacility/Facility:Frankfurt:Campus]] the campus in it.
+The campus is `composedOf` its halls, so only the campus needs a location. [[TechnologyFacility/Facility:Madrid:DC]] is a
 colocation site in [[Location/Location:Spain:Madrid]].
 
 ## Physical: equipment and links
 
-A rack such as [[Equipment/Equipment:Frankfurt:HallA:Rack01]] is `locatedAt` its hall. The fibre route
-[[Equipment/Equipment:Link:Frankfurt-Madrid]] is one link `locatedAt` both of its ends, and
-[[Equipment/Equipment:Backbone]] is `composedOf` the links. The logical backbone service
+A rack such as [[TechnologyEquipment/Equipment:Frankfurt:HallA:Rack01]] is `locatedAt` its hall. The fibre route
+[[TechnologyEquipment/Equipment:Link:Frankfurt-Madrid]] is one link `locatedAt` both of its ends, and
+[[TechnologyEquipment/Equipment:Backbone]] is `composedOf` the links. The logical backbone service
 [[TechnologyService/Network:Backbone]] is `realizedBy` it.
 
 ## Networks
 
-- [[CommunicationNetwork/Network:Underlay:Frankfurt-Madrid]] is the routed underlay between the sites.
-- [[CommunicationNetwork/Network:Overlay:EVPN]] is the overlay that carries private workloads: one network, not one
+- [[TechnologyCommunicationNetwork/Network:Underlay:Frankfurt-Madrid]] is the routed underlay between the sites.
+- [[TechnologyCommunicationNetwork/Network:Overlay:EVPN]] is the overlay that carries private workloads: one network, not one
   per customer. It is `servedBy` the underlay and `realizedBy` the routing software [[TechnologySystemSoftware/Tech:Routing:EVPN]].
-- [[CommunicationNetwork/Network:Management]] is the concept; [[CommunicationNetwork/Network:Management:Frankfurt]]
+- [[TechnologyCommunicationNetwork/Network:Management]] is the concept; [[TechnologyCommunicationNetwork/Network:Management:Frankfurt]]
   `specializes` it for one site.
-- [[CommunicationNetwork/Network:VPN:Office]] tunnels through [[CommunicationNetwork/Network:Public]].
-- [[CommunicationNetwork/Network:Metro:Frankfurt]] supports the metro region: `locatedAt` the location and
+- [[TechnologyCommunicationNetwork/Network:VPN:Office]] tunnels through [[TechnologyCommunicationNetwork/Network:Public]].
+- [[TechnologyCommunicationNetwork/Network:Metro:Frankfurt]] supports the metro region: `locatedAt` the location and
   `composedOf` the site networks.
 
 ```view
@@ -74,7 +74,7 @@ kind: View
 metadata:
   name: All networks
   annotations:
-    view/query: 'CommunicationNetwork: name =~ "Network"'
+    view/query: 'TechnologyCommunicationNetwork: name =~ "Network"'
     view/fields: name, network/type, network/topology
     view/sort: name
 ```

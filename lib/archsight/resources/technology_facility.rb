@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# Facility represents a building, data center or site
-class Archsight::Resources::Facility < Archsight::Resources::Base
+# TechnologyFacility represents a building, data center or site
+class Archsight::Resources::TechnologyFacility < Archsight::Resources::Base
   include_annotations :git, :architecture
 
   description <<~MD
@@ -9,7 +9,7 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
 
     ## ArchiMate Definition
 
-    **Layer:** Physical
+    **Layer:** Technology (physical element)
     **Aspect:** Active Structure
 
     A facility is a physical structure or environment. Technology nodes, services and system software are located
@@ -17,7 +17,7 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
 
     ## Usage
 
-    Use Facility to represent:
+    Use TechnologyFacility to represent:
 
     - Data centers and colocation sites
     - Offices
@@ -27,7 +27,7 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
     ## Not this kind
 
     - A country, metro or region is a `Location`
-    - A rack, cage or fabric inside the site is `Equipment`; a server is a `TechnologyNode` `locatedAt` the facility
+    - A rack, cage or fabric inside the site is `TechnologyEquipment`; a server is a `TechnologyNode` `locatedAt` the facility
     - A data center is never a `TechnologyNode` and never an annotation on other elements
 
     Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
@@ -35,7 +35,7 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
     ## How it connects
 
     - Things that run at a facility point to it with `locatedAt`: `TechnologyNode`, `TechnologyService`,
-      `TechnologySystemSoftware` and `Equipment`. One element can be located at many facilities (one cluster that
+      `TechnologySystemSoftware` and `TechnologyEquipment`. One element can be located at many facilities (one cluster that
       runs in three data centers is one element with three relations, not three copies)
     - A facility is `locatedAt` a `Location` and `composedOf` other facilities (campus, hall)
     - A facility is `servedBy` the `BusinessActor` that operates it
@@ -46,11 +46,11 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
   MD
 
   icon "building"
-  layer "physical"
+  layer "technology"
 
   annotation "facility/type",
              description: "Kind of site",
-             title: "Facility Type",
+             title: "TechnologyFacility Type",
              enum: %w[data-center colocation office edge],
              filter: :word,
              summary: true
@@ -62,6 +62,6 @@ class Archsight::Resources::Facility < Archsight::Resources::Base
              summary: true
 
   relation :locatedAt, :locations, :Location
-  relation :composedOf, :facilities, :Facility
+  relation :composedOf, :technologyFacilities, :TechnologyFacility
   relation :servedBy, :businessActors, :BusinessActor
 end

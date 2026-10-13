@@ -17,9 +17,7 @@ Business Layer                How business operates (processes, actors, products
        |
 Application Layer             What software supports the business
        |
-Technology Layer              How software is built and deployed
-       |
-Physical Layer                Where it runs (locations, facilities, equipment)
+Technology Layer              How software is built and deployed, and where it runs (facilities, equipment, networks)
 ```
 
 The sidebar, the search facets, the metamodel diagram and these guides list the layers in this order, top to bottom;
@@ -146,16 +144,16 @@ The chain is part of `examples/archsight` (`strategy/`, `business/`, `services/`
 
 ## Choosing the Kind: Infrastructure
 
-Infrastructure is modeled in four tiers: **where** (Location, Facility), **physical** (Equipment), **network**
-(CommunicationNetwork) and **compute** (TechnologyNode, TechnologySystemSoftware, TechnologyService,
+Infrastructure is modeled in four tiers: **where** (Location, TechnologyFacility), **physical** (TechnologyEquipment), **network**
+(TechnologyCommunicationNetwork) and **compute** (TechnologyNode, TechnologySystemSoftware, TechnologyService,
 TechnologyArtifact). The same principle holds as above: the test decides the kind, not the name.
 
 | Kind | Question | Test | Name |
 |------|----------|------|------|
 | Location | In which region or country is it? | A place on a map, not a building; holds facilities | the place ("Location:Germany:Frankfurt") |
-| Facility | In which building or site does hardware stand? | Has an address and can be visited; can be nested (campus, hall) | the site ("Facility:Frankfurt:HallA") |
-| Equipment | Which physical thing can you touch? | Racks, fabrics, fibre routes, carrier circuits; no software of its own | the thing and its place ("Equipment:Link:Frankfurt-Madrid") |
-| CommunicationNetwork | What carries data between nodes? | Has a network role (`network/type`); exists beyond any single link | role and scope ("Network:Management:Frankfurt") |
+| TechnologyFacility | In which building or site does hardware stand? | Has an address and can be visited; can be nested (campus, hall) | the site ("Facility:Frankfurt:HallA") |
+| TechnologyEquipment | Which physical thing can you touch? | Racks, fabrics, fibre routes, carrier circuits; no software of its own | the thing and its place ("Equipment:Link:Frankfurt-Madrid") |
+| TechnologyCommunicationNetwork | What carries data between nodes? | Has a network role (`network/type`); exists beyond any single link | role and scope ("Network:Management:Frankfurt") |
 | TechnologyNode | On which machine does software run? | A server, VM or appliance with a lifecycle of its own | the host or host role ("Node:Frankfurt:Web01") |
 | TechnologySystemSoftware | What software hosts other software or data? | An operating system, database cluster, routing stack, platform | the product and role ("Tech:Routing:EVPN") |
 | TechnologyService | What does infrastructure offer to its consumers? | Consumed without knowing which nodes run it | the offering ("Network:Backbone", "Postgres") |
@@ -164,10 +162,10 @@ TechnologyArtifact). The same principle holds as above: the test decides the kin
 **Decision questions**, asked in order for any new infrastructure element:
 
 1. Is it a country, metro or region? Location.
-2. Is it a building, campus, hall or site that can be visited? Facility.
-3. Is it a physical thing (rack, switch fabric, fibre, circuit) without software of its own? Equipment.
+2. Is it a building, campus, hall or site that can be visited? TechnologyFacility.
+3. Is it a physical thing (rack, switch fabric, fibre, circuit) without software of its own? TechnologyEquipment.
 4. Does it carry data between nodes, with a role such as underlay, overlay, management, public or VPN?
-   CommunicationNetwork.
+   TechnologyCommunicationNetwork.
 5. Is it a machine (physical or virtual) that software runs on? TechnologyNode.
 6. Is it software that hosts other software, data or traffic? TechnologySystemSoftware.
 7. Is it something consumed by others without them knowing how it is run? TechnologyService.
@@ -177,9 +175,9 @@ TechnologyArtifact). The same principle holds as above: the test decides the kin
 
 1. One element per thing, many `locatedAt`: a service, network or cluster that runs in three data centers is one
    element with three relations, never a copy per site.
-2. A link between sites is one Equipment (`equipment/type: link`) `locatedAt` exactly its two facilities. A backbone
-   is Equipment `composedOf` its links.
-3. Physical before logical: a network is `realizedBy` the Equipment it runs over and the system software that
+2. A link between sites is one TechnologyEquipment (`equipment/type: link`) `locatedAt` exactly its two facilities. A backbone
+   is TechnologyEquipment `composedOf` its links.
+3. Physical before logical: a network is `realizedBy` the TechnologyEquipment it runs over and the system software that
    implements it; an overlay or VPN is `servedBy` the network it runs over.
 4. No element per tenant or customer network: the overlay is one network, its tenants are instances of it.
 5. A mesh is `network/topology: mesh` on one network, not an element per pair of sites. Single tunnels are
@@ -195,25 +193,25 @@ As above, these are **warnings** in the "Modeling warnings" section and never fa
 
 | Warning | Rule |
 |---------|------|
-| `Equipment 'Equipment:Link:A-B' is a link located at 1 facility, not 2` | 2 |
-| `CommunicationNetwork 'Network:Overlay:EVPN' is an overlay network served by no network` | 3 |
-| `Facility 'Facility:Madrid:DC' is located at no Location` | where |
-| `Equipment 'Equipment:Rack01' is located at no Facility` | where |
+| `TechnologyEquipment 'Equipment:Link:A-B' is a link located at 1 facility, not 2` | 2 |
+| `TechnologyCommunicationNetwork 'Network:Overlay:EVPN' is an overlay network served by no network` | 3 |
+| `TechnologyFacility 'Facility:Madrid:DC' is located at no Location` | where |
+| `TechnologyEquipment 'Equipment:Rack01' is located at no TechnologyFacility` | where |
 
-Nested facilities need no location of their own (the outermost facility has it), and Equipment that is part of other
-Equipment, or composed of placed parts, needs no facility of its own.
+Nested facilities need no location of their own (the outermost facility has it), and TechnologyEquipment that is part of other
+TechnologyEquipment, or composed of placed parts, needs no facility of its own.
 
 **Example chain**
 
 ```
 Location "Location:Germany:Frankfurt"
        ↑ locatedAt
-Facility "Facility:Frankfurt:Campus"  ──composedOf──>  Facility "Facility:Frankfurt:HallA"
+TechnologyFacility "Facility:Frankfurt:Campus"  ──composedOf──>  TechnologyFacility "Facility:Frankfurt:HallA"
        ↑ locatedAt (both ends)                              ↑ locatedAt
-Equipment "Equipment:Link:Frankfurt-Madrid" (link)       TechnologyNode "Node:Frankfurt:Web01"
+TechnologyEquipment "Equipment:Link:Frankfurt-Madrid" (link)       TechnologyNode "Node:Frankfurt:Web01"
        ↑ composedOf                                         │ servedBy
-Equipment "Equipment:Backbone"                              ↓
-       ↑ realizedBy                                     CommunicationNetwork "Network:Management:Frankfurt"
+TechnologyEquipment "Equipment:Backbone"                              ↓
+       ↑ realizedBy                                     TechnologyCommunicationNetwork "Network:Management:Frankfurt"
 TechnologyService "Network:Backbone"
 ```
 
@@ -225,11 +223,11 @@ through on the example page "Infrastructure Modeling".
 
 | Anti-pattern | Fix |
 |--------------|-----|
-| A data center modeled as a TechnologyNode | Facility; the servers in it are nodes `locatedAt` it |
-| Sites as annotations (`deployment/locations: dc-1,dc-2`) | Facility elements and `locatedAt` |
+| A data center modeled as a TechnologyNode | TechnologyFacility; the servers in it are nodes `locatedAt` it |
+| Sites as annotations (`deployment/locations: dc-1,dc-2`) | TechnologyFacility elements and `locatedAt` |
 | One copy of a service or cluster per site | One element `locatedAt` every site |
-| A Location used for a building | Facility `locatedAt` the Location |
-| A link or fibre route as a TechnologyService | Equipment `link`; the network service is `realizedBy` it |
+| A Location used for a building | TechnologyFacility `locatedAt` the Location |
+| A link or fibre route as a TechnologyService | TechnologyEquipment `link`; the network service is `realizedBy` it |
 | A network per tenant or customer | One overlay network; tenants stay out of the model |
 | An element per pair of sites in a mesh | One network with `network/topology: mesh` |
 | An overlay or VPN with nothing under it | `servedBy` the underlay or the network it tunnels through |
@@ -424,23 +422,23 @@ Model **infrastructure** and **code**.
 | TechnologySystemSoftware | For logical infrastructure (database cluster, message queue) |
 | TechnologyNode | For infrastructure instances; `specializes` / `composedOf` another node |
 | TechnologyInterface | For technical protocols and endpoints |
-| CommunicationNetwork | For logical networks: underlay, overlay, management, public, VPN (`network/type`) |
+| TechnologyCommunicationNetwork | For logical networks: underlay, overlay, management, public, VPN (`network/type`) |
 
 **Example chain:** Component "Payments:API" → realizedThrough → Artifact "Repo:payments-api" → maintainedBy → Actor "Platform Team"
 
 #### Logical Networks
 
-Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-infrastructure). A logical network is a `CommunicationNetwork` (ArchiMate Communication Network). Physical links and fabrics stay
-`Equipment`; the network is what runs over them.
+Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-infrastructure). A logical network is a `TechnologyCommunicationNetwork` (ArchiMate Communication Network). Physical links and fabrics stay
+`TechnologyEquipment`; the network is what runs over them.
 
 | From | Verb | To |
 |------|------|----|
-| `CommunicationNetwork` | `composedOf` | `CommunicationNetwork` (a metro network of its site networks) |
-| `CommunicationNetwork` | `specializes` | `CommunicationNetwork` (concept and implementation) |
-| `CommunicationNetwork` | `servedBy` | `CommunicationNetwork` (the network it runs over) |
-| `CommunicationNetwork` | `locatedAt` | `Facility`, `Location` (many) |
-| `CommunicationNetwork` | `realizedBy` | `Equipment` (the fabric), `TechnologySystemSoftware` (routing stack, VPN software) |
-| `TechnologyNode` | `servedBy` | `CommunicationNetwork` |
+| `TechnologyCommunicationNetwork` | `composedOf` | `TechnologyCommunicationNetwork` (a metro network of its site networks) |
+| `TechnologyCommunicationNetwork` | `specializes` | `TechnologyCommunicationNetwork` (concept and implementation) |
+| `TechnologyCommunicationNetwork` | `servedBy` | `TechnologyCommunicationNetwork` (the network it runs over) |
+| `TechnologyCommunicationNetwork` | `locatedAt` | `TechnologyFacility`, `Location` (many) |
+| `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyEquipment` (the fabric), `TechnologySystemSoftware` (routing stack, VPN software) |
+| `TechnologyNode` | `servedBy` | `TechnologyCommunicationNetwork` |
 
 - **Underlay and overlay:** the underlay *serves* the overlay, so the overlay is `servedBy` the underlay. A BGP-EVPN
   network that carries customer workloads is one `overlay` network served by the underlay and realized by the routing
@@ -456,41 +454,41 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 
 ```
 # all overlay networks
-CommunicationNetwork: network/type == "overlay"
+TechnologyCommunicationNetwork: network/type == "overlay"
 
-# networks that reach Facility X
-CommunicationNetwork: -> "Facility:Madrid:DC"
+# networks that reach TechnologyFacility X
+TechnologyCommunicationNetwork: -> "Facility:Madrid:DC"
 ```
 
 See `examples/archsight/technology/networks.yaml`.
 
-### Physical Layer: Where Technology Runs
+### Where Technology Runs
 
 Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-infrastructure).
 
-Model **where** technology runs with `Facility` (a building, data center or site, nested with `composedOf`),
-`Location` (a country, metro or region) and, when the physical grouping matters, `Equipment` (racks, fabrics,
+Model **where** technology runs with `TechnologyFacility` (a building, data center or site, nested with `composedOf`),
+`Location` (a country, metro or region) and, when the physical grouping matters, `TechnologyEquipment` (racks, fabrics,
 physical clusters). Do not model sites as annotations, as one service per site, or as `TechnologyNode`s: a data
 center is not a computational resource.
 
 | Resource | When to Use |
 |----------|-------------|
 | Location | For a country, metro or region |
-| Facility | For a data center, colocation, office or edge site (`facility/type`), also a campus or hall inside one |
-| Equipment | Optional: racks, network fabrics, physical clusters inside a facility (`equipment/type`) |
+| TechnologyFacility | For a data center, colocation, office or edge site (`facility/type`), also a campus or hall inside one |
+| TechnologyEquipment | Optional: racks, network fabrics, physical clusters inside a facility (`equipment/type`) |
 
 Relations are written on the element that is placed (see [Direction of Relations](#direction-of-relations)):
 
 | From | Verb | To |
 |------|------|----|
-| `TechnologyNode`, `TechnologyService`, `TechnologySystemSoftware`, `Equipment` | `locatedAt` | `Facility` (many) |
-| `Facility` | `locatedAt` | `Location` |
-| `Facility` | `composedOf` | `Facility` (nested sites) |
-| `Facility` | `servedBy` | `BusinessActor` (the operator) |
+| `TechnologyNode`, `TechnologyService`, `TechnologySystemSoftware`, `TechnologyEquipment` | `locatedAt` | `TechnologyFacility` (many) |
+| `TechnologyFacility` | `locatedAt` | `Location` |
+| `TechnologyFacility` | `composedOf` | `TechnologyFacility` (nested sites) |
+| `TechnologyFacility` | `servedBy` | `BusinessActor` (the operator) |
 
 `locatedAt` with many targets is the point: a service that runs in three data centers is **one** service with three
-`locatedAt` relations. A `locatedAt` target that is not a Facility (or, from a facility, a Location) is rejected by
-`archsight lint`. Facility and Location pages list what is located there (incoming `locatedAt`), grouped by kind.
+`locatedAt` relations. A `locatedAt` target that is not a TechnologyFacility (or, from a facility, a Location) is rejected by
+`archsight lint`. TechnologyFacility and Location pages list what is located there (incoming `locatedAt`), grouped by kind.
 
 A service may run on different platforms in different facilities (a managed platform in site A, a self-hosted one in
 site B). There is no qualifier on the relation: locate the nodes or system software of each platform at its
@@ -499,36 +497,36 @@ facilities too, and the pair (platform, facility) is derivable.
 Queries:
 
 ```
-# all technology services in Facility X
+# all technology services in TechnologyFacility X
 TechnologyService: -> "DC:Alpha"
 
 # facilities that host service Y
-Facility: <- "Orders:Cluster"
+TechnologyFacility: <- "Orders:Cluster"
 ```
 
 #### Backbone and links between facilities
 
-The physical network between sites is `Equipment`. A **link** (fibre route, carrier circuit) is one Equipment with
-`equipment/type: link` that is `locatedAt` **both** end facilities. A **backbone** is an Equipment that is `composedOf`
-its links (composition only points at Equipment and must not form a cycle). The logical network is a
-`TechnologyService` (and routers are `TechnologyNode`s) that is `realizedBy` the Equipment it runs over, and is
+The physical network between sites is `TechnologyEquipment`. A **link** (fibre route, carrier circuit) is one TechnologyEquipment with
+`equipment/type: link` that is `locatedAt` **both** end facilities. A **backbone** is a TechnologyEquipment that is `composedOf`
+its links (composition only points at TechnologyEquipment and must not form a cycle). The logical network is a
+`TechnologyService` (and routers are `TechnologyNode`s) that is `realizedBy` the TechnologyEquipment it runs over, and is
 `locatedAt` the facilities it reaches:
 
 ```
-TechnologyService "Network:Backbone"  --realizedBy-->  Equipment "Equipment:Backbone"
-                                                            --composedOf-->  Equipment "Equipment:Link:Frankfurt-Madrid" (link)
-                                                                                 --locatedAt-->  Facility Frankfurt, Facility Madrid
+TechnologyService "Network:Backbone"  --realizedBy-->  TechnologyEquipment "Equipment:Backbone"
+                                                            --composedOf-->  TechnologyEquipment "Equipment:Link:Frankfurt-Madrid" (link)
+                                                                                 --locatedAt-->  TechnologyFacility Frankfurt, TechnologyFacility Madrid
 ```
 
 ```
 # all links between facilities
-Equipment: equipment/type == "link"
+TechnologyEquipment: equipment/type == "link"
 
-# links that end in Facility X
-Equipment: equipment/type == "link" & -> "Facility:Madrid:DC"
+# links that end in TechnologyFacility X
+TechnologyEquipment: equipment/type == "link" & -> "Facility:Madrid:DC"
 ```
 
-The Equipment page lists what is realized by it (incoming `realizedBy`) and the backbones it belongs to (incoming
+The TechnologyEquipment page lists what is realized by it (incoming `realizedBy`) and the backbones it belongs to (incoming
 `composedOf`). A link has no endpoints of its own: it is placed at its facilities, so keep to two `locatedAt` targets
 per link. See `examples/archsight/technology/facilities.yaml`.
 
