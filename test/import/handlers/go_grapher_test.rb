@@ -315,6 +315,94 @@ class GoGrapherTest < Minitest::Test
     end
   end
 
+  # ── Two repositories with the same module path (issue #150) ──────────────
+
+  SHOP = "alice:shop"
+  GENERATED = { "generated/script" => "Import:GoGrapher:other" }.freeze
+
+  # A repository checked out from acme/<name>, declaring the module github.com/alice/shop
+  def shop_repo(repo, name)
+    write(repo, ".git/config", "[remote \"origin\"]\n\turl = git@github.com:acme/#{name}.git\n")
+    write(repo, "go.mod", "module github.com/alice/shop\n\ngo 1.21\n")
+    write(repo, "main.go", "package main\n")
+  end
+
+  # The database after both repositories were imported once: one merged component realized by both
+  def merged_shop(artifacts = {})
+    MockDatabase.new({ SHOP => GENERATED },
+                     { specs: { SHOP => { "realizedThrough" => { "technologyArtifacts" => %w[Repo:acme:shop Repo:acme:shop-prototype] } } },
+                       artifacts: artifacts })
+  end
+
+  def component_names_for(repo, database)
+    create_handler(path: repo, database: database).execute
+    YAML.load_stream(File.read(output_path)).select { |r| r["kind"] == "ApplicationComponent" }.map { |r| r.dig("metadata", "name") }
+  end
+
+  def test_an_archived_repository_with_the_same_module_path_gets_a_suffixed_name
+    archived = { "Repo:acme:shop-prototype" => { "activity/status" => "archived" }, "Repo:acme:shop" => { "activity/status" => "active" } }
+    with_repo do |repo|
+      shop_repo(repo, "shop-prototype")
+
+      assert_equal ["alice:shop@acme:shop-prototype"], component_names_for(repo, merged_shop(archived))
+    end
+    with_repo do |repo|
+      shop_repo(repo, "shop")
+
+      assert_equal [SHOP], component_names_for(repo, merged_shop(archived))
+    end
+  end
+
+  def test_the_non_archived_repository_keeps_the_name_even_when_it_sorts_last
+    archived = { "Repo:acme:shop" => { "activity/status" => "archived" } }
+    with_repo do |repo|
+      shop_repo(repo, "shop-prototype")
+
+      assert_equal [SHOP], component_names_for(repo, merged_shop(archived))
+    end
+  end
+
+  def test_without_an_archived_repository_the_first_by_name_keeps_the_name
+    with_repo do |repo|
+      shop_repo(repo, "shop")
+
+      assert_equal [SHOP], component_names_for(repo, merged_shop)
+    end
+    with_repo do |repo|
+      shop_repo(repo, "shop-prototype")
+
+      assert_equal ["alice:shop@acme:shop-prototype"], component_names_for(repo, merged_shop)
+    end
+  end
+
+  def test_a_component_only_this_repository_realizes_keeps_its_name
+    with_repo do |repo|
+      shop_repo(repo, "shop-prototype")
+      own = MockDatabase.new({ SHOP => GENERATED }, { specs: { SHOP => { "realizedThrough" => { "technologyArtifacts" => %w[Repo:acme:shop-prototype] } } } })
+
+      assert_equal [SHOP], component_names_for(repo, own)
+    end
+  end
+
+  def test_a_curated_component_listing_several_repositories_is_not_split
+    with_repo do |repo|
+      shop_repo(repo, "shop-prototype")
+      curated = MockDatabase.new({ SHOP => { "component/type" => "module" } },
+                                 { specs: { SHOP => { "realizedThrough" => { "technologyArtifacts" => %w[Repo:acme:shop Repo:acme:shop-prototype] } } } })
+
+      assert_equal [SHOP], component_names_for(repo, curated)
+    end
+  end
+
+  def test_the_dependency_resolver_import_knows_the_artifact
+    with_repo do |repo|
+      shop_repo(repo, "shop")
+      resolver = run_full_handler(repo).find { |r| r["kind"] == "Import" }
+
+      assert_equal "Repo:acme:shop", resolver.dig("metadata", "annotations", "import/config/artifact")
+    end
+  end
+
   # ── Error cases ───────────────────────────────────────────────────────────
 
   def test_missing_path_raises_error
@@ -378,14 +466,18 @@ class GoGrapherTest < Minitest::Test
 
   # Minimal database stub: ApplicationComponents keyed by name, with the given annotations
   class MockDatabase
-    Component = Struct.new(:annotations)
+    Component = Struct.new(:annotations, :raw)
 
-    def initialize(annotations_by_name)
-      @instances = annotations_by_name.transform_values { |annotations| Component.new(annotations) }
+    # annotations_by_name: ApplicationComponents; specs: their spec; artifacts: TechnologyArtifact annotations
+    # (positional so that a component named like "example:svc" is not taken for a keyword)
+    def initialize(annotations_by_name, extra = {})
+      specs = extra.fetch(:specs, {})
+      @instances = annotations_by_name.to_h { |name, annotations| [name, Component.new(annotations, { "spec" => specs.fetch(name, {}) })] }
+      @artifacts = extra.fetch(:artifacts, {}).transform_values { |annotations| Component.new(annotations, {}) }
     end
 
     def instances_by_kind(kind)
-      kind == "ApplicationComponent" ? @instances : {}
+      { "ApplicationComponent" => @instances, "TechnologyArtifact" => @artifacts }.fetch(kind, {})
     end
   end
 

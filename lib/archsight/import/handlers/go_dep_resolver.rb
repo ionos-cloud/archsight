@@ -20,6 +20,8 @@ require_relative "../registry"
 #
 # Configuration:
 #   import/config/path - Path to the Go repository root (same as GoGrapher)
+#   import/config/artifact - Repository artifact the modules belong to; names the component when two repositories
+#                            declare the same module path (see GoModuleParser#owned_component_name)
 class Archsight::Import::Handlers::GoDepResolver < Archsight::Import::Handler
   include Archsight::Import::Handlers::GoModuleParser
 
@@ -45,7 +47,7 @@ class Archsight::Import::Handlers::GoDepResolver < Archsight::Import::Handler
       dep_names = compute_deps(mod_dir, mod_name, existing_components)
       next if dep_names.empty?
 
-      comp_name = component_name(mod_name)
+      comp_name = owned_component_name(mod_name, config("artifact"))
       existing = existing_components[comp_name]
       next unless existing
 

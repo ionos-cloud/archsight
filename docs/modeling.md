@@ -113,6 +113,7 @@ such as an internal service or a capability that no product carries yet.
 | `BusinessProduct 'Online Checkout' is served by no ApplicationService` | 1 |
 | `ApplicationService 'Ledger' is not served to any product or process` | 1 |
 | `StrategyCapability 'Payment Processing' is realized by no product` | 1 |
+| `ApplicationComponent 'alice:shop' is generated from 2 repositories with the same module path: ...` | import, see [Classifying components](#classifying-components) |
 
 A service counts as served when a product or a process is `servedBy` it, directly or through other services that
 `dependsOn` it. Each finding starts with the file and line of the resource, like the errors.
@@ -388,7 +389,13 @@ Components are not all alike: some are run, some are only imported, some bundle 
 `architecture/tags` from the manifests; the tags a person set stay, and a re-import only replaces the machine tags of
 those namespaces. The entry points (main packages such as `cmd/api`) are written to `component/entrypoints`, a list
 you query like a tag (`component/entrypoints == "cmd/api"`) that is not a sidebar filter, because there are too many
-distinct values. `component/role` is set by hand and never overwritten. The computed `component/dependents` counts the components that depend on a
+distinct values. `component/role` is set by hand and never overwritten. A generated component is named after its module path (`github.com/alice/shop` → `alice:shop`). When
+two repositories declare the same module path (a prototype and its successor, a fork), each gets its own component:
+the repository that is not archived (then the first by name) keeps the plain name, the other gets its repository
+appended (`alice:shop@acme:shop-prototype`), and a dependency on the module path points at the plain name. The
+importer only sees the other repository once both were imported, so the names separate on the import after that;
+until then `archsight lint` warns about the merged component. A hand-written component that lists several
+repositories is left as it is. The computed `component/dependents` counts the components that depend on a
 component, which shows how widely a library or module is shared.
 
 | Ecosystem | Executable | Library | Module (bundles both) |

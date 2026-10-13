@@ -168,6 +168,37 @@ class GoDepResolverTest < Minitest::Test
 
   # ── Error cases ───────────────────────────────────────────────────────────
 
+  # Two repositories with the same module path (issue #150): the resolver writes the dependencies to the component
+  # of its own repository, and a dependency on the module path points at the owner of the plain name
+
+  def colliding_database
+    merged = { "realizedThrough" => { "technologyArtifacts" => %w[Repo:acme:shop Repo:acme:shop-prototype] } }
+    mock_database({ "alice:shop" => merged, "alice:shop@acme:shop-prototype" => {}, "alice:lib" => {},
+                    "alice:app" => {} },
+                  { "alice:shop" => { "generated/script" => "Import:GoGrapher:acme:shop" } })
+  end
+
+  def test_the_suffixed_repository_gets_its_dependencies_on_its_own_component
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/alice/shop\n\ngo 1.21\n\nrequire github.com/alice/lib v1.0.0\n")
+      create_handler(path: repo, database: colliding_database, artifact: "Repo:acme:shop-prototype").execute
+      components = YAML.load_stream(File.read(output_path)).select { |r| r["kind"] == "ApplicationComponent" }
+
+      assert_equal(["alice:shop@acme:shop-prototype"], components.map { |c| c.dig("metadata", "name") })
+      assert_equal ["alice:lib"], components.first.dig("spec", "dependsOn", "applicationComponents")
+    end
+  end
+
+  def test_a_dependency_on_a_shared_module_path_points_at_the_owner
+    with_repo do |repo|
+      write(repo, "go.mod", "module github.com/alice/app\n\ngo 1.21\n\nrequire github.com/alice/shop v1.0.0\n")
+      create_handler(path: repo, database: colliding_database, artifact: "Repo:acme:app").execute
+      component = YAML.load_stream(File.read(output_path)).find { |r| r["kind"] == "ApplicationComponent" }
+
+      assert_equal ["alice:shop"], component.dig("spec", "dependsOn", "applicationComponents")
+    end
+  end
+
   def test_missing_path_raises_error
     handler = create_handler(path: nil)
     assert_raises(RuntimeError) { handler.execute }
@@ -197,9 +228,10 @@ class GoDepResolverTest < Minitest::Test
     File.join(@resources_dir, "generated", "relationships.yaml")
   end
 
-  def create_handler(path:, database: nil)
+  def create_handler(path:, database: nil, artifact: nil)
     annotations = { "import/handler" => "go-dep-resolver" }
     annotations["import/config/path"] = path if path
+    annotations["import/config/artifact"] = artifact if artifact
 
     import_raw = {
       "apiVersion" => "architecture/v1alpha1",

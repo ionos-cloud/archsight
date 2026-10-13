@@ -22,6 +22,7 @@ module Archsight
           product_without_service,
           service_reached_from_nothing,
           capability_without_product,
+          generated_component_in_several_repositories,
           link_not_between_two_facilities,
           overlay_without_underlay,
           facility_without_location,
@@ -116,6 +117,20 @@ module Archsight
           next if realized.key?(capability)
 
           warning(capability, "is realized by no product")
+        end
+      end
+
+      # A generated component realized by several repositories is two components merged into one: the repositories
+      # declare the same module path. A re-import gives each its own name (GoModuleParser#owned_component_name).
+      def generated_component_in_several_repositories
+        instances("ApplicationComponent").filter_map do |component|
+          next unless component.annotations.key?("generated/script")
+
+          repositories = targets(component, :realizedThrough, :technologyArtifacts).select { |a| a.name.start_with?("Repo:") }
+          next if repositories.length < 2
+
+          warning(component, "is generated from #{repositories.length} repositories with the same module path: " \
+                             "#{names(repositories.sort_by(&:name))}")
         end
       end
 

@@ -62,7 +62,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     output = +""
 
     modules.each do |rel_dir, mod_name|
-      comp_name = component_name(mod_name)
+      comp_name = owned_component_name(mod_name, artifact_name)
       next unless comp_name
 
       mod_dir = rel_dir == "." ? path : File.join(path, rel_dir)
@@ -96,7 +96,7 @@ class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grap
     output << YAML.dump(import_yaml(
                           name: resolver_name,
                           handler: "go-dep-resolver",
-                          config: { "path" => path }
+                          config: { "path" => path, "artifact" => artifact_name }
                         ))
 
     output

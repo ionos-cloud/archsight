@@ -141,4 +141,38 @@ module Archsight::Import::Handlers::GoModuleParser
     parts.shift
     parts.join(":") unless parts.empty?
   end
+
+  # The name of the component that the module of one repository gets. Two repositories may declare the same module
+  # path (a prototype and its successor, a fork); without care both would emit the same component and the loader
+  # would merge them into one. The repository that owns the plain name is the one that is not archived, then the
+  # first by name; the others get the repository appended (`alice:shop@acme:shop-prototype`).
+  #
+  # The other repositories are found through the existing component of the plain name, so a collision is resolved on
+  # the import after both repositories were imported once. A component without `generated/script` is curated: a
+  # person deliberately lists several repositories, and it keeps the plain name.
+  # @return [String, nil]
+  def owned_component_name(mod_name, artifact_name)
+    base = component_name(mod_name)
+    return base unless base && artifact_name
+
+    others = colliding_artifacts(base, artifact_name)
+    return base if others.empty?
+
+    owner = ([artifact_name] + others).min_by { |name| [archived_artifact?(name) ? 1 : 0, name] }
+    owner == artifact_name ? base : "#{base}@#{artifact_name.delete_prefix("Repo:")}"
+  end
+
+  # Repository artifacts other than `artifact_name` that a generated component of this name is realized through
+  def colliding_artifacts(base, artifact_name)
+    existing = database&.instances_by_kind("ApplicationComponent")&.[](base)
+    return [] unless existing&.annotations&.key?("generated/script")
+
+    artifacts = Array(existing.raw.dig("spec", "realizedThrough", "technologyArtifacts"))
+    artifacts.select { |name| name.start_with?("Repo:") && name != artifact_name }.uniq
+  end
+
+  def archived_artifact?(name)
+    artifact = database&.instances_by_kind("TechnologyArtifact")&.[](name)
+    artifact&.annotations&.[]("activity/status") == "archived"
+  end
 end
