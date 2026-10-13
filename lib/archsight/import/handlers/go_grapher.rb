@@ -23,6 +23,9 @@ require_relative "../registry"
 #   import/config/nodesep              - Vertical gap between nodes in a column (default: 0.15)
 #   import/config/interface_visibility - Visibility prefix for detected interfaces (default: Private)
 class Archsight::Import::Handlers::GoGrapher < Archsight::Import::Handlers::Grapher
+  # generates child imports (see Handler.generates_imports?)
+  def self.generates_imports? = true
+
   include Archsight::Import::Handlers::GoModuleParser
 
   # Directories not scanned for Go packages

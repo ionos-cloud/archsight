@@ -3,6 +3,7 @@
 require "digest"
 require "fileutils"
 require "json"
+require "pathname"
 require "yaml"
 require "archsight/import"
 require_relative "progress"
@@ -12,7 +13,14 @@ require_relative "progress"
 # Subclasses must implement the #execute method to perform the actual import.
 # Use the helper methods to read configuration, validate environment, and write output.
 class Archsight::Import::Handler
-  attr_reader :import_resource, :database, :resources_dir, :progress, :shared_writer
+  attr_reader :import_resource, :database, :resources_dir, :progress, :shared_writer, :owned_outputs
+
+  # Whether the handler generates child imports (`import_yaml`). An import that depends on a pattern
+  # (`import/dependsOn: Import:Repo:*`) waits for such a handler on its first run, before it has a `generates` record
+  # that tells which imports it creates. Override in handlers that generate imports.
+  def self.generates_imports?
+    false
+  end
 
   # @param import_resource [Archsight::Resources::Import] The import resource to execute
   # @param database [Archsight::Database] The database instance
@@ -26,6 +34,15 @@ class Archsight::Import::Handler
     @progress = progress || Archsight::Import::Progress.new
     @shared_writer = shared_writer
     @tracked_resources = []
+    @owned_outputs = []
+  end
+
+  # The directory the git-based handlers clone repositories into (`import/config/cacheRoot`, else `import.cache_root`
+  # of the user configuration or ARCHSIGHT_IMPORT_CACHE_ROOT, else ~/.cache/archsight/git), so an importer of the
+  # resources repository finds the same clones
+  # @return [String] absolute path
+  def cache_root
+    File.expand_path(Archsight::Import.cache_root(config("cacheRoot")))
   end
 
   # Execute the import. Must be implemented by subclasses.
@@ -74,21 +91,53 @@ class Archsight::Import::Handler
   end
 
   # Generate a marker Import for this handler with generated/at timestamp and config hash
-  # Used for caching - call at end of execute() to persist the execution timestamp
+  # Used for caching - call at end of execute() to persist the execution timestamp. It also records the hash of the
+  # files in `import/config/inputs` and the files written with #write_file, so call it after writing them.
   # @return [Hash] Import resource hash ready for YAML serialization
   def self_marker
+    annotations = {
+      "generated/at" => Time.now.utc.iso8601,
+      "generated/configHash" => compute_config_hash
+    }
+    inputs_hash = Archsight::Import.inputs_hash(import_resource, resources_dir)
+    annotations["generated/inputsHash"] = inputs_hash if inputs_hash
+    annotations["generated/outputs"] = owned_outputs.uniq.sort.join(",") if owned_outputs.any?
     {
       "apiVersion" => "architecture/v1alpha1",
       "kind" => "Import",
       "metadata" => {
         "name" => import_resource.name,
-        "annotations" => {
-          "generated/at" => Time.now.utc.iso8601,
-          "generated/configHash" => compute_config_hash
-        }
+        "annotations" => annotations
       },
       "spec" => {}
     }
+  end
+
+  # Write a whole file that belongs to this import alone, such as a page (Markdown) next to the generated YAML.
+  # The file is recorded in the self marker (`generated/outputs`): the cache is invalid while it is missing, and a
+  # file of an earlier run that is not written again is deleted.
+  # @param rel_path [String] path relative to the resources directory
+  # @param content [String]
+  # @return [String] the absolute path
+  # @raise [ArgumentError] for a path outside the resources directory
+  def write_file(rel_path, content)
+    full_path = Archsight::Import.resources_path(resources_dir, rel_path)
+    raise ArgumentError, "#{rel_path} is outside the resources directory" unless full_path
+
+    FileUtils.mkdir_p(File.dirname(full_path))
+    File.write(full_path, content)
+    record_output(rel_path)
+    full_path
+  end
+
+  # Record a file this import wrote by other means (a command, a library) as its own output (see #write_file)
+  # @param rel_path [String] path relative to the resources directory
+  # @raise [ArgumentError] for a path outside the resources directory
+  def record_output(rel_path)
+    full_path = Archsight::Import.resources_path(resources_dir, rel_path)
+    raise ArgumentError, "#{rel_path} is outside the resources directory" unless full_path
+
+    @owned_outputs << Pathname.new(full_path).relative_path_from(File.expand_path(resources_dir)).to_s
   end
 
   # Write YAML content to the output path

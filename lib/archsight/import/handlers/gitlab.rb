@@ -38,6 +38,9 @@ require_relative "cache_pruner"
 # API (e.g. a project that was renamed, moved, or deleted), so stale clones
 # don't linger and get picked up by later importers.
 class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
+  # generates child imports (see Handler.generates_imports?)
+  def self.generates_imports? = true
+
   include Archsight::Import::Handlers::CachePruner
 
   def execute
@@ -51,7 +54,7 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
     @child_cache_time = config("childCacheTime")
     @default_visibility = config("defaultVisibility", default: "internal")
 
-    cache_root = config("cacheRoot", default: File.join(Dir.home, ".cache", "archsight", "git"))
+    cache_root = Archsight::Import.cache_root(config("cacheRoot"))
     @target_dir = File.join(cache_root, "gitlab")
     @explore_groups = config("exploreGroups") == "true"
     @per_page = config("perPage", default: "100").to_i

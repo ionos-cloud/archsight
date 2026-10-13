@@ -25,15 +25,23 @@ class Archsight::Web::Application < Sinatra::Base
     attr_accessor :db
 
     def database
-      @database ||= Archsight::Database.new(Archsight.resources_dir).tap(&:reload!)
+      @database ||= Archsight::Database.new(Archsight.resources_dir).tap(&:reload!).tap { |db| load_import_handlers(db) }
     end
 
     def reload!
       start = Time.new
       puts "== Reloading ..." if database.verbose
       database.reload!
+      load_import_handlers(database)
       dur = (Time.new - start) * 1000
       puts format("== done %0.2f ms", dur) if database.verbose
+    end
+
+    # The import handlers, built-in and of the resources repository (import/handlerPath), so the editor knows the
+    # same handler names as `archsight lint`. A file that does not load is reported, the server keeps running.
+    def load_import_handlers(db)
+      require "archsight/import"
+      Archsight::Import::HandlerLoader.load(db).each { |problem| warn "Import handler: #{problem}" }
     end
 
     # Configure application for the given environment

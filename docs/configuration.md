@@ -37,6 +37,7 @@ that is set but empty counts as not set.
 | `jira.server` | `ARCHSIGHT_JIRA_SERVER` | Name of the Jira server as Confluence knows it (the `server` parameter of its Jira macro). Needed by the Confluence export when Confluence has more than one Jira server: without it the exported `{jira:KEY}` macros have no server and Confluence shows an error |
 | `jira.server_id` | `ARCHSIGHT_JIRA_SERVER_ID` | Id of that server (the `serverId` parameter). Copy both from the storage format of a Jira macro that already works in Confluence (page "Edit in storage format") |
 | `jira.token` | `ARCHSIGHT_JIRA_TOKEN` | Reserved, nothing uses it yet |
+| `import.cache_root` | `ARCHSIGHT_IMPORT_CACHE_ROOT` | Where the GitHub, GitLab and repository imports clone repositories, and what importers of the resources repository get as `cache_root` / `ARCHSIGHT_CACHE_DIR`. Default `~/.cache/archsight/git`; an import's own `import/config/cacheRoot` wins, see [Importers of the Resources Repository](/doc/import#importers-of-the-resources-repository) |
 
 ## Command line
 

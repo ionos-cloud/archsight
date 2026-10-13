@@ -35,25 +35,51 @@ class Archsight::Resources::Import < Archsight::Resources::Base
   icon "download"
   layer "other"
 
-  # Handler selection
+  # Handler selection: a built-in handler or one the resources repository registers (import/handlerPath)
   annotation "import/handler",
-             description: "Handler class name to execute this import",
+             description: "Name of the handler that executes this import: a built-in one or one registered by the file " \
+                          "in import/handlerPath",
              title: "Handler",
              summary: true,
-             enum: %w[
-               gitlab github repository
-               rest-api rest-api-index
-               jira-discover jira-metrics
-               go-grapher go-dep-resolver
-               cpp-grapher ruby-grapher python-grapher
-               java-grapher javascript-grapher
-               rust-grapher crystal-grapher elixir-grapher
-             ]
+             filter: :word,
+             validator: lambda { |value|
+               require "archsight/import/handler_loader"
+               Archsight::Import::HandlerLoader.load_builtin!
+               next if Archsight::Import::Registry[value]
+
+               "unknown import handler '#{value}'. Registered: #{Archsight::Import::Registry.handlers.sort.join(", ")}; " \
+                 "a handler of the resources repository needs import/handlerPath"
+             }
+
+  annotation "import/handlerPath",
+             description: "Ruby file of a handler that lives in the resources repository, relative to the resources " \
+                          "root (e.g., 'importers/deployments.rb'). It registers the name used in import/handler.",
+             title: "Handler Path"
+
+  annotation "import/dependsOn",
+             description: "Imports that must run first, by name or glob pattern (e.g., 'Import:Repo:*'), comma " \
+                          "separated. Adds to the dependency on the import that generated this one.",
+             title: "Depends On",
+             filter: :list,
+             sidebar: false
 
   # Output configuration
   annotation "import/outputPath",
              description: "Output file path relative to resources root (e.g., 'imports/generated/gitlab.yaml')",
              title: "Output Path"
+
+  annotation "generated/inputsHash",
+             description: "Hash of the files matched by import/config/inputs at the last run (for change detection)",
+             title: "Inputs Hash",
+             sidebar: false,
+             editor: false
+
+  annotation "generated/outputs",
+             description: "Files the last run wrote, relative to the resources root",
+             title: "Outputs",
+             filter: :list,
+             sidebar: false,
+             editor: false
 
   # Control flags
   annotation "import/enabled",

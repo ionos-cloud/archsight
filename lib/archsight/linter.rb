@@ -26,6 +26,7 @@ module Archsight
     end
 
     def validate
+      validate_imports
       @database.instances.each_value do |instances_hash|
         instances_hash.each_value do |instance|
           validate_instance_annotations(instance)
@@ -63,6 +64,26 @@ module Archsight
             annotation = instance.class.annotation_matching(key)
             "#{instance.path_ref}: #{instance.klass} '#{instance.name}' uses deprecated annotation '#{key}': #{annotation.deprecated}" if annotation&.deprecated?
           end
+        end
+      end
+    end
+
+    # Imports: the handlers of the resources repository load (before the `import/handler` names are checked against
+    # the registry), and every `import/dependsOn` entry names an import or is a pattern
+    def validate_imports
+      return unless @database.respond_to?(:instances_by_kind)
+
+      imports = @database.instances_by_kind("Import")&.values || []
+      return if imports.empty?
+
+      require "archsight/import/handler_loader"
+      Archsight::Import::HandlerLoader.load(@database).each { |problem| @errors << problem.to_s }
+      names = imports.to_set(&:name)
+      imports.each do |import|
+        Archsight::Import.declared_dependencies(import).each do |entry|
+          next if Archsight::Import.pattern?(entry) || names.include?(entry)
+
+          @errors << "#{import.path_ref}: Import '#{import.name}' depends on unknown import '#{entry}'"
         end
       end
     end

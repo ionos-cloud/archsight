@@ -22,6 +22,9 @@ require_relative "../team_matcher"
 #   import/config/corporateAffixes - Optional comma-separated corporate username affixes for team matching (e.g., "ionos,1and1")
 #   import/config/grapherOutputPath - Optional output path for language-grapher child imports
 class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
+  # generates child imports (see Handler.generates_imports?)
+  def self.generates_imports? = true
+
   def execute
     @path = config_path("path")
     @git_url = config("gitUrl")
