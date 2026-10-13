@@ -2,6 +2,7 @@
 
 require "kramdown"
 require_relative "helpers"
+require_relative "linter/structure"
 
 module Archsight
   class Linter
@@ -38,6 +39,11 @@ module Archsight
     # They are not errors, so they do not make `archsight lint` fail.
     def warnings
       @database.respond_to?(:deprecations) ? @database.deprecations.map(&:to_s) : []
+    end
+
+    # Structural modeling checks (rules of "Choosing the Kind", see Linter::Structure). Warnings, never errors.
+    def structural_warnings
+      Structure.new(@database).warnings
     end
 
     private

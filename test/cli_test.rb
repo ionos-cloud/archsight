@@ -97,6 +97,22 @@ class CLITest < Minitest::Test
     Archsight.resources_dir = original_dir
   end
 
+  def test_lint_command_prints_modeling_warnings_without_failing
+    original_dir = Archsight.resources_dir
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "test.yaml"), "---\napiVersion: architecture/v1alpha1\nkind: StrategyCapability\nmetadata:\n  name: Payment Processing\nspec: {}\n")
+      @cli.options = { resources: dir }
+
+      output = capture_stdout { @cli.lint }
+
+      assert_includes output, "Modeling warnings (1):"
+      assert_includes output, "StrategyCapability 'Payment Processing' is realized by no product"
+      assert_includes output, "passed"
+    end
+  ensure
+    Archsight.resources_dir = original_dir
+  end
+
   def test_template_with_invalid_kind
     # Template.generate raises RuntimeError for invalid kinds
     assert_raises(RuntimeError) do

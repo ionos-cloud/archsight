@@ -31,8 +31,8 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
     **Test:** It can be described without naming repositories, deployments or runtime objects, and has one owning actor.
     **Name:** The function, not the technology or a deployment object ("Payment Authorization").
 
-    A component belongs to exactly one service. A service that is called by or shared with others is a service of its
-    own that is modeled once; products reference it. A service whose only component has the same name is a smell. See
+    A component belongs to exactly one service. One service using another is `dependsOn` between the two services, not
+    the other service's components listed again; a service that many others use is modeled once. A service whose only component has the same name is a smell. See
     the modeling guide, "Choosing the Kind".
 
     ## Security and risk modelling
@@ -227,6 +227,7 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
   end
 
   relation :realizedThrough, :applicationComponents, :ApplicationComponent
+  relation :dependsOn, :applicationServices, :ApplicationService
   relation :servedBy, :businessActors, :BusinessActor
   relation :servedBy, :technologyServices, :TechnologyService
   relation :realizes, :motivationConstraints, :MotivationConstraint

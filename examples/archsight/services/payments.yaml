@@ -8,9 +8,33 @@ metadata:
       by the API or deployment that implements it.
     architecture/tags: example,payments
 spec:
+  dependsOn:
+    applicationServices:
+      - Refunds
   realizedThrough:
     applicationComponents:
       - Payments:API
+  servedBy:
+    businessActors:
+      - Archsight:Maintainers
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationService
+metadata:
+  name: Refunds
+  annotations:
+    architecture/description: |
+      Returns money for an authorized payment. It uses Payment Authorization
+      by `dependsOn` on the service, not by listing its component; the two
+      services also depend on each other, which the cycle check allows.
+    architecture/tags: example,payments
+spec:
+  dependsOn:
+    applicationServices:
+      - Payment Authorization
+  realizedThrough:
+    applicationComponents:
+      - Refunds:Worker
   servedBy:
     businessActors:
       - Archsight:Maintainers

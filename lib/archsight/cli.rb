@@ -133,6 +133,12 @@ module Archsight
         warnings.each { |warning| puts "  #{warning}" }
       end
 
+      structure = linter.structural_warnings
+      if structure.any?
+        puts "Modeling warnings (#{structure.count}):"
+        structure.each { |warning| puts "  #{warning}" }
+      end
+
       if errors.any?
         puts "Validation Errors (#{errors.count}):"
         errors.each { |error| display_error_with_context(error) }
