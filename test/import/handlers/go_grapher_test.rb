@@ -108,8 +108,8 @@ class GoGrapherTest < Minitest::Test
     non_runtime = %w[test/e2e build/tools internal/systemtest tools/bench tests/fullstack]
     runtime = %w[. cmd/api pkg/client pkg/latest internal/store]
 
-    assert_equal non_runtime, non_runtime.select { |dir| parser.non_runtime_module?(dir) }
-    assert_empty runtime.select { |dir| parser.non_runtime_module?(dir) }
+    assert_equal(non_runtime, non_runtime.select { |dir| parser.non_runtime_module?(dir) })
+    assert_empty(runtime.select { |dir| parser.non_runtime_module?(dir) })
   end
 
   def test_go_work_with_multiple_modules_emits_multiple_components
