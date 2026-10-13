@@ -97,6 +97,9 @@ spec:
   locatedAt:
     facilities:
       - Facility:Frankfurt:HallA
+  servedBy:
+    communicationNetworks:
+      - Network:Management:Frankfurt
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologySystemSoftware

@@ -327,8 +327,45 @@ Model **infrastructure** and **code**.
 | TechnologySystemSoftware | For logical infrastructure (database cluster, message queue) |
 | TechnologyNode | For infrastructure instances; `specializes` / `composedOf` another node |
 | TechnologyInterface | For technical protocols and endpoints |
+| CommunicationNetwork | For logical networks: underlay, overlay, management, public, VPN (`network/type`) |
 
 **Example chain:** Component "Payments:API" → realizedThrough → Artifact "Repo:payments-api" → maintainedBy → Actor "Platform Team"
+
+#### Logical Networks
+
+A logical network is a `CommunicationNetwork` (ArchiMate Communication Network). Physical links and fabrics stay
+`Equipment`; the network is what runs over them.
+
+| From | Verb | To |
+|------|------|----|
+| `CommunicationNetwork` | `composedOf` | `CommunicationNetwork` (a metro network of its site networks) |
+| `CommunicationNetwork` | `specializes` | `CommunicationNetwork` (concept and implementation) |
+| `CommunicationNetwork` | `servedBy` | `CommunicationNetwork` (the network it runs over) |
+| `CommunicationNetwork` | `locatedAt` | `Facility`, `Location` (many) |
+| `CommunicationNetwork` | `realizedBy` | `Equipment` (the fabric), `TechnologySystemSoftware` (routing stack, VPN software) |
+| `TechnologyNode` | `servedBy` | `CommunicationNetwork` |
+
+- **Underlay and overlay:** the underlay *serves* the overlay, so the overlay is `servedBy` the underlay. A BGP-EVPN
+  network that carries customer workloads is one `overlay` network served by the underlay and realized by the routing
+  system software. Do not model a network per customer or tenant.
+- **VPN:** a network of `network/type: vpn`, `servedBy` the network it tunnels through (usually the public network),
+  `locatedAt` the sites it joins and `realizedBy` the gateway software.
+- **Mesh:** `network/topology: mesh` on **one** network that is `locatedAt` all its sites. Only when single tunnels
+  matter (capacity, owner) are they sub-networks, `composedOf` into the mesh.
+- **Nesting and metro regions:** a network that supports a metro region is `locatedAt` the `Location` and
+  `composedOf` the networks of its sites. `composedOf` and `specializes` only point at networks and must not form a
+  cycle; `archsight lint` reports cycles of `composedOf`, `specializes` and `servedBy`.
+- **Attachment:** a node is `servedBy` the networks it is attached to; the network page lists them.
+
+```
+# all overlay networks
+CommunicationNetwork: network/type == "overlay"
+
+# networks that reach Facility X
+CommunicationNetwork: -> "Facility:Madrid:DC"
+```
+
+See `examples/archsight/technology/networks.yaml`.
 
 ### Physical Layer: Where Technology Runs
 
