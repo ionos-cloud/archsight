@@ -425,6 +425,29 @@ class LinterTest < Minitest::Test
     assert_empty warnings
   end
 
+  # Generated components merged from two repositories with the same module path (issue #150)
+
+  def generated(yaml)
+    annotated(yaml, "generated/script" => "Import:GoGrapher:x")
+  end
+
+  def test_structure_warns_about_a_generated_component_from_several_repositories
+    artifacts = { realizedThrough: { technologyArtifacts: %w[Repo:acme:shop Repo:acme:shop-prototype] } }
+    warnings = structural_warnings(generated(resource("ApplicationComponent", "alice:shop", artifacts)),
+                                   resource("TechnologyArtifact", "Repo:acme:shop"), resource("TechnologyArtifact", "Repo:acme:shop-prototype"))
+
+    assert_includes warnings.join("\n"), "ApplicationComponent 'alice:shop' is generated from 2 repositories with the same module path: " \
+                                         "'Repo:acme:shop', 'Repo:acme:shop-prototype'"
+  end
+
+  def test_structure_accepts_a_curated_component_with_several_repositories
+    artifacts = { realizedThrough: { technologyArtifacts: %w[Repo:acme:shop Repo:acme:shop-prototype] } }
+    warnings = structural_warnings(resource("ApplicationComponent", "alice:shop", artifacts),
+                                   resource("TechnologyArtifact", "Repo:acme:shop"), resource("TechnologyArtifact", "Repo:acme:shop-prototype"))
+
+    refute(warnings.any? { |w| w.include?("same module path") }, warnings.join(", "))
+  end
+
   private
 
   def lint(annotations)
