@@ -53,8 +53,12 @@ export function searchCount(query) {
   return fetchJson(`${BASE}/search?${params}`)
 }
 
-export async function getInstanceDot(kind, name) {
-  const res = await fetch(`/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/dot`)
+// depth: steps from the instance (null: all), layers: the layers the graph follows (null: all)
+export async function getInstanceDot(kind, name, { depth = null, layers = null } = {}) {
+  const params = new URLSearchParams()
+  if (depth) params.set('depth', depth)
+  if (layers?.length) params.set('layers', layers.join(','))
+  const res = await fetch(`/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/dot?${params}`)
   if (!res.ok) return null
   return res.text()
 }

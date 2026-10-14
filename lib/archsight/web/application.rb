@@ -301,10 +301,14 @@ class Archsight::Web::Application < Sinatra::Base
     serve_vue
   end
 
+  # `depth`: steps from the instance (a positive number; missing or `all`: every step), `layers`: the layers it
+  # follows, comma separated (missing or none known: every layer)
   get "/kinds/:kind/instances/:instance/dot" do
     @kind = params["kind"]
     @instance = params["instance"]
+    depth = params["depth"].to_s.match?(/\A[1-9]\d*\z/) ? params["depth"].to_i : nil
+    layers = params["layers"].to_s.split(",").map(&:strip) & Archsight::Resources::LAYERS
     content_type "text/plain"
-    create_graph_one(db, @kind, @instance)
+    create_graph_one(db, @kind, @instance, max_depth: depth, layers: layers.empty? ? nil : layers)
   end
 end

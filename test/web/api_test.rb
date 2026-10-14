@@ -175,6 +175,12 @@ class APITest < Minitest::Test
     assert data["references"]
   end
 
+  def test_get_api_instance_has_the_default_graph_layers
+    get "/api/v1/kinds/ApplicationService/instances/Archsight:Web"
+
+    assert_equal %w[application technology], json_response["graph_layers"]
+  end
+
   def test_get_instance_renders_the_diagram_annotation
     get "/api/v1/kinds/BusinessProduct/instances/Archsight"
 

@@ -1,6 +1,7 @@
 module Archsight
   module Resources
     @resource_classes: Hash[String, singleton(Base)]
+    LAYERS: Array[String]
     DERIVED_VERBS: Array[Symbol]
     DERIVED_KEY: Symbol
     DERIVED_RELATIONS: Array[[Symbol, Symbol, String]]

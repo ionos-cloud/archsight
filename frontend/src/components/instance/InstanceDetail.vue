@@ -25,6 +25,7 @@ import LicenseInfo from '../artifact/LicenseInfo.vue'
 import ExternalLinks from '../artifact/ExternalLinks.vue'
 import AnnotationRow from '../artifact/AnnotationRow.vue'
 import { LEAD_KEYS } from '../../composables/useAnnotationSymbols.js'
+import { LAYERS as LAYER_DEFS, LAYER_IDS } from '../../composables/useLayers.js'
 
 const props = defineProps({
   data: Object,
@@ -34,8 +35,44 @@ const props = defineProps({
 
 const svgHtml = ref('')
 const graphEl = ref(null)
+const graphBox = ref(null)
 let graphLoaded = false
 let panZoom = null
+
+// How far the dependency graph goes (null: all the way, remembered per browser) and which layers it follows (the
+// page opens with the resource's own layer and the next one below, `graph_layers` of the API)
+const DEPTHS = [1, 2, 3, null]
+// in the order of the sidebar (useLayers)
+const LAYERS = LAYER_IDS
+const layerTitle = (layer) => `${LAYER_DEFS.find(l => l.id === layer)?.title || layer} layer`
+function stored(key, fallback, allowed) {
+  try {
+    const raw = localStorage.getItem(key)
+    const value = raw === null ? fallback : JSON.parse(raw)
+    return allowed.includes(value) ? value : fallback
+  } catch { return fallback }
+}
+function store(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage unavailable */ }
+}
+const graphDepth = ref(stored('archsight.graphDepth', 2, DEPTHS))
+const graphLayers = ref([...(props.data.graph_layers || LAYERS)])
+
+async function setGraphDepth(depth) {
+  graphDepth.value = depth
+  store('archsight.graphDepth', depth)
+  graphLoaded = false
+  await loadGraph()
+}
+
+// Turns a layer on or off; the last one stays on
+async function toggleGraphLayer(layer) {
+  const on = graphLayers.value.includes(layer)
+  if (on && graphLayers.value.length === 1) return
+  graphLayers.value = on ? graphLayers.value.filter(l => l !== layer) : LAYERS.filter(l => l === layer || graphLayers.value.includes(l))
+  graphLoaded = false
+  await loadGraph()
+}
 const descEl = ref(null)
 useInternalLinks(descEl)
 const { embeds, scanEmbeds } = useEmbeds()
@@ -107,7 +144,9 @@ const customAnnotations = computed(() => {
 async function loadGraph() {
   if (graphLoaded || !hasOutgoingRelations.value) return
   graphLoaded = true
-  const dot = await getInstanceDot(props.kind, props.data.name)
+  const dot = await getInstanceDot(props.kind, props.data.name, { depth: graphDepth.value, layers: graphLayers.value })
+  panZoom?.destroy()
+  panZoom = null
   svgHtml.value = dot ? await renderDot(dot) : ''
   await nextTick()
   initPanZoomOnGraph()
@@ -143,7 +182,7 @@ function initPanZoomOnGraph() {
   if (!graphEl.value) return
   const svg = graphEl.value.querySelector('svg')
   if (!svg) return
-  panZoom = initSvgPanZoom(svg, graphEl.value)
+  panZoom = initSvgPanZoom(svg, graphEl.value, { fullscreenTarget: graphBox.value })
 }
 </script>
 
@@ -190,7 +229,25 @@ function initPanZoomOnGraph() {
     </div>
     <div v-if="diagramHtml" v-show="view === 'diagram'" ref="diagramEl" class="asd-diagram-wrap" v-html="diagramHtml"></div>
 
-    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" class="graph-container">
+    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" ref="graphBox" class="graph-container">
+      <div class="graph-options">
+        <i class="iconoir-depth" title="Depth: how many steps the graph follows"></i>
+        <div role="group" aria-label="Graph depth">
+          <button v-for="depth in DEPTHS" :key="String(depth)" type="button"
+                  :class="{ outline: graphDepth !== depth, secondary: graphDepth !== depth }" :aria-pressed="graphDepth === depth"
+                  :title="depth ? `Depth ${depth}: ${depth} step${depth > 1 ? 's' : ''} from here` : 'Depth: all the way'"
+                  @click="setGraphDepth(depth)">{{ depth ?? 'All' }}</button>
+        </div>
+        <i class="iconoir-color-filter" title="Layers the graph follows"></i>
+        <div role="group" aria-label="Graph layers">
+          <button v-for="layer in LAYERS" :key="layer" type="button" class="layer-toggle"
+                  :class="{ outline: !graphLayers.includes(layer), secondary: !graphLayers.includes(layer) }"
+                  :aria-pressed="graphLayers.includes(layer)" :aria-label="layerTitle(layer)"
+                  :disabled="graphLayers.length === 1 && graphLayers.includes(layer)"
+                  :title="`${layerTitle(layer)}: ${graphLayers.includes(layer) ? 'shown, click to hide' : 'hidden, click to show'}`"
+                  @click="toggleGraphLayer(layer)"><span class="layer-swatch" :style="{ background: `var(--layer-${layer}-fill, var(--pico-muted-border-color))` }"></span></button>
+        </div>
+      </div>
       <div id="graphviz" ref="graphEl" class="canvas" v-html="svgHtml"></div>
     </div>
     <p v-else-if="hasRelations && !hasOutgoingRelations && !diagramHtml" class="graph-too-large">
@@ -281,6 +338,50 @@ function initPanZoomOnGraph() {
 #graphviz {
   width: 100%;
   height: 100%;
+}
+
+.graph-options {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-options > i {
+  color: var(--pico-muted-color);
+}
+
+.graph-options [role="group"] {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0;
+  background: var(--pico-card-background-color);
+}
+
+.layer-swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 2px;
+  border: 1px solid var(--pico-muted-color);
+  vertical-align: middle;
+}
+
+.graph-options button.layer-toggle:not([aria-pressed="true"]) .layer-swatch {
+  opacity: 0.35;
+}
+
+.graph-options button {
+  flex: 0 0 auto;
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.15rem 0.6rem;
+  font-size: var(--fs-xs);
 }
 
 :deep(#graphviz svg) {

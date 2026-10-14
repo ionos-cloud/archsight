@@ -6,8 +6,8 @@ require_relative "template"
 module Archsight
   # Documentation generates markdown documentation for architecture resources
   class Documentation
-    # Layer display order (top to bottom)
-    LAYER_ORDER = %w[motivation strategy implementation business application technology].freeze
+    # Layer display order (top to bottom), without the tool's own kinds
+    LAYER_ORDER = (Archsight::Resources::LAYERS - ["other"]).freeze
 
     # Layer display names
     LAYER_NAMES = {

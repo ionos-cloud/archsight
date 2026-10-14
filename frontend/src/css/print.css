@@ -37,6 +37,7 @@
   .copy-button,
   .view-pager,
   .svg-zoom-btn,
+  .graph-options,
   .kind-embed-rerun {
     display: none !important;
   }

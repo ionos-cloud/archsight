@@ -12,6 +12,16 @@
   display: block;
 }
 
+/* Full screen (the zoom controls' button): the element fills the screen, the pan-zoom container in it too */
+.svg-pan-fullscreen:fullscreen {
+  background: var(--pico-background-color);
+}
+
+.svg-pan-fullscreen:fullscreen .svg-pan-container,
+.svg-pan-container:fullscreen {
+  height: 100% !important;
+}
+
 /* Shared SVG zoom controls (used by mermaid and graphviz) */
 .svg-zoom-controls {
   position: absolute;
