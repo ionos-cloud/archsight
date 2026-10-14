@@ -96,7 +96,8 @@ module Archsight::Web::API::JsonHelpers
       spec: serialize_spec(instance.spec),
       relations: extract_relations(instance),
       references: extract_references(instance),
-      diagram: render_diagram_annotation(instance.annotations)
+      diagram: render_diagram_annotation(instance.annotations),
+      graph_layers: Archsight::GraphvisRenderer.default_graph_layers(instance.class.layer)
     }
   end
 

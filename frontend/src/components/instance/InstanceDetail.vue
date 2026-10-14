@@ -38,13 +38,12 @@ const graphBox = ref(null)
 let graphLoaded = false
 let panZoom = null
 
-// How far the dependency graph goes (null: all the way) and what it follows ('structure': the application and
-// technology stack, 'all': also organisation, motivation, ...). The choice is remembered per browser.
+// How far the dependency graph goes (null: all the way, remembered per browser) and which layers it follows (the
+// page opens with the resource's own layer and the next one below, `graph_layers` of the API)
 const DEPTHS = [1, 2, 3, null]
-const SCOPES = [
-  ['structure', 'iconoir-network-right', 'Structure: the application and technology stack'],
-  ['all', 'iconoir-community', 'All elements: also teams, owners, requirements, ...'],
-]
+// top to bottom, as GraphvisRenderer::LAYERS
+const LAYERS = ['motivation', 'strategy', 'business', 'application', 'technology', 'implementation', 'other']
+const layerTitle = (layer) => `${layer.charAt(0).toUpperCase()}${layer.slice(1)} layer`
 function stored(key, fallback, allowed) {
   try {
     const raw = localStorage.getItem(key)
@@ -56,13 +55,20 @@ function store(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage unavailable */ }
 }
 const graphDepth = ref(stored('archsight.graphDepth', 2, DEPTHS))
-const graphScope = ref(stored('archsight.graphScope', 'structure', SCOPES.map(([s]) => s)))
+const graphLayers = ref([...(props.data.graph_layers || LAYERS)])
 
-async function setGraphOption(depth, scope) {
+async function setGraphDepth(depth) {
   graphDepth.value = depth
-  graphScope.value = scope
   store('archsight.graphDepth', depth)
-  store('archsight.graphScope', scope)
+  graphLoaded = false
+  await loadGraph()
+}
+
+// Turns a layer on or off; the last one stays on
+async function toggleGraphLayer(layer) {
+  const on = graphLayers.value.includes(layer)
+  if (on && graphLayers.value.length === 1) return
+  graphLayers.value = on ? graphLayers.value.filter(l => l !== layer) : LAYERS.filter(l => l === layer || graphLayers.value.includes(l))
   graphLoaded = false
   await loadGraph()
 }
@@ -137,7 +143,7 @@ const customAnnotations = computed(() => {
 async function loadGraph() {
   if (graphLoaded || !hasOutgoingRelations.value) return
   graphLoaded = true
-  const dot = await getInstanceDot(props.kind, props.data.name, { depth: graphDepth.value, scope: graphScope.value })
+  const dot = await getInstanceDot(props.kind, props.data.name, { depth: graphDepth.value, layers: graphLayers.value })
   panZoom?.destroy()
   panZoom = null
   svgHtml.value = dot ? await renderDot(dot) : ''
@@ -229,13 +235,16 @@ function initPanZoomOnGraph() {
           <button v-for="depth in DEPTHS" :key="String(depth)" type="button"
                   :class="{ outline: graphDepth !== depth, secondary: graphDepth !== depth }" :aria-pressed="graphDepth === depth"
                   :title="depth ? `Depth ${depth}: ${depth} step${depth > 1 ? 's' : ''} from here` : 'Depth: all the way'"
-                  @click="setGraphOption(depth, graphScope)">{{ depth ?? 'All' }}</button>
+                  @click="setGraphDepth(depth)">{{ depth ?? 'All' }}</button>
         </div>
-        <div role="group" aria-label="Graph scope">
-          <button v-for="[scope, icon, hint] in SCOPES" :key="scope" type="button"
-                  :class="{ outline: graphScope !== scope, secondary: graphScope !== scope }" :aria-pressed="graphScope === scope"
-                  :title="hint" :aria-label="hint"
-                  @click="setGraphOption(graphDepth, scope)"><i :class="icon"></i></button>
+        <i class="iconoir-color-filter" title="Layers the graph follows"></i>
+        <div role="group" aria-label="Graph layers">
+          <button v-for="layer in LAYERS" :key="layer" type="button" class="layer-toggle"
+                  :class="{ outline: !graphLayers.includes(layer), secondary: !graphLayers.includes(layer) }"
+                  :aria-pressed="graphLayers.includes(layer)" :aria-label="layerTitle(layer)"
+                  :disabled="graphLayers.length === 1 && graphLayers.includes(layer)"
+                  :title="`${layerTitle(layer)}: ${graphLayers.includes(layer) ? 'shown, click to hide' : 'hidden, click to show'}`"
+                  @click="toggleGraphLayer(layer)"><span class="layer-swatch" :style="{ background: `var(--layer-${layer}-fill, var(--pico-muted-border-color))` }"></span></button>
         </div>
       </div>
       <div id="graphviz" ref="graphEl" class="canvas" v-html="svgHtml"></div>
@@ -351,6 +360,19 @@ function initPanZoomOnGraph() {
   width: fit-content;
   margin: 0;
   background: var(--pico-card-background-color);
+}
+
+.layer-swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 2px;
+  border: 1px solid var(--pico-muted-color);
+  vertical-align: middle;
+}
+
+.graph-options button.layer-toggle:not([aria-pressed="true"]) .layer-swatch {
+  opacity: 0.35;
 }
 
 .graph-options button {

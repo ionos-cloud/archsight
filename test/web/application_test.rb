@@ -174,7 +174,7 @@ class ApplicationTest < Minitest::Test
     assert_includes last_response.body, "digraph"
   end
 
-  def test_get_instance_dot_with_depth_and_scope
+  def test_get_instance_dot_with_depth_and_layers
     path = "/kinds/ApplicationService/instances/Archsight:Web/dot"
     get path
     full = last_response.body
@@ -186,10 +186,14 @@ class ApplicationTest < Minitest::Test
 
     assert_operator last_response.body.scan('"class" = ').size, :<, full.scan('"class" = ').size
 
-    get path, scope: "structure"
+    get path, layers: "application,technology,unknown"
 
     refute_includes last_response.body, "BusinessActor/"
     assert_includes full, "BusinessActor/"
+
+    get path, layers: "unknown"
+
+    assert_equal full, last_response.body, "no known layer: every layer"
   end
 
   # Doc HTML routes serve Vue SPA

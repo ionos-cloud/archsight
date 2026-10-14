@@ -106,16 +106,29 @@ module Archsight
       end
     end
 
-    # The layers the `structure` scope of an instance graph follows: the application and technology stack, without
-    # organisation (actors, roles), motivation, compliance, implementation and other resources
-    STRUCTURE_LAYERS = %w[application technology].freeze
+    # The layers of the kinds, top to bottom
+    LAYERS = %w[motivation strategy business application technology implementation other].freeze
+
+    # The layer an instance graph also follows by default, below the instance's own layer (technology is the bottom
+    # of the stack; implementation points at what it changes)
+    NEXT_LAYER = { "motivation" => "strategy", "strategy" => "business", "business" => "application",
+                   "application" => "technology", "implementation" => "application" }.freeze
+
+    # The layers the graph of a resource of this layer follows when its page opens: its own and the next one below,
+    # every layer for `other` (pages, views, locations, ... refer to anything)
+    def self.default_graph_layers(layer)
+      return LAYERS.dup unless LAYERS.include?(layer) && layer != "other"
+
+      [layer, NEXT_LAYER[layer]].compact
+    end
 
     # The dependency graph of one instance: the resources its relations lead to, breadth first, so a resource gets
     # the depth of its shortest path.
     # @param max_depth [Integer, nil] follow relations this many steps from the instance (nil: all the way). A
     #   resource at the limit that has more relations is drawn dashed.
-    # @param scope [Symbol] :all follows every relation, :structure only those to application and technology resources
-    def create_graph_one(db, klass_pat, name_pat, max_depth: nil, scope: :all)
+    # @param layers [Array<String>, nil] follow only relations to resources of these layers (nil: every layer); the
+    #   instance itself is always shown
+    def create_graph_one(db, klass_pat, name_pat, max_depth: nil, layers: nil)
       klass = Archsight::Resources[klass_pat] || raise("kind #{klass_pat} unknown")
       root = db.instances[klass]&.[](name_pat) || raise("name #{name_pat} for kind #{klass_pat} not found")
 
@@ -128,7 +141,7 @@ module Archsight
           next if nodes[inst]
 
           nodes[inst] = true
-          targets = graph_targets(inst, scope)
+          targets = graph_targets(inst, layers)
           if max_depth && depth >= max_depth
             gnode(g, inst, truncated: targets.any?)
             next
@@ -145,11 +158,11 @@ module Archsight
       end
     end
 
-    # The [verb, target] pairs of an instance's relations the graph follows in the scope
-    def graph_targets(inst, scope)
+    # The [verb, target] pairs of an instance's relations the graph follows: those to resources of the layers
+    def graph_targets(inst, layers)
       inst.class.relations.flat_map do |verb, kind|
         inst.relations(verb, kind).filter_map do |rel|
-          [verb, rel] if scope != :structure || STRUCTURE_LAYERS.include?(rel.class.layer)
+          [verb, rel] if layers.nil? || layers.include?(rel.class.layer)
         end
       end
     end

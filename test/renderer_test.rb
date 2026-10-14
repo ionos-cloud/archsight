@@ -66,21 +66,31 @@ class RendererTest < Minitest::Test
     refute_includes full, "dashed"
   end
 
-  def test_create_graph_one_structure_scope_leaves_out_organisation_and_motivation
+  def test_create_graph_one_follows_only_the_selected_layers
     # e.g. a repository: technology relations and the team that maintains it
+    stack = %w[application technology]
     root = @db.instances.values.flat_map(&:values).find do |inst|
-      layers = graph_targets(inst, :all).map { |_, rel| rel.class.layer }
-      layers.include?("technology") && layers.any? { |layer| !Archsight::GraphvisRenderer::STRUCTURE_LAYERS.include?(layer) }
+      layers = graph_targets(inst, nil).map { |_, rel| rel.class.layer }
+      layers.include?("technology") && layers.any? { |layer| !stack.include?(layer) }
     end
     skip("no resource with technology and other relations") unless root
 
     all = graph_nodes(create_graph_one(@db, root.klass, root.name, max_depth: 1))
-    structure = graph_nodes(create_graph_one(@db, root.klass, root.name, max_depth: 1, scope: :structure))
-    layers = structure.map { |node| Archsight::Resources[node.split("/", 2).first.split("::").last].layer }
+    selected = graph_nodes(create_graph_one(@db, root.klass, root.name, max_depth: 1, layers: stack))
+    layers = selected.map { |node| Archsight::Resources[node.split("/", 2).first.split("::").last].layer }
 
-    assert_operator all.size, :>, structure.size
+    assert_operator all.size, :>, selected.size
     assert_includes layers, "technology"
-    assert(layers.drop(1).all? { |layer| Archsight::GraphvisRenderer::STRUCTURE_LAYERS.include?(layer) })
+    assert(layers.drop(1).all? { |layer| stack.include?(layer) })
+  end
+
+  def test_the_default_layers_are_the_own_and_the_next_below
+    renderer = Archsight::GraphvisRenderer
+
+    assert_equal %w[application technology], renderer.default_graph_layers("application")
+    assert_equal %w[motivation strategy], renderer.default_graph_layers("motivation")
+    assert_equal %w[technology], renderer.default_graph_layers("technology")
+    assert_equal renderer::LAYERS, renderer.default_graph_layers("other")
   end
 
   def test_gname_returns_string
@@ -104,8 +114,8 @@ class RendererTest < Minitest::Test
   def deep_instance
     @db.instances.each_value do |instances|
       instances.each_value do |inst|
-        direct = graph_targets(inst, :all).map(&:last)
-        return [inst, direct] if direct.any? { |rel| graph_targets(rel, :all).any? { |_, deeper| deeper != inst && !direct.include?(deeper) } }
+        direct = graph_targets(inst, nil).map(&:last)
+        return [inst, direct] if direct.any? { |rel| graph_targets(rel, nil).any? { |_, deeper| deeper != inst && !direct.include?(deeper) } }
       end
     end
     skip("no instance with a graph deeper than one step")
