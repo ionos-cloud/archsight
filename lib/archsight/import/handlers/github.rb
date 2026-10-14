@@ -35,6 +35,9 @@ require_relative "cache_pruner"
 # the API (e.g. a repo that was renamed or deleted), so stale clones don't
 # linger and get picked up by later importers.
 class Archsight::Import::Handlers::Github < Archsight::Import::Handler
+  # generates child imports (see Handler.generates_imports?)
+  def self.generates_imports? = true
+
   include Archsight::Import::Handlers::CachePruner
 
   PER_PAGE = 100
@@ -49,7 +52,7 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
     @repo_output_path = config("repoOutputPath")
     @child_cache_time = config("childCacheTime")
     @default_visibility = config("defaultVisibility", default: "internal")
-    cache_root = config("cacheRoot", default: File.join(Dir.home, ".cache", "archsight", "git"))
+    cache_root = Archsight::Import.cache_root(config("cacheRoot"))
     @target_dir = File.join(cache_root, "github", @org)
 
     # Fetch all repositories with pagination

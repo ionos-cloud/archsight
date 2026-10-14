@@ -38,7 +38,9 @@ class Archsight::Import::Executor
   # @param output [IO] Output stream for progress (default: $stdout)
   # @param filter [String, nil] Regex pattern to match import names
   # @param force [Boolean] Whether to bypass cache and re-run all imports
-  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil, force: false)
+  # @param deps [Boolean] With a filter, also run the imports the matched ones depend on (false: only the matched ones)
+  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil, force: false,
+                 deps: true)
     @database = database
     @resources_dir = resources_dir
     @verbose = verbose
@@ -47,7 +49,10 @@ class Archsight::Import::Executor
     @filter = filter
     @filter_regex = Regexp.new(filter, Regexp::IGNORECASE) if filter
     @force = force
+    @deps = deps
     @executed_this_run = Set.new
+    @ran_this_run = Set.new
+    @handler_problems = {}
     @iteration = 0
     @mutex = Mutex.new
   end
@@ -154,16 +159,22 @@ class Archsight::Import::Executor
     sorted = topological_sort(filtered_imports)
 
     @output.puts "Filter: #{@filter}" if @filter
+    @output.puts "Dependencies: not run (--no-deps)" if only_matches?
 
     sorted.each_with_index do |imp, idx|
       enabled = import_enabled?(imp)
       deps = import_dependency_names(imp)
       deps_str = deps.empty? ? "(no dependencies)" : "depends on: #{deps.join(", ")}"
       enabled_str = enabled ? "" : " [DISABLED]"
-      @output.puts "  #{idx + 1}. #{imp.name}#{enabled_str} #{deps_str}"
+      @output.puts "  #{idx + 1}. #{imp.name}#{enabled_str} #{deps_str}#{unmatched_patterns_note(imp)}"
     end
 
     sorted
+  end
+
+  # Names of the imports that executed in this run (not served from the cache)
+  def ran_imports
+    @mutex.synchronize { @ran_this_run.to_a.sort }
   end
 
   private
@@ -222,7 +233,13 @@ class Archsight::Import::Executor
     @imports_to_run.include?(import.name)
   end
 
-  # Compute the full set of imports to run: filtered imports + all their dependencies
+  # Whether only the imports matching the filter run (`-f` with `--no-deps`)
+  def only_matches?
+    !@deps && !@filter_regex.nil?
+  end
+
+  # Compute the full set of imports to run: filtered imports + all their dependencies (only the filtered ones with
+  # `--no-deps`)
   def compute_imports_to_run
     all_imports = database.instances_by_kind("Import")&.values || []
     imports_by_name = all_imports.to_h { |imp| [imp.name, imp] }
@@ -230,6 +247,7 @@ class Archsight::Import::Executor
     # Start with imports matching the filter
     matching = all_imports.select { |imp| @filter_regex.match?(imp.name) }.map(&:name)
     to_run = Set.new(matching)
+    return to_run unless @deps
 
     # Recursively add dependencies
     queue = matching.dup
@@ -264,36 +282,79 @@ class Archsight::Import::Executor
     end
   end
 
+  # With `--no-deps` a dependency outside the run is not waited for: it does not run, so the import uses the model
+  # as it is
   def runnable_dependency_names(import)
     imports_by_name = (database.instances_by_kind("Import")&.values || []).to_h { |imp| [imp.name, imp] }
     import_dependency_names(import).select do |dep_name|
       parent = imports_by_name[dep_name]
-      parent && import_enabled?(parent)
+      parent && import_enabled?(parent) && (!only_matches? || import_matches_filter?(parent))
     end
   end
 
-  # Get dependency names for an import by finding parents that generate this import
-  # Dependencies are derived from the inverse of `generates` - if Import A generates Import B,
-  # then B depends on A
+  # Get dependency names for an import: the parents that generate it (the inverse of `generates` - if Import A
+  # generates Import B, then B depends on A) and the imports it declares in `import/dependsOn`
   def import_dependency_names(import)
-    # Find all imports that have this import in their generates.imports
     all_imports = database.instances_by_kind("Import")&.values || []
     parent_imports = all_imports.select do |parent|
-      generated = parent.relations(:generates, :imports)
-      generated&.any? { |gen| (gen.is_a?(String) ? gen : gen.name) == import.name }
+      generated_import_names(parent).include?(import.name)
     end
-    parent_imports.map(&:name)
+    (parent_imports.map(&:name) + declared_dependency_names(import, all_imports)).uniq
   end
 
-  # Reload database without verbose output
+  # The imports `import/dependsOn` names or matches. For a pattern this also includes the imports that may still
+  # generate a matching import in this run: one whose last run generated a match, and one that never ran but whose
+  # handler generates imports. So `Import:Repo:*` waits for the GitHub import and then for the repositories it found.
+  def declared_dependency_names(import, all_imports = database.instances_by_kind("Import")&.values || [])
+    entries = Archsight::Import.declared_dependencies(import)
+    return [] if entries.empty?
+
+    others = all_imports.reject { |imp| imp.name == import.name }
+    entries.flat_map do |entry|
+      matches = others.select { |imp| Archsight::Import.dependency_match?(entry, imp.name) }
+      matches += others.select { |imp| may_generate_match?(imp, entry) } if Archsight::Import.pattern?(entry)
+      matches.map(&:name)
+    end.uniq
+  end
+
+  # Whether an import generated a match of the pattern in its last run, or may do so on its first one
+  def may_generate_match?(import, pattern)
+    generated = generated_import_names(import)
+    return generated.any? { |name| Archsight::Import.dependency_match?(pattern, name) } if generated.any?
+
+    handler = Archsight::Import::Registry[import.annotations["import/handler"]]
+    !import.annotations["generated/at"] && handler.respond_to?(:generates_imports?) && handler.generates_imports?
+  end
+
+  def generated_import_names(import)
+    (import.relations(:generates, :imports) || []).map { |gen| gen.is_a?(String) ? gen : gen.name }
+  end
+
+  # For the plan: patterns of `import/dependsOn` that match no import yet
+  def unmatched_patterns_note(import)
+    all_names = (database.instances_by_kind("Import")&.keys || []) - [import.name]
+    unmatched = Archsight::Import.declared_dependencies(import).select do |entry|
+      Archsight::Import.pattern?(entry) && all_names.none? { |name| Archsight::Import.dependency_match?(entry, name) }
+    end
+    unmatched.empty? ? "" : " (#{unmatched.join(", ")} matches no import yet)"
+  end
+
+  # Reload database without verbose output, and load the handlers the imports declare (`import/handlerPath`)
   def reload_database_quietly!
     original_verbose = database.verbose
     database.verbose = false
     database.reload!
+    load_local_handlers
     # Reset filter cache since new imports may have been discovered
     @imports_to_run = nil if @filter_regex
   ensure
     database.verbose = original_verbose
+  end
+
+  # A handler file that does not load fails the imports that use it, not the whole run
+  def load_local_handlers
+    problems = Archsight::Import::HandlerLoader.load(database, resources_dir: resources_dir)
+    @handler_problems = problems.to_h { |problem| [problem.import.name, problem.message] }
   end
 
   # Reload database and update progress total for newly discovered imports
@@ -326,6 +387,8 @@ class Archsight::Import::Executor
           result = execute_single_import(imp, slot_progress)
           if result == :cached
             slot_progress.complete("Cached")
+          elsif result.is_a?(String)
+            slot_progress.complete(result)
           else
             @mutex.synchronize { @total_executed += 1 }
             slot_progress.complete("Done")
@@ -350,12 +413,24 @@ class Archsight::Import::Executor
   end
 
   # Execute a single import (called from thread)
-  # @return [Symbol] :executed, :cached, or raises on error
+  # @return [Symbol, String] :executed, :cached, a message for a skipped import, or raises on error
   def execute_single_import(import, import_progress)
     # Check if import is still fresh based on generated/at and import/cacheTime
     if import_fresh?(import)
       @mutex.synchronize { @total_cached += 1 }
       return :cached
+    end
+
+    problem = @handler_problems[import.name]
+    raise Archsight::Import::UnknownHandlerError, problem if problem
+
+    missing = missing_environment(import)
+    if missing.any?
+      message = "missing environment variable#{"s" if missing.length > 1} #{missing.join(", ")} (import/config/requiredEnv)"
+      raise Archsight::Import::ImportError, message unless import.annotations["import/config/optional"] == "true"
+
+      import_progress.warn("Skipped: #{message}")
+      return "Skipped"
     end
 
     # Execute the import
@@ -368,12 +443,30 @@ class Archsight::Import::Executor
       shared_writer: @shared_writer
     )
     handler.execute
+    remove_stale_outputs(import, handler.owned_outputs)
+    @mutex.synchronize { @ran_this_run.add(import.name) }
     :executed
   end
 
+  # Variables of `import/config/requiredEnv` that are not set (or blank)
+  def missing_environment(import)
+    names = import.annotations["import/config/requiredEnv"].to_s.split(",").map(&:strip).reject(&:empty?)
+    names.select { |name| ENV[name].to_s.strip.empty? }
+  end
+
+  # Delete the files an earlier run of the import wrote (`generated/outputs`) that this run did not write again
+  def remove_stale_outputs(import, written)
+    previous = import.annotations["generated/outputs"].to_s.split(",").map(&:strip).reject(&:empty?)
+    (previous - written).each do |rel_path|
+      path = Archsight::Import.resources_path(resources_dir, rel_path)
+      FileUtils.rm_f(path) if path && File.file?(path)
+    end
+  end
+
   # Check if import is still fresh (cached)
-  # Uses generated/at annotation and import/cacheTime to determine freshness
-  # Also validates that output file exists (if specified) and source file hasn't changed
+  # Uses generated/at annotation and import/cacheTime to determine freshness. The cache is also invalid when the
+  # output file or a recorded output (`generated/outputs`) is missing, the configuration or the files of
+  # `import/config/inputs` changed, or an import it declares in `import/dependsOn` executed in this run.
   def import_fresh?(import)
     # Honor force flag - always re-run when forced
     return false if @force
@@ -387,6 +480,11 @@ class Archsight::Import::Executor
       full_path = File.join(resources_dir, output_path)
       return false unless File.exist?(full_path)
     end
+
+    return false unless recorded_outputs_exist?(import)
+    return false if dependency_ran?(import)
+    return false if import.annotations["import/config/inputs"] &&
+                    import.annotations["generated/inputsHash"] != Archsight::Import.inputs_hash(import, resources_dir)
 
     generated_at = import.annotations["generated/at"]
     return false if generated_at.nil? || generated_at.empty?
@@ -408,6 +506,20 @@ class Archsight::Import::Executor
   rescue ArgumentError
     # Invalid time format
     false
+  end
+
+  def recorded_outputs_exist?(import)
+    import.annotations["generated/outputs"].to_s.split(",").map(&:strip).reject(&:empty?).all? do |rel_path|
+      path = Archsight::Import.resources_path(resources_dir, rel_path)
+      path && File.exist?(path)
+    end
+  end
+
+  # Whether an import declared in `import/dependsOn` executed (not just came from the cache) in this run. The
+  # generated imports of a parent are not affected: they keep their own cache time when the parent runs.
+  def dependency_ran?(import)
+    names = declared_dependency_names(import)
+    @mutex.synchronize { names.any? { |name| @ran_this_run.include?(name) } }
   end
 
   def parse_duration(str)

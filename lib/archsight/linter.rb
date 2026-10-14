@@ -26,6 +26,7 @@ module Archsight
     end
 
     def validate
+      validate_imports
       @database.instances.each_value do |instances_hash|
         instances_hash.each_value do |instance|
           validate_instance_annotations(instance)
@@ -64,6 +65,40 @@ module Archsight
             "#{instance.path_ref}: #{instance.klass} '#{instance.name}' uses deprecated annotation '#{key}': #{annotation.deprecated}" if annotation&.deprecated?
           end
         end
+      end
+    end
+
+    # Imports: the handlers of the resources repository load (before the `import/handler` names are checked against
+    # the registry), and every `import/dependsOn` entry names an import or is a pattern
+    def validate_imports
+      return unless @database.respond_to?(:instances_by_kind)
+
+      imports = @database.instances_by_kind("Import")&.values || []
+      return if imports.empty?
+
+      require "archsight/import/handler_loader"
+      Archsight::Import::HandlerLoader.load(@database).each { |problem| @errors << problem.to_s }
+      names = imports.to_set(&:name)
+      imports.each do |import|
+        Archsight::Import.declared_dependencies(import).each do |entry|
+          next if Archsight::Import.pattern?(entry) || names.include?(entry)
+
+          @errors << "#{import.path_ref}: Import '#{import.name}' depends on unknown import '#{entry}'"
+        end
+      end
+      validate_command_outputs(imports)
+    end
+
+    # A command import replaces its whole output file on every run, so no other import may write to it
+    def validate_command_outputs(imports)
+      file_of = ->(import) { File.expand_path(Archsight::Import.output_path(import), "/") }
+      imports.select { |import| import.annotations["import/handler"] == "command" }.each do |command|
+        others = imports.reject { |import| import.equal?(command) }.select { |import| file_of.call(import) == file_of.call(command) }
+        next if others.empty?
+
+        @errors << "#{command.path_ref}: Import '#{command.name}' runs a command, which replaces its output file " \
+                   "#{Archsight::Import.output_path(command)}, but #{others.map { |o| "'#{o.name}'" }.join(", ")} " \
+                   "also write#{"s" if others.one?} to it; give it a file of its own"
       end
     end
 

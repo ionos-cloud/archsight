@@ -43,6 +43,9 @@ require_relative "../registry"
 #     ]
 #   }
 class Archsight::Import::Handlers::RestApiIndex < Archsight::Import::Handler
+  # generates child imports (see Handler.generates_imports?)
+  def self.generates_imports? = true
+
   VALID_GATES = %w[General-Availability Early-Access Development GA EA DEV].freeze
   GATE_TOKEN_RE = /\b(ga|ea|dev)\b/i
 

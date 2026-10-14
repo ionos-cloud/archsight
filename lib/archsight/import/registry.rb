@@ -8,13 +8,25 @@ require "archsight/import"
 # The executor looks up handlers by name to instantiate and execute them.
 module Archsight::Import::Registry
   @handlers = {}
+  @builtin = {}
 
   class << self
     # Register a handler class with a name
     # @param name [String, Symbol] Handler name (matches import/handler annotation)
     # @param handler_class [Class] Handler class that extends Handler
+    # @raise [DuplicateHandlerError] if another class already registered the name
     def register(name, handler_class)
-      @handlers[name.to_s] = handler_class
+      name = name.to_s
+      existing = @handlers[name] || @builtin[name]
+      raise Archsight::Import::DuplicateHandlerError, "Import handler '#{name}' is registered twice (#{existing} and #{handler_class})" if existing && existing != handler_class
+
+      @handlers[name] = handler_class
+      @builtin[name] = handler_class if builtin_caller?(caller_locations(1, 1)&.first)
+    end
+
+    # Register the built-in handlers again after `clear!` (they are only required once per process)
+    def restore_builtin!
+      @handlers = @builtin.merge(@handlers)
     end
 
     # Look up a handler class by name
@@ -70,8 +82,17 @@ module Archsight::Import::Registry
     def clear!
       @handlers = {}
     end
+
+    private
+
+    def builtin_caller?(location)
+      location && File.expand_path(location.path).start_with?("#{File.expand_path("handlers", __dir__)}/")
+    end
   end
 end
 
 # Error raised when an unknown handler is requested
 class Archsight::Import::UnknownHandlerError < StandardError; end
+
+# Error raised when two handler classes register the same name
+class Archsight::Import::DuplicateHandlerError < StandardError; end

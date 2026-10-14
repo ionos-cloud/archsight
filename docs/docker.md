@@ -32,7 +32,10 @@ Access web interface at: <http://localhost:4567>
 
 - Volume mount `-v "/path/to/resources:/resources"` mounts your resources directory
 - Default command starts the web server on port 4567
-- Pass subcommands directly (lint, version, console, template)
+- Pass subcommands directly (lint, version, console, template, import)
+- `import` runs the imports of the mounted repository, including its own handlers (`import/handlerPath` must point
+  inside `/resources`). The image has no git, go or python, so imports that clone repositories or run such programs
+  need a derived image
 
 ## Environment Variables
 
