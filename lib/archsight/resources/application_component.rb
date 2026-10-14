@@ -187,19 +187,19 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              sidebar: false,
              filter: :list
   annotation "deployment/chart",
-             description: "Deployed Helm chart name",
+             description: "Deployed Helm charts, comma separated",
              title: "Helm Chart",
              sidebar: false,
-             filter: :word
+             filter: :list
   annotation "deployment/namespace",
-             description: "Kubernetes namespace",
+             description: "Kubernetes namespaces, comma separated",
              title: "Namespace",
              sidebar: false,
-             filter: :word
+             filter: :list
   annotation "deployment/cluster",
-             description: "Target cluster name",
+             description: "Target clusters, comma separated",
              title: "Cluster",
-             filter: :word,
+             filter: :list,
              summary: true
 
   # Computed Annotations

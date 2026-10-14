@@ -222,6 +222,13 @@ class APITest < Minitest::Test
     assert_equal "tag_word", formats["evidence/status"]
   end
 
+  # a component deployed by several charts to several clusters lists them, one chip per value
+  def test_deployment_annotations_are_tag_lists
+    formats = Archsight::Resources["ApplicationComponent"].annotation_formats(%w[deployment/chart deployment/namespace deployment/cluster])
+
+    assert_equal({ "deployment/chart" => "tag_list", "deployment/namespace" => "tag_list", "deployment/cluster" => "tag_list" }, formats)
+  end
+
   def test_compliance_evidence_defines_the_structured_fields_as_markdown
     klass = Archsight::Resources["ComplianceEvidence"]
     keys = %w[evidence/mechanism evidence/coverage evidence/operatorView evidence/verification evidence/gaps evidence/sources]
