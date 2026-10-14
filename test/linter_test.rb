@@ -239,6 +239,30 @@ class LinterTest < Minitest::Test
     end
   end
 
+  # deployment/cluster is replaced by servedBy technologyServices (issue #164): it still loads, lint names each use
+  def test_lint_reports_a_deprecated_annotation_without_failing
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "test.yaml"), <<~YAML)
+        apiVersion: architecture/v1alpha1
+        kind: ApplicationComponent
+        metadata:
+          name: DNS:Agent
+          annotations:
+            deployment/cluster: A:Cluster, B:Cluster
+        spec: {}
+      YAML
+      db = Archsight::Database.new(dir, verbose: false, compute_annotations: false)
+      db.reload!
+      linter = Archsight::Linter.new(db)
+
+      assert_empty linter.validate
+      assert_equal(["ApplicationComponent 'DNS:Agent' uses deprecated annotation 'deployment/cluster': list the clusters as spec.servedBy.technologyServices"],
+                   linter.warnings.map { |w| w.sub(/\A.*?: /, "") })
+      assert_match(/test\.yaml:\d+: /, linter.warnings.first)
+      assert_equal "A:Cluster, B:Cluster", db.instances_by_kind("ApplicationComponent")["DNS:Agent"].annotations["deployment/cluster"]
+    end
+  end
+
   def realized_through(components)
     { realizedThrough: { applicationComponents: components } }
   end

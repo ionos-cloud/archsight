@@ -6,7 +6,7 @@ require_relative "resource_reference"
 
 # Annotation represents a single annotation definition with its schema and behavior
 class Archsight::Annotations::Annotation
-  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :summary, :editor
+  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :summary, :editor, :deprecated
 
   def initialize(key, options = {})
     @key = key
@@ -20,6 +20,7 @@ class Archsight::Annotations::Annotation
     @editor = options.fetch(:editor, true)
     @type = options[:type]
     @unique = options[:unique] == true
+    @deprecated = options[:deprecated]
 
     # Auto-add filter if enum present
     @filter ||= :word if @enum
@@ -56,6 +57,12 @@ class Archsight::Annotations::Annotation
   # A unique annotation holds identifiers: no two resources of a kind share a value (checked by `archsight lint`)
   def unique?
     @unique
+  end
+
+  # A deprecated annotation still loads and works, but `archsight lint` reports every use with what to use instead
+  # (the `deprecated:` text)
+  def deprecated?
+    !@deprecated.nil?
   end
 
   # @return [Boolean] true if the value names another resource (`Name` or `Kind/Name`)

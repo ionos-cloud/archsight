@@ -259,7 +259,8 @@ one resource). It is not a name: it cannot be used in a relation, a `[[wiki link
 the same resource, their aliases (and tags) are added together instead of one replacing the other.
 
 For kind authors: `annotation "key", unique: true` makes any annotation an identifier of this kind: unique per kind,
-checked by `archsight lint`, shown as plain text.
+checked by `archsight lint`, shown as plain text. `annotation "key", deprecated: "what to use instead"` keeps an
+annotation working while `archsight lint` lists every use as a deprecation (with the text), without failing.
 
 ### Links
 
@@ -575,6 +576,25 @@ other. Do not add the other service's components to your own `realizedThrough`: 
 two services, its owner is ambiguous and every rollup over the service's components counts it twice. Two services may
 depend on each other, so `dependsOn` is exempt from the cycle check. In `examples/archsight`, "Refunds" depends on "Payment Authorization" (it refunds an authorized payment) and
 "Payment Authorization" depends on "Refunds" (it asks to reverse a payment it cannot complete).
+
+### Where a Component Runs
+
+Three relations say what something runs on; each answers a different question:
+
+| Relation | Means | Example |
+|----------|-------|---------|
+| ApplicationComponent `servedBy technologyServices` | the platform service the component is deployed on | `Payments:API` runs in `Payments:Cluster` |
+| ApplicationComponent `servedBy technologySystemSoftware` | the runtime it runs on | a Kubernetes distribution, a JVM |
+| ApplicationService `servedBy technologyServices` | a platform service the service as a whole uses | a managed database, the clusters of its own components |
+
+Deployment importers (Argo CD, Helm, Cluster API) know every cluster a deployable runs in and write the relation per
+component. Keep the service-level relation to the clusters of the service's own components: a sidecar or agent that
+the products deploy into their own clusters (a DNS or monitoring agent) is `servedBy` each of those clusters, and its
+owning service is not, so it does not look like it runs everywhere. The TechnologyService page lists the components
+deployed on it as incoming `servedBy` from ApplicationComponent. The `deployment/cluster` annotation is deprecated in
+favour of the relation, which the graph, views and analyses see; it still loads, and `archsight lint` lists every use
+as a deprecation without failing. See
+`examples/archsight/technology/payments-platform.yaml`.
 
 ### Concept and Implementation
 

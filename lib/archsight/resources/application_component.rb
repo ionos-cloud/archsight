@@ -55,6 +55,13 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     works in queries like a tag but is not a sidebar filter, as there are too many distinct values. Deployable forms (container image, chart, package) are `TechnologyArtifact`s, not
     component types.
 
+    ## Where it runs
+
+    A component is `servedBy` the `TechnologyService` it is deployed on (a product's cluster, a managed platform) and
+    `servedBy` the `TechnologySystemSoftware` it runs on (the runtime, such as a Kubernetes distribution). Deployment
+    importers write the service per component, so a sidecar or agent deployed into many clusters shows where it runs
+    without making its own service look like it runs in all of them.
+
     The computed `component/dependents` counts the components that depend on this one, which tells shared libraries
     and modules from components nobody consumes.
 
@@ -200,7 +207,8 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              description: "Target clusters, comma separated",
              title: "Cluster",
              filter: :list,
-             summary: true
+             summary: true,
+             deprecated: "list the clusters as spec.servedBy.technologyServices"
 
   # Computed Annotations
   computed_annotation "repository/artifacts/total",
@@ -409,6 +417,7 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   relation :realizedThrough, :technologyArtifacts, :TechnologyArtifact
   relation :realizedBy, :technologyComponents, :TechnologyNode
   relation :servedBy, :technologyComponents, :TechnologySystemSoftware
+  relation :servedBy, :technologyServices, :TechnologyService
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationComponents, :ApplicationComponent

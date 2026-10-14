@@ -1,0 +1,13 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyService
+metadata:
+  name: Payments:Cluster
+  annotations:
+    architecture/description: |
+      The Kubernetes cluster the payments components are deployed on. The
+      components point to it with `servedBy`, so its page lists what runs here.
+    architecture/tags: example,payments
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:Campus
