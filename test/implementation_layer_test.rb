@@ -6,7 +6,6 @@ require "tmpdir"
 class ImplementationLayerTest < Minitest::Test
   KINDS = %w[ImplementationWorkPackage ImplementationDeliverable ImplementationEvent ImplementationPlateau
              ImplementationGap].freeze
-  LAYERS = %w[strategy motivation business application technology implementation other].freeze
 
   RESOURCES = <<~YAML
     ---
@@ -292,9 +291,14 @@ class ImplementationLayerTest < Minitest::Test
   def test_every_kind_has_a_known_layer_and_its_own_icon
     classes = Archsight::Resources.resource_classes.values
 
-    classes.each { |klass| assert_includes LAYERS, klass.layer, klass.name }
+    classes.each { |klass| assert_includes Archsight::Resources::LAYERS, klass.layer, klass.name }
     duplicates = classes.group_by(&:icon).select { |_icon, group| group.size > 1 }
 
     assert_empty(duplicates.transform_values { |group| group.map(&:name) })
+  end
+
+  def test_a_kind_cannot_declare_an_unknown_layer
+    error = assert_raises(ArgumentError) { Class.new(Archsight::Resources::Base) { layer "physical" } }
+    assert_includes error.message, "physical"
   end
 end

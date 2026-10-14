@@ -90,7 +90,7 @@ class RendererTest < Minitest::Test
     assert_equal %w[application technology], renderer.default_graph_layers("application")
     assert_equal %w[motivation strategy], renderer.default_graph_layers("motivation")
     assert_equal %w[technology], renderer.default_graph_layers("technology")
-    assert_equal renderer::LAYERS, renderer.default_graph_layers("other")
+    assert_equal Archsight::Resources::LAYERS, renderer.default_graph_layers("other")
   end
 
   def test_gname_returns_string

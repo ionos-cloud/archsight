@@ -106,9 +106,6 @@ module Archsight
       end
     end
 
-    # The layers of the kinds, top to bottom, in the order of the sidebar (frontend/src/composables/useLayers.js)
-    LAYERS = %w[motivation strategy implementation business application technology other].freeze
-
     # The layer an instance graph also follows by default, below the instance's own layer (technology is the bottom
     # of the stack; implementation points at what it changes)
     NEXT_LAYER = { "motivation" => "strategy", "strategy" => "business", "business" => "application",
@@ -117,7 +114,7 @@ module Archsight
     # The layers the graph of a resource of this layer follows when its page opens: its own and the next one below,
     # every layer for `other` (pages, views, locations, ... refer to anything)
     def self.default_graph_layers(layer)
-      return LAYERS.dup unless LAYERS.include?(layer) && layer != "other"
+      return Archsight::Resources::LAYERS.dup unless Archsight::Resources::LAYERS.include?(layer) && layer != "other"
 
       [layer, NEXT_LAYER[layer]].compact
     end

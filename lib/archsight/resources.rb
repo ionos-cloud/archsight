@@ -34,6 +34,12 @@ module Archsight
     DERIVED_VERBS = %i[mentions depicts].freeze
     DERIVED_KEY = :resources
 
+    # The layers a kind belongs to (Base.layer), top to bottom: why (motivation), what we want to become (strategy),
+    # how the change happens (implementation and migration), then the architecture it changes (business, application,
+    # technology). `other` holds the tool's own kinds (pages, views, imports, ...) and stays last. Everything that
+    # lists or orders layers uses this; the frontend repeats it in frontend/src/composables/useLayers.js.
+    LAYERS = %w[motivation strategy implementation business application technology other].freeze
+
     # The derived relations of every class, next to the ones it declares: [verb, key, kind]
     DERIVED_RELATIONS = DERIVED_VERBS.map { |verb| [verb, DERIVED_KEY, "Resource"] }.freeze
 

@@ -150,8 +150,11 @@ module Archsight
         end
       end
 
+      # The layer of the kind, one of Archsight::Resources::LAYERS (default `other`)
       def self.layer(layer_name = nil)
         if layer_name
+          raise ArgumentError, "unknown layer #{layer_name.inspect} for #{name}" unless Archsight::Resources::LAYERS.include?(layer_name)
+
           @layer = layer_name
         else
           @layer || "other" # default layer

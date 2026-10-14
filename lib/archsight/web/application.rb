@@ -307,7 +307,7 @@ class Archsight::Web::Application < Sinatra::Base
     @kind = params["kind"]
     @instance = params["instance"]
     depth = params["depth"].to_s.match?(/\A[1-9]\d*\z/) ? params["depth"].to_i : nil
-    layers = params["layers"].to_s.split(",").map(&:strip) & Archsight::GraphvisRenderer::LAYERS
+    layers = params["layers"].to_s.split(",").map(&:strip) & Archsight::Resources::LAYERS
     content_type "text/plain"
     create_graph_one(db, @kind, @instance, max_depth: depth, layers: layers.empty? ? nil : layers)
   end
