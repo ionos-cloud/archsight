@@ -44,6 +44,12 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     A service is `realizedBy` the `TechnologyEquipment` it runs over: a backbone network service is realized by the links
     between the facilities (`equipment/type: link`).
 
+      ## Deployed components
+
+    Application components deployed on the service point to it with `servedBy`; they are listed as incoming
+    "servedBy" from ApplicationComponent on its page. An ApplicationService that is `servedBy` the service uses it as a
+    whole; list a cluster there only when the service's own components run in it.
+
     ## Concept and implementation
 
     A service can `specialize` another service (ArchiMate specialization): the general service is the concept, the

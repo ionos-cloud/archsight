@@ -753,6 +753,16 @@ class APITest < Minitest::Test
     assert_equal ["Tech:RegionalCluster"], targets
   end
 
+  # a component is servedBy the platform service it is deployed on; the service lists it as incoming (issue #164)
+  def test_technology_service_lists_the_components_deployed_on_it
+    assert_includes Archsight::Resources["ApplicationComponent"].relations, %i[servedBy technologyServices TechnologyService]
+
+    get "/api/v1/kinds/TechnologyService/instances/Payments:Cluster"
+
+    assert_predicate last_response, :ok?
+    assert_equal %w[Payments:API Refunds:Worker], json_response["references"].dig("ApplicationComponent", "servedBy").sort
+  end
+
   def test_get_artifact_shows_where_it_is_contained_and_deployed
     get "/api/v1/kinds/TechnologyArtifact/instances/Tech:Package:VirtAgent"
 

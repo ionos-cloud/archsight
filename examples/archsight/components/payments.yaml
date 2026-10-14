@@ -13,6 +13,9 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:payments-api
+  servedBy:
+    technologyServices:
+      - Payments:Cluster
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationComponent
@@ -28,3 +31,6 @@ spec:
   realizedThrough:
     technologyArtifacts:
       - Repo:refunds-worker
+  servedBy:
+    technologyServices:
+      - Payments:Cluster
