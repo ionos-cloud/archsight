@@ -102,6 +102,17 @@ class HandlerLoaderTest < Minitest::Test
     assert(errors.any? { |e| e.include?("'Import:Nope'") })
   end
 
+  def test_lint_reports_a_command_that_shares_its_output_file
+    create_import("Import:Teams", "command", nil, output_path: "generated/shared.yaml")
+    create_import("Import:Other", "command", nil, output_path: "generated/./shared.yaml")
+    create_import("Import:Own", "command", nil, output_path: "generated/own.yaml")
+    errors = lint_errors.grep(/replaces its output file/)
+
+    assert_equal 2, errors.size
+    assert(errors.any? { |e| e.include?("Import 'Import:Teams'") && e.include?("'Import:Other' also writes to it") })
+    refute(errors.any? { |e| e.include?("Import:Own") })
+  end
+
   private
 
   def unique_name
@@ -116,8 +127,9 @@ class HandlerLoaderTest < Minitest::Test
     Archsight::Linter.new(database).validate
   end
 
-  def create_import(name, handler, handler_path, depends_on: nil)
+  def create_import(name, handler, handler_path, depends_on: nil, output_path: nil)
     annotations = { "import/handler" => handler }
+    annotations["import/outputPath"] = output_path if output_path
     annotations["import/handlerPath"] = handler_path if handler_path
     annotations["import/dependsOn"] = depends_on if depends_on
     document = { "apiVersion" => "architecture/v1alpha1", "kind" => "Import",

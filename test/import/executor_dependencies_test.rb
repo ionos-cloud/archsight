@@ -73,6 +73,22 @@ class ExecutorDependenciesTest < Minitest::Test
     assert_equal %w[Import:Z Import:A], LoggingHandler.log
   end
 
+  # `-f X --no-deps` runs X alone, without waiting for the dependencies it does not run (no deadlock)
+  def test_without_dependencies_the_filter_runs_only_the_matches
+    create_import("Import:A", handler: "log", depends_on: "Import:Z, Import:Repo:*")
+    create_import("Import:Z", handler: "log")
+    create_import("Import:GitHub", handler: "generator", config: { "children" => "Import:Repo:a" })
+    run!(filter: "\\AImport:A\\z", deps: false)
+
+    assert_equal %w[Import:A], LoggingHandler.log
+
+    out = StringIO.new
+    plan = executor(output: out, filter: "\\AImport:A\\z", deps: false).execution_plan
+
+    assert_equal %w[Import:A], plan.map(&:name)
+    assert_includes out.string, "Dependencies: not run (--no-deps)"
+  end
+
   # ── Freshness ──────────────────────────────────────────────────────────────
 
   def test_an_import_runs_again_within_its_cache_time_when_a_dependency_executed

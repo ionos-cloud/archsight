@@ -38,7 +38,9 @@ class Archsight::Import::Executor
   # @param output [IO] Output stream for progress (default: $stdout)
   # @param filter [String, nil] Regex pattern to match import names
   # @param force [Boolean] Whether to bypass cache and re-run all imports
-  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil, force: false)
+  # @param deps [Boolean] With a filter, also run the imports the matched ones depend on (false: only the matched ones)
+  def initialize(database:, resources_dir:, verbose: false, max_concurrent: MAX_CONCURRENT, output: $stdout, filter: nil, force: false,
+                 deps: true)
     @database = database
     @resources_dir = resources_dir
     @verbose = verbose
@@ -47,6 +49,7 @@ class Archsight::Import::Executor
     @filter = filter
     @filter_regex = Regexp.new(filter, Regexp::IGNORECASE) if filter
     @force = force
+    @deps = deps
     @executed_this_run = Set.new
     @ran_this_run = Set.new
     @handler_problems = {}
@@ -156,6 +159,7 @@ class Archsight::Import::Executor
     sorted = topological_sort(filtered_imports)
 
     @output.puts "Filter: #{@filter}" if @filter
+    @output.puts "Dependencies: not run (--no-deps)" if only_matches?
 
     sorted.each_with_index do |imp, idx|
       enabled = import_enabled?(imp)
@@ -229,7 +233,13 @@ class Archsight::Import::Executor
     @imports_to_run.include?(import.name)
   end
 
-  # Compute the full set of imports to run: filtered imports + all their dependencies
+  # Whether only the imports matching the filter run (`-f` with `--no-deps`)
+  def only_matches?
+    !@deps && !@filter_regex.nil?
+  end
+
+  # Compute the full set of imports to run: filtered imports + all their dependencies (only the filtered ones with
+  # `--no-deps`)
   def compute_imports_to_run
     all_imports = database.instances_by_kind("Import")&.values || []
     imports_by_name = all_imports.to_h { |imp| [imp.name, imp] }
@@ -237,6 +247,7 @@ class Archsight::Import::Executor
     # Start with imports matching the filter
     matching = all_imports.select { |imp| @filter_regex.match?(imp.name) }.map(&:name)
     to_run = Set.new(matching)
+    return to_run unless @deps
 
     # Recursively add dependencies
     queue = matching.dup
@@ -271,11 +282,13 @@ class Archsight::Import::Executor
     end
   end
 
+  # With `--no-deps` a dependency outside the run is not waited for: it does not run, so the import uses the model
+  # as it is
   def runnable_dependency_names(import)
     imports_by_name = (database.instances_by_kind("Import")&.values || []).to_h { |imp| [imp.name, imp] }
     import_dependency_names(import).select do |dep_name|
       parent = imports_by_name[dep_name]
-      parent && import_enabled?(parent)
+      parent && import_enabled?(parent) && (!only_matches? || import_matches_filter?(parent))
     end
   end
 

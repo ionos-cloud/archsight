@@ -86,6 +86,20 @@ module Archsight
           @errors << "#{import.path_ref}: Import '#{import.name}' depends on unknown import '#{entry}'"
         end
       end
+      validate_command_outputs(imports)
+    end
+
+    # A command import replaces its whole output file on every run, so no other import may write to it
+    def validate_command_outputs(imports)
+      file_of = ->(import) { File.expand_path(Archsight::Import.output_path(import), "/") }
+      imports.select { |import| import.annotations["import/handler"] == "command" }.each do |command|
+        others = imports.reject { |import| import.equal?(command) }.select { |import| file_of.call(import) == file_of.call(command) }
+        next if others.empty?
+
+        @errors << "#{command.path_ref}: Import '#{command.name}' runs a command, which replaces its output file " \
+                   "#{Archsight::Import.output_path(command)}, but #{others.map { |o| "'#{o.name}'" }.join(", ")} " \
+                   "also write#{"s" if others.one?} to it; give it a file of its own"
+      end
     end
 
     # Pages need exactly one menu and their [[links]] must resolve

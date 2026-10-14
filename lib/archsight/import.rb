@@ -30,6 +30,18 @@ module Archsight
       path.start_with?("#{root}/") ? path : nil
     end
 
+    # The file an import writes its resources to, relative to the resources directory: `import/outputPath`, else
+    # generated/<name>.yaml (see Handler#write_yaml)
+    def self.output_path(import)
+      import.annotations["import/outputPath"] || File.join("generated", "#{import.name.gsub(/[^a-zA-Z0-9_-]/, "_")}.yaml")
+    end
+
+    # The files an import wrote, relative to the resources directory: its output path and the `generated/outputs`
+    # of its last run. Tells which import a resource of a generated file comes from.
+    def self.output_files(import)
+      [output_path(import), *import.annotations["generated/outputs"].to_s.split(",").map(&:strip)].reject(&:empty?).uniq
+    end
+
     # Hash of the files `import/config/inputs` matches (glob patterns relative to the resources directory, comma
     # separated): their paths, sizes and modification times. nil when the import declares no inputs.
     # @return [String, nil]
