@@ -40,9 +40,11 @@ module Archsight
     def gnode(graph, inst, opts = {})
       label = "<TABLE><TR><TD><B>#{inst.name}</B></TD></TR><TR><TD>#{inst.klass}</TD></TR></TABLE>"
       label = inst.name if opts[:simple_label]
-      graph.node gname(inst), class: css_class(inst), shape: :box,
-                              style: "rounded,filled", fontname: FONT, label: label,
-                              href: "/kinds/#{inst.klass}/instances/#{inst.name}"
+      attrs = { class: css_class(inst), shape: :box, style: "rounded,filled", fontname: FONT, label: label,
+                href: "/kinds/#{inst.klass}/instances/#{inst.name}" }
+      # A resource at the depth limit with more dependencies: dashed, its own page shows them
+      attrs.merge!(style: "rounded,filled,dashed", tooltip: "More dependencies: open it to explore them") if opts[:truncated]
+      graph.node gname(inst), attrs
     end
 
     def gedge(graph, a_inst, b_inst, label)
@@ -104,29 +106,50 @@ module Archsight
       end
     end
 
-    def create_graph_one(db, klass_pat, name_pat)
-      name = "#{klass_pat}:#{name_pat}"
-      nodes = {}
-      edges = {}
-      Archsight::Graphvis.new(name).draw_dot do |g|
-        klass = Archsight::Resources[klass_pat] || raise("kind #{klass_pat} unknown")
-        instances = db.instances[klass]
-        inst = instances[name_pat] || raise("name #{name_pat} for kind #{klass_pat} not found")
-        create_graph_one_inst(db, g, inst, nodes, edges)
+    # The layers the `structure` scope of an instance graph follows: the application and technology stack, without
+    # organisation (actors, roles), motivation, compliance, implementation and other resources
+    STRUCTURE_LAYERS = %w[application technology].freeze
+
+    # The dependency graph of one instance: the resources its relations lead to, breadth first, so a resource gets
+    # the depth of its shortest path.
+    # @param max_depth [Integer, nil] follow relations this many steps from the instance (nil: all the way). A
+    #   resource at the limit that has more relations is drawn dashed.
+    # @param scope [Symbol] :all follows every relation, :structure only those to application and technology resources
+    def create_graph_one(db, klass_pat, name_pat, max_depth: nil, scope: :all)
+      klass = Archsight::Resources[klass_pat] || raise("kind #{klass_pat} unknown")
+      root = db.instances[klass]&.[](name_pat) || raise("name #{name_pat} for kind #{klass_pat} not found")
+
+      Archsight::Graphvis.new("#{klass_pat}:#{name_pat}").draw_dot do |g|
+        nodes = {}
+        edges = {}
+        queue = [[root, 0]]
+        while queue.any?
+          inst, depth = queue.shift
+          next if nodes[inst]
+
+          nodes[inst] = true
+          targets = graph_targets(inst, scope)
+          if max_depth && depth >= max_depth
+            gnode(g, inst, truncated: targets.any?)
+            next
+          end
+
+          gnode(g, inst)
+          targets.each do |verb, rel|
+            edge_name = "#{gname(inst)}|#{verb}|#{gname(rel)}"
+            gedge(g, inst, rel, verb) unless edges[edge_name]
+            edges[edge_name] = true
+            queue << [rel, depth + 1] unless nodes[rel]
+          end
+        end
       end
     end
 
-    def create_graph_one_inst(db, graph, inst, nodes, edges)
-      return if nodes[inst] # Already visited - prevent infinite recursion
-
-      gnode(graph, inst)
-      nodes[inst] = true
-      inst.class.relations.each do |verb, kind|
-        inst.relations(verb, kind).each do |rel|
-          edge_name = "#{inst}|#{verb}|#{rel}"
-          gedge(graph, inst, rel, verb) unless edges[edge_name]
-          edges[edge_name] = true
-          create_graph_one_inst(db, graph, rel, nodes, edges)
+    # The [verb, target] pairs of an instance's relations the graph follows in the scope
+    def graph_targets(inst, scope)
+      inst.class.relations.flat_map do |verb, kind|
+        inst.relations(verb, kind).filter_map do |rel|
+          [verb, rel] if scope != :structure || STRUCTURE_LAYERS.include?(rel.class.layer)
         end
       end
     end

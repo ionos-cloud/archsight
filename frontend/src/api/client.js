@@ -53,8 +53,11 @@ export function searchCount(query) {
   return fetchJson(`${BASE}/search?${params}`)
 }
 
-export async function getInstanceDot(kind, name) {
-  const res = await fetch(`/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/dot`)
+// depth: steps from the instance (null: all), scope: 'structure' or 'all'
+export async function getInstanceDot(kind, name, { depth = null, scope = 'all' } = {}) {
+  const params = new URLSearchParams({ scope })
+  if (depth) params.set('depth', depth)
+  const res = await fetch(`/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}/dot?${params}`)
   if (!res.ok) return null
   return res.text()
 }

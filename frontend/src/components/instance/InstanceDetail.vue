@@ -34,8 +34,38 @@ const props = defineProps({
 
 const svgHtml = ref('')
 const graphEl = ref(null)
+const graphBox = ref(null)
 let graphLoaded = false
 let panZoom = null
+
+// How far the dependency graph goes (null: all the way) and what it follows ('structure': the application and
+// technology stack, 'all': also organisation, motivation, ...). The choice is remembered per browser.
+const DEPTHS = [1, 2, 3, null]
+const SCOPES = [
+  ['structure', 'iconoir-network-right', 'Structure: the application and technology stack'],
+  ['all', 'iconoir-community', 'All elements: also teams, owners, requirements, ...'],
+]
+function stored(key, fallback, allowed) {
+  try {
+    const raw = localStorage.getItem(key)
+    const value = raw === null ? fallback : JSON.parse(raw)
+    return allowed.includes(value) ? value : fallback
+  } catch { return fallback }
+}
+function store(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* storage unavailable */ }
+}
+const graphDepth = ref(stored('archsight.graphDepth', 2, DEPTHS))
+const graphScope = ref(stored('archsight.graphScope', 'structure', SCOPES.map(([s]) => s)))
+
+async function setGraphOption(depth, scope) {
+  graphDepth.value = depth
+  graphScope.value = scope
+  store('archsight.graphDepth', depth)
+  store('archsight.graphScope', scope)
+  graphLoaded = false
+  await loadGraph()
+}
 const descEl = ref(null)
 useInternalLinks(descEl)
 const { embeds, scanEmbeds } = useEmbeds()
@@ -107,7 +137,9 @@ const customAnnotations = computed(() => {
 async function loadGraph() {
   if (graphLoaded || !hasOutgoingRelations.value) return
   graphLoaded = true
-  const dot = await getInstanceDot(props.kind, props.data.name)
+  const dot = await getInstanceDot(props.kind, props.data.name, { depth: graphDepth.value, scope: graphScope.value })
+  panZoom?.destroy()
+  panZoom = null
   svgHtml.value = dot ? await renderDot(dot) : ''
   await nextTick()
   initPanZoomOnGraph()
@@ -143,7 +175,7 @@ function initPanZoomOnGraph() {
   if (!graphEl.value) return
   const svg = graphEl.value.querySelector('svg')
   if (!svg) return
-  panZoom = initSvgPanZoom(svg, graphEl.value)
+  panZoom = initSvgPanZoom(svg, graphEl.value, { fullscreenTarget: graphBox.value })
 }
 </script>
 
@@ -190,7 +222,22 @@ function initPanZoomOnGraph() {
     </div>
     <div v-if="diagramHtml" v-show="view === 'diagram'" ref="diagramEl" class="asd-diagram-wrap" v-html="diagramHtml"></div>
 
-    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" class="graph-container">
+    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" ref="graphBox" class="graph-container">
+      <div class="graph-options">
+        <i class="iconoir-depth" title="Depth: how many steps the graph follows"></i>
+        <div role="group" aria-label="Graph depth">
+          <button v-for="depth in DEPTHS" :key="String(depth)" type="button"
+                  :class="{ outline: graphDepth !== depth, secondary: graphDepth !== depth }" :aria-pressed="graphDepth === depth"
+                  :title="depth ? `Depth ${depth}: ${depth} step${depth > 1 ? 's' : ''} from here` : 'Depth: all the way'"
+                  @click="setGraphOption(depth, graphScope)">{{ depth ?? 'All' }}</button>
+        </div>
+        <div role="group" aria-label="Graph scope">
+          <button v-for="[scope, icon, hint] in SCOPES" :key="scope" type="button"
+                  :class="{ outline: graphScope !== scope, secondary: graphScope !== scope }" :aria-pressed="graphScope === scope"
+                  :title="hint" :aria-label="hint"
+                  @click="setGraphOption(graphDepth, scope)"><i :class="icon"></i></button>
+        </div>
+      </div>
       <div id="graphviz" ref="graphEl" class="canvas" v-html="svgHtml"></div>
     </div>
     <p v-else-if="hasRelations && !hasOutgoingRelations && !diagramHtml" class="graph-too-large">
@@ -281,6 +328,37 @@ function initPanZoomOnGraph() {
 #graphviz {
   width: 100%;
   height: 100%;
+}
+
+.graph-options {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-options > i {
+  color: var(--pico-muted-color);
+}
+
+.graph-options [role="group"] {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin: 0;
+  background: var(--pico-card-background-color);
+}
+
+.graph-options button {
+  flex: 0 0 auto;
+  width: auto;
+  margin-bottom: 0;
+  padding: 0.15rem 0.6rem;
+  font-size: var(--fs-xs);
 }
 
 :deep(#graphviz svg) {

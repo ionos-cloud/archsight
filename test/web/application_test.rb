@@ -174,6 +174,24 @@ class ApplicationTest < Minitest::Test
     assert_includes last_response.body, "digraph"
   end
 
+  def test_get_instance_dot_with_depth_and_scope
+    path = "/kinds/ApplicationService/instances/Archsight:Web/dot"
+    get path
+    full = last_response.body
+    get path, depth: "all"
+
+    assert_equal full, last_response.body
+
+    get path, depth: "1"
+
+    assert_operator last_response.body.scan('"class" = ').size, :<, full.scan('"class" = ').size
+
+    get path, scope: "structure"
+
+    refute_includes last_response.body, "BusinessActor/"
+    assert_includes full, "BusinessActor/"
+  end
+
   # Doc HTML routes serve Vue SPA
   def test_get_doc_markdown_serves_vue
     get "/doc/search"
