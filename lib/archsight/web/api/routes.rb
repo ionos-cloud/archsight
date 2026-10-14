@@ -71,7 +71,9 @@ module Archsight::Web::API::Routes
     instance = db.instance_by_kind(kind, name) || db.instance_by_alias(kind, name)
     json_error("Instance '#{name}' not found", status: 404, error_type: "NotFound") unless instance
 
-    json_response(build_instance_response(kind, instance))
+    # graph_layers: the layers its dependency graph follows when the page opens
+    json_response(build_instance_response(kind, instance)
+      .merge(graph_layers: Archsight::GraphvisRenderer.default_graph_layers(instance.class.layer)))
   end
 
   # GET /api/v1/pages - Page tree built from PageMenu resources, page tags and filters and the home page
