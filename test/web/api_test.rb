@@ -619,6 +619,34 @@ class APITest < Minitest::Test
     end
   end
 
+  def test_the_analysis_description_is_markdown
+    app = Archsight::Web::Application.new!
+    html = app.render_annotations({ "analysis/description" => "**Orphans** of [[ApplicationService/Archsight:Web]]" },
+                                  kind: "Analysis")["analysis/description"]
+
+    assert_includes html, "<strong>Orphans</strong>"
+    assert_includes html, 'href="/kinds/ApplicationService/instances/Archsight:Web"'
+  end
+
+  # Table cells, list items and messages also come as inline html: markdown and [[Kind/Name]] links
+  def test_analysis_sections_carry_inline_html_next_to_the_raw_values
+    app = Archsight::Web::Application.new!
+    link = "[[ApplicationService/Archsight:Web]]"
+    href = 'href="/kinds/ApplicationService/instances/Archsight:Web"'
+    table = app.serialize_analysis_section({ type: :table, headers: %w[Name Note], rows: [[link, "<b>plain</b>"], ["x", 3]] })
+    list = app.serialize_analysis_section({ type: :list, items: ["**bold** #{link}"] })
+    message = app.serialize_analysis_section({ type: :message, level: :warning, message: "#{link} has no owner" })
+
+    assert_equal [[link, "<b>plain</b>"], ["x", 3]], table[:rows]
+    assert_includes table[:rows_html][0][0], href
+    refute_includes table[:rows_html][0][0], "<p>"
+    assert_equal "&lt;b&gt;plain&lt;/b&gt;", table[:rows_html][0][1]
+    assert_equal %w[x 3], table[:rows_html][1]
+    assert_includes list[:items_html][0], "<strong>bold</strong>"
+    assert_includes list[:items_html][0], href
+    assert_includes message[:message_html], href
+  end
+
   def test_execute_analysis_not_found
     post "/api/v1/kinds/Analysis/instances/nonexistent_analysis_xyz/execute"
 

@@ -50,13 +50,6 @@ module Archsight::Web::API::PageHelpers
     }
   end
 
-  # A short text (a page property) rendered as inline markdown: links, emphasis, `{macros}`, [[wiki links]], without the
-  # paragraph around it
-  def inline_markdown(text, page)
-    html = markdown(text.to_s, base: Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir), page: page)
-    html.strip.sub(%r{\A<p>(.*)</p>\z}m, '\1')
-  end
-
   # The header already shows the title, so a leading "# Title" that repeats it is dropped
   # (Confluence exports and hand-written pages usually start with one).
   def strip_duplicate_title(body, page)

@@ -10,18 +10,20 @@ export default {
   props: { data: Object, kindMeta: Object },
   setup(props) {
     const annotations = computed(() => props.data.metadata?.annotations || {})
-    // `analysis/description` is the analysis' own plain-text summary; `architecture/description` (markdown, html
-    // from the API) is the generic one
+    // `analysis/description` is the analysis' own summary, `architecture/description` the generic one (both
+    // markdown, html from the API)
     const summary = computed(() => annotations.value['analysis/description'])
     const description = computed(() => annotations.value['architecture/description'])
     const analysisScript = computed(() => annotations.value['analysis/script'])
 
     const descEl = ref(null)
     useInternalLinks(descEl)
+    const summaryEl = ref(null)
+    useInternalLinks(summaryEl)
 
     return {
       annotations, summary, description, analysisScript,
-      descEl, displayName
+      descEl, summaryEl, displayName
     }
   }
 }
@@ -47,7 +49,7 @@ export default {
         </router-link>
       </div>
     </header>
-    <p v-if="summary" class="analysis-summary">{{ summary }}</p>
+    <div ref="summaryEl" v-if="summary" class="analysis-summary prose" v-html="summary"></div>
     <div ref="descEl" v-if="description" class="description-box prose" v-html="description"></div>
   </article>
 
@@ -119,6 +121,11 @@ export default {
 .analysis-summary {
   margin: 0.25rem 0 0;
   color: var(--pico-muted-color);
+}
+
+/* a one-line description stays one line */
+.analysis-summary :deep(p:last-child) {
+  margin-bottom: 0;
 }
 
 .analysis-header h2 {
