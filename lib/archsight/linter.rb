@@ -41,10 +41,11 @@ module Archsight
       @errors
     end
 
-    # Things that still work but should be changed: renamed kinds and relation keys that the files still use.
-    # They are not errors, so they do not make `archsight lint` fail.
+    # Things that still work but should be changed: renamed kinds and relation keys that the files still use, and
+    # annotations their kind marks `deprecated:`. They are not errors, so they do not make `archsight lint` fail.
     def warnings
-      @database.respond_to?(:deprecations) ? @database.deprecations.map(&:to_s) : []
+      renamed = @database.respond_to?(:deprecations) ? @database.deprecations.map(&:to_s) : []
+      renamed + deprecated_annotations
     end
 
     # Structural modeling checks (rules of "Choosing the Kind", see Linter::Structure). Warnings, never errors.
@@ -53,6 +54,18 @@ module Archsight
     end
 
     private
+
+    # Each use of an annotation the kind marks `deprecated:`, with what to use instead
+    def deprecated_annotations
+      @database.instances.each_value.flat_map do |instances_hash|
+        instances_hash.each_value.flat_map do |instance|
+          instance.annotations.keys.filter_map do |key|
+            annotation = instance.class.annotation_matching(key)
+            "#{instance.path_ref}: #{instance.klass} '#{instance.name}' uses deprecated annotation '#{key}': #{annotation.deprecated}" if annotation&.deprecated?
+          end
+        end
+      end
+    end
 
     # Pages need exactly one menu and their [[links]] must resolve
     def validate_page(page)

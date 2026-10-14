@@ -259,7 +259,8 @@ one resource). It is not a name: it cannot be used in a relation, a `[[wiki link
 the same resource, their aliases (and tags) are added together instead of one replacing the other.
 
 For kind authors: `annotation "key", unique: true` makes any annotation an identifier of this kind: unique per kind,
-checked by `archsight lint`, shown as plain text.
+checked by `archsight lint`, shown as plain text. `annotation "key", deprecated: "what to use instead"` keeps an
+annotation working while `archsight lint` lists every use as a deprecation (with the text), without failing.
 
 ### Links
 
@@ -590,8 +591,9 @@ Deployment importers (Argo CD, Helm, Cluster API) know every cluster a deployabl
 component. Keep the service-level relation to the clusters of the service's own components: a sidecar or agent that
 the products deploy into their own clusters (a DNS or monitoring agent) is `servedBy` each of those clusters, and its
 owning service is not, so it does not look like it runs everywhere. The TechnologyService page lists the components
-deployed on it as incoming `servedBy` from ApplicationComponent. The `deployment/cluster` annotation says the same as
-the relation but is invisible to the graph, views and analyses; prefer the relation. See
+deployed on it as incoming `servedBy` from ApplicationComponent. The `deployment/cluster` annotation is deprecated in
+favour of the relation, which the graph, views and analyses see; it still loads, and `archsight lint` lists every use
+as a deprecation without failing. See
 `examples/archsight/technology/payments-platform.yaml`.
 
 ### Concept and Implementation

@@ -60,8 +60,7 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     A component is `servedBy` the `TechnologyService` it is deployed on (a product's cluster, a managed platform) and
     `servedBy` the `TechnologySystemSoftware` it runs on (the runtime, such as a Kubernetes distribution). Deployment
     importers write the service per component, so a sidecar or agent deployed into many clusters shows where it runs
-    without making its own service look like it runs in all of them. `deployment/cluster` says the same as an
-    annotation; prefer the relation, which the graph, views and analyses see.
+    without making its own service look like it runs in all of them.
 
     The computed `component/dependents` counts the components that depend on this one, which tells shared libraries
     and modules from components nobody consumes.
@@ -205,10 +204,11 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
              sidebar: false,
              filter: :list
   annotation "deployment/cluster",
-             description: "Target clusters, comma separated; redundant to servedBy technologyServices, prefer the relation",
+             description: "Target clusters, comma separated",
              title: "Cluster",
              filter: :list,
-             summary: true
+             summary: true,
+             deprecated: "list the clusters as spec.servedBy.technologyServices"
 
   # Computed Annotations
   computed_annotation "repository/artifacts/total",

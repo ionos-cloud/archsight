@@ -25,7 +25,7 @@ module Archsight
       MAX_SUMMARY_ANNOTATIONS: Integer
       def self.declared_relations: () -> Array[[Symbol, Symbol, String]]
       def self.relations: () -> Array[[Symbol, Symbol, String]]
-      def self.annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?summary: bool) -> void
+      def self.annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?summary: bool, ?editor: bool, ?validator: (^(String) -> String?)?, ?unique: bool, ?deprecated: String?) -> void
       def self.annotations: () -> Array[Annotations::Annotation]
       def self.computed_annotation: (String, ?description: String?, ?filter: Symbol?, ?title: String?, ?format: Symbol?, ?enum: Array[String]?, ?sidebar: bool, ?type: Class?, ?summary: bool) { () -> untyped } -> void
       def self.computed_annotations: () -> Array[Annotations::Computed]

@@ -35,15 +35,19 @@ module Archsight
       # A kind may mark at most this many annotations as summary (see Base.annotation)
       MAX_SUMMARY_ANNOTATIONS = 3
 
+      # The options `annotation` accepts (see Archsight::Annotations::Annotation)
+      ANNOTATION_OPTIONS = %i[description filter title format enum sidebar type summary editor validator unique
+                              deprecated].freeze
+
       # Define an annotation using the Annotation class
       # `summary: true` marks it as a summary attribute: it is returned with every search hit of this kind.
       # `unique: true` makes it an identifier: its values (each element of a list) are unique among the resources
       # of the kind, which `archsight lint` checks, and it is shown as plain text, not as tags.
-      def self.annotation(key, description: nil, filter: nil, title: nil, format: nil, enum: nil, sidebar: true,
-                          type: nil, summary: false, editor: true, validator: nil, unique: false)
-        options = { description: description, filter: filter, title: title, format: format, enum: enum,
-                    sidebar: sidebar, type: type, summary: summary, editor: editor, validator: validator,
-                    unique: unique }
+      # `deprecated: "what to use instead"` keeps it working while `archsight lint` lists every use.
+      def self.annotation(key, **options)
+        unknown = options.keys - ANNOTATION_OPTIONS
+        raise ArgumentError, "unknown annotation option(s) #{unknown.join(", ")} for #{key}" if unknown.any?
+
         register_annotation(Archsight::Annotations::Annotation.new(key, options))
       end
 

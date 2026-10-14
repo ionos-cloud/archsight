@@ -9,6 +9,7 @@ module Archsight
       attr_reader sidebar: bool
       attr_reader type: Class?
       attr_reader summary: bool
+      attr_reader deprecated: String?
 
       @explicit_title: String?
       @validator: (^(String) -> String?)?
@@ -21,6 +22,7 @@ module Archsight
       def filterable?: () -> boolish
       def list?: () -> bool
       def unique?: () -> bool
+      def deprecated?: () -> bool
       def resource?: () -> bool
       def summary?: () -> bool
       def has_validation?: () -> boolish
