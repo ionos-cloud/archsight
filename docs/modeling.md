@@ -254,12 +254,13 @@ ApplicationService: architecture/aliases == "ITGS:A001"
 name == "ITGS:A001"
 ```
 
-An alias is an identifier, so it is shown as plain text and is not a facet in the sidebar (it would only ever point at
-one resource). It is not a name: it cannot be used in a relation, a `[[wiki link]]` or a URL. When two documents describe
-the same resource, their aliases (and tags) are added together instead of one replacing the other.
+An alias is an identifier, so each alias is shown as a chip without a link and is not a facet in the sidebar (it
+would only ever point at one resource). It is not a name: it cannot be used in a relation, a `[[wiki link]]` or a URL.
+When two documents describe the same resource, their aliases (and tags) are added together instead of one replacing
+the other.
 
 For kind authors: `annotation "key", unique: true` makes any annotation an identifier of this kind: unique per kind,
-checked by `archsight lint`, shown as plain text. `annotation "key", deprecated: "what to use instead"` keeps an
+checked by `archsight lint`, shown as chips without links. `annotation "key", deprecated: "what to use instead"` keeps an
 annotation working while `archsight lint` lists every use as a deprecation (with the text), without failing.
 
 ### Links

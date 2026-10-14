@@ -27,7 +27,7 @@ const isUrl = computed(() => {
   return typeof props.value === 'string' && /^https?:\/\//.test(props.value)
 })
 
-// an identifier (alias) points at one resource, so it is plain text: never a chip, never a link
+// an identifier (alias) points at one resource: one chip per value, never a link
 const identifiers = computed(() => {
   if (props.format !== 'identifier' || props.value == null) return []
   return String(props.value).split(',').map(s => s.trim()).filter(Boolean)
@@ -48,7 +48,7 @@ const tagValues = computed(() => {
       <template v-if="format === 'markdown'">
         <div ref="mdEl" v-html="value"></div>
       </template>
-      <template v-else-if="identifiers.length">{{ identifiers.join(', ') }}</template>
+      <TagChips v-else-if="identifiers.length" :kind="kind" :annotation-key="annotationKey" :values="identifiers" :linked="false" />
       <TagChips v-else-if="tagValues.length" :kind="kind" :annotation-key="annotationKey" :values="tagValues" />
       <template v-else>
         <a v-if="isUrl" :href="value" target="_blank">{{ value }}</a>

@@ -42,7 +42,7 @@ module Archsight
       # Define an annotation using the Annotation class
       # `summary: true` marks it as a summary attribute: it is returned with every search hit of this kind.
       # `unique: true` makes it an identifier: its values (each element of a list) are unique among the resources
-      # of the kind, which `archsight lint` checks, and it is shown as plain text, not as tags.
+      # of the kind, which `archsight lint` checks, and its values are shown as chips without links (not tags).
       # `deprecated: "what to use instead"` keeps it working while `archsight lint` lists every use.
       def self.annotation(key, **options)
         unknown = options.keys - ANNOTATION_OPTIONS
