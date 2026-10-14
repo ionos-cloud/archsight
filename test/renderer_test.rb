@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "tmpdir"
 
 class RendererTest < Minitest::Test
   include Archsight::GraphvisRenderer
@@ -91,6 +92,76 @@ class RendererTest < Minitest::Test
     assert_equal %w[motivation strategy], renderer.default_graph_layers("motivation")
     assert_equal %w[technology], renderer.default_graph_layers("technology")
     assert_equal Archsight::Resources::LAYERS, renderer.default_graph_layers("other")
+  end
+
+  def test_the_self_relations_of_a_kind
+    renderer = Archsight::GraphvisRenderer
+
+    assert_equal [%i[compositeOf businessActors]], renderer.self_relations(Archsight::Resources["BusinessActor"])
+    assert_empty renderer.self_relations(Archsight::Resources["DataObject"])
+  end
+
+  def test_create_graph_kind_draws_the_teams_and_their_sub_teams_only
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, "teams.yaml"), <<~YAML)
+        ---
+        apiVersion: architecture/v1alpha1
+        kind: BusinessActor
+        metadata:
+          name: Org:Platform
+        spec:
+          compositeOf:
+            businessActors:
+              - Team:Compute
+              - Team:Network
+        ---
+        apiVersion: architecture/v1alpha1
+        kind: BusinessActor
+        metadata:
+          name: Team:Compute
+        spec: {}
+        ---
+        apiVersion: architecture/v1alpha1
+        kind: BusinessActor
+        metadata:
+          name: Team:Network
+        spec: {}
+        ---
+        apiVersion: architecture/v1alpha1
+        kind: BusinessActor
+        metadata:
+          name: Team:Alone
+        spec: {}
+        ---
+        apiVersion: architecture/v1alpha1
+        kind: BusinessProcess
+        metadata:
+          name: Process:Deploy
+        spec:
+          performedBy:
+            businessActors:
+              - Team:Alone
+      YAML
+      db = Archsight::Database.new(dir, verbose: false)
+      db.reload!
+      dot = create_graph_kind(db, "BusinessActor")
+
+      assert_equal %w[BusinessActor/Org:Platform BusinessActor/Team:Compute BusinessActor/Team:Network],
+                   graph_nodes(dot).map { |node| node.split("::").last }.sort
+      assert_equal 2, dot.scan("compositeOf").size
+    end
+  end
+
+  def test_create_graph_kind_draws_the_dependencies_between_services
+    dot = create_graph_kind(@db, "ApplicationService")
+    kinds = graph_nodes(dot).map { |node| node.split("/", 2).first.split("::").last }.uniq
+
+    assert_equal ["ApplicationService"], kinds
+    assert_includes dot, "dependsOn"
+  end
+
+  def test_create_graph_kind_raises_for_unknown_kind
+    assert_raises(RuntimeError) { create_graph_kind(@db, "NonexistentKind") }
   end
 
   def test_gname_returns_string

@@ -63,6 +63,13 @@ export async function getInstanceDot(kind, name, { depth = null, layers = null }
   return res.text()
 }
 
+// The resources of a kind and the relations between them
+export async function getKindDot(kind) {
+  const res = await fetch(`/kinds/${encodeURIComponent(kind)}/dot`)
+  if (!res.ok) return null
+  return res.text()
+}
+
 export async function getGlobalDot() {
   const res = await fetch('/dot')
   if (!res.ok) return null

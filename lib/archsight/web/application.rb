@@ -299,6 +299,14 @@ class Archsight::Web::Application < Sinatra::Base
     serve_vue
   end
 
+  # The resources of a kind and the relations between them (see GraphvisRenderer#create_graph_kind)
+  get "/kinds/:kind/dot" do
+    halt 404, "kind #{params["kind"]} unknown" unless Archsight::Resources[params["kind"]]
+
+    content_type "text/plain"
+    create_graph_kind(db, params["kind"])
+  end
+
   # An alias in the URL redirects to the resource's real name (`:` stays readable, the rest is escaped)
   get "/kinds/:kind/instances/:instance" do
     kind = params["kind"]
