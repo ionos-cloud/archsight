@@ -173,8 +173,7 @@ module Archsight
       end
       edges.uniq! { |inst, verb, rel| "#{gname(inst)}|#{verb}|#{gname(rel)}" }
 
-      # top down, like an org chart
-      Archsight::Graphvis.new(klass_pat, rankdir: :TB).draw_dot do |g|
+      Archsight::Graphvis.new(klass_pat).draw_dot do |g|
         edges.flat_map { |inst, _, rel| [inst, rel] }.uniq.each { |inst| gnode(g, inst, simple_label: true) }
         edges.each { |inst, verb, rel| gedge(g, inst, rel, verb) }
       end
