@@ -30,6 +30,7 @@ module Archsight
     def reload!: () -> void
     def instances_by_kind: (String) -> Hash[String, Resources::Base]
     def instance_by_kind: (String, String) -> Resources::Base?
+    def instance_by_alias: (String, String) -> Resources::Base?
     def annotation_values: (String, Annotations::Annotation) -> Array[untyped]
     def filters_for_kind: (String) -> Array[untyped]
     def query: (String) -> Array[Resources::Base]

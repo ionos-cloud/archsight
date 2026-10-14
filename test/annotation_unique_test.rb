@@ -100,6 +100,23 @@ class AnnotationUniqueTest < Minitest::Test
     end
   end
 
+  # an alias in a URL opens the one resource of the kind that has it
+  def test_instance_by_alias_finds_the_one_resource_of_the_kind
+    with_db do |db|
+      assert_equal "Foo", db.instance_by_alias("ApplicationService", "C5:COS-07")&.name
+      assert_equal "Elsewhere", db.instance_by_alias("TechnologyService", "ITGS:A001")&.name
+      assert_nil db.instance_by_alias("ApplicationService", "Foo") # a name is not an alias
+      assert_nil db.instance_by_alias("ApplicationService", "ITGS:A9")
+      assert_nil db.instance_by_alias("NoSuchKind", "ITGS:A001")
+    end
+  end
+
+  def test_instance_by_alias_does_not_guess_between_two_resources
+    yaml = RESOURCES.sub("architecture/aliases: ITGS:A002", "architecture/aliases: ITGS:A001")
+
+    with_db(yaml) { |db| assert_nil db.instance_by_alias("ApplicationService", "ITGS:A001") }
+  end
+
   def test_name_not_equal_also_considers_aliases
     with_db do |db|
       names = db.query('ApplicationService: name != "ITGS:A001"').map(&:name)

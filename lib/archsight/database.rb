@@ -93,6 +93,21 @@ module Archsight
       @instances[Archsight::Resources[kind]][instance]
     end
 
+    # The resource of a kind that has `identifier` as one of its aliases (a value of a unique annotation), when exactly
+    # one has; nil otherwise. A name always wins, so callers try instance_by_kind first.
+    def instance_by_alias(kind, identifier)
+      klass = Archsight::Resources[kind]
+      return nil unless klass
+
+      unique = klass.annotations.select(&:unique?).reject(&:pattern?)
+      return nil if unique.empty?
+
+      matches = instances_by_kind(kind).values.select do |instance|
+        unique.any? { |annotation| Array(annotation.value_for(instance)).map(&:to_s).include?(identifier) }
+      end
+      matches.first if matches.one?
+    end
+
     # Collect unique annotation values across all instances of a kind
     def annotation_values(kind, annotation)
       instances = instances_by_kind(kind).values

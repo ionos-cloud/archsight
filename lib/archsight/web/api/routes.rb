@@ -67,7 +67,8 @@ module Archsight::Web::API::Routes
     klass = Archsight::Resources[kind]
     json_error("Kind '#{kind}' not found", status: 404, error_type: "NotFound") unless klass
 
-    instance = db.instance_by_kind(kind, name)
+    # an alias finds the one resource that has it; the response carries the real name
+    instance = db.instance_by_kind(kind, name) || db.instance_by_alias(kind, name)
     json_error("Instance '#{name}' not found", status: 404, error_type: "NotFound") unless instance
 
     json_response(build_instance_response(kind, instance))

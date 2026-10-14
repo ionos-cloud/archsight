@@ -282,7 +282,14 @@ class Archsight::Web::Application < Sinatra::Base
     serve_vue
   end
 
+  # An alias in the URL redirects to the resource's real name (`:` stays readable, the rest is escaped)
   get "/kinds/:kind/instances/:instance" do
+    kind = params["kind"]
+    name = params["instance"]
+    if Archsight::Resources[kind] && !db.instance_by_kind(kind, name) && (instance = db.instance_by_alias(kind, name))
+      redirect "/kinds/#{kind}/instances/#{ERB::Util.url_encode(instance.name).gsub("%3A", ":")}"
+    end
+
     serve_vue
   end
 
