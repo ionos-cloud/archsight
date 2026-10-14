@@ -246,20 +246,24 @@ about who it is and where else it lives. Both are available on every resource ki
 
 `architecture/aliases` holds the other identifiers of a resource, comma-separated: `ApplicationService:Foo` can also be
 `ITGS:A001`. Aliases are **unique among the resources of a kind** (`archsight lint` reports a duplicate with both
-resources); the same alias on resources of different kinds is fine, like names. They are found, not resolved:
+resources); the same alias on resources of different kinds is fine, like names. They are found by search and open a
+resource by URL:
 
 ```
 ITGS:A001                                              # the search box: the name shortcut also tests aliases
 ApplicationService: architecture/aliases == "ITGS:A001"
 name == "ITGS:A001"
+/kinds/ApplicationService/instances/ITGS:A001          # redirects to /kinds/ApplicationService/instances/Foo
 ```
 
-An alias is an identifier, so it is shown as plain text and is not a facet in the sidebar (it would only ever point at
-one resource). It is not a name: it cannot be used in a relation, a `[[wiki link]]` or a URL. When two documents describe
-the same resource, their aliases (and tags) are added together instead of one replacing the other.
+In a URL (and the instance API) a name always wins; when no resource has that name, the one resource of the kind
+with that alias opens under its real name. An alias is an identifier, so each alias is shown as a chip without a link
+and is not a facet in the sidebar (it would only ever point at one resource). It is not a name in the model: a
+relation or a `[[wiki link]]` must use the name. When two documents describe the same resource, their aliases (and
+tags) are added together instead of one replacing the other.
 
 For kind authors: `annotation "key", unique: true` makes any annotation an identifier of this kind: unique per kind,
-checked by `archsight lint`, shown as plain text. `annotation "key", deprecated: "what to use instead"` keeps an
+checked by `archsight lint`, shown as chips without links. `annotation "key", deprecated: "what to use instead"` keeps an
 annotation working while `archsight lint` lists every use as a deprecation (with the text), without failing.
 
 ### Links

@@ -41,6 +41,28 @@ class ApplicationTest < Minitest::Test
     assert last_response.location.end_with?("/kinds/TechnologyArtifact")
   end
 
+  # an alias in the URL opens the resource under its real name
+  def test_instance_page_redirects_an_alias_to_the_name
+    get "/kinds/ApplicationService/instances/ITGS:A001"
+
+    assert_predicate last_response, :redirect?
+    assert last_response.location.end_with?("/kinds/ApplicationService/instances/Archsight:CLI")
+
+    get "/kinds/ApplicationService/instances/Archsight:CLI"
+
+    assert_predicate last_response, :ok?
+    get "/kinds/ApplicationService/instances/NoSuchAlias"
+
+    assert_predicate last_response, :ok? # unknown names are left to the frontend's not-found page
+  end
+
+  def test_instance_api_finds_a_resource_by_alias
+    get "/api/v1/kinds/ApplicationService/instances/C5:COS-07"
+
+    assert_predicate last_response, :ok?
+    assert_equal "Archsight:CLI", JSON.parse(last_response.body)["name"]
+  end
+
   def test_post_maintenance_restart_disabled_by_default
     post "/maintenance/restart"
 

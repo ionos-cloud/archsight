@@ -395,7 +395,7 @@ main .canvas a {
   }
 }
 
-/* ===== Tag chips: the values of tag annotations, each a link to the search for that value ===== */
+/* ===== Tag chips: the values of tag annotations, each a link to the search for that value (aliases: plain chips) ===== */
 .chip-group {
   display: inline-flex;
   flex-wrap: wrap;
@@ -417,7 +417,7 @@ main .canvas a {
   transition: border-color 0.15s ease, color 0.15s ease;
 }
 
-.chip:hover,
+a.chip:hover,
 .chip:focus-visible {
   color: var(--accent);
   border-color: var(--accent);

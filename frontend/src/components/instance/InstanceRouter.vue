@@ -24,9 +24,12 @@ async function load() {
   error.value = null
   try {
     data.value = await getInstance(props.kind, props.instance)
-    // a renamed kind opened under its old name (an old link): carry on under the current name
-    if (data.value.kind && data.value.kind !== props.kind) {
-      router.replace({ name: 'instance', params: { kind: data.value.kind, instance: props.instance } })
+    // a renamed kind opened under its old name (an old link) or a resource opened by an alias: carry on under the
+    // current kind and the real name
+    const kind = data.value.kind || props.kind
+    const name = data.value.name || props.instance
+    if (kind !== props.kind || name !== props.instance) {
+      router.replace({ name: 'instance', params: { kind, instance: name } })
     }
   } catch (e) {
     error.value = e.message

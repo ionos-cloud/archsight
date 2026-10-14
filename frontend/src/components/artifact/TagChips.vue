@@ -4,17 +4,19 @@ import { searchParams } from '../../composables/useSearchScope.js'
 import { symbolFor } from '../../composables/useAnnotationSymbols.js'
 
 // The values of a tag annotation as chips. Each chip is a link to the search for that value; a machine tag
-// (namespace:value) shows its namespace apart, and values with a known symbol carry it.
+// (namespace:value) or a namespaced alias (ITGS:A001) shows its namespace apart, and values with a known symbol carry
+// it. Unlinked chips (aliases) show the values only: an alias points at the one resource that is already open.
 const props = defineProps({
   kind: { type: String, required: true },
   annotationKey: { type: String, required: true },
   values: { type: Array, required: true },
+  linked: { type: Boolean, default: true },
 })
 
 // lifecycle states that call for attention get a tone: deprecated warns, sunset and end-of-life are over
 const LIFECYCLE_TONES = { deprecated: 'chip-warning', sunset: 'chip-danger', 'end-of-life': 'chip-danger' }
 
-const MACHINE_TAG = /^([a-z][a-z0-9-]*):(.+)$/
+const MACHINE_TAG = /^([a-z][a-z0-9-]*):(.+)$/i
 
 function quote(value) {
   return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')
@@ -35,17 +37,18 @@ const chips = computed(() => props.values.map((value) => {
 
 <template>
   <span class="chip-group">
-    <router-link
+    <component
+      :is="linked ? 'router-link' : 'span'"
       v-for="chip in chips"
       :key="chip.value"
       class="chip"
       :class="chip.tone"
-      :to="chip.to"
-      :title="`Show ${kind} resources with ${annotationKey} = ${chip.value}`"
+      :to="linked ? chip.to : undefined"
+      :title="linked ? `Show ${kind} resources with ${annotationKey} = ${chip.value}` : undefined"
     >
       <i v-if="chip.symbol" :class="`iconoir-${chip.symbol} icon-application chip-symbol`" aria-hidden="true"></i>
       <span v-if="chip.namespace" class="chip-namespace">{{ chip.namespace }}</span>
       <span>{{ chip.label }}</span>
-    </router-link>
+    </component>
   </span>
 </template>
