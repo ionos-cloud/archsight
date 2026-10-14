@@ -106,8 +106,8 @@ module Archsight
       end
     end
 
-    # The layers of the kinds, top to bottom
-    LAYERS = %w[motivation strategy business application technology implementation other].freeze
+    # The layers of the kinds, top to bottom, in the order of the sidebar (frontend/src/composables/useLayers.js)
+    LAYERS = %w[motivation strategy implementation business application technology other].freeze
 
     # The layer an instance graph also follows by default, below the instance's own layer (technology is the bottom
     # of the stack; implementation points at what it changes)

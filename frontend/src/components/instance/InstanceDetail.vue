@@ -25,6 +25,7 @@ import LicenseInfo from '../artifact/LicenseInfo.vue'
 import ExternalLinks from '../artifact/ExternalLinks.vue'
 import AnnotationRow from '../artifact/AnnotationRow.vue'
 import { LEAD_KEYS } from '../../composables/useAnnotationSymbols.js'
+import { LAYERS as LAYER_DEFS, LAYER_IDS } from '../../composables/useLayers.js'
 
 const props = defineProps({
   data: Object,
@@ -41,9 +42,9 @@ let panZoom = null
 // How far the dependency graph goes (null: all the way, remembered per browser) and which layers it follows (the
 // page opens with the resource's own layer and the next one below, `graph_layers` of the API)
 const DEPTHS = [1, 2, 3, null]
-// top to bottom, as GraphvisRenderer::LAYERS
-const LAYERS = ['motivation', 'strategy', 'business', 'application', 'technology', 'implementation', 'other']
-const layerTitle = (layer) => `${layer.charAt(0).toUpperCase()}${layer.slice(1)} layer`
+// in the order of the sidebar (useLayers)
+const LAYERS = LAYER_IDS
+const layerTitle = (layer) => `${LAYER_DEFS.find(l => l.id === layer)?.title || layer} layer`
 function stored(key, fallback, allowed) {
   try {
     const raw = localStorage.getItem(key)
