@@ -194,42 +194,6 @@ module Archsight::Web::API::JsonHelpers
     end
   end
 
-  def build_analysis_result(result)
-    data = {
-      name: result.name,
-      success: result.success?,
-      has_findings: result.has_findings?,
-      duration: result.duration,
-      sections: result.sections.map { |s| serialize_analysis_section(s) }
-    }
-
-    if result.failed?
-      data[:error] = result.error
-      data[:error_backtrace] = result.error_backtrace if result.error_backtrace&.any?
-    end
-
-    data
-  end
-
-  def serialize_analysis_section(section)
-    case section[:type]
-    when :heading
-      { type: "heading", level: section[:level], text: section[:text] }
-    when :text
-      { type: "text", content: markdown(section[:content]) }
-    when :message
-      { type: "message", level: section[:level].to_s, message: section[:message] }
-    when :table
-      { type: "table", headers: section[:headers], rows: section[:rows] }
-    when :list
-      { type: "list", items: section[:items] }
-    when :code
-      { type: "code", lang: section[:lang], content: section[:content] }
-    else
-      { type: section[:type].to_s }
-    end
-  end
-
   def extract_references(instance)
     references = {}
 

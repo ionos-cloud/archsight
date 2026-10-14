@@ -5,6 +5,7 @@ require "sinatra/extension"
 require_relative "json_helpers"
 require_relative "page_helpers"
 require_relative "requirements_helpers"
+require_relative "analysis_helpers"
 require_relative "../../assets"
 
 module Archsight; end
@@ -18,6 +19,7 @@ module Archsight::Web::API::Routes
   helpers Archsight::Web::API::JsonHelpers
   helpers Archsight::Web::API::PageHelpers
   helpers Archsight::Web::API::RequirementsHelpers
+  helpers Archsight::Web::API::AnalysisHelpers
 
   # Rendering is CPU work, previews are typed, not pasted
   MAX_DIAGRAM_SOURCE = 100_000

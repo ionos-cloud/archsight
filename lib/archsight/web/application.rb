@@ -143,6 +143,15 @@ class Archsight::Web::Application < Sinatra::Base
       settings.environment == :development
     end
 
+    # A short text (a page property, an analysis table cell) rendered as inline markdown: links, emphasis,
+    # `{macros}`, [[wiki links]], without the paragraph around it
+    # @param page [Archsight::Resources::Page, nil] the page the text belongs to, for its relative images and macros
+    def inline_markdown(text, page = nil)
+      base = page && Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir)
+      html = markdown(text.to_s, base: base, page: page)
+      html.strip.sub(%r{\A<p>(.*)</p>\z}m, '\1')
+    end
+
     # Render markdown to HTML with optional URL resolution for repository content
     # @param data [String] Markdown content
     # @param git_url [String, nil] Git URL for resolving relative paths (e.g., for README images)

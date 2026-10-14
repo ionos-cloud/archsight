@@ -57,8 +57,9 @@ class Archsight::Resources::Analysis < Archsight::Resources::Base
 
   # Description
   annotation "analysis/description",
-             description: "Human-readable description of what this analysis validates",
-             title: "Description"
+             description: "Human-readable description of what this analysis validates (markdown)",
+             title: "Description",
+             format: :markdown
 
   # Execution configuration
   annotation "analysis/timeout",
