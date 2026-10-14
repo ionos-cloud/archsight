@@ -155,6 +155,31 @@ module Archsight
       end
     end
 
+    # The relations of a kind to its own kind (a team's sub-teams, a service's dependencies on other services) as
+    # [verb, key] pairs
+    def self.self_relations(klass)
+      kind = klass.name.to_s.split("::").last
+      klass.declared_relations.filter_map { |verb, key, target| [verb, key] if target.to_s == kind }
+    end
+
+    # The graph of a kind: its resources that are related to each other by its relations to its own kind (an org
+    # chart for BusinessActor). Resources without such a relation are left out, the kind's list shows them.
+    def create_graph_kind(db, klass_pat)
+      klass = Archsight::Resources[klass_pat] || raise("kind #{klass_pat} unknown")
+      relations = Archsight::GraphvisRenderer.self_relations(klass)
+      sources = (db.instances[klass] || {}).values.reject(&:abandoned?)
+      edges = sources.flat_map do |inst|
+        relations.flat_map { |verb, key| inst.relations(verb, key).reject(&:abandoned?).map { |rel| [inst, verb, rel] } }
+      end
+      edges.uniq! { |inst, verb, rel| "#{gname(inst)}|#{verb}|#{gname(rel)}" }
+
+      # top down, like an org chart
+      Archsight::Graphvis.new(klass_pat, rankdir: :TB).draw_dot do |g|
+        edges.flat_map { |inst, _, rel| [inst, rel] }.uniq.each { |inst| gnode(g, inst, simple_label: true) }
+        edges.each { |inst, verb, rel| gedge(g, inst, rel, verb) }
+      end
+    end
+
     # The [verb, target] pairs of an instance's relations the graph follows: those to resources of the layers
     def graph_targets(inst, layers)
       inst.class.relations.flat_map do |verb, kind|

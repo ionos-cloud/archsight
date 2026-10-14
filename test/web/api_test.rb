@@ -53,6 +53,15 @@ class APITest < Minitest::Test
     assert_equal kinds.sort, kinds
   end
 
+  def test_get_api_kinds_tells_which_kinds_relate_to_themselves
+    get "/api/v1/kinds"
+
+    self_relations = json_response["kinds"].to_h { |k| [k["kind"], k["self_relations"]] }
+
+    assert self_relations["BusinessActor"]
+    refute self_relations["DataObject"]
+  end
+
   # GET /api/v1/kinds/:kind tests
 
   def test_get_api_kinds_kind

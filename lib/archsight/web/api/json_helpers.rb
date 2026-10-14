@@ -66,7 +66,8 @@ module Archsight::Web::API::JsonHelpers
         description: klass.description,
         layer: klass.layer,
         icon: klass.icon,
-        instance_count: count
+        instance_count: count,
+        self_relations: Archsight::GraphvisRenderer.self_relations(klass).any?
       }
     end
     kinds.sort_by { |k| k[:kind] }

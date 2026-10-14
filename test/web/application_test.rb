@@ -196,6 +196,18 @@ class ApplicationTest < Minitest::Test
     assert_equal full, last_response.body, "no known layer: every layer"
   end
 
+  def test_get_kind_dot
+    get "/kinds/ApplicationService/dot"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.body, "digraph"
+    assert_includes last_response.body, "dependsOn"
+
+    get "/kinds/NonexistentKind/dot"
+
+    assert_equal 404, last_response.status
+  end
+
   # Doc HTML routes serve Vue SPA
   def test_get_doc_markdown_serves_vue
     get "/doc/search"
