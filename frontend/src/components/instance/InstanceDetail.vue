@@ -9,6 +9,7 @@ import { renderMermaidIn } from '../../composables/useMermaid.js'
 import { renderDrawioIn } from '../../composables/useDrawio.js'
 import { useEmbeds } from '../../composables/useEmbeds.js'
 import EmbeddedKind from '../page/EmbeddedKind.vue'
+import EmbedButton from '../common/EmbedButton.vue'
 import RelationsGrid from './RelationsGrid.vue'
 import ModuleGraph from './ModuleGraph.vue'
 import RequirementsSection from './RequirementsSection.vue'
@@ -207,14 +208,17 @@ function initPanZoomOnGraph() {
           generated {{ timeAgo(generatedAt) }}
         </span>
       </div>
-      <router-link
-        v-else
-        class="btn-header"
-        :to="`/kinds/${kind}/instances/${data.name}/edit`"
-        title="Edit this resource"
-      >
-        <i class="iconoir-edit-pencil"></i> Edit
-      </router-link>
+      <div class="header-actions">
+        <EmbedButton :kind="kind" :name="data.name" />
+        <router-link
+          v-if="!generatedScript"
+          class="btn-header"
+          :to="`/kinds/${kind}/instances/${data.name}/edit`"
+          title="Edit this resource"
+        >
+          <i class="iconoir-edit-pencil"></i> Edit
+        </router-link>
+      </div>
     </header>
 
     <div v-if="diagramHtml && hasOutgoingRelations" class="view-pager" role="group" aria-label="Diagram view">
@@ -392,6 +396,12 @@ function initPanZoomOnGraph() {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-header {

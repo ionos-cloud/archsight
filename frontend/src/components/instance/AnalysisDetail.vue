@@ -1,12 +1,13 @@
 <script>
 import { ref, computed } from 'vue'
 import { displayName } from '../../composables/useFormatting.js'
+import EmbedButton from '../common/EmbedButton.vue'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import RelationsGrid from './RelationsGrid.vue'
 import AnalysisResults from './AnalysisResults.vue'
 
 export default {
-  components: { RelationsGrid, AnalysisResults },
+  components: { RelationsGrid, AnalysisResults, EmbedButton },
   props: { data: Object, kindMeta: Object },
   setup(props) {
     const annotations = computed(() => props.data.metadata?.annotations || {})
@@ -40,6 +41,7 @@ export default {
         </div>
       </h2>
       <div class="header-actions">
+        <EmbedButton kind="Analysis" :name="data.name" />
         <router-link
           class="btn-header"
           :to="`/kinds/Analysis/instances/${data.name}/edit`"

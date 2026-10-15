@@ -1,8 +1,11 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, inject, nextTick } from 'vue'
 import { getInstance, getRequirements } from '../../api/client.js'
 import { viewSpec } from '../../composables/useViewSpec.js'
 import { analysisStatus } from '../../composables/useAnalysisStatus.js'
+import { useInternalLinks } from '../../composables/useInternalLinks.js'
+import { renderMermaidIn } from '../../composables/useMermaid.js'
+import { renderDrawioIn } from '../../composables/useDrawio.js'
 import ViewResults from '../instance/ViewResults.vue'
 import AnalysisResults from '../instance/AnalysisResults.vue'
 import RequirementsTable from '../instance/RequirementsTable.vue'
@@ -12,6 +15,8 @@ import RequirementsTable from '../instance/RequirementsTable.vue'
 // An inline view (a ```view block) brings its own `spec` (query, fields, sort, showKind) and `name` is its title:
 // nothing to load but the result. The requirements of a selection of resources (a ```requirements block, kind
 // 'Requirements') bring a `spec` too (`of`, `priority`, `status`) and are loaded from the API here.
+// Any other kind (`![[MotivationGoal/Name]]`) shows the resource's description; embeds inside that description stay
+// links, so two descriptions cannot embed each other without end.
 const props = defineProps({
   kind: String,
   name: String,
@@ -23,6 +28,11 @@ const total = ref(null)
 const analysis = ref(null) // { result, executing } of an embedded analysis
 const error = ref(null)
 const requirements = ref(null) // the entries of a 'Requirements' embed
+const descriptionEl = ref(null)
+useInternalLinks(descriptionEl)
+const kinds = inject('kinds', ref(null))
+const LIVE_KINDS = ['View', 'Analysis', 'Requirements']
+const isDescription = computed(() => !props.spec && !LIVE_KINDS.includes(props.kind))
 
 async function loadRequirements() {
   requirements.value = null
@@ -63,7 +73,18 @@ const status = computed(() => {
   return { failed: s.failed, label: result.duration ? `${label} ${result.duration.toFixed(2)}s` : label }
 })
 const hasScript = computed(() => !!annotations.value['analysis/script'])
-const icon = computed(() => ({ View: 'iconoir-table-rows', Requirements: 'iconoir-list' })[props.kind] || 'iconoir-play')
+const description = computed(() => annotations.value['architecture/description'])
+watch(description, async () => {
+  await nextTick()
+  if (!descriptionEl.value) return
+  renderMermaidIn(descriptionEl.value)
+  renderDrawioIn(descriptionEl.value)
+})
+const kindMeta = computed(() => kinds.value?.kinds?.find((k) => k.kind === props.kind))
+const icon = computed(() => {
+  if (isDescription.value) return kindMeta.value ? `iconoir-${kindMeta.value.icon} icon-${kindMeta.value.layer}` : 'iconoir-page'
+  return ({ View: 'iconoir-table-rows', Requirements: 'iconoir-list' })[props.kind] || 'iconoir-play'
+})
 const title = computed(() => props.name || (props.kind === 'Requirements' ? 'Requirements' : 'View'))
 // The "Realized by" column only helps when the requirements come from more than one resource
 const showBy = computed(() => new Set((requirements.value || []).flatMap((r) => r.by.map((b) => `${b.kind}/${b.name}`))).size > 1)
@@ -76,6 +97,7 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
       <i :class="icon"></i>
       <span v-if="spec" class="kind-embed-title">{{ title }}</span>
       <router-link v-else :to="{ name: 'instance', params: { kind, instance: name } }" :title="`Open ${kind.toLowerCase()} ${name}`">{{ name }}</router-link>
+      <span v-if="isDescription" class="kind-embed-kind">{{ kind }}</span>
       <span v-if="total != null" class="kind-embed-count">({{ total }} {{ total === 1 ? 'item' : 'items' }})</span>
       <template v-if="analysis">
         <span v-if="status" class="kind-embed-status" :class="{ failed: status.failed }">({{ status.label }})</span>
@@ -102,6 +124,10 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
       <AnalysisResults v-if="hasScript" :name="name" compact @state="analysis = $event" />
       <p v-else class="kind-embed-empty">No script defined for this analysis</p>
     </template>
+    <template v-else>
+      <div v-if="description" ref="descriptionEl" class="kind-embed-description prose" v-html="description"></div>
+      <p v-else class="kind-embed-empty">No description</p>
+    </template>
   </div>
 </template>
 
@@ -123,6 +149,20 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
 .kind-embed-source a:hover {
   color: var(--pico-primary);
   text-decoration: underline;
+}
+
+.kind-embed-kind {
+  opacity: 0.7;
+}
+
+/* the description of another resource: set off from the page's own text like a quote */
+.kind-embed-description {
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--line);
+}
+
+.kind-embed-description :deep(> :last-child) {
+  margin-bottom: 0;
 }
 
 .kind-embed-status.failed {
