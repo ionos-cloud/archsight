@@ -40,7 +40,7 @@ Ready-made sources live in `examples/diagrams/` (`archsight.asd` models archsigh
 archsight diagram examples/diagrams/aws_vpc.asd -o diagram.svg
 archsight diagram aws_vpc.asd --watch              # re-renders on every save
 archsight diagram three_tier.asd --relation=all    # also show control/data-flow edges
-archsight diagram overview.asd --theme=compact     # denser spacing + smaller fonts (or cozy)
+archsight diagram overview.asd --theme=compact     # denser spacing + smaller fonts (or cozy, tight)
 archsight diagram overview.asd --legend=bottom     # legend below (or right/left/top/none; default auto)
 archsight diagram *.asd                            # render every file to its own .svg
 ```
@@ -231,10 +231,13 @@ From roomiest to densest:
 | `default` | small diagrams; used when there's no `theme` statement | 13px |
 | `cozy` | mid-sized diagrams: roughly halfway between the two | 12px |
 | `compact` | large diagrams that would otherwise sprawl | 11px |
+| `tight` | very large diagrams: `compact` with boxes that hug their labels | 11px |
 
 `cozy` and `compact` shrink container padding, sibling gaps and node
 sizes along with the fonts, and size each node from its label's real
-Helvetica glyph widths so boxes hug their text. `--theme=NAME` on the CLI (or `theme:` in
+Helvetica glyph widths so boxes hug their text. `tight` is `compact` with
+less than half the space above and below a component's label and half the
+space beside it. `--theme=NAME` on the CLI (or `theme:` in
 `Archsight::Diagram.render`) overrides the file's own choice. The legend
 isn't affected.
 

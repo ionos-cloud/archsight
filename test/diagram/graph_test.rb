@@ -308,7 +308,7 @@ class DiagramGraphTest < Minitest::Test
       Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(%(theme "tiny"\n)))
     end
 
-    assert_equal 'unknown theme "tiny" (line 1); expected one of default, cozy, compact', error.message
+    assert_equal 'unknown theme "tiny" (line 1); expected one of default, cozy, compact, tight', error.message
   end
 
   def test_rejects_a_second_theme_statement
