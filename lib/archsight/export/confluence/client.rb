@@ -97,6 +97,19 @@ module Archsight
           call("DELETE", "/rest/api/content/#{attachment_id}")
         end
 
+        # The names of the labels of a content
+        def labels(id)
+          (get("/rest/api/content/#{id}/label", limit: 500)["results"] || []).map { |label| label["name"] }
+        end
+
+        def add_labels(id, names)
+          post("/rest/api/content/#{id}/label", names.map { |name| { prefix: "global", name: name } })
+        end
+
+        def remove_label(id, name)
+          call("DELETE", "/rest/api/content/#{id}/label", query: { name: name })
+        end
+
         # Let only this user edit the page (best effort: the caller reports a failure).
         def restrict_update_to(id, username)
           put("/rest/api/content/#{id}/restriction", [{ operation: "update", restrictions: { user: [{ type: "known", username: username }] } }])

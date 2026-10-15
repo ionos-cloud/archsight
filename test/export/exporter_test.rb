@@ -97,6 +97,53 @@ class ConfluenceExporterTest < Minitest::Test
     assert_includes @fake.pages["42"].body, "Hello again"
   end
 
+  def test_tags_become_labels_and_only_the_labels_of_the_export_are_removed
+    write_page("guide", "Hello\n", confluence: URL, tags: "Team:BSS, airgap, Air Gap")
+    @fake.pages["42"].labels = %w[airgap reviewed] # set by somebody in Confluence
+    run_export(force: true)
+
+    assert_equal %w[air-gap airgap reviewed team-bss], @fake.pages["42"].labels.sort
+    assert_equal %w[air-gap team-bss], @fake.pages["42"].properties["archsight"][:value]["ownLabels"], "airgap was there before"
+
+    @fake.requests.clear
+
+    assert_equal :unchanged, run_export.first.status
+    refute(@fake.requests.any? { |r| r[:path].end_with?("/label") }, "no label calls when the tags did not change")
+
+    write_page("guide", "Hello\n", confluence: URL, tags: "Team:BSS")
+
+    assert_equal :exported, run_export.first.status
+    assert_equal %w[airgap reviewed team-bss], @fake.pages["42"].labels.sort, "labels of others stay"
+  end
+
+  # a page exported before the export knew labels: its labels are set without writing a new version
+  def test_labels_alone_are_updated_without_a_new_version
+    write_page("guide", "Hello\n", confluence: URL, tags: "airgap")
+    run_export(force: true)
+    marker = @fake.pages["42"].properties["archsight"][:value]
+    marker.delete("labels")
+    marker.delete("ownLabels")
+    @fake.pages["42"].labels = []
+
+    assert_includes run_export(dry_run: true).first.message, "would update the labels"
+    assert_empty @fake.pages["42"].labels
+
+    result = run_export.first
+
+    assert_equal :exported, result.status
+    assert_includes result.message, "labels updated"
+    assert_equal 2, @fake.pages["42"].version
+    assert_equal ["airgap"], @fake.pages["42"].labels
+  end
+
+  def test_tags_are_made_valid_label_names
+    labels = Archsight::Export::Confluence::Labels
+
+    assert_equal "team-bss", labels.label("Team:BSS")
+    assert_equal "a-b-c", labels.label(" A (b) [c] ")
+    assert_nil labels.label("::")
+  end
+
   def test_a_page_edited_in_confluence_is_blocked_with_who_and_when_and_not_written
     run_export(force: true)
     @fake.edit(42, by: "Alice Example")
