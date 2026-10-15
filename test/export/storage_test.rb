@@ -30,9 +30,9 @@ class ConfluenceStorageTest < Minitest::Test
     FileUtils.rm_rf(@dir)
   end
 
-  def convert(markdown, toc: false, drawio: false, database: nil)
+  def convert(markdown, toc: false, drawio: false, database: nil, links: @db)
     storage = Storage.new(page_name: "p", source: "pages/p.md", base_dir: "pages", resources_dir: @dir,
-                          wiki: Archsight::Helpers::WikiLinks.new(@db), page_id: "1", base: "https://wiki.example.com", drawio: drawio,
+                          wiki: Archsight::Helpers::WikiLinks.new(links), page_id: "1", base: "https://wiki.example.com", drawio: drawio,
                           diagram_links: Archsight::Export::Confluence::DiagramLinks.new(@db), database: database)
     storage.convert(markdown, toc: toc)
   end
@@ -438,6 +438,58 @@ class ConfluenceStorageTest < Minitest::Test
 
     assert_includes body, '<a href="https://wiki.example.com/pages/viewpage.action?pageId=55">other</a>'
     assert_includes body, "<td>plain</td>"
+  end
+
+  ANALYSIS = <<~YAML
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: Analysis
+    metadata:
+      name: Check
+      annotations:
+        analysis/script: |
+          heading("Services")
+          text("All **services** of [[ApplicationService/Storage]].")
+          table(headers: %w[Name Note], rows: [["[[ApplicationService/Storage]]", "first<br>second & <b>x</b>"]])
+          list(["one", "two"])
+          warning("1 service without owner")
+          code("a = 1", lang: "ruby")
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: Analysis
+    metadata:
+      name: Broken
+      annotations:
+        analysis/script: raise "boom"
+  YAML
+
+  def test_an_analysis_on_its_own_line_is_run_and_its_result_written_into_the_page
+    File.write(File.join(@dir, "data.yaml"), DATA + ANALYSIS)
+    db = Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+    result = convert("Intro\n\n![[Analysis/Check]]\n\nSee ![[Analysis/Check]] inline.\n", database: db, links: db)
+    body = result.body
+    well_formed!(body)
+
+    assert_includes body, "<p><strong>Check</strong> (result of the analysis at the export)</p>"
+    assert_includes body, "<h3>Services</h3>"
+    assert_includes body, "All <strong>services</strong> of Storage."
+    assert_includes body, "<th>Name</th><th>Note</th>"
+    assert_includes body, "<td>Storage</td><td>first<br />second &amp; &lt;b&gt;x&lt;/b&gt;</td>"
+    assert_includes body, "<ul><li>one</li><li>two</li></ul>"
+    assert_includes body, '<ac:structured-macro ac:name="note"><ac:rich-text-body><p>1 service without owner</p>'
+    assert_includes body, '<ac:parameter ac:name="language">ruby</ac:parameter>'
+    assert_includes body, "<em>Analysis/Check (live content, shown in Archsight only)</em>", "inline it stays a note"
+    assert_empty result.problems
+    assert_equal body, convert("Intro\n\n![[Analysis/Check]]\n\nSee ![[Analysis/Check]] inline.\n", database: db, links: db).body,
+                 "the same data gives the same page (no time in it)"
+  end
+
+  def test_a_failing_analysis_is_a_note_in_the_page
+    File.write(File.join(@dir, "data.yaml"), DATA + ANALYSIS)
+    db = Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+    body = convert("![[Analysis/Broken]]\n", database: db).body
+
+    assert_match(%r{<p><em>The analysis failed: .*boom</em></p>}, body)
   end
 
   def test_unknown_views_and_analyses_stay_notes_and_code_is_left_alone

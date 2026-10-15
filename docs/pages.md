@@ -349,7 +349,13 @@ export writes the current data; a page whose tables did not change is `unchanged
 the view (Name, Kind unless `list:name`, the `view/fields`, sorted by `view/sort`; times are the stored values, not "3 days ago") or
 the requirements table (status and priority as status lozenges: implemented green, partial yellow, planned blue; `must` red,
 `should` yellow, `may` grey), and names of pages that have a Confluence link as links. At most 200 rows are exported, a note says how many
-were left out. A `![[View/..]]` that is not alone on its line or names no view stays a note, and so does `![[Analysis/..]]` (it runs a script).
+were left out. A `![[View/..]]` that is not alone on its line or names no view stays a note.
+
+**Analyses** (`![[Analysis/Name]]` on a line of its own) are run at the export and their result is written into the page, the data
+of the moment like a view: headings, text, tables and lists as Confluence content (`[[links]]` as for the page, `<br>` and newlines
+in a cell break the line), `info`/`warning`/`error` messages as info, note and warning panels, code as a code macro. The result
+holds no time or run time, so a page whose analysis gives the same result stays `unchanged`. A failing analysis is a note in the page,
+an analysis that is not alone on its line or names no analysis stays a note.
 An embedded description (`![[MotivationGoal/Name]]` on a line of its own) is text, not live content: it is written into the page
 as it is in Archsight; embeds inside it stay notes.
 
