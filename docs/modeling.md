@@ -36,7 +36,7 @@ There are two families of verbs:
 
 | Family | Verbs | Written on | Points to |
 |--------|-------|------------|-----------|
-| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `realizedThrough`, `exposes`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
 | Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
 
 Rules:
@@ -329,7 +329,9 @@ Model **why** the architecture exists.
 | MotivationAssessment | For risks, vulnerabilities, findings and supplier or protection-need analyses (`assessment/type`) |
 | MotivationPrinciple | For policies, guidelines and architecture principles (`principle/type`) |
 
-**Example chain:** Stakeholder "Security Team" → hasConcern → Goal "Achieve Compliance" → realizes → Requirement "Encrypt data at rest"
+**Example chain:** Stakeholder "Security Team" → hasConcern → Goal "Achieve Compliance" → realizes → Requirement "Encrypt data at rest"; Stakeholder "Security Team" → representedBy → Actor "Security Office"
+
+**Source of a requirement:** the stakeholder that `hasConcern` for a requirement (directly, or for the goal the requirement answers) is its source, and the stakeholder is `representedBy` the `BusinessActor` or `BusinessRole` behind it: the actual organisation, not a generic "customer". This follows ArchiMate, where a stakeholder is a motivation role associated with the actor or role that plays it, and TOGAF, where the requirements repository records each requirement's source and the stakeholder map links stakeholders to organisation units. The requirement's page shows its stakeholders, the actor's page the stakeholder roles it represents. A source is optional.
 
 ### Strategy Layer
 

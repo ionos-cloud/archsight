@@ -26,6 +26,7 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
     - Support organizations
     - Cross-functional groups
     - Customers and providers: the parties a `BusinessContract` is `agreedBy`
+    - The party behind a `MotivationStakeholder`: the stakeholder is `representedBy` it
 
     ## Security and risk modelling
 

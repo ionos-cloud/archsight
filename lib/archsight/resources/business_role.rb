@@ -37,6 +37,7 @@ class Archsight::Resources::BusinessRole < Archsight::Resources::Base
     - A `BusinessProcess` is `performedBy` the role, a `BusinessControl` is `ownedBy` and `executedBy` it
     - Assessments, principles, work packages, deliverables and implementation events are `ownedBy` it
     - The role is `performedBy` the actors that hold it
+    - A `MotivationStakeholder` can be `representedBy` the role (the interest belongs to the role, whoever holds it)
     - Pointing straight at an actor stays valid; use a role where the responsibility has a name of its own
 
     ## Security and risk modelling
