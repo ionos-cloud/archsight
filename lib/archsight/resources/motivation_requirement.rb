@@ -36,6 +36,12 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
 
     Both show as incoming relations on the requirement's page.
 
+    ## Where it comes from
+
+    The source of a requirement is the `MotivationStakeholder` that `hasConcern` for it, directly or through the goal
+    the requirement answers. The stakeholder is `representedBy` the actor or role behind it, so the chain reaches the
+    actual organisation that asked for the requirement.
+
     ## Security and risk modelling
 
     - **Control measure:** `requirement/type` `control-measure` is a measure that a control objective

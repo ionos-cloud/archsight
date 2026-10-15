@@ -123,6 +123,7 @@ The metamodel defines architectural entities and their relationships across all 
 **Cross-Cutting:**
 
 - **Principle**, **Constraint**, **Requirement**, **Location**
+- **Stakeholder**: `MotivationStakeholder`, with its concerns (`hasConcern`); the organisation unit or actor behind it is linked with `representedBy` (`BusinessActor`, `BusinessRole`). The stakeholder that has the concern is the source of a requirement, as recorded in the requirements repository
 - **Gap**, **Work Package**, **Deliverable**, **Plateau**, **Implementation Event**: the Implementation & Migration layer (`ImplementationGap`, `ImplementationWorkPackage`, `ImplementationDeliverable`, `ImplementationPlateau`, `ImplementationEvent`)
 
 **Governance:**
