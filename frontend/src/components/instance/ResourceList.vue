@@ -14,6 +14,8 @@ const props = defineProps({
   pageLinks: { type: Boolean, default: false },
   // quiet rows (hairlines instead of a box per row), used by the search results
   rows: { type: Boolean, default: false },
+  // inside a page (an embedded view): the table takes the look of the page's own tables
+  embedded: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['load-more'])
@@ -97,7 +99,7 @@ function isTimeField(key) {
 <template>
   <p v-if="!instances.length" class="empty-state"><i>No resources found</i></p>
 
-  <table v-else-if="useTable" class="resource-list-table">
+  <table v-else-if="useTable" class="resource-list-table" :class="{ embedded }">
     <thead>
       <tr>
         <th class="col-name">Name</th>
@@ -233,13 +235,17 @@ function isTimeField(key) {
   border-radius: 4px;
 }
 
+/* the table of a kind list or a view page; embedded in a page it keeps the look of the page's tables (prose.css) */
 .resource-list-table {
-  width: 100%;
   border-collapse: collapse;
+}
+
+.resource-list-table:not(.embedded) {
+  width: 100%;
   margin: 0;
 }
 
-.resource-list-table thead th {
+.resource-list-table:not(.embedded) thead th {
   text-align: left;
   padding: 8px 12px;
   font-weight: 600;
@@ -249,7 +255,7 @@ function isTimeField(key) {
   background-color: var(--pico-card-background-color);
 }
 
-.resource-list-table tbody tr {
+.resource-list-table:not(.embedded) tbody tr {
   border-bottom: 1px solid var(--pico-muted-border-color);
   transition: background-color 0.15s ease;
 }
@@ -260,9 +266,20 @@ function isTimeField(key) {
   background-color: var(--pico-card-background-color);
 }
 
-.resource-list-table td {
+.resource-list-table:not(.embedded) td {
   padding: 8px 12px;
   vertical-align: middle;
+}
+
+/* a name is an identifier: it is not broken in the middle (a wide table scrolls) */
+.resource-list-table.embedded .instance-name {
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.resource-list-table.embedded .instance-kind {
+  padding: 0;
+  background: none;
 }
 
 .resource-list-table .col-name {

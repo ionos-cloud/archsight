@@ -651,6 +651,9 @@ class APITest < Minitest::Test
     refute_includes table[:rows_html][0][0], "<p>"
     assert_equal "&lt;b&gt;plain&lt;/b&gt;", table[:rows_html][0][1]
     assert_equal %w[x 3], table[:rows_html][1]
+    breaks = app.serialize_analysis_section({ type: :table, headers: %w[A], rows: [["one<br>two<BR/>three\nfour <i>x</i>"]] })
+
+    assert_equal "one<br>two<br>three<br>four &lt;i&gt;x&lt;/i&gt;", breaks[:rows_html][0][0], "only line breaks stay HTML"
     assert_includes list[:items_html][0], "<strong>bold</strong>"
     assert_includes list[:items_html][0], href
     assert_includes message[:message_html], href

@@ -95,14 +95,15 @@ const messageIcons = { error: 'xmark-circle', warning: 'warning-triangle', info:
   font-size: var(--fs-sm);
 }
 
-.analysis-table-wrapper th,
-.analysis-table-wrapper td {
+/* on the analysis page the table has no rules, so the first column lines up with the text above; embedded in a
+   page (compact) the table has the cell borders of the page's own tables and keeps their padding (prose.css) */
+.analysis-execution:not(.compact) .analysis-table-wrapper th,
+.analysis-execution:not(.compact) .analysis-table-wrapper td {
   padding: 0.35rem 0.75rem;
 }
 
-/* the first column lines up with the text above, the last with the edge */
-.analysis-table-wrapper th:first-child,
-.analysis-table-wrapper td:first-child { padding-left: 0; }
+.analysis-execution:not(.compact) .analysis-table-wrapper th:first-child,
+.analysis-execution:not(.compact) .analysis-table-wrapper td:first-child { padding-left: 0; }
 
 pre.code {
   margin: 0.5rem 0 0.75rem;

@@ -321,14 +321,19 @@ main .canvas a {
   line-height: 1;
 }
 
-/* a view or analysis embedded in markdown (![[View/Name]]), filled in by the frontend. No box and no
-   indent: the content sits in the text column like a markdown table does. */
-.kind-embed {
+/* content embedded in markdown (![[Kind/Name]], ```view, ```requirements blocks), filled in by the frontend. It
+   reads as part of the page: no card, no box and no indent; the content sits in the text column like a markdown
+   table does, and its tables look like the page's own (prose.css). */
+.kind-embed,
+.view-embed,
+.requirements-embed {
   margin: 1.25rem 0;
   overflow-x: auto;
 }
 
-.kind-embed article {
+.kind-embed article,
+.view-embed article,
+.requirements-embed article {
   margin: 0;
   padding: 0;
   border: 0;
