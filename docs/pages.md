@@ -311,6 +311,11 @@ keeps its property reports working: Document status (a status lozenge; `wip`/`dr
 `Team:<name>` tags), Tags and every entry of `properties`. People are written as their name. `created` and `updated` are not
 exported. The Confluence import (not part of Archsight) does the reverse, which is why `Team:` tags and `properties` exist.
 
+**Labels**: the tags of a page become its Confluence labels, so label macros and searches find the page. A label is
+lowercase without spaces or `!#&()*,.:;<>?@[]^`, those become a dash (`Team:BSS` is the label `team-bss`). A tag that is
+removed removes the label again, but only labels the export added itself (recorded in the marker): labels somebody set
+in Confluence stay. Labels are not versioned, so a page whose labels alone change gets no new version.
+
 **Credentials** are a personal access token, set as `confluence.token` in the [configuration file](/doc/configuration)
 (`~/.config/archsight/archsight.yaml`, `--config PATH` for another file) or in `ARCHSIGHT_CONFLUENCE_TOKEN`. The host comes from
 the page URL. The token is never printed. If the Confluence has the draw.io app, add `drawio: true` (or

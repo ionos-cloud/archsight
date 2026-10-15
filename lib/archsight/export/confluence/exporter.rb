@@ -12,6 +12,7 @@ require_relative "credentials"
 require_relative "page_url"
 require_relative "storage"
 require_relative "page_properties"
+require_relative "labels"
 
 module Archsight
   module Export
@@ -21,7 +22,8 @@ module Archsight
       # A page is only written when Confluence still holds what Archsight wrote last time: the exporter leaves a
       # marker (a content property with the page version it created) and refuses to overwrite a page that has
       # no marker or a newer version, unless `force` is set. Every written version says in its message that it
-      # was generated, and the page is locked for other editors where the server allows it.
+      # was generated, and the page is locked for other editors where the server allows it. The page's tags
+      # become its labels; the exporter only removes labels it added itself (recorded in the marker).
       class Exporter
         PROPERTY = "archsight"
 
@@ -138,23 +140,48 @@ module Archsight
           current = content.dig("version", "number")
           body_hash = Digest::SHA256.hexdigest(converted.body)
           files = converted.attachments.transform_values(&:sha)
-          return Result.new(page: page.name, status: :unchanged, message: "version #{current}") if !blocked && marker["bodyHash"] == body_hash && marker["attachments"] == files
-          return would_export(page, current, blocked) if @dry_run
+          labels = Labels.for(page)
+          body_changed = blocked || marker["bodyHash"] != body_hash || marker["attachments"] != files
+          labels_changed = (marker&.fetch("labels", nil) || []) != labels
+          return Result.new(page: page.name, status: :unchanged, message: "version #{current}") unless body_changed || labels_changed
+          return would_export(page, current, blocked, body_changed, labels) if @dry_run
 
-          upload(client, id, converted.attachments, marker&.fetch("attachments", nil) || {})
-          updated = client.update_page(id, title: content["title"], space: content.dig("space", "key"), body: converted.body,
-                                           version: current + 1, message: message(page, blocked, marker, current))
-          version = updated.dig("version", "number")
-          state = { "version" => version, "bodyHash" => body_hash, "attachments" => files, "page" => page.name,
-                    "exportedAt" => Time.now.utc.iso8601, "archsight" => Archsight::VERSION }
+          version = body_changed ? write_body(page, client, content, converted, marker, blocked, id) : current
+          own = marker&.fetch("ownLabels", nil) || []
+          own = sync_labels(client, id, labels, own) if labels_changed
+          state = { "version" => version, "bodyHash" => body_hash, "attachments" => files, "labels" => labels,
+                    "ownLabels" => own, "page" => page.name, "exportedAt" => Time.now.utc.iso8601,
+                    "archsight" => Archsight::VERSION }
           client.save_property(id, PROPERTY, state, property)
+          return Result.new(page: page.name, status: :exported, message: "labels updated (version #{version})") unless body_changed
+
           remove_stale_attachments(client, id, marker, files)
           Result.new(page: page.name, status: :exported, message: "version #{version}#{lock(client, id)}")
         end
 
-        def would_export(page, current, blocked)
-          Result.new(page: page.name, status: :would_export,
-                     message: "would write version #{current + 1}#{" (overwriting: #{blocked})" if blocked}")
+        # Uploads the attachments and writes the new version; returns its number
+        def write_body(page, client, content, converted, marker, blocked, id)
+          current = content.dig("version", "number")
+          upload(client, id, converted.attachments, marker&.fetch("attachments", nil) || {})
+          updated = client.update_page(id, title: content["title"], space: content.dig("space", "key"), body: converted.body,
+                                           version: current + 1, message: message(page, blocked, marker, current))
+          updated.dig("version", "number")
+        end
+
+        # Gives the page the labels of its tags and removes the labels an earlier export added that are no tag any
+        # more; labels somebody else set are left alone. Returns the labels the exporter owns now.
+        def sync_labels(client, id, labels, own)
+          present = client.labels(id)
+          added = labels - present
+          client.add_labels(id, added) if added.any?
+          (own - labels).each { |name| client.remove_label(id, name) if present.include?(name) }
+          ((own & labels) + added).uniq.sort
+        end
+
+        def would_export(page, current, blocked, body_changed, labels)
+          message = body_changed ? "would write version #{current + 1}#{" (overwriting: #{blocked})" if blocked}" : "would update the labels"
+          message += " with the labels #{labels.join(", ")}" if body_changed && labels.any?
+          Result.new(page: page.name, status: :would_export, message: message)
         end
 
         def upload(client, id, attachments, known)

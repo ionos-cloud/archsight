@@ -5,7 +5,7 @@ require "uri"
 
 # An in-memory stand-in for the Confluence REST calls the export makes, used as the Client's transport.
 class FakeConfluence
-  Page = Struct.new(:id, :title, :space, :version, :by, :at, :body, :properties, :attachments, :restriction, keyword_init: true)
+  Page = Struct.new(:id, :title, :space, :version, :by, :at, :body, :properties, :attachments, :restriction, :labels, keyword_init: true)
 
   attr_reader :pages, :requests, :uploads, :deleted
   attr_accessor :restriction_error
@@ -21,7 +21,7 @@ class FakeConfluence
 
   def add_page(id, title: "Test", space: "SP", body: "<p>hello</p>")
     @pages[id.to_s] = Page.new(id: id.to_s, title: title, space: space, version: 1, by: "Original Author", at: "2026-01-01T10:00:00.000Z",
-                               body: body, properties: {}, attachments: {}, restriction: nil)
+                               body: body, properties: {}, attachments: {}, restriction: nil, labels: [])
   end
 
   # Someone edits the page in Confluence
@@ -57,6 +57,9 @@ class FakeConfluence
     in ["POST", %r{\A/rest/api/content/(\d+)/child/attachment(?:/(\d+)/data)?\z}] then upload(::Regexp.last_match(1), ::Regexp.last_match(2), headers, body)
     in ["PUT", %r{\A/rest/api/content/(\d+)/restriction\z}] then restrict(::Regexp.last_match(1), JSON.parse(body))
     in ["DELETE", %r{\A/rest/api/content/(\d+)\z}] then delete_attachment(::Regexp.last_match(1))
+    in ["GET", %r{\A/rest/api/content/(\d+)/label\z}] then ok(results: @pages.fetch(::Regexp.last_match(1)).labels.map { |name| { prefix: "global", name: name } })
+    in ["POST", %r{\A/rest/api/content/(\d+)/label\z}] then add_labels(::Regexp.last_match(1), JSON.parse(body))
+    in ["DELETE", %r{\A/rest/api/content/(\d+)/label\z}] then remove_label(::Regexp.last_match(1), query["name"])
     else [404, JSON.generate(message: "no route #{verb} #{uri.path}")]
     end
   end
@@ -118,6 +121,17 @@ class FakeConfluence
   def delete_attachment(attachment_id)
     @pages.each_value { |page| page.attachments.delete_if { |_, a| a[:id] == attachment_id } }
     @deleted << attachment_id
+    [204, ""]
+  end
+
+  def add_labels(id, payload)
+    page = @pages.fetch(id)
+    page.labels |= payload.map { |label| label["name"] }
+    ok(results: page.labels.map { |name| { name: name } })
+  end
+
+  def remove_label(id, name)
+    @pages.fetch(id).labels.delete(name)
     [204, ""]
   end
 
