@@ -109,6 +109,9 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | **Representation** | A perceptible form of the information carried by a business object. |
 | **Product** | A coherent collection of services and/or passive structure elements, accompanied by a contract, offered to customers. |
 
+Archsight models Contract as `BusinessContract` (aggregated by a `BusinessProduct`, `agreedBy` its parties, `composedOf` its
+call-offs, SLAs and amendments) and Product as `BusinessProduct`. Business Object and Representation are not modelled.
+
 ## Application Layer Elements
 
 ### Active Structure Elements

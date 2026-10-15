@@ -66,7 +66,8 @@ Each answers one question. The test decides the kind, not the name.
 **Decision questions**, asked in order for any new element:
 
 1. Is it something the organization must be able to do, whoever or whatever does it? Capability.
-2. Is it something a customer selects, buys or signs a contract for? Product.
+2. Is it something a customer selects, buys or signs a contract for? Product. The contract itself (framework, call-off,
+   SLA, amendment) is a `BusinessContract` the product aggregates, not a DataObject and not text in a description.
 3. Is it a function another system or a user calls or consumes, nameable without saying how it is built? Service.
 4. Is it something that is built, versioned and deployed or linked? Component.
 5. Is it a repository, package, image or binary? Artifact.
@@ -368,6 +369,7 @@ Model **who** does **what** in business terms.
 | BusinessRole | For responsibilities held by actors: control owner, risk owner, information security officer (`role/type`) |
 | BusinessProcess | For workflows that produce business value |
 | BusinessProduct | For what a customer buys or contracts, as on a price list ("Online Checkout", "Premium Support") |
+| BusinessContract | For what a customer and a provider agreed: framework contracts, call-offs, SLAs, amendments (`contract/type`) |
 | BusinessControl | For controls that guide a process (access review, change approval), with an owner and executors |
 | BusinessEvent | For things that happen in the business: threat events, loss events, incidents, triggers (`event/type`) |
 
@@ -376,6 +378,51 @@ Model **who** does **what** in business terms.
 **Roles:** Process "Incident Response" → performedBy → Role "Incident Manager" → performedBy → Actor "Platform Team". Controls, risks, policies and work packages use `ownedBy` (and controls `executedBy`) the same way. Use a role where the responsibility has a name of its own and should survive a change of team; pointing straight at an actor stays valid.
 
 **Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Role or Actor. How controls, requirements and evidence fit together is described under Relation Patterns below.
+
+**Contracts:** Product → aggregates → Contract (framework) → composedOf → Contract (call-off) → covers → Equipment, and the call-off → realizedThrough → Deliverable ← realizes ← Work Package → affects → Equipment. The contract is `agreedBy` the actual organisations (the customer and the provider), not a generic role. All relations are written on the more abstract element; the equipment, the actors and the deliverable show them as incoming ("covered by", "agreed contracts", "fulfils"). A contract is a `BusinessContract`, not a `DataObject` and not text in a description.
+
+```yaml
+kind: BusinessProduct
+metadata:
+  name: PrivateCloudOffering
+spec:
+  servedBy:
+    applicationServices: [ComputeService, ObjectStorage]
+  aggregates:
+    businessContracts: [Contract:Customer]
+---
+kind: BusinessContract
+metadata:
+  name: Contract:Customer
+  annotations:
+    contract/type: framework
+    contract/from: '2024-01-01'
+spec:
+  agreedBy:
+    businessActors: [CustomerOrg, ProviderOrg]
+  composedOf:
+    businessContracts: [Contract:Customer:Block1, Contract:Customer:Block2]
+---
+kind: BusinessContract
+metadata:
+  name: Contract:Customer:Block2
+  annotations:
+    contract/type: call-off
+spec:
+  covers:
+    technologyEquipment: [Block2]
+  realizedThrough:
+    implementationDeliverables: [Block2Delivered]
+---
+kind: ImplementationWorkPackage
+metadata:
+  name: BuildBlock2
+spec:
+  realizes:
+    implementationDeliverables: [Block2Delivered]
+  affects:
+    technologyEquipment: [Block2]
+```
 
 ### Application Layer
 

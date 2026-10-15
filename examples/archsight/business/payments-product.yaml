@@ -15,3 +15,6 @@ spec:
   servedBy:
     applicationServices:
       - Payment Authorization
+  aggregates:
+    businessContracts:
+      - Contract:Checkout
