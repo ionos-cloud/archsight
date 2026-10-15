@@ -94,9 +94,11 @@
 }
 
 @media (min-width: 1100px) {
+  /* centred, not on the baseline: a chip (links) is taller than a line of text and keeps its text in the middle */
   .wiki-page .page-properties {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 0 2.25rem;
     max-width: none;
     padding: 7px 0;
@@ -105,7 +107,7 @@
 
   .wiki-page .page-properties .prop {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.5rem;
     padding: 2px 0;
     border-bottom: 0;
