@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { installRouteFocus, scrollBehavior } from '../composables/useRouteFocus.js'
 
 const routes = [
   {
@@ -60,7 +61,11 @@ const routes = [
   },
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory('/'),
   routes,
+  scrollBehavior,
 })
+installRouteFocus(router)
+
+export default router
