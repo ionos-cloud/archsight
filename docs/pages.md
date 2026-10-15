@@ -141,7 +141,7 @@ result) inside a page, or in the description of any resource:
 ```
 
 The page is shown immediately. Each embed loads on its own, with a spinner, and an analysis runs when the page opens
-(it can be run again from the embed), so a slow query or script never delays the text around it. The embed
+(reload the page to run it again), so a slow query or script never delays the text around it. The embed
 links to the view or analysis page. The server only writes a placeholder: rendering a page (`GET /api/v1/pages/{name}`)
 never runs a query or a script, and API or MCP consumers get `<div class="kind-embed" data-kind data-name>` with a plain
 link to the resource. Other kinds are not embeddable; an unknown name, another kind or an embed written inline in

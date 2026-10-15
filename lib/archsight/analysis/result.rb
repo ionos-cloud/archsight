@@ -36,7 +36,8 @@ module Archsight
         @analysis.name
       end
 
-      # @return [Boolean] true if any content sections exist (excluding messages)
+      # @return [Boolean] true if the script produced any output (tables, lists, text, ...; not counting messages).
+      #   Output is not a problem (many analyses are reports); see #warnings?
       def has_findings?
         @sections.any? { |s| %i[table list text heading code].include?(s[:type]) }
       end
@@ -49,6 +50,11 @@ module Archsight
       # @return [Integer] Count of warning-level messages
       def warning_count
         @sections.count { |s| s[:type] == :message && s[:level] == :warning }
+      end
+
+      # @return [Boolean] true if the script reported an error or a warning itself (`error(...)`, `warning(...)`)
+      def warnings?
+        (error_count + warning_count).positive?
       end
 
       # Convert result to markdown (only script-generated content)
@@ -82,7 +88,7 @@ module Archsight
       def status_emoji
         return "❌" unless success?
 
-        has_findings? ? "⚠️" : "✅"
+        warnings? ? "⚠️" : "✅"
       end
 
       # Formatted duration string

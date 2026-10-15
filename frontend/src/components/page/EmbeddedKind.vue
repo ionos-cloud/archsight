@@ -2,11 +2,12 @@
 import { ref, computed, watch } from 'vue'
 import { getInstance, getRequirements } from '../../api/client.js'
 import { viewSpec } from '../../composables/useViewSpec.js'
+import { analysisStatus } from '../../composables/useAnalysisStatus.js'
 import ViewResults from '../instance/ViewResults.vue'
 import AnalysisResults from '../instance/AnalysisResults.vue'
 import RequirementsTable from '../instance/RequirementsTable.vue'
 
-// The live content of a View or Analysis inside a page (`![[View/Name]]`). The page is already on screen when
+// The live content of a View or Analysis inside a page (an analysis runs once, when the page opens) (`![[View/Name]]`). The page is already on screen when
 // this mounts; the resource, its query or script are loaded here, and a spinner shows until they are there.
 // An inline view (a ```view block) brings its own `spec` (query, fields, sort, showKind) and `name` is its title:
 // nothing to load but the result. The requirements of a selection of resources (a ```requirements block, kind
@@ -20,7 +21,6 @@ const props = defineProps({
 const instance = ref(null)
 const total = ref(null)
 const analysis = ref(null) // { result, executing } of an embedded analysis
-const analysisEl = ref(null)
 const error = ref(null)
 const requirements = ref(null) // the entries of a 'Requirements' embed
 
@@ -54,12 +54,13 @@ watch(() => [props.kind, props.name, JSON.stringify(props.spec)], load, { immedi
 
 const annotations = computed(() => instance.value?.metadata?.annotations || {})
 const viewSpecOf = computed(() => props.spec || viewSpec(annotations.value))
-// "Completed with findings 0.00s", for the line above the embedded analysis
-const analysisStatus = computed(() => {
+// "Completed, 1 warning 0.02s", for the line above the embedded analysis
+const status = computed(() => {
   const result = analysis.value?.result
-  if (!result) return null
-  const label = !result.success ? 'Failed' : result.has_findings ? 'Completed with findings' : 'Completed successfully'
-  return { label: result.duration ? `${label} ${result.duration.toFixed(2)}s` : label }
+  const s = analysisStatus(result)
+  if (!s) return null
+  const label = s.notes ? `${s.label}, ${s.notes}` : s.label
+  return { failed: s.failed, label: result.duration ? `${label} ${result.duration.toFixed(2)}s` : label }
 })
 const hasScript = computed(() => !!annotations.value['analysis/script'])
 const icon = computed(() => ({ View: 'iconoir-table-rows', Requirements: 'iconoir-list' })[props.kind] || 'iconoir-play')
@@ -77,11 +78,8 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
       <router-link v-else :to="{ name: 'instance', params: { kind, instance: name } }" :title="`Open ${kind.toLowerCase()} ${name}`">{{ name }}</router-link>
       <span v-if="total != null" class="kind-embed-count">({{ total }} {{ total === 1 ? 'item' : 'items' }})</span>
       <template v-if="analysis">
-        <span v-if="analysis.result" class="kind-embed-status" :class="{ failed: !analysis.result.success }">({{ analysisStatus.label }})</span>
+        <span v-if="status" class="kind-embed-status" :class="{ failed: status.failed }">({{ status.label }})</span>
         <span v-else-if="analysis.executing" class="kind-embed-status">(Running...)</span>
-        <button class="kind-embed-rerun" :disabled="analysis.executing" title="Run the analysis again" aria-label="Run the analysis again" @click="analysisEl?.run()">
-          <i class="iconoir-refresh" :class="{ spinning: analysis.executing }"></i>
-        </button>
       </template>
     </p>
 
@@ -101,7 +99,7 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
       <p v-else class="kind-embed-empty">No query defined</p>
     </template>
     <template v-else-if="kind === 'Analysis'">
-      <AnalysisResults v-if="hasScript" ref="analysisEl" :name="name" compact @state="analysis = $event" />
+      <AnalysisResults v-if="hasScript" :name="name" compact @state="analysis = $event" />
       <p v-else class="kind-embed-empty">No script defined for this analysis</p>
     </template>
   </div>
@@ -129,27 +127,6 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
 
 .kind-embed-status.failed {
   color: #ef4444;
-}
-
-.kind-embed-rerun {
-  font-size: inherit;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  margin: 0;
-  padding: 0 0.25rem;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-
-.kind-embed-rerun i {
-  font-size: var(--fs-md);
-}
-
-.kind-embed-rerun:hover:not(:disabled) {
-  color: var(--pico-primary);
 }
 
 .kind-embed-loading,

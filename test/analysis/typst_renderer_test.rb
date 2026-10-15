@@ -50,12 +50,16 @@ class TypstRendererTest < Minitest::Test
   end
 
   def test_document_has_preamble_title_and_summary
-    typst = render([result, result("Analysis:Bad", success: false, error: "boom")])
+    warned = result("Analysis:Warn", sections: [{ type: :message, level: :warning, text: "x" }])
+    typst = render([result, warned, result("Analysis:Bad", success: false, error: "boom")])
 
     assert_includes typst, "#set page("
     assert_includes typst, '#"Archsight analysis"'
-    assert_includes typst, '#"1 passed"'
+    assert_includes typst, '#"2 completed"'
     assert_includes typst, '#"1 failed"'
+    assert_includes typst, '#"1 with warnings"'
+    assert_includes typst, '#"completed, 0.50s"'
+    refute_includes typst, "passed"
     assert_includes typst, '#heading(level: 1)[#"Analysis:Demo"]'
   end
 

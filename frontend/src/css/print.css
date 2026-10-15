@@ -33,12 +33,10 @@
   .page-edit,
   .page-toc,
   .btn-header,
-  .rerun,
   .copy-button,
   .view-pager,
   .svg-zoom-btn,
-  .graph-options,
-  .kind-embed-rerun {
+  .graph-options {
     display: none !important;
   }
 
