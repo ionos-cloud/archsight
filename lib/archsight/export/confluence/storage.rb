@@ -17,6 +17,7 @@ require_relative "drawio"
 require_relative "page_url"
 require_relative "rasterizer"
 require_relative "tables"
+require_relative "analysis_output"
 
 module Archsight
   module Export
@@ -262,6 +263,7 @@ module Archsight
             xml && placeholder("LINK", xml, plain: (macro.plain(value) if macro.respond_to?(:plain)))
           end
           text = text.gsub(%r{^[ \t]*!\[\[View/([^\]|]+)\]\][ \t]*$}) { view_embed(Regexp.last_match(1).strip) || Regexp.last_match(0) }
+          text = text.gsub(%r{^[ \t]*!\[\[Analysis/([^\]|]+)\]\][ \t]*$}) { analysis_embed(Regexp.last_match(1).strip) || Regexp.last_match(0) }
           text = text.gsub(/!\[\[([^\]|]+)\]\]/) { placeholder("EMBED", embed_note(Regexp.last_match(1).strip)) }
           text.gsub(Archsight::Helpers::WikiLinks::PATTERN) do
             placeholder("LINK", wiki_link(Regexp.last_match(1).strip, Regexp.last_match(2)&.strip))
@@ -276,6 +278,18 @@ module Archsight
 
           xml = table_xml("view #{name}") { Tables.xml(ViewTable.from_view(@database, view)) }
           placeholder("TABLE", xml, plain: embed_note("View/#{name}"))
+        end
+
+        # An Analysis on a line of its own is run and its result written into the page (the data of the moment, like a
+        # view); an unknown Analysis stays an embed (a note), the linter reports it.
+        def analysis_embed(name)
+          analysis = @database&.instances_by_kind("Analysis")&.[](name)
+          return nil unless analysis
+
+          require_relative "../../analysis"
+          result = Archsight::Analysis::Executor.new(@database).execute(analysis)
+          output = AnalysisOutput.new(link: ->(target, label) { wiki_link(target, label) }, code: ->(source, language) { code(source, language) })
+          placeholder("TABLE", output.xml(name, result), plain: embed_note("Analysis/#{name}"))
         end
 
         # The XML of a table, or nothing and a problem (the page is not exported) if it cannot be built
