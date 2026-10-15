@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { getDoc } from '../../api/client.js'
+import { setTitle } from '../../composables/usePageTitle.js'
 import WikiPage from '../page/WikiPage.vue'
 
 // A documentation page (/doc/<name>, /doc/resources/<kind>) in the layout of wiki pages: the leading h1 of the
@@ -33,7 +34,7 @@ async function load() {
   doc.value = html
     ? parse(html, props.filename)
     : { title: 'Not found', html: '<p>Documentation not found.</p>', toc: [], breadcrumb: [{ title: 'Documentation' }] }
-  document.title = `${doc.value.title} - Archsight`
+  setTitle(doc.value.title)
 }
 
 watch(() => props.filename, load, { immediate: true })

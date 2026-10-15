@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { installRouteFocus, scrollBehavior } from '../composables/useRouteFocus.js'
+import { installPageTitle } from '../composables/usePageTitle.js'
 
 const routes = [
   {
@@ -67,5 +68,6 @@ const router = createRouter({
   scrollBehavior,
 })
 installRouteFocus(router)
+installPageTitle(router)
 
 export default router
