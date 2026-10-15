@@ -130,21 +130,27 @@ is served:
   such requests, so an image embedded in a diagram from an `https://` URL is not shown. Formulas are not typeset.
 - **Kubernetes**: binary files do not fit a ConfigMap (1 MB limit), provide the resources with git-sync or a volume.
 
-## Embedding views and analyses
+## Embedding views, analyses and descriptions
 
 `![[View/Name]]` and `![[Analysis/Name]]` show the live content of a view (its result list) or an analysis (its
-result) inside a page, or in the description of any resource:
+result) inside a page, or in the description of any resource. Any other resource, written `![[Kind/Name]]`, shows its
+description (`architecture/description`), for example the goal a concept is written for:
 
 ```markdown
 ![[View/View:ServiceDependencies]]
 ![[Analysis/Analysis:Service:Count]]
+![[MotivationGoal/Goal:SimplifyArchitecture]]
 ```
+
+The **Embed** button on the page of a resource, view or analysis copies its `![[Kind/Name]]`. An embedded description
+is set off like a quote and links to its resource; `![[...]]` embeds inside it are shown as links (two descriptions
+cannot embed each other without end). Pages cannot be embedded.
 
 The page is shown immediately. Each embed loads on its own, with a spinner, and an analysis runs when the page opens
 (reload the page to run it again), so a slow query or script never delays the text around it. The embed
 links to the view or analysis page. The server only writes a placeholder: rendering a page (`GET /api/v1/pages/{name}`)
 never runs a query or a script, and API or MCP consumers get `<div class="kind-embed" data-kind data-name>` with a plain
-link to the resource. Other kinds are not embeddable; an unknown name, another kind or an embed written inline in
+link to the resource. An unknown name, a page or an embed written inline in
 a sentence (instead of on its own line) is shown as a marker or a link, and `archsight lint` reports embeds that do not
 resolve. Code blocks and inline code are left alone.
 
@@ -339,6 +345,8 @@ the view (Name, Kind unless `list:name`, the `view/fields`, sorted by `view/sort
 the requirements table (status and priority as status lozenges: implemented green, partial yellow, planned blue; `must` red,
 `should` yellow, `may` grey), and names of pages that have a Confluence link as links. At most 200 rows are exported, a note says how many
 were left out. A `![[View/..]]` that is not alone on its line or names no view stays a note, and so does `![[Analysis/..]]` (it runs a script).
+An embedded description (`![[MotivationGoal/Name]]` on a line of its own) is text, not live content: it is written into the page
+as it is in Archsight; embeds inside it stay notes.
 
 **Links in diagrams**: a node with `resource "Some Page"` links to the Confluence page of that wiki page (the page's own
 `confluence:` link) instead of its Archsight address, which means nothing in Confluence. A reference to a page without a

@@ -449,6 +449,20 @@ class ConfluenceStorageTest < Minitest::Test
     refute_includes body, "<table"
   end
 
+  def test_an_embedded_description_is_written_into_the_page
+    goal = "---\napiVersion: architecture/v1alpha1\nkind: MotivationGoal\nmetadata:\n  name: Goal:Uptime\n  annotations:\n    " \
+           "architecture/description: |\n      Keep **99.9%** up.\n\n      ![[MotivationGoal/Goal:Uptime]]\n"
+    File.write(File.join(@dir, "data.yaml"), DATA + goal)
+    db = Archsight::Database.new(@dir, compute_annotations: false).tap(&:reload!)
+    body = convert("Intro\n\n![[MotivationGoal/Goal:Uptime]]\n\n```\n![[MotivationGoal/Goal:Uptime]]\n```\n", database: db).body
+    well_formed!(body)
+
+    assert_includes body, "Keep <strong>99.9%</strong> up."
+    assert_equal 1, body.scan("Keep <strong>").length, "an embed inside the description is not expanded again"
+    assert_includes body, "<em>MotivationGoal/Goal:Uptime (live content, shown in Archsight only)</em>"
+    assert_includes body, "![[MotivationGoal/Goal:Uptime]]", "code is left alone"
+  end
+
   def test_a_view_embed_inside_a_paragraph_is_a_note
     body = convert("see this\n![[View/Services]]\nand that\n", database: data_db).body
 

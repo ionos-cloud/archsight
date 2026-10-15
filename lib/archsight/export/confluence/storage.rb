@@ -229,9 +229,31 @@ module Archsight
         end
 
         # {macros}, [[Target|label]] and ![[View/Name]] become placeholders before kramdown sees them (it would split the
-        # brackets), except in code.
+        # brackets), except in code; embedded descriptions are written in first.
         def protect(markdown)
-          markdown.split(CODE).each_with_index.map { |part, i| i.odd? ? part : protect_text(part) }.join
+          outside_code(embed_descriptions(markdown)) { |text| protect_text(text) }
+        end
+
+        def outside_code(markdown, &)
+          markdown.split(CODE).each_with_index.map { |part, i| i.odd? ? part : yield(part) }.join
+        end
+
+        # The description of a resource embedded on a line of its own (`![[MotivationGoal/Name]]`) is written into the
+        # page: it is text, not live content. Embeds in that description stay notes (they are not expanded again).
+        def embed_descriptions(markdown)
+          outside_code(markdown) do |text|
+            text.gsub(/^[ \t]*!\[\[([^\]|]+)\]\][ \t]*$/) { embedded_description(Regexp.last_match(1).strip) || Regexp.last_match(0) }
+          end
+        end
+
+        def embedded_description(reference)
+          kind, name = reference.split("/", 2)
+          return if name.nil? || Archsight::Helpers::Embeds::LIVE_KINDS.include?(kind) ||
+                    !Archsight::Helpers::Embeds.embeddable_kind?(kind)
+
+          instance = @database&.instances_by_kind(kind)&.[](name)
+          description = instance&.annotations.to_h["architecture/description"].to_s.strip
+          description.empty? ? nil : description
         end
 
         def protect_text(text)

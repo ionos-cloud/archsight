@@ -54,6 +54,11 @@ comp -> art { relation "implements" }
 - Use a [[Searching and Queries|query]] as a health check, for example unowned artifacts:
   `TechnologyArtifact: -{maintainedBy}> none`.
 - Save such checks as `View` resources so they show up in the sidebar.
+- Show what a page is written for by embedding the description of its goal (the **Embed** button on the goal's page
+  copies the line):
+
+![[MotivationGoal/Goal:SimplifyArchitecture]]
+
 - Write checks that need logic as an `Analysis`. This one lists components that nothing refers to, and it runs
   every time this page opens:
 

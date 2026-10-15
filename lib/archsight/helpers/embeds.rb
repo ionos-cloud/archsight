@@ -4,25 +4,36 @@ require "erb"
 
 module Archsight
   module Helpers
-    # Replaces `![[View/Name]]` and `![[Analysis/Name]]` in rendered HTML by a placeholder for the live content of
-    # that view or analysis. The frontend turns each placeholder into the result list or the analysis result (it
-    # loads and runs them itself, so rendering a page never executes a query or a script):
+    # Replaces `![[Kind/Name]]` in rendered HTML by a placeholder for the content of that resource: the result list of
+    # a View, the result of an Analysis, the description of any other resource (a goal, a capability, ...). The
+    # frontend turns each placeholder into that content (it loads and runs it itself, so rendering a page never
+    # executes a query or a script):
     #
     #   <div class="kind-embed" data-kind="View" data-name="View:Services"><a href="/kinds/View/instances/...">...</a></div>
     #
     # The link inside is what API and MCP consumers (and a browser without script) get. A reference that does not
-    # name an existing View or Analysis renders as a `broken-link` marker. Code (`<pre>`, `<code>`) is left alone.
+    # name an existing resource (or names a page) renders as a `broken-link` marker. Code (`<pre>`, `<code>`) is
+    # left alone.
     class Embeds
-      KINDS = %w[View Analysis].freeze
+      # Embeds with live content; every other kind shows its description
+      LIVE_KINDS = %w[View Analysis].freeze
+      # Pages and menus are not resources with a description
+      NOT_EMBEDDABLE = %w[Page PageMenu].freeze
       PATTERN = /!\[\[([^\]|]+)\]\]/
       PARAGRAPH = %r{<p>\s*(#{PATTERN.source})\s*</p>}
       CODE = %r{(<pre\b.*?</pre>|<code\b.*?</code>)}m
 
       REASONS = {
-        kind: "only #{KINDS.join(" and ")} can be embedded, written View/Name or Analysis/Name",
+        kind: "embed a resource as Kind/Name (a View, an Analysis or the description of any other resource); " \
+              "pages cannot be embedded",
         missing: "no such resource",
         ambiguous: "ambiguous reference"
       }.freeze
+
+      # Whether `![[kind/...]]` can be embedded: a known kind that is not a page
+      def self.embeddable_kind?(kind)
+        !Archsight::Resources[kind].nil? && !NOT_EMBEDDABLE.include?(Archsight::Resources.canonical(kind))
+      end
 
       def initialize(database, resolver: ResourceResolver.new(database))
         @database = database
@@ -66,7 +77,7 @@ module Archsight
       # @return [Array(Array(String, String), Symbol)] kind and name, and the problem (nil if it is embeddable)
       def check(reference)
         kind, name = reference.split("/", 2)
-        return [[kind, name], :kind] unless name && KINDS.include?(kind)
+        return [[kind, name], :kind] unless name && self.class.embeddable_kind?(kind)
 
         problem = @resolver.call(reference)
         [[kind, name], problem.is_a?(Symbol) ? problem : nil]

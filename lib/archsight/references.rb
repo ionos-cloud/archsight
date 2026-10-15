@@ -32,7 +32,7 @@ module Archsight
       end
     end
 
-    # The resources a markdown text mentions with `[[...]]` links and `![[View/...]]` embeds, outside code.
+    # The resources a markdown text mentions with `[[...]]` links and `![[Kind/...]]` embeds, outside code.
     # @return [Array<Base>]
     def mentions(markdown, finder)
       visible = markdown.to_s.gsub(FENCE, "").gsub(INLINE_CODE, "")
@@ -111,10 +111,10 @@ module Archsight
         @links.exact_target_for(target)
       end
 
-      # An `![[Kind/Name]]` embed: only views and analyses can be embedded
+      # An `![[Kind/Name]]` embed: any resource but a page
       def embed(reference)
         kind = reference.split("/", 2).first
-        return unless Helpers::Embeds::KINDS.include?(kind)
+        return unless Helpers::Embeds.embeddable_kind?(kind)
 
         reference(reference)
       end

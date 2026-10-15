@@ -86,13 +86,28 @@ class EmbedsTest < Minitest::Test
     assert_equal 2, html.scan("![[View/Services]]").length
   end
 
-  def test_other_kinds_and_unknown_names_are_broken_markers
-    html = html_of("![[ApplicationService/Svc]]\n\n![[View/Nope]]\n\n![[Svc]]\n")
+  def test_pages_unknown_names_and_bare_names_are_broken_markers
+    html = html_of("![[Page/p]]\n\n![[View/Nope]]\n\n![[Svc]]\n\n![[NoKind/Svc]]\n")
 
-    assert_equal 3, html.scan('class="broken-link"').length
-    assert_includes html, "only View and Analysis can be embedded"
+    assert_equal 4, html.scan('class="broken-link"').length
+    assert_includes html, "pages cannot be embedded"
     assert_includes html, "no such resource"
     refute_includes html, "kind-embed"
+  end
+
+  def test_any_other_resource_is_embedded_for_its_description
+    html = html_of("![[ApplicationService/Svc]]\n")
+
+    assert_includes html, '<div class="kind-embed" data-kind="ApplicationService" data-name="Svc">' \
+                          '<a href="/kinds/ApplicationService/instances/Svc">Svc</a></div>'
+  end
+
+  def test_an_embedded_resource_is_mentioned_by_the_page
+    write_page("![[ApplicationService/Svc]]\n")
+    reload
+    svc = app.instance_variable_get(:@database).instance_by_kind("ApplicationService", "Svc")
+
+    assert_includes svc.references.select { |ref| ref[:verb] == :mentions }.map { |ref| ref[:instance].name }, "p"
   end
 
   def test_rendering_a_page_does_not_run_anything
@@ -107,13 +122,13 @@ class EmbedsTest < Minitest::Test
   end
 
   def test_lint_reports_embeds_that_do_not_resolve
-    write_page("![[View/Services]]\n![[View/Nope]]\n![[ApplicationService/Svc]]\n\n```\n![[View/InCode]]\n```\n\nand `![[View/InlineCode]]`\n")
+    write_page("![[View/Services]]\n![[View/Nope]]\n![[Page/p]]\n![[ApplicationService/Svc]]\n\n```\n![[View/InCode]]\n```\n\nand `![[View/InlineCode]]`\n")
     reload
     errors = Archsight::Linter.new(app.instance_variable_get(:@database)).validate
 
     assert(errors.any? { |e| e.include?("![[View/Nope]]") && e.include?("no such resource") })
-    assert(errors.any? { |e| e.include?("![[ApplicationService/Svc]]") && e.include?("only View and Analysis") })
-    refute(errors.any? { |e| e.include?("View/Services]]") || e.include?("InCode") || e.include?("InlineCode") })
+    assert(errors.any? { |e| e.include?("![[Page/p]]") && e.include?("pages cannot be embedded") })
+    refute(errors.any? { |e| e.include?("View/Services]]") || e.include?("ApplicationService/Svc]]") || e.include?("InCode") || e.include?("InlineCode") })
     refute(errors.any? { |e| e.include?("links to unknown") }, "an embed is not also reported as a broken [[link]]")
   end
 end

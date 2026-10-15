@@ -4,6 +4,7 @@ import { displayName } from '../../composables/useFormatting.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { viewSpec } from '../../composables/useViewSpec.js'
 import ViewResults from './ViewResults.vue'
+import EmbedButton from '../common/EmbedButton.vue'
 
 const props = defineProps({
   data: Object,
@@ -32,6 +33,9 @@ useInternalLinks(descEl)
           <span class="instance-kind-subtitle">View</span>
         </div>
       </h2>
+      <div class="header-actions">
+        <EmbedButton kind="View" :name="data.name" />
+      </div>
     </header>
     <div ref="descEl" v-if="viewDescription" class="description-box prose" v-html="viewDescription"></div>
     <div v-if="viewQuery" class="view-query-display">
