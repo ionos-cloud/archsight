@@ -97,6 +97,7 @@ watch(() => [props.query, props.fields.join(',')], executeQuery, { immediate: tr
       :fields="fields.length ? fields : null"
       :total="total"
       :loading-more="loadingMore"
+      :embedded="compact"
       @load-more="loadMore"
     />
   </article>

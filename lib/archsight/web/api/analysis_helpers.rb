@@ -45,10 +45,11 @@ module Archsight::Web::API::AnalysisHelpers
     end
   end
 
-  # A value of a table cell, list item or message as html: HTML in it stays text (escaped first), markdown and
-  # [[Kind/Name]] links are rendered; a value without markup is only escaped, so large tables stay cheap
+  # A value of a table cell, list item or message as html: HTML in it stays text (escaped first) except a line
+  # break (`<br>` or a newline, the usual way to break a line in a table cell), markdown and [[Kind/Name]] links are
+  # rendered; a value without markup is only escaped, so large tables stay cheap
   def analysis_html(value)
-    escaped = Rack::Utils.escape_html(value.to_s)
+    escaped = Rack::Utils.escape_html(value.to_s).gsub(%r{&lt;br\s*/?&gt;}i, "<br>").gsub(/\r?\n/, "<br>")
     escaped.match?(/[*_`\[{]|https?:/) ? inline_markdown(escaped) : escaped
   end
 end

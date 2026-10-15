@@ -82,7 +82,7 @@ watch(description, async () => {
 })
 const kindMeta = computed(() => kinds.value?.kinds?.find((k) => k.kind === props.kind))
 const icon = computed(() => {
-  if (isDescription.value) return kindMeta.value ? `iconoir-${kindMeta.value.icon} icon-${kindMeta.value.layer}` : 'iconoir-page'
+  if (isDescription.value) return kindMeta.value ? `iconoir-${kindMeta.value.icon}` : 'iconoir-page'
   return ({ View: 'iconoir-table-rows', Requirements: 'iconoir-list' })[props.kind] || 'iconoir-play'
 })
 const title = computed(() => props.name || (props.kind === 'Requirements' ? 'Requirements' : 'View'))
@@ -155,10 +155,20 @@ const priorityLink = (priority) => `/search?q=${encodeURIComponent(`MotivationRe
   opacity: 0.7;
 }
 
-/* the description of another resource: set off from the page's own text like a quote */
-.kind-embed-description {
-  padding-left: 0.75rem;
-  border-left: 3px solid var(--line);
+/* the description of another resource is text of the page: no quote, no frame. Its headings sit below the
+   page's own section heading, so they are set as sub-headings whatever level they have in the description. */
+.kind-embed-description :deep(:is(h1, h2, h3)) {
+  margin: 0.75rem 0 0.35rem;
+  font-size: var(--fs-md);
+}
+
+.kind-embed-description :deep(:is(h4, h5, h6)) {
+  margin: 0.6rem 0 0.25rem;
+  font-size: 1em;
+}
+
+.kind-embed-description :deep(> :first-child) {
+  margin-top: 0;
 }
 
 .kind-embed-description :deep(> :last-child) {
