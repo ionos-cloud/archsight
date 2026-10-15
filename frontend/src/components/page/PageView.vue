@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { getPage } from '../../api/client.js'
+import { setTitle } from '../../composables/usePageTitle.js'
 import { searchParams } from '../../composables/useSearchScope.js'
 import WikiPage from './WikiPage.vue'
 import ResourceLinks from '../common/ResourceLinks.vue'
@@ -23,9 +24,10 @@ async function load() {
   } catch (e) {
     page.value = null
     error.value = e.message
+    setTitle('Not found')
     return
   }
-  document.title = `${page.value.title} - Archsight`
+  setTitle(page.value.title)
 }
 
 watch(() => props.name, load, { immediate: true })
