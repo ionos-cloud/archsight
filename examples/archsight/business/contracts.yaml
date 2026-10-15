@@ -1,0 +1,82 @@
+apiVersion: architecture/v1alpha1
+kind: BusinessActor
+metadata:
+  name: Customer:ExampleShop
+  annotations:
+    architecture/description: |
+      A shop that takes payments with Online Checkout. As a party of the
+      checkout contract it is the actual organisation, not a generic
+      "customer" role.
+    architecture/tags: example,payments
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessActor
+metadata:
+  name: Provider:ExamplePayments
+  annotations:
+    architecture/description: |
+      The company that operates Online Checkout and signs its contracts.
+    architecture/tags: example,payments
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessContract
+metadata:
+  name: Contract:Checkout
+  annotations:
+    architecture/description: |
+      The framework contract for Online Checkout. Capacity is ordered in
+      call-offs; the SLA states the availability.
+    contract/type: framework
+    contract/reference: FC-2024-017
+    contract/from: '2024-01-01'
+    architecture/tags: example,payments
+spec:
+  agreedBy:
+    businessActors:
+      - Customer:ExampleShop
+      - Provider:ExamplePayments
+  composedOf:
+    businessContracts:
+      - Contract:Checkout:SLA
+      - Contract:Checkout:Rack01
+  covers:
+    applicationServices:
+      - Payment Authorization
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessContract
+metadata:
+  name: Contract:Checkout:SLA
+  annotations:
+    architecture/description: |
+      99.9% monthly availability of the payment authorization.
+    contract/type: sla
+    contract/from: '2024-01-01'
+    architecture/tags: example,payments
+spec:
+  covers:
+    applicationServices:
+      - Payment Authorization
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessContract
+metadata:
+  name: Contract:Checkout:Rack01
+  annotations:
+    architecture/description: |
+      A call-off under the framework contract: dedicated capacity in its
+      own rack, delivered when the rack is in operation.
+    contract/type: call-off
+    contract/reference: FC-2024-017/1
+    contract/from: '2026-07-01'
+    contract/until: '2029-06-30'
+    architecture/tags: example,payments
+spec:
+  covers:
+    technologyEquipment:
+      - Equipment:Frankfurt:HallA:Rack01
+  realizedThrough:
+    implementationDeliverables:
+      - Deliverable:Rack01InOperation

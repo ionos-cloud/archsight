@@ -42,6 +42,8 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
       TechnologyEquipment too and the chain must not form a cycle
     - A technology service or node is `realizedBy` the TechnologyEquipment it runs on or over (a network service by the link)
     - TechnologyEquipment is optional: nodes and services can be `locatedAt` a facility directly
+    - A `BusinessContract` `covers` the equipment it obliges the provider to deliver, and the `ImplementationWorkPackage` that
+      installs or changes it `affects` it
   MD
 
   icon "cpu"

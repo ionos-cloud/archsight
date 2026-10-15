@@ -26,6 +26,7 @@ class Archsight::Resources::ImplementationDeliverable < Archsight::Resources::Ba
     ## How it connects
 
     - A `ImplementationWorkPackage` `realizes` it
+    - A `BusinessContract` is `realizedThrough` it: the delivery that fulfils the contract (a call-off)
     - It is `ownedBy` an actor and `realizes` plateaus, requirements, goals, outcomes and `ComplianceEvidence`
 
     ## Security and risk modelling

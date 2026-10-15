@@ -93,3 +93,37 @@ spec:
   triggers:
     implementationPlateaus:
       - Plateau:Target
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationWorkPackage
+metadata:
+  name: WorkPackage:InstallRack01
+  annotations:
+    architecture/description: |
+      Installs the rack the checkout call-off orders and puts it into
+      operation.
+    workpackage/type: project
+    workpackage/status: done
+    workpackage/due: '2026-07-01'
+spec:
+  ownedBy:
+    businessActors:
+      - Provider:ExamplePayments
+  affects:
+    technologyEquipment:
+      - Equipment:Frankfurt:HallA:Rack01
+  realizes:
+    implementationDeliverables:
+      - Deliverable:Rack01InOperation
+---
+apiVersion: architecture/v1alpha1
+kind: ImplementationDeliverable
+metadata:
+  name: Deliverable:Rack01InOperation
+  annotations:
+    architecture/description: |
+      The rack is installed, cabled and in operation: what the call-off
+      Contract:Checkout:Rack01 is fulfilled by.
+    deliverable/type: system
+    deliverable/status: accepted
+spec: {}

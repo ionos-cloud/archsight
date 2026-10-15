@@ -34,6 +34,8 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
 
     A product `realizes` a capability and is `servedBy` the services that deliver it. A product that nearly every
     service serves is a catalog, not a product. See the modeling guide, "Choosing the Kind".
+
+    The contract that comes with the product is a `BusinessContract` the product `aggregates`.
   MD
 
   icon "box-iso"
@@ -213,4 +215,5 @@ class Archsight::Resources::BusinessProduct < Archsight::Resources::Base
   relation :servedBy, :applicationServices, :ApplicationService
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :provides, :complianceEvidences, :ComplianceEvidence
+  relation :aggregates, :businessContracts, :BusinessContract
 end

@@ -28,7 +28,7 @@ class Archsight::Resources::ImplementationWorkPackage < Archsight::Resources::Ba
 
     - `ownedBy` the accountable actor or role, `performedBy` the actors or roles that carry it out
     - `realizes` deliverables (its results), requirements and goals
-    - `affects` the assets it changes; the assessments (risks, findings) it treats are `mitigatedBy` it (written on the assessment)
+    - `affects` the assets it changes, for example the `TechnologyEquipment` a project installs; the assessments (risks, findings) it treats are `mitigatedBy` it (written on the assessment)
     - `triggers` the work packages that follow it; an `ImplementationEvent` can trigger it
     - A `ImplementationGap` is `closedBy` it
 
@@ -79,5 +79,6 @@ class Archsight::Resources::ImplementationWorkPackage < Archsight::Resources::Ba
   relation :affects, :applicationComponents, :ApplicationComponent
   relation :affects, :applicationServices, :ApplicationService
   relation :affects, :technologyNodes, :TechnologyNode
+  relation :affects, :technologyEquipment, :TechnologyEquipment
   relation :triggers, :implementationWorkPackages, :ImplementationWorkPackage
 end

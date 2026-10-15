@@ -12,6 +12,7 @@ Current icon assignments for each resource type:
 | ApplicationService | `cube` | <i class="iconoir-cube"></i> |
 | BusinessActor | `community` | <i class="iconoir-community"></i> |
 | ApplicationEvent | `bell-notification` | <i class="iconoir-bell-notification"></i> |
+| BusinessContract | `journal-page` | <i class="iconoir-journal-page"></i> |
 | BusinessControl | `shield-search` | <i class="iconoir-shield-search"></i> |
 | BusinessEvent | `flash` | <i class="iconoir-flash"></i> |
 | BusinessRole | `user-badge-check` | <i class="iconoir-user-badge-check"></i> |

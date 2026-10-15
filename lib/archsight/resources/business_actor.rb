@@ -25,6 +25,7 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
     - External vendors or partners
     - Support organizations
     - Cross-functional groups
+    - Customers and providers: the parties a `BusinessContract` is `agreedBy`
 
     ## Security and risk modelling
 
