@@ -439,6 +439,11 @@ a.chip:hover,
   color: #991b1b;
 }
 
+.chip-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .chip-warning {
     background-color: #78350f;
@@ -448,6 +453,11 @@ a.chip:hover,
   :root:not([data-theme="light"]) .chip-danger {
     background-color: #7f1d1d;
     color: #fee2e2;
+  }
+
+  :root:not([data-theme="light"]) .chip-info {
+    background-color: #1e3a8a;
+    color: #dbeafe;
   }
 }
 
@@ -459,6 +469,11 @@ a.chip:hover,
 :root[data-theme="dark"] .chip-danger {
   background-color: #7f1d1d;
   color: #fee2e2;
+}
+
+:root[data-theme="dark"] .chip-info {
+  background-color: #1e3a8a;
+  color: #dbeafe;
 }
 
 .chip-symbol {

@@ -13,8 +13,9 @@ const props = defineProps({
   linked: { type: Boolean, default: true },
 })
 
-// lifecycle states that call for attention get a tone: deprecated warns, sunset and end-of-life are over
-const LIFECYCLE_TONES = { deprecated: 'chip-warning', sunset: 'chip-danger', 'end-of-life': 'chip-danger' }
+// lifecycle states that call for attention get a tone: planned is not yet there, deprecated warns, sunset and
+// end-of-life are over
+const LIFECYCLE_TONES = { planned: 'chip-info', deprecated: 'chip-warning', sunset: 'chip-danger', 'end-of-life': 'chip-danger' }
 
 const MACHINE_TAG = /^([a-z][a-z0-9-]*):(.+)$/i
 

@@ -10,6 +10,7 @@ module Archsight
       attr_reader type: Class?
       attr_reader summary: bool
       attr_reader deprecated: String?
+      attr_reader default: String?
 
       @explicit_title: String?
       @validator: (^(String) -> String?)?

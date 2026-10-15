@@ -265,6 +265,8 @@ tags) are added together instead of one replacing the other.
 For kind authors: `annotation "key", unique: true` makes any annotation an identifier of this kind: unique per kind,
 checked by `archsight lint`, shown as chips without links. `annotation "key", deprecated: "what to use instead"` keeps an
 annotation working while `archsight lint` lists every use as a deprecation (with the text), without failing.
+`annotation "key", default: "value"` gives every resource that does not set the annotation that value when the
+resources are loaded (queries, filters and pages see it; the editor does not write it into the file).
 
 ### Links
 
@@ -882,14 +884,16 @@ Use annotations to capture metadata:
 ### Lifecycle
 
 `lifecycle/status` marks any resource with `architecture/*` annotations (products, components, services, artifacts, ...) as
-`active`, `deprecated` (do not start new uses), `sunset` (being phased out) or `end-of-life` (no longer operated or
-supported). A missing annotation means `active`. The status shows as a badge (yellow for `deprecated`, red for `sunset` and
-`end-of-life`) and is a sidebar filter and query term (`lifecycle/status == "deprecated"`).
+`planned` (not yet in use), `active`, `deprecated` (do not start new uses), `sunset` (being phased out) or `end-of-life`
+(no longer operated or supported). A resource without the annotation is `active`: the annotation's default, so
+`lifecycle/status == "active"` finds it and the sidebar filter counts it (the editor does not write the default into the
+file). The status shows as a badge (blue for `planned`, yellow for `deprecated`, red for `sunset` and `end-of-life`) and
+is a sidebar filter and query term (`lifecycle/status == "deprecated"`).
 
 | Annotation | Purpose |
 |------------|---------|
 | `lifecycle/status` | The state above |
-| `lifecycle/deprecatedAt`, `lifecycle/sunsetAt`, `lifecycle/endOfLifeAt` | When it happened or will happen (ISO 8601 date or time, checked by `archsight lint`) |
+| `lifecycle/activeAt`, `lifecycle/deprecatedAt`, `lifecycle/sunsetAt`, `lifecycle/endOfLifeAt` | When it happened or will happen (ISO 8601 date or time, checked by `archsight lint`) |
 | `lifecycle/replacedBy` | The resource that replaces it: a name for a resource of the same kind, `Kind/Name` for another kind (a component replaced by an `ApplicationService/...`). Shown as a link, `archsight lint` checks that it exists |
 | `lifecycle/reason` | Why, in markdown |
 

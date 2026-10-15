@@ -37,13 +37,14 @@ module Archsight
 
       # The options `annotation` accepts (see Archsight::Annotations::Annotation)
       ANNOTATION_OPTIONS = %i[description filter title format enum sidebar type summary editor validator unique
-                              deprecated].freeze
+                              deprecated default].freeze
 
       # Define an annotation using the Annotation class
       # `summary: true` marks it as a summary attribute: it is returned with every search hit of this kind.
       # `unique: true` makes it an identifier: its values (each element of a list) are unique among the resources
       # of the kind, which `archsight lint` checks, and its values are shown as chips without links (not tags).
       # `deprecated: "what to use instead"` keeps it working while `archsight lint` lists every use.
+      # `default: "value"` is the value of a resource that does not set it (see #apply_annotation_defaults!).
       def self.annotation(key, **options)
         unknown = options.keys - ANNOTATION_OPTIONS
         raise ArgumentError, "unknown annotation option(s) #{unknown.join(", ")} for #{key}" if unknown.any?
@@ -231,6 +232,26 @@ module Archsight
         @raw["metadata"] ||= {}
         @raw["metadata"]["annotations"] = @raw["metadata"]["annotations"] || {} #: Hash[String, String]
         @raw["metadata"]["annotations"][key] = value
+      end
+
+      # Gives every annotation with a `default:` that the file does not set its default, in the annotations hash like
+      # a written value, so queries, filters and the page see it. The editor leaves these out (#defaulted?), so a
+      # save does not write them into the file.
+      def apply_annotation_defaults!
+        self.class.annotations.each do |annotation|
+          next if annotation.default.nil? || annotation.pattern? || annotations.key?(annotation.key)
+
+          defaulted = (@defaulted ||= []) #: Array[String]
+          defaulted << annotation.key
+          @raw["metadata"] ||= {}
+          @raw["metadata"]["annotations"] = @raw["metadata"]["annotations"] || {} #: Hash[String, untyped]
+          @raw["metadata"]["annotations"][annotation.key] = annotation.default
+        end
+      end
+
+      # Whether the value of the annotation is its default, not written in the file
+      def defaulted?(key)
+        @defaulted&.include?(key) || false
       end
 
       # Get a computed annotation value from the cache

@@ -258,9 +258,13 @@ Everything that is on its way out:
 
     lifecycle/status in ("deprecated", "sunset", "end-of-life")
 
-Resources that are not retiring (a missing status counts as active):
+Resources in use (a resource without a status is active, the annotation's default):
 
-    ! lifecycle/status? | lifecycle/status == "active"
+    lifecycle/status == "active"
+
+What is planned, not yet in use:
+
+    lifecycle/status == "planned"
 
 Services exposing APIs:
 

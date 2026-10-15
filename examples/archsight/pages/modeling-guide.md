@@ -65,13 +65,14 @@ Every resource that carries `architecture/*` annotations can say where it is in 
 
 | Status | Meaning |
 |--------|---------|
-| `active` | In use, no restriction (the default when the annotation is missing) |
+| `planned` | Not yet in use: decided or being built, `lifecycle/activeAt` says when it starts |
+| `active` | In use, no restriction (the default: a resource without the annotation is `active`) |
 | `deprecated` | Still works, but do not start new uses |
 | `sunset` | Being phased out, there is a date after which it goes away |
 | `end-of-life` | No longer operated or supported |
 
-The status is shown as a coloured badge, yellow for `deprecated`, red for `sunset` and `end-of-life`. Companions record
-the story: `lifecycle/deprecatedAt`, `lifecycle/sunsetAt` and `lifecycle/endOfLifeAt` (ISO 8601 dates),
+The status is shown as a coloured badge, blue for `planned`, yellow for `deprecated`, red for `sunset` and
+`end-of-life`. Companions record the story: `lifecycle/activeAt`, `lifecycle/deprecatedAt`, `lifecycle/sunsetAt` and `lifecycle/endOfLifeAt` (ISO 8601 dates),
 `lifecycle/replacedBy` (the replacing resource, a name for the same kind or `Kind/Name` for another kind such as a component replaced by a service; shown as a link, `archsight lint` checks that it exists) and
 `lifecycle/reason`.
 

@@ -57,7 +57,8 @@ module Archsight
           data = build_form_metadata(kind, klass)
           data[:mode] = "edit"
           data[:name] = instance.name
-          data[:annotations] = instance.annotations.dup
+          # defaults are not in the file, a save leaves them out
+          data[:annotations] = instance.annotations.reject { |key, _| instance.defaulted?(key) }
           data[:relations] = extract_instance_relations(instance)
           data[:path_ref] = source_ref(instance)
           data[:content_hash] = source_content_hash(instance)
