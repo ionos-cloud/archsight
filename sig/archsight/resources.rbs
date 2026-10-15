@@ -18,6 +18,7 @@ module Archsight
       attr_accessor references: Array[Hash[Symbol, untyped]]
 
       @computed_values: untyped
+      @defaulted: Array[String]?
       @declared_relations: Array[[Symbol, Symbol, String]]?
       @relations: Array[[Symbol, Symbol, String]]?
 
@@ -50,6 +51,8 @@ module Archsight
       def kind: () -> String?
       def name: () -> String?
       def annotations: () -> Hash[String, untyped]
+      def apply_annotation_defaults!: () -> void
+      def defaulted?: (String) -> bool
       def set_computed_annotation: (String, untyped) -> void
       def computed_annotation_value: (String) -> untyped
       def metadata: () -> Hash[String, untyped]

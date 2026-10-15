@@ -4,8 +4,8 @@ require "uri"
 
 # Architecture module adds common architecture annotations to resource classes
 module Archsight::Annotations::Architecture
-  # `active` first: templates use the first value
-  LIFECYCLE_STATUSES = %w[active deprecated sunset end-of-life].freeze
+  # in the order of a resource's life; a resource that sets none is `active` (the annotation's default)
+  LIFECYCLE_STATUSES = %w[planned active deprecated sunset end-of-life].freeze
 
   def self.included(base)
     base.include Archsight::Annotations::Links
@@ -43,10 +43,15 @@ module Archsight::Annotations::Architecture
   def self.define_lifecycle(base)
     base.class_eval do
       annotation "lifecycle/status",
-                 description: "Lifecycle state: active, deprecated (do not start new uses), sunset (being phased out) " \
-                              "or end-of-life (no longer operated or supported)",
+                 description: "Lifecycle state: planned (not yet in use), active (the default), deprecated (do not " \
+                              "start new uses), sunset (being phased out) or end-of-life (no longer operated or supported)",
                  enum: LIFECYCLE_STATUSES,
+                 default: "active",
                  title: "Lifecycle"
+      annotation "lifecycle/activeAt",
+                 description: "When the resource goes (or went) into use (ISO 8601 date or time)",
+                 title: "Active at",
+                 validator: ->(value) { Archsight::Resources::Page.timestamp_error(value) }
       annotation "lifecycle/deprecatedAt",
                  description: "When the resource was deprecated (ISO 8601 date or time)",
                  title: "Deprecated at",

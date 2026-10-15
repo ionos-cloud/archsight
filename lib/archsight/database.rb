@@ -75,6 +75,7 @@ module Archsight
         puts "parsing #{path}..." if @verbose
         File.extname(path) == ".md" ? load_page(path) : load_file(path)
       end
+      @instances.each_value { |instances| instances.each_value(&:apply_annotation_defaults!) }
 
       verify! if @verify
       derive_references! if @verify

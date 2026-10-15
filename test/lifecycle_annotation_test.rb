@@ -29,11 +29,15 @@ class LifecycleAnnotationTest < Minitest::Test
   end
 
   def lint_yaml(yaml)
+    with_db(yaml) { |db| Archsight::Linter.new(db).validate }
+  end
+
+  def with_db(yaml)
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, "test.yaml"), yaml)
       db = Archsight::Database.new(dir, verbose: false, compute_annotations: false)
       db.reload!
-      Archsight::Linter.new(db).validate
+      yield db
     end
   end
 
@@ -45,8 +49,26 @@ class LifecycleAnnotationTest < Minitest::Test
     end
   end
 
-  def test_active_is_the_first_state
-    assert_equal "active", Archsight::Annotations::Architecture::LIFECYCLE_STATUSES.first
+  def test_planned_comes_before_active
+    assert_equal %w[planned active], Archsight::Annotations::Architecture::LIFECYCLE_STATUSES.first(2)
+  end
+
+  def test_a_resource_without_a_status_is_active
+    with_db(resource_yaml("ApplicationService", "Plain") +
+            resource_yaml("ApplicationService", "Next", "lifecycle/status" => "planned", "lifecycle/activeAt" => "2027-01-31")) do |db|
+      plain = db.instance_by_kind("ApplicationService", "Plain")
+      upcoming = db.instance_by_kind("ApplicationService", "Next")
+
+      assert_equal "active", plain.annotations["lifecycle/status"]
+      assert plain.defaulted?("lifecycle/status")
+      assert_equal "planned", upcoming.annotations["lifecycle/status"]
+      refute upcoming.defaulted?("lifecycle/status")
+      assert_equal ["Plain"], Archsight::Query.parse('lifecycle/status == "active"').filter(db).map(&:name)
+    end
+  end
+
+  def test_the_template_starts_with_the_default
+    assert_includes Archsight::Template.generate("ApplicationService"), "lifecycle/status: active"
   end
 
   def test_unknown_state_is_rejected

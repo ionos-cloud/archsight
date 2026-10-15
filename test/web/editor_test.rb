@@ -112,6 +112,17 @@ class EditorRoutesTest < Minitest::Test
     assert data.key?("path_ref")
   end
 
+  def test_api_form_edit_leaves_out_default_values
+    service = Archsight::Web::Application.database.instances_by_kind("ApplicationService").values
+                                         .find { |inst| inst.defaulted?("lifecycle/status") }
+    skip("No ApplicationService without a lifecycle") unless service
+
+    get "/api/v1/editor/kinds/ApplicationService/instances/#{ERB::Util.url_encode(service.name)}/form"
+
+    assert_equal "active", service.annotations["lifecycle/status"]
+    refute JSON.parse(last_response.body)["annotations"].key?("lifecycle/status"), "a save would write the default into the file"
+  end
+
   def test_api_form_edit_404_for_unknown_instance
     get "/api/v1/editor/kinds/TechnologyArtifact/instances/nonexistent-xyz/form"
 

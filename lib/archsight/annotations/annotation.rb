@@ -6,7 +6,7 @@ require_relative "resource_reference"
 
 # Annotation represents a single annotation definition with its schema and behavior
 class Archsight::Annotations::Annotation
-  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :summary, :editor, :deprecated
+  attr_reader :key, :description, :filter, :format, :enum, :sidebar, :type, :summary, :editor, :deprecated, :default
 
   def initialize(key, options = {})
     @key = key
@@ -21,6 +21,7 @@ class Archsight::Annotations::Annotation
     @type = options[:type]
     @unique = options[:unique] == true
     @deprecated = options[:deprecated]
+    @default = options[:default]
 
     # Auto-add filter if enum present
     @filter ||= :word if @enum
@@ -141,9 +142,11 @@ class Archsight::Annotations::Annotation
     @format if code? || diagram?
   end
 
-  # Example value for templates
+  # Example value for templates: the default, else the first value of the enum
   def example_value
-    if @enum
+    if @default
+      @default
+    elsif @enum
       @enum.first || "TODO"
     elsif @type == Float
       0.0
