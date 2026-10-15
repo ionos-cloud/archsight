@@ -3,9 +3,11 @@ import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { executeAnalysis } from '../../api/client.js'
 import { highlightCodeBlocks } from '../../composables/useHighlight.js'
 import AnalysisSection from './AnalysisSection.vue'
+import { analysisStatus } from '../../composables/useAnalysisStatus.js'
 
 // Runs an analysis when it is shown and displays the result (the analysis page and page embeds).
 // It never blocks its parent: the run is awaited here only, and the placeholder spins meanwhile.
+// It runs once: the result only changes with the data, and that needs a reload of the page anyway.
 const props = defineProps({
   name: String,
   compact: { type: Boolean, default: false },
@@ -55,6 +57,8 @@ const sectionGroups = computed(() => {
   return groupSections(result.value.sections)
 })
 
+const status = computed(() => analysisStatus(result.value))
+
 const hasTitledGroups = computed(() => sectionGroups.value.some(g => g.title))
 // one titled group needs no fold: its title is just the heading of the output
 const collapsible = computed(() => sectionGroups.value.filter(g => g.title).length > 1)
@@ -67,32 +71,21 @@ watch(result, async () => {
 })
 
 onMounted(run)
-defineExpose({ run })
 </script>
 
 <template>
 <article ref="rootEl" class="analysis-execution" :class="{ compact }">
   <div v-if="!compact" class="analysis-bar">
     <span class="status-indicator">
-      <template v-if="result">
-        <template v-if="result.success && result.has_findings">
-          <i class="iconoir-warning-triangle status-findings"></i> Completed with findings
-        </template>
-        <template v-else-if="result.success">
-          <i class="iconoir-check-circle status-success"></i> Completed without findings
-        </template>
-        <template v-else>
-          <i class="iconoir-xmark-circle status-error"></i> Failed
-        </template>
+      <template v-if="status">
+        <i :class="status.failed ? 'iconoir-xmark-circle status-error' : 'iconoir-check-circle status-done'"></i>
+        {{ status.label }}
+        <span v-if="status.notes" class="status-notes" title="Reported by the analysis">· {{ status.notes }}</span>
       </template>
-      <template v-else>Running...</template>
+      <template v-else><i class="iconoir-refresh spinning"></i> Running...</template>
     </span>
     <span class="analysis-bar-end">
       <span v-if="result?.duration" class="duration" title="Run time">{{ result.duration.toFixed(2) }}s</span>
-      <button type="button" class="rerun" @click="run" :disabled="executing">
-        <i class="iconoir-refresh" :class="{ spinning: executing }"></i>
-        {{ executing ? 'Running...' : 'Re-run' }}
-      </button>
     </span>
   </div>
 
@@ -157,33 +150,20 @@ defineExpose({ run })
   font-weight: 600;
 }
 
-.status-success { color: #10b981; }
-.status-findings { color: #f59e0b; }
+.status-done { color: var(--pico-muted-color); }
+.status-warning { color: #f59e0b; }
 .status-error { color: #ef4444; }
+
+.status-notes {
+  font-weight: 400;
+  color: var(--pico-muted-color);
+}
 
 .analysis-bar-end {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   color: var(--pico-muted-color);
-}
-
-.analysis-bar .rerun {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  width: auto;
-  margin: 0;
-  padding: 0.2rem 0.4rem;
-  font-size: var(--fs-xs);
-  color: var(--pico-muted-color);
-  background: transparent;
-  border: none;
-}
-
-.analysis-bar .rerun:hover:not(:disabled),
-.analysis-bar .rerun:focus-visible {
-  color: var(--pico-contrast);
 }
 
 @keyframes spin {

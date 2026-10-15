@@ -516,14 +516,14 @@ module Archsight
     end
 
     def build_analysis_summary_markdown(results)
-      passed = results.count(&:success?)
+      completed = results.count(&:success?)
       failed = results.count(&:failed?)
-      with_findings = results.count(&:has_findings?)
+      with_warnings = results.count { |result| result.success? && result.warnings? }
 
       lines = ["---", "", "# Summary", ""]
-      lines << "- ✅ **#{passed}** passed"
+      lines << "- ✅ **#{completed}** completed"
       lines << "- ❌ **#{failed}** failed" if failed.positive?
-      lines << "- ⚠️ **#{with_findings}** with findings" if with_findings.positive?
+      lines << "- ⚠️ **#{with_warnings}** with warnings" if with_warnings.positive?
       lines.join("\n")
     end
 

@@ -52,12 +52,12 @@ module Archsight
       end
 
       def summary
-        passed = @results.count(&:success?)
+        completed = @results.count(&:success?)
         failed = @results.count(&:failed?)
-        with_findings = @results.count(&:has_findings?)
-        items = ["#{passed} passed"]
+        with_warnings = @results.count { |result| result.success? && result.warnings? }
+        items = ["#{completed} completed"]
         items << "#{failed} failed" if failed.positive?
-        items << "#{with_findings} with findings" if with_findings.positive?
+        items << "#{with_warnings} with warnings" if with_warnings.positive?
         "#list(#{items.map { |item| "[#{str(item)}]" }.join(", ")})\n"
       end
 
@@ -107,7 +107,7 @@ module Archsight
 
       def render_result(result)
         parts = ["#pagebreak(weak: true)", "#heading(level: 1)[#{str(result.name)}]"]
-        status = result.failed? ? "failed" : "passed"
+        status = result.failed? ? "failed" : "completed"
         status += ", #{result.duration_str}" unless result.duration_str.empty?
         parts << "#text(fill: gray)[#{str(status)}]"
         parts << error_block(result) if result.failed?

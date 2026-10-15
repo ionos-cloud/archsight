@@ -398,7 +398,7 @@ class AnalysisExecutorTest < Minitest::Test
     assert_includes result.error_markdown, "Error:"
   end
 
-  def test_result_status_emoji_findings
+  def test_result_status_emoji_output_alone_is_not_a_warning
     create_analysis(
       name: "Test:ShowFindings",
       script: 'report([1, 2, 3], title: "Items")'
@@ -407,10 +407,19 @@ class AnalysisExecutorTest < Minitest::Test
     analysis = @db.instance_by_kind("Analysis", "Test:ShowFindings")
     result = @executor.execute(analysis)
 
-    # Status emoji shows findings indicator
-    assert_equal "⚠️", result.status_emoji
-    # Markdown contains script output
+    # a report is not a problem
+    assert_equal "✅", result.status_emoji
+    refute_predicate result, :warnings?
     assert_includes result.to_markdown, "Items"
+  end
+
+  def test_result_status_emoji_warning_reported_by_the_script
+    create_analysis(name: "Test:Warns", script: 'warning("2 components without an owner")')
+
+    result = @executor.execute(@db.instance_by_kind("Analysis", "Test:Warns"))
+
+    assert_predicate result, :warnings?
+    assert_equal "⚠️", result.status_emoji
   end
 
   def test_result_duration_tracked

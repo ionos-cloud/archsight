@@ -1489,7 +1489,7 @@ components:
           description: Whether the analysis executed successfully
         has_findings:
           type: boolean
-          description: Whether the analysis produced findings
+          description: Whether the script produced any output (tables, lists, text, ...). Output is not a problem; errors and warnings the script reports are message sections
         duration:
           type: number
           format: float
