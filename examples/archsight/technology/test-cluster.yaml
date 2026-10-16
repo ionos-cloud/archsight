@@ -1,0 +1,95 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyEquipment
+metadata:
+  name: Equipment:Frankfurt:TestCluster
+  annotations:
+    architecture/description: Shared test cluster in room 2, operated by the infrastructure team and partitioned among the teams that test on it.
+    equipment/type: cluster
+    equipment/purpose: shared test environment
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+  ownedBy:
+    businessActors:
+      - Team:Infrastructure
+  composedOf:
+    technologyEquipment:
+      - Equipment:Frankfurt:TestCluster:Partition:Compute
+      - Equipment:Frankfurt:TestCluster:Partition:Kernel
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyEquipment
+metadata:
+  name: Equipment:Frankfurt:TestCluster:Partition:Compute
+  annotations:
+    architecture/description: The servers of the test cluster held by QA.
+    equipment/type: cluster
+    equipment/purpose: hypervisor regression tests
+spec:
+  servedBy:
+    businessActors:
+      - Team:QA
+  composedOf:
+    technologyDevices:
+      - Device:Frankfurt:Test01
+      - Device:Frankfurt:Test02
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyEquipment
+metadata:
+  name: Equipment:Frankfurt:TestCluster:Partition:Kernel
+  annotations:
+    architecture/description: The server of the test cluster held by the kernel team.
+    equipment/type: cluster
+    equipment/purpose: kernel regression tests
+spec:
+  servedBy:
+    businessActors:
+      - Team:Kernel
+  composedOf:
+    technologyDevices:
+      - Device:Frankfurt:Test03
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Test01
+  annotations:
+    architecture/description: Test server of the compute partition; served by QA through its partition.
+    device/type: server
+    device/role: test
+spec:
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Test02
+  annotations:
+    architecture/description: Test server of the compute partition; served by QA through its partition.
+    device/type: server
+    device/role: test
+spec:
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Test03
+  annotations:
+    architecture/description: Test server of the kernel partition.
+    device/type: server
+    device/role: test
+    device/purpose: kernel regression tests on new kernel builds
+spec:
+  servedBy:
+    businessActors:
+      - Team:Kernel
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1

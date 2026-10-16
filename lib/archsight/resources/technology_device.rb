@@ -44,9 +44,11 @@ class Archsight::Resources::TechnologyDevice < Archsight::Resources::Base
     - A `TechnologyCommunicationNetwork` is `realizedBy` its switches and routers and `connects` the devices attached
       to it
     - `TechnologyEquipment` (a rack, a delivered hardware block) is `composedOf` its devices
+    - A device is `ownedBy` the team (`BusinessActor`) or `BusinessRole` responsible for operating it and `servedBy`
+      the team it is dedicated to (ArchiMate serving: a test server held by one team); `device/purpose` says what for
 
-    A device points to nothing above it: nodes, networks and equipment point down to the device, so the relations
-    stay free of cycles.
+    A device points to nothing above it: nodes, networks and equipment point down to the device, and the teams it
+    points to point to nothing further, so the relations stay free of cycles.
   MD
 
   icon "server"
@@ -72,8 +74,15 @@ class Archsight::Resources::TechnologyDevice < Archsight::Resources::Base
   annotation "device/rack",
              description: "Rack and height units, e.g. B12 U20-21",
              title: "Rack"
+  annotation "device/purpose",
+             description: "What the device is dedicated to, e.g. kernel regression tests",
+             title: "Purpose",
+             filter: :word
 
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :connectedTo, :technologyDevices, :TechnologyDevice
   relation :composedOf, :technologyDevices, :TechnologyDevice
+  relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
+  relation :servedBy, :businessActors, :BusinessActor
 end

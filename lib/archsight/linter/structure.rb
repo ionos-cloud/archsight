@@ -30,7 +30,8 @@ module Archsight
           equipment_without_facility,
           device_without_facility,
           device_connected_to_itself,
-          network_device_realizing_no_network
+          network_device_realizing_no_network,
+          device_served_apart_from_its_equipment
         ].flatten.sort
       end
 
@@ -214,6 +215,23 @@ module Archsight
           next if realized.key?(device) || members.key?(device)
 
           warning(device, "is a #{type} that realizes no TechnologyCommunicationNetwork")
+        end
+      end
+
+      # A device in a partition (equipment servedBy a team) serves that team; one that names another team has been
+      # handed over without moving it. A device that names no team is served through its equipment.
+      def device_served_apart_from_its_equipment
+        holders = owners_by_target("TechnologyEquipment", :composedOf, :technologyDevices)
+        instances("TechnologyDevice").filter_map do |device|
+          teams = targets(device, :servedBy, :businessActors)
+          equipment_teams = holders.fetch(device, []).flat_map { |equipment| targets(equipment, :servedBy, :businessActors) }
+          next if teams.empty? || equipment_teams.empty?
+
+          others = teams - equipment_teams
+          next if others.empty?
+
+          warning(device, "is servedBy #{names(others.sort_by(&:name))}, not by the team of its equipment " \
+                          "(#{names(equipment_teams.uniq.sort_by(&:name))})")
         end
       end
     end
