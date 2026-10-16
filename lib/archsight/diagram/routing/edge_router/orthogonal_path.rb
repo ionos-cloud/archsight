@@ -24,6 +24,14 @@ module Archsight
         # resorting to a two-turn mid-jog.
         SINGLE_TURN_RATIOS = [0.5, 0.1, 0.9].freeze
 
+        # How far a single turn's exit may also move off `a`'s center, away
+        # from `b`, as a fraction of `a`'s extent: a source whose center
+        # lies just past `b`'s side would otherwise turn right along that
+        # side, in a stub too short to read (see `EdgeRouter::MIN_END_LEG`).
+        # Only offered for such a source: anywhere else the centered exit
+        # stays the only one.
+        EXIT_SHIFT = 0.25
+
         # A single turn entering the target off its center, remembering by
         # how far. Entering nearer the source is always exactly that much
         # shorter, so `EdgeRouter.score_candidates` charges it back: the
@@ -57,8 +65,10 @@ module Archsight
           dx = b.x - a.x
           dy = b.y - a.y
 
-          horizontal = SINGLE_TURN_RATIOS.map { |ratio| single_turn_horizontal_first(a, b, dx, dy, ratio) }
-          vertical = SINGLE_TURN_RATIOS.map { |ratio| single_turn_vertical_first(a, b, dx, dy, ratio) }
+          # Centered exits first, the ones shifted away from `b` after them.
+          exits = [0.0, EXIT_SHIFT]
+          horizontal = exits.product(SINGLE_TURN_RATIOS).map { |shift, ratio| single_turn_horizontal_first(a, b, dx, dy, ratio, shift) }
+          vertical = exits.product(SINGLE_TURN_RATIOS).map { |shift, ratio| single_turn_vertical_first(a, b, dx, dy, ratio, shift) }
           # Centered entries first (dominant axis leading), off-center ones after.
           singles = if dx.abs >= dy.abs
                       [horizontal.first, vertical.first, *horizontal.drop(1), *vertical.drop(1)]
@@ -125,15 +135,21 @@ module Archsight
         # also guarantees the corner-to-entry run (at x = entry_x) clears `a`
         # entirely; and (2) `a`'s own y sits outside `b`'s vertical span, so
         # the exit-to-corner run (at y = a.y) clears `b` entirely.
-        def single_turn_horizontal_first(a, b, dx, dy, ratio = 0.5)
+        # `exit_shift` moves the exit that fraction of `a`'s height away from
+        # `b` (see `EXIT_SHIFT`).
+        def single_turn_horizontal_first(a, b, dx, dy, ratio = 0.5, exit_shift = 0.0)
           return nil if dx.zero?
 
           corner_x = ratio == 0.5 ? b.x : b.left + (b.width * ratio)
           return nil if dx.positive? ? (corner_x <= a.right) : (corner_x >= a.left)
-          return nil unless a.y < b.top || a.y > b.bottom
 
-          exit_point = [dx.positive? ? a.right : a.left, a.y]
-          corner = [corner_x, a.y]
+          return nil unless exit_shift.zero? || short_run?(a.y, b.top, b.bottom)
+
+          exit_y = a.y - ((dy <=> 0) * a.height * exit_shift)
+          return nil unless exit_y < b.top || exit_y > b.bottom
+
+          exit_point = [dx.positive? ? a.right : a.left, exit_y]
+          corner = [corner_x, exit_y]
           entry_point = [corner_x, dy.positive? ? b.top : b.bottom]
           off_center(ratio, corner_x - b.x, [exit_point, corner, entry_point])
         end
@@ -141,17 +157,29 @@ module Archsight
         # The transpose of `single_turn_horizontal_first`: exit `a` from
         # whichever top/bottom edge faces `b`, corner at `(a.x, b.y)`, then
         # straight into `b`'s facing left/right edge.
-        def single_turn_vertical_first(a, b, dx, dy, ratio = 0.5)
+        def single_turn_vertical_first(a, b, dx, dy, ratio = 0.5, exit_shift = 0.0)
           return nil if dy.zero?
 
           corner_y = ratio == 0.5 ? b.y : b.top + (b.height * ratio)
           return nil if dy.positive? ? (corner_y <= a.bottom) : (corner_y >= a.top)
-          return nil unless a.x < b.left || a.x > b.right
 
-          exit_point = [a.x, dy.positive? ? a.bottom : a.top]
-          corner = [a.x, corner_y]
+          return nil unless exit_shift.zero? || short_run?(a.x, b.left, b.right)
+
+          exit_x = a.x - ((dx <=> 0) * a.width * exit_shift)
+          return nil unless exit_x < b.left || exit_x > b.right
+
+          exit_point = [exit_x, dy.positive? ? a.bottom : a.top]
+          corner = [exit_x, corner_y]
           entry_point = [dx.positive? ? b.left : b.right, corner_y]
           off_center(ratio, corner_y - b.y, [exit_point, corner, entry_point])
+        end
+
+        # Whether a centered exit at `coord` lies just outside `b`'s span
+        # `low..high`, so its run into `b` would be shorter than
+        # `EdgeRouter::MIN_END_LEG`.
+        def short_run?(coord, low, high)
+          gap = coord < low ? low - coord : coord - high
+          gap.positive? && gap < EdgeRouter::MIN_END_LEG
         end
 
         def off_center(ratio, offset, points)

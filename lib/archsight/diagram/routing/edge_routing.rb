@@ -37,7 +37,9 @@ module Archsight
       # once it's `PORT_ORDER_PROBE` out from the side (see `order_key`);
       # `far` -- where it finally ends up, its far endpoint -- breaks ties
       # between lines still running together at that depth.
-      PortMember = Struct.new(:edge_path, :role, :box, :axis, :original, :approach, :order, :far, keyword_init: true)
+      # `slide` is the range a straight line may move within as a whole (see
+      # `sliding_range`), nil when it can only tilt.
+      PortMember = Struct.new(:edge_path, :role, :box, :axis, :original, :approach, :order, :far, :slide, keyword_init: true)
 
       # How many times `refine_line_overlap!` sweeps every edge. Each round
       # re-scores every edge against every other edge's *current* path, in
@@ -183,6 +185,7 @@ module Archsight
           add_port_member(groups, ep, :end, ep.to_box, ep.points.last)
         end
 
+        groups.each_value { |members| members.each { |m| m.slide = sliding_range(m, groups) } }
         groups.each_value { |members| apply_port_slots(members) if members.length > 1 }
       ensure
         @original_crossings = nil
@@ -197,6 +200,38 @@ module Archsight
           scored = [{ path: points, crossing: 0, length: Geometry.path_length(points) }]
           RoutedEdge.new(edge: nil, points: points, obstacles: [], scored: scored)
         end
+      end
+
+      # Where a straight line (two points, perpendicular to the side) can
+      # move as a whole, both ends together, and stay straight: within the
+      # span both boxes share on the side's axis, clear of their corners.
+      # Only when its far end is alone on its side, so moving it there
+      # never collides with that side's own port slots. Nil otherwise.
+      def sliding_range(member, groups)
+        points = member.edge_path.points
+        return nil unless points.length == 2 && EdgeRouter::PathMetrics.close?(member.approach, member.original)
+
+        far_box = member.role == :start ? member.edge_path.to_box : member.edge_path.from_box
+        far_point = member.role == :start ? points.last : points.first
+        far_side = far_box&.side_of(far_point)
+        return nil unless far_side && groups[[far_box.object_id, far_side]].length == 1
+
+        span = ->(box) { member.axis == :x ? [box.left, box.right] : [box.top, box.bottom] }
+        margin = EdgeRouter::StraightPath::ALIGNED_CORNER_MARGIN
+        low = [span.call(member.box).first, span.call(far_box).first].max + margin
+        high = [span.call(member.box).last, span.call(far_box).last].min - margin
+        low <= high ? (low..high) : nil
+      end
+
+      # `member`'s route with its endpoint moved to `pos`: a straight line
+      # that may slide there moves as a whole, anything else only at this end.
+      def moved_points(member, pos)
+        delta = pos - member.original
+        points = member.edge_path.points
+        return EdgeRouter::Attachment.shift_attachment(points, member.axis, delta, at: member.role) unless member.slide&.cover?(pos)
+
+        index = member.axis == :x ? 0 : 1
+        points.map { |point| point.dup.tap { |p| p[index] += delta } }
       end
 
       def positioned(node)
@@ -353,7 +388,7 @@ module Archsight
       end
 
       def slot_path(member, pos)
-        EdgeRouter::Attachment.shift_attachment(member.edge_path.points, member.axis, pos - member.original, at: member.role)
+        moved_points(member, pos)
       end
 
       def port_order(m, n)
@@ -365,8 +400,11 @@ module Archsight
       # Whether moving `member`'s endpoint keeps its route's shape: it
       # arrives perpendicular, along a run `EdgeRouter::Attachment.shift_attachment`
       # moves as a whole -- unlike a straight two-point line, whose far end
-      # stays put, so it only ever tilts.
+      # stays put, so it only ever tilts -- unless it may slide as a whole
+      # (`sliding_range`).
       def flexible?(member)
+        return true if member.slide
+
         member.edge_path.points.length > 2 && EdgeRouter::PathMetrics.close?(member.approach, member.original)
       end
 
@@ -381,8 +419,12 @@ module Archsight
       # the side) first tries to stay exactly where it is, anywhere along
       # the side and not just within its band: moving only its box end
       # would tilt it, and `place_members` already keeps it clear of every
-      # endpoint placed before it.
+      # endpoint placed before it. One that may slide as a whole
+      # (`sliding_range`) is `flexible?` instead and takes its band like the
+      # rest, so it makes room for a line that turns in beside it.
       def band_shifts(member, band_low, band_high, side_low, side_high)
+        return shifts_for(member, slide_positions(member, band_low, band_high)) if member.slide
+
         straight = member.approach.clamp(band_low, band_high)
         center = (band_low + band_high) / 2.0
         preferred = flexible?(member) ? [center, straight] : [straight, center]
@@ -390,6 +432,20 @@ module Archsight
                member.original.between?(side_low, side_high)
         positions = [*(member.original if keep), *preferred, band_low, band_high].uniq
         shifts_for(member, positions)
+      end
+
+      # Where a line that may slide (`sliding_range`) tries to go, all of it
+      # inside its range so it stays straight: where it is, if that is in its
+      # band, else the band's center, then the band's ends -- clamped to the
+      # part of the band within the range. A band entirely outside the range
+      # leaves it where it is.
+      def slide_positions(member, band_low, band_high)
+        low = [band_low, member.slide.begin].max
+        high = [band_high, member.slide.end].min
+        return [member.original] if low > high
+
+        keep = member.original.between?(low, high) ? [member.original] : []
+        [*keep, ((band_low + band_high) / 2.0).clamp(low, high), low, high].uniq
       end
 
       # `[pos, shifted points]` for moving `member`'s endpoint to `pos`, or
@@ -405,7 +461,7 @@ module Archsight
         path = member.edge_path
         moves = positions.map do |pos|
           delta = pos - member.original
-          [pos, delta.zero? ? path.points : EdgeRouter::Attachment.shift_attachment(path.points, member.axis, delta, at: member.role), delta.zero?]
+          [pos, delta.zero? ? path.points : moved_points(member, pos), delta.zero?]
         end
         moved = moves.reject(&:last)
         return moves.map { |pos, points, _| [pos, points] } if moved.empty?

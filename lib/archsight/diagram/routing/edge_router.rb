@@ -80,6 +80,15 @@ module Archsight
       TURN_PENALTY = 300.0
       TURN_LENGTH_FACTOR = 2.0
 
+      # A bent route's run out of or into a box shorter than this hugs the
+      # box's border instead of reading as a connection to it (a turn right
+      # past the corner of the box it then enters). Every pixel short of it
+      # costs `SHORT_LEG_WEIGHT` pixels of length, so a route a little longer
+      # but with a real run in wins (see `OrthogonalPath::EXIT_SHIFT`). A
+      # straight line has no turn to hug with and is never charged.
+      MIN_END_LEG = BridgePath::BRIDGE_STUB
+      SHORT_LEG_WEIGHT = 3.0
+
       # Two edges running right along each other for a stretch reads as
       # clutter too, but far more mildly than either one cutting through a
       # box -- weighting each pixel of *collinear* overlap with a sibling
@@ -137,7 +146,16 @@ module Archsight
           # selection kernels, which only know crossings and length, apply it too.
           extra_turns = turns[i] - fewest_turns[crossings[i]]
           turn_cost = [TURN_PENALTY, lengths[i] * TURN_LENGTH_FACTOR].min * extra_turns
-          { path: path, crossing: crossings[i], length: lengths[i] + turn_cost + off_center_cost(path) }
+          { path: path, crossing: crossings[i], length: lengths[i] + turn_cost + off_center_cost(path) + short_leg_cost(path) }
+        end
+      end
+
+      # See `MIN_END_LEG`.
+      def short_leg_cost(path)
+        return 0.0 if path.length < 3
+
+        [path.first(2), path.last(2)].sum do |(p, q)|
+          [MIN_END_LEG - Math.hypot(q[0] - p[0], q[1] - p[1]), 0.0].max * SHORT_LEG_WEIGHT
         end
       end
 

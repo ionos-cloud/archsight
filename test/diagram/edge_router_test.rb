@@ -448,6 +448,29 @@ class DiagramEdgeRouterTest < Minitest::Test
     assert_equal [tall.top, target.bottom], points.map(&:last)
   end
 
+  def test_a_source_just_below_the_target_s_side_exits_lower_instead_of_hugging_it
+    target = box(565, 714, 130, 40) # bottom 734
+    source = box(875, 738, 118, 88) # 816..934, center 4px below the target's bottom
+    neighbour = box(700, 714, 126, 40) # right of the target: no straight line into its side
+
+    points = Archsight::Diagram::EdgeRouter.route(source, target, "orthogonal", obstacles: [neighbour])
+    leg = points.last(2)
+
+    assert_equal 3, points.length
+    assert_operator points.first[1], :>, source.y # leaves below its center
+    assert_operator (leg[0][1] - leg[1][1]).abs, :>=, Archsight::Diagram::EdgeRouter::MIN_END_LEG
+  end
+
+  def test_a_source_well_below_the_target_s_side_still_exits_at_its_center
+    target = box(565, 714, 130, 40)
+    source = box(875, 800, 118, 88)
+    neighbour = box(700, 714, 126, 40)
+
+    exit_point = Archsight::Diagram::EdgeRouter.route(source, target, "orthogonal", obstacles: [neighbour]).first
+
+    assert(exit_point[0] == source.x || exit_point[1] == source.y, "exits off-center at #{exit_point.inspect}")
+  end
+
   def test_a_short_zig_zag_beats_a_one_corner_detour_more_than_three_times_its_length
     zig_zag = [[0.0, 0.0], [0.0, 23.0], [30.0, 23.0], [30.0, 46.0]] # 76 long, two turns
     detour = [[0.0, 0.0], [6.0, 0.0], [6.0, -284.0]] # 290 long, one turn

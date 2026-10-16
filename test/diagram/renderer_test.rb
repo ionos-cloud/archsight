@@ -641,6 +641,31 @@ class DiagramRendererTest < Minitest::Test
     assert_nil routing.send(:shift_for, member, 100.0)
   end
 
+  def test_a_straight_line_slides_aside_for_a_line_turning_in_beside_it
+    # `z` comes from the left and turns down into `t`'s top right of where
+    # `s` drops straight onto it: left as routed, z's run crosses s's line.
+    source = %(component "z" { }\ncomponent "s" { }\ncomponent "t" { }\nz -> t { style "orthogonal" }\ns -> t { style "orthogonal" }\n)
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
+    boxes = {
+      "z" => Archsight::Diagram::Layout::Box.new(0, 0, 60, 200),
+      "s" => Archsight::Diagram::Layout::Box.new(140, 0, 150, 200), # 65..215
+      "t" => Archsight::Diagram::Layout::Box.new(170, 200, 130, 40) # 105..235, top 180
+    }
+    edge_routing = Archsight::Diagram::EdgeRouting.new(graph, boxes)
+    z_path, s_path = edge_routing.compute_paths(graph.edges)
+    z_path.points = [[0.0, 100.0], [0.0, 140.0], [150.0, 140.0], [150.0, 180.0]]
+    s_path.points = [[140.0, 100.0], [140.0, 180.0]]
+
+    assert_equal 1, Archsight::Diagram::EdgeRouter::PathMetrics.crossing_edges_count(z_path.points, [s_path.points])
+
+    edge_routing.assign_ports!([z_path, s_path])
+
+    assert_equal 0, Archsight::Diagram::EdgeRouter::PathMetrics.crossing_edges_count(z_path.points, [s_path.points])
+    assert_equal 2, s_path.points.length
+    assert_in_delta s_path.points.first[0], s_path.points.last[0], 0.01 # still straight
+    assert_operator s_path.points.first[0], :>, z_path.points.last[0] # moved right of z's line
+  end
+
   def test_keeps_many_edges_into_a_wide_box_straight_after_port_assignment
     xs = [60, 100, 140, 700, 760] # clustered, so equal-width port bands alone would tilt most of them
     source = [*xs.each_index.map { |i| %(component "s#{i}" { }) }, %(component "wide" { }),
