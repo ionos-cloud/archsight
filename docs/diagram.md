@@ -43,7 +43,16 @@ archsight diagram three_tier.asd --relation=all    # also show control/data-flow
 archsight diagram overview.asd --theme=compact     # denser spacing + smaller fonts (or cozy, tight)
 archsight diagram overview.asd --legend=bottom     # legend below (or right/left/top/none; default auto)
 archsight diagram *.asd                            # render every file to its own .svg
+archsight diagram --format *.asd                   # re-indent the sources in place
+archsight diagram --format --check *.asd           # list unformatted sources, exit 1 if any (CI)
 ```
+
+`--format` tidies the sources instead of rendering them: every line is
+indented by its brace depth (two spaces per level), trailing whitespace
+and runs of blank lines go, the file ends in one newline. Comments, line
+breaks and one-line blocks stay as written. A file that does not parse is
+reported and left alone, and the result is checked to parse to the same
+diagram before it is written. With `-o` a single input is written there.
 
 `-o`/`--output` only makes sense with a single input file; with multiple
 inputs (including a shell glob like `*.asd`) each one is rendered next to

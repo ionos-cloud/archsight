@@ -143,6 +143,30 @@ class DiagramCliTest < Minitest::Test
 
   private
 
+  def test_format_rewrites_the_inputs_in_place_and_check_reports_unformatted_ones
+    Dir.mktmpdir do |dir|
+      messy = write(dir, "messy.asd", %(layer {\ncomponent "x" { }\n}\n))
+      tidy = write(dir, "tidy.asd", %(component "y" { }\n))
+
+      status = nil
+      stdout, = silence { status = Archsight::Diagram::CLI.run(["--format", "--check", messy, tidy]) }
+
+      assert_equal 1, status
+      assert_includes stdout, "messy.asd is not formatted"
+      refute_includes stdout, "tidy.asd"
+      assert_equal %(layer {\ncomponent "x" { }\n}\n), File.read(messy) # --check writes nothing
+
+      silence { status = Archsight::Diagram::CLI.run(["--format", messy, tidy]) }
+
+      assert_equal 0, status
+      assert_equal %(layer {\n  component "x" { }\n}\n), File.read(messy)
+      assert_same false, File.exist?(File.join(dir, "messy.svg")) # formatted, not rendered
+      silence { status = Archsight::Diagram::CLI.run(["--format", "--check", messy, tidy]) }
+
+      assert_equal 0, status
+    end
+  end
+
   def write(dir, name, content)
     path = File.join(dir, name)
     File.write(path, content)

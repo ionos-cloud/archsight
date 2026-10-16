@@ -2,6 +2,7 @@
 
 require "optparse"
 require_relative "."
+require_relative "formatter"
 
 module Archsight
   module Diagram
@@ -18,7 +19,7 @@ module Archsight
       end
 
       # Runs with already-parsed options (:inputs, :output, :watch, :relation_filter,
-      # :style, :theme, :legend, :profile), e.g. from the `archsight diagram` Thor command.
+      # :style, :theme, :legend, :profile, :format, :check), e.g. from the `archsight diagram` Thor command.
       def run_with(options)
         if options[:inputs].empty?
           warn "archsight-diagram: missing input file\n\n#{usage}"
@@ -29,6 +30,8 @@ module Archsight
           warn "archsight-diagram: -o/--output can only be used with a single input file\n\n#{usage}"
           return 1
         end
+
+        return format_files(options) if options[:format]
 
         if options[:watch]
           watch(options)
@@ -76,6 +79,12 @@ module Archsight
           opts.on("-p", "--profile", "Print stage timing stats after each render") do
             options[:profile] = true
           end
+          opts.on("--format", "Re-indent the inputs in place instead of rendering them (-o: write a single input there)") do
+            options[:format] = true
+          end
+          opts.on("--check", "With --format: only list the inputs that are not formatted, exit 1 if any") do
+            options[:check] = true
+          end
           opts.on("-h", "--help", "Show this help") do
             puts opts
             exit 0
@@ -90,7 +99,46 @@ module Archsight
       end
 
       def usage
-        "Usage: archsight-diagram INPUT.asd [INPUT2.asd ...] [-o OUTPUT.svg] [--watch] [--relation=LIST] [--style=STYLE] [--theme=NAME] [--legend=MODE] [-p]"
+        "Usage: archsight-diagram INPUT.asd [INPUT2.asd ...] [-o OUTPUT.svg] [--watch] [--relation=LIST] [--style=STYLE] [--theme=NAME] [--legend=MODE] [-p] [--format [--check]]"
+      end
+
+      # `--format`: each input re-indented (see `Formatter`) and written back,
+      # or to `--output`; with `--check` nothing is written, the inputs that
+      # would change are listed and the status is 1 if there are any.
+      def format_files(options)
+        if options[:watch]
+          warn "archsight-diagram: --format cannot be combined with --watch"
+          return 1
+        end
+
+        statuses = options[:inputs].map { |input| format_once(input, options) }
+        statuses.all?(&:zero?) ? 0 : 1
+      end
+
+      def format_once(input, options)
+        source = File.read(input)
+        formatted = Formatter.format(source)
+        if options[:check]
+          return 0 if formatted == source
+
+          puts "archsight-diagram: #{input} is not formatted"
+          return 1
+        end
+
+        output = options[:output] || input
+        if output == input && formatted == source
+          puts "archsight-diagram: #{input} already formatted"
+        else
+          File.write(output, formatted)
+          puts "archsight-diagram: formatted #{output}"
+        end
+        0
+      rescue Archsight::Diagram::Error => e
+        warn "archsight-diagram: #{input}: #{e.message}"
+        1
+      rescue Errno::ENOENT => e
+        warn "archsight-diagram: #{e.message}"
+        1
       end
 
       def output_for(input, explicit_output)
