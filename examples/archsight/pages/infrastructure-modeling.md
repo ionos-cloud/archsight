@@ -69,6 +69,9 @@ machine is a `TechnologyDevice` `locatedAt` its room, so the room page lists wha
   and `connects` the servers and firewalls; the underlay is `realizedBy` the two core routers.
 - The logical node [[TechnologyNode/Node:Frankfurt:Hypervisors]] is `realizedBy` the four servers, and the rack
   [[TechnologyEquipment/Equipment:Frankfurt:HallA:Rack01]] is `composedOf` the two it holds.
+- The rack and the core switch are `ownedBy` [[BusinessActor/Team:Infrastructure]]; the storage server
+  [[TechnologyDevice/Device:Frankfurt:Storage02]] is also `usedBy` [[BusinessActor/Team:QA]] for its load tests, so the
+  team page shows which hardware a test setup depends on.
 
 ![Hall A, room by room](site-rooms.asd)
 

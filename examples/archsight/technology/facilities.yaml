@@ -111,6 +111,9 @@ spec:
     technologyDevices:
       - Device:Frankfurt:Server01
       - Device:Frankfurt:Server02
+  ownedBy:
+    businessActors:
+      - Team:Infrastructure
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyNode

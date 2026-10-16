@@ -44,6 +44,8 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
       cycle) and of the `TechnologyDevice`s it holds (a rack, a delivered hardware block)
     - A technology service or node is `realizedBy` the TechnologyEquipment it runs on or over (a network service by the link)
     - TechnologyEquipment is optional: nodes and services can be `locatedAt` a facility directly
+    - TechnologyEquipment is `ownedBy` the team (`BusinessActor`) or `BusinessRole` responsible for it and `usedBy`
+      the teams that work with it (a lab rack)
     - A `BusinessContract` `covers` the equipment it obliges the provider to deliver, and the `ImplementationWorkPackage` that
       installs or changes it `affects` it
   MD
@@ -61,4 +63,7 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :composedOf, :technologyEquipment, :TechnologyEquipment
   relation :composedOf, :technologyDevices, :TechnologyDevice
+  relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
+  relation :usedBy, :businessActors, :BusinessActor
 end

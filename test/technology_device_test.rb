@@ -46,6 +46,8 @@ class TechnologyDeviceTest < Minitest::Test
         technologyFacilities: [Room1]
       connectedTo:
         technologyDevices: [SwitchN0]
+      ownedBy:
+        businessActors: [Team:Ops]
     ---
     apiVersion: architecture/v1alpha1
     kind: TechnologyDevice
@@ -58,6 +60,8 @@ class TechnologyDeviceTest < Minitest::Test
         technologyFacilities: [Room2]
       connectedTo:
         technologyDevices: [SwitchN1]
+      usedBy:
+        businessActors: [Team:QA]
     ---
     apiVersion: architecture/v1alpha1
     kind: TechnologyDevice
@@ -114,6 +118,30 @@ class TechnologyDeviceTest < Minitest::Test
         technologyFacilities: [Room1]
       composedOf:
         technologyDevices: [Server1]
+      ownedBy:
+        businessRoles: [Role:DeviceOwner]
+      usedBy:
+        businessActors: [Team:QA]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: BusinessActor
+    metadata:
+      name: Team:Ops
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: BusinessActor
+    metadata:
+      name: Team:QA
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: BusinessRole
+    metadata:
+      name: Role:DeviceOwner
+    spec:
+      performedBy:
+        businessActors: [Team:Ops]
     ---
     apiVersion: architecture/v1alpha1
     kind: TechnologyNode
@@ -173,6 +201,19 @@ class TechnologyDeviceTest < Minitest::Test
       assert_equal ["Management"], incoming(instance(db, "TechnologyDevice", "CoreSwitch"), "TechnologyCommunicationNetwork", :realizedBy)
       assert_equal ["Rack1"], incoming(server, "TechnologyEquipment", :composedOf)
       assert_equal %w[Router1 Server1 SwitchN0], incoming(instance(db, "TechnologyFacility", "Room1"), "TechnologyDevice", :locatedAt)
+    end
+  end
+
+  def test_teams_own_and_use_devices_and_equipment
+    with_db do |db|
+      ops = instance(db, "BusinessActor", "Team:Ops")
+      qa = instance(db, "BusinessActor", "Team:QA")
+      owner = instance(db, "BusinessRole", "Role:DeviceOwner")
+
+      assert_equal ["Server1"], incoming(ops, "TechnologyDevice", :ownedBy)
+      assert_equal ["Server2"], incoming(qa, "TechnologyDevice", :usedBy)
+      assert_equal ["Rack1"], incoming(qa, "TechnologyEquipment", :usedBy)
+      assert_equal ["Rack1"], incoming(owner, "TechnologyEquipment", :ownedBy)
     end
   end
 
@@ -267,6 +308,10 @@ class TechnologyDeviceTest < Minitest::Test
     %w[TechnologyNode TechnologyCommunicationNetwork TechnologyEquipment].each do |kind|
       assert_includes reachable.call(kind), "TechnologyDevice"
       refute_includes reachable.call("TechnologyDevice"), kind, "a device must not lead back to #{kind}"
+    end
+    %w[BusinessActor BusinessRole].each do |kind|
+      assert_includes reachable.call("TechnologyDevice"), kind
+      refute_includes reachable.call(kind), "TechnologyDevice", "#{kind} must not lead back to a device"
     end
   end
 end

@@ -44,9 +44,11 @@ class Archsight::Resources::TechnologyDevice < Archsight::Resources::Base
     - A `TechnologyCommunicationNetwork` is `realizedBy` its switches and routers and `connects` the devices attached
       to it
     - `TechnologyEquipment` (a rack, a delivered hardware block) is `composedOf` its devices
+    - A device is `ownedBy` the team (`BusinessActor`) or `BusinessRole` responsible for it and `usedBy` the teams
+      that work with it (a test machine, a lab switch)
 
-    A device points to nothing above it: nodes, networks and equipment point down to the device, so the relations
-    stay free of cycles.
+    A device points to nothing above it: nodes, networks and equipment point down to the device, and the teams it
+    points to point to nothing further, so the relations stay free of cycles.
   MD
 
   icon "server"
@@ -76,4 +78,7 @@ class Archsight::Resources::TechnologyDevice < Archsight::Resources::Base
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :connectedTo, :technologyDevices, :TechnologyDevice
   relation :composedOf, :technologyDevices, :TechnologyDevice
+  relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
+  relation :usedBy, :businessActors, :BusinessActor
 end
