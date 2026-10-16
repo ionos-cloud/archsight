@@ -9,9 +9,9 @@ module Archsight
   module Export
     module Confluence
       # The frontmatter of a page as the Page Properties (`details`) macro of Confluence: a two column table
-      # with the status, owner, author, teams, tags and every further property. It is the counterpart of what the
+      # with the status, owner, author, teams and every further property. It is the counterpart of what the
       # import lifts out of such a table, and keeps Confluence's property reports working. People are written as
-      # text (a name), not as user links.
+      # text (a name), not as user links. The other tags are no property: they are the page's labels (`Labels`).
       module PageProperties
         STATUS_COLOURS = {
           "wip" => "yellow", "draft" => "yellow", "rfc" => "blue", "review" => "blue", "proposed" => "blue",
@@ -36,13 +36,11 @@ module Archsight
         # @return [Array<Array(String, String)>] label and the storage XML of the value
         def rows(page)
           annotations = page.annotations
-          tags = annotations["page/tags"].to_s.split(",").map(&:strip).reject(&:empty?)
-          teams, other = tags.partition { |tag| tag.start_with?(TEAM_PREFIX) }
+          teams = annotations["page/tags"].to_s.split(",").map(&:strip).select { |tag| tag.start_with?(TEAM_PREFIX) }
           rows = [["Document status", status(annotations["page/status"])],
                   ["Document owner", text(person(annotations["page/owner"]))],
                   ["Document author", text(person(annotations["page/author"]))],
-                  ["Teams", text(teams.map { |t| t.delete_prefix(TEAM_PREFIX).strip }.join(", "))],
-                  ["Tags", text(other.join(", "))]]
+                  ["Teams", text(teams.map { |t| t.delete_prefix(TEAM_PREFIX).strip }.join(", "))]]
           rows += page.properties.map { |key, value| [key, text(value)] }
           rows.reject { |_, value| value.empty? }
         end

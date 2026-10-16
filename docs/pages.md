@@ -308,8 +308,8 @@ archsight export --to confluence handbook-home --force        # overwrite change
 **Page properties**: the frontmatter is exported as a Page Properties table (the `details` macro) above the body, so Confluence
 keeps its property reports working: Document status (a status lozenge; `wip`/`draft` yellow, `rfc`/`review` blue,
 `approved`/`done`/`ga` green, `deprecated`/`rejected` red, anything else grey), Document owner, Document author, Teams (the
-`Team:<name>` tags), Tags and every entry of `properties`. People are written as their name. `created` and `updated` are not
-exported. The Confluence import (not part of Archsight) does the reverse, which is why `Team:` tags and `properties` exist.
+`Team:<name>` tags) and every entry of `properties`. People are written as their name. `created` and `updated` are not
+exported, and neither are the other tags: they are the page's labels (below). The Confluence import (not part of Archsight) does the reverse, which is why `Team:` tags and `properties` exist.
 
 **Labels**: the tags of a page become its Confluence labels, so label macros and searches find the page. A label is
 lowercase without spaces or `!#&()*,.:;<>?@[]^`, those become a dash (`Team:BSS` is the label `team-bss`). A tag that is

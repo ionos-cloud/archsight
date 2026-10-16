@@ -49,7 +49,8 @@ class ConfluencePagePropertiesTest < Minitest::Test
     assert_includes xml, "<tr><th>Document owner</th><td>Jane Doe</td></tr>"
     assert_includes xml, "<tr><th>Document author</th><td>John Smith</td></tr>"
     assert_includes xml, "<tr><th>Teams</th><td>Core, R&amp;D</td></tr>"
-    assert_includes xml, "<tr><th>Tags</th><td>imported, concept</td></tr>"
+    refute_includes xml, "<th>Tags</th>" # they are the page's labels
+    refute_includes xml, "imported"
   end
 
   def test_properties_are_rows_with_links_macros_and_escaping
