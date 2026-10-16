@@ -177,7 +177,7 @@ level, where `OP` is:
 - `<->` — bidirectional (arrowheads on both ends).
 - `--` — undirected (no arrowheads).
 
-Edges between boxes that sit one above the other (or side by side) and overlap on the other axis are drawn as a single straight axis-aligned line when nothing is in the way, e.g. many components dropping straight down onto one wide database. An explicit `style "orthogonal"` keeps its right-angle turns.
+Edges between boxes that sit one above the other (or side by side) and overlap on the other axis are drawn as a single straight axis-aligned line when nothing is in the way, e.g. many components dropping straight down onto one wide database. An explicit `style "orthogonal"` takes that straight line too (it has no bend at all), and is never drawn diagonally.
 
 Edge attributes:
 - `label "..."` — text drawn along the edge.

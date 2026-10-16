@@ -70,22 +70,23 @@ class DiagramEdgeRouterTest < Minitest::Test
     # turn (exit a's side, one corner, straight into b's top) can't cut
     # through either box.
     a = box(636, 51, 120, 60)
-    b = box(712, 234, 190, 60)
+    b = box(812, 234, 190, 60) # left 717: clear of a's right (696), so no straight drop
 
     points = Archsight::Diagram::EdgeRouter.route(a, b, "orthogonal")
 
     assert_equal 3, points.length
-    assert_equal [b.x, a.y], points[1] # the single corner
+    assert_equal [a.x, b.y], points[1] # the single corner, along the dominant (vertical) axis first
   end
 
   def test_falls_back_to_a_two_turn_mid_jog_when_no_single_corner_is_safe
     # One below the other, offset on x but still overlapping it: each
     # single turn's corner would double back through a box, so only a
-    # mid-jog, bent in the vertical gap between them, clears both.
+    # mid-jog, bent in the vertical gap between them, clears both. (Routed,
+    # the straight drop between them wins; this is the best bent route.)
     a = box(0, 0, 100, 60)
     b = box(10, 200, 100, 60) # spans -40..60: no entry point on its top lies beyond a's right edge (50)
 
-    points = Archsight::Diagram::EdgeRouter.route(a, b, "orthogonal")
+    points = Archsight::Diagram::EdgeRouter.best_path(Archsight::Diagram::EdgeRouter::OrthogonalPath.orthogonal_candidates(a, b), [])
 
     assert_equal 4, points.length
     assert_equal [0, 30.0], points.first # leaves `a`'s bottom, facing `b`
@@ -428,11 +429,53 @@ class DiagramEdgeRouterTest < Minitest::Test
     assert_equal [[700, above.bottom], [700, wide.top]], points
   end
 
-  def test_an_explicit_orthogonal_style_keeps_its_bends_even_when_a_straight_drop_is_possible
+  def test_an_explicit_orthogonal_style_drops_straight_when_the_boxes_overlap
     wide = box(400, 300, 800, 40)
     above = box(700, 100, 100, 40)
 
-    refute_equal 2, Archsight::Diagram::EdgeRouter.route(above, wide, "orthogonal").length
+    assert_equal [[700, above.bottom], [700, wide.top]], Archsight::Diagram::EdgeRouter.route(above, wide, "orthogonal")
+  end
+
+  def test_an_orthogonal_edge_from_a_tall_box_goes_straight_up_into_the_box_above_not_along_its_side
+    target = box(565, 810, 130, 40) # 500..630, bottom 830
+    tall = box(535, 1115, 150, 480) # 460..610, top 875: below the target, overlapping it
+    neighbour = box(695, 1115, 150, 480) # 620..770: right next to the tall box, the target's right end above it
+
+    points = Archsight::Diagram::EdgeRouter.route(tall, target, "orthogonal", obstacles: [neighbour])
+
+    assert_equal 2, points.length
+    assert_equal points.first[0], points.last[0]
+    assert_equal [tall.top, target.bottom], points.map(&:last)
+  end
+
+  def test_a_source_just_below_the_target_s_side_exits_lower_instead_of_hugging_it
+    target = box(565, 714, 130, 40) # bottom 734
+    source = box(875, 738, 118, 88) # 816..934, center 4px below the target's bottom
+    neighbour = box(700, 714, 126, 40) # right of the target: no straight line into its side
+
+    points = Archsight::Diagram::EdgeRouter.route(source, target, "orthogonal", obstacles: [neighbour])
+    leg = points.last(2)
+
+    assert_equal 3, points.length
+    assert_operator points.first[1], :>, source.y # leaves below its center
+    assert_operator (leg[0][1] - leg[1][1]).abs, :>=, Archsight::Diagram::EdgeRouter::MIN_END_LEG
+  end
+
+  def test_a_source_well_below_the_target_s_side_still_exits_at_its_center
+    target = box(565, 714, 130, 40)
+    source = box(875, 800, 118, 88)
+    neighbour = box(700, 714, 126, 40)
+
+    exit_point = Archsight::Diagram::EdgeRouter.route(source, target, "orthogonal", obstacles: [neighbour]).first
+
+    assert(exit_point[0] == source.x || exit_point[1] == source.y, "exits off-center at #{exit_point.inspect}")
+  end
+
+  def test_a_short_zig_zag_beats_a_one_corner_detour_more_than_three_times_its_length
+    zig_zag = [[0.0, 0.0], [0.0, 23.0], [30.0, 23.0], [30.0, 46.0]] # 76 long, two turns
+    detour = [[0.0, 0.0], [6.0, 0.0], [6.0, -284.0]] # 290 long, one turn
+
+    assert_equal zig_zag, Archsight::Diagram::EdgeRouter.best_path([zig_zag, detour], [])
   end
 
   def test_prefers_a_longer_route_with_fewer_bends_among_routes_that_clear_the_same_boxes

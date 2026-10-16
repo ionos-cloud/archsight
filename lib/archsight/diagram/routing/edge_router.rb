@@ -41,14 +41,15 @@ module Archsight
       def candidate_paths(a, b, style, from_shape: "rectangle", to_shape: "rectangle", obstacles: [])
         # A straight axis-aligned line joins the straight family (and the
         # automatic choice), listed first so it wins ties against the
-        # diagonal. An explicit `style "orthogonal"` keeps its bends.
+        # diagonal. It is orthogonal too (no bend at all), so an explicit
+        # `style "orthogonal"` takes it as well and only never goes diagonal.
         aligned = StraightPath.aligned_paths(a, b, from_shape: from_shape, to_shape: to_shape)
         straight = [StraightPath.straight_path(a, b, from_shape: from_shape, to_shape: to_shape)]
         orthogonal = OrthogonalPath.orthogonal_candidates(a, b, obstacles)
 
         case style
         when "straight" then aligned + straight
-        when "orthogonal" then orthogonal
+        when "orthogonal" then aligned + orthogonal
         else aligned + straight + orthogonal
         end
       end
@@ -71,8 +72,22 @@ module Archsight
       # Charged relative to the best candidate in the same crossing class
       # rather than absolutely, so however large it is it never tips the
       # balance against `CROSSING_PENALTY`: a bridge that clears a box still
-      # beats a bend-free line through it.
+      # beats a bend-free line through it. An extra bend never costs more
+      # than `TURN_LENGTH_FACTOR` times the route's own length, though: a
+      # short zig-zag still beats a one-corner detour more than three times
+      # its length (out of a box's side and all the way along it instead of
+      # a short jog off its top).
       TURN_PENALTY = 300.0
+      TURN_LENGTH_FACTOR = 2.0
+
+      # A bent route's run out of or into a box shorter than this hugs the
+      # box's border instead of reading as a connection to it (a turn right
+      # past the corner of the box it then enters). Every pixel short of it
+      # costs `SHORT_LEG_WEIGHT` pixels of length, so a route a little longer
+      # but with a real run in wins (see `OrthogonalPath::EXIT_SHIFT`). A
+      # straight line has no turn to hug with and is never charged.
+      MIN_END_LEG = BridgePath::BRIDGE_STUB
+      SHORT_LEG_WEIGHT = 3.0
 
       # Two edges running right along each other for a stretch reads as
       # clutter too, but far more mildly than either one cutting through a
@@ -130,7 +145,17 @@ module Archsight
           # Folded into `length` (rather than a separate term) so the native
           # selection kernels, which only know crossings and length, apply it too.
           extra_turns = turns[i] - fewest_turns[crossings[i]]
-          { path: path, crossing: crossings[i], length: lengths[i] + (TURN_PENALTY * extra_turns) + off_center_cost(path) }
+          turn_cost = [TURN_PENALTY, lengths[i] * TURN_LENGTH_FACTOR].min * extra_turns
+          { path: path, crossing: crossings[i], length: lengths[i] + turn_cost + off_center_cost(path) + short_leg_cost(path) }
+        end
+      end
+
+      # See `MIN_END_LEG`.
+      def short_leg_cost(path)
+        return 0.0 if path.length < 3
+
+        [path.first(2), path.last(2)].sum do |(p, q)|
+          [MIN_END_LEG - Math.hypot(q[0] - p[0], q[1] - p[1]), 0.0].max * SHORT_LEG_WEIGHT
         end
       end
 
