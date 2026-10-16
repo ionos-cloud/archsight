@@ -270,7 +270,8 @@ module Archsight
     end
 
     desc "diagram INPUT...", "Render .asd diagram files to SVG"
-    long_desc "Renders each INPUT.asd to an SVG next to it (or to --output for a single input)."
+    long_desc "Renders each INPUT.asd to an SVG next to it (or to --output for a single input). " \
+              "With --format, re-indents the inputs in place instead (--check: only report the ones that are not formatted)."
     option :output, aliases: "-o", type: :string, desc: "SVG output path (single input file only)"
     option :watch, aliases: "-w", type: :boolean, desc: "Re-render whenever an input file changes"
     option :relation, type: :string, desc: "Edge relations to draw: comma-separated list, or 'all' (default: dependency,implements)"
@@ -278,6 +279,8 @@ module Archsight
     option :theme, type: :string, desc: "Spacing/font-size theme (default: the file's own `theme` statement)"
     option :legend, type: :string, desc: "Legend placement (default: the file's own `legend` statement, else auto)"
     option :profile, aliases: "-p", type: :boolean, desc: "Print stage timing stats after each render"
+    option :format, type: :boolean, desc: "Re-indent the inputs in place instead of rendering them (-o: write a single input there)"
+    option :check, type: :boolean, desc: "With --format: only list the inputs that are not formatted, exit 1 if any"
     def diagram(*inputs)
       require "archsight/diagram/cli"
 
@@ -292,6 +295,7 @@ module Archsight
 
       status = diagram::CLI.new.run_with(
         inputs: inputs, output: options[:output], watch: options[:watch], profile: options[:profile],
+        format: options[:format], check: options[:check],
         style: options[:style], theme: options[:theme], legend: options[:legend],
         relation_filter: if relation.nil?
                            diagram::Relations::DEFAULT_FILTER
