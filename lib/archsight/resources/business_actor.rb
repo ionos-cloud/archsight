@@ -27,8 +27,9 @@ class Archsight::Resources::BusinessActor < Archsight::Resources::Base
     - Cross-functional groups
     - Customers and providers: the parties a `BusinessContract` is `agreedBy`
     - The party behind a `MotivationStakeholder`: the stakeholder is `representedBy` it
-    - The team behind hardware: a `TechnologyDevice` or `TechnologyEquipment` is `ownedBy` the team responsible for
-      it and `usedBy` the teams that work with it (a test machine, a lab rack)
+    - The team behind infrastructure: a `TechnologyDevice`, `TechnologyEquipment`, `TechnologyNode` or
+      `TechnologyCommunicationNetwork` is `ownedBy` the team that operates it, and a device, equipment or node is
+      `servedBy` the team it is dedicated to (a test server, a cluster partition)
 
     ## Security and risk modelling
 

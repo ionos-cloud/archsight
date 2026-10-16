@@ -69,9 +69,23 @@ machine is a `TechnologyDevice` `locatedAt` its room, so the room page lists wha
   and `connects` the servers and firewalls; the underlay is `realizedBy` the two core routers.
 - The logical node [[TechnologyNode/Node:Frankfurt:Hypervisors]] is `realizedBy` the four servers, and the rack
   [[TechnologyEquipment/Equipment:Frankfurt:HallA:Rack01]] is `composedOf` the two it holds.
-- The rack and the core switch are `ownedBy` [[BusinessActor/Team:Infrastructure]]; the storage server
-  [[TechnologyDevice/Device:Frankfurt:Storage02]] is also `usedBy` [[BusinessActor/Team:QA]] for its load tests, so the
-  team page shows which hardware a test setup depends on.
+- The rack, the core switch and the management network are `ownedBy` [[BusinessActor/Team:Infrastructure]], the team
+  that operates them.
+- The shared [[TechnologyEquipment/Equipment:Frankfurt:TestCluster]] is partitioned among teams: each partition is
+  equipment `servedBy` the team it is dedicated to, `composedOf` its servers, with `equipment/purpose` saying what for.
+  [[BusinessActor/Team:QA]] holds the compute partition for hypervisor regression tests, [[BusinessActor/Team:Kernel]]
+  the kernel partition, so a team page lists the hardware the team holds.
+
+```view
+apiVersion: architecture/v1alpha1
+kind: View
+metadata:
+  name: Test cluster partitions
+  annotations:
+    view/query: 'TechnologyEquipment: name =~ "Partition"'
+    view/fields: name, equipment/purpose
+    view/sort: name
+```
 
 ![Hall A, room by room](site-rooms.asd)
 

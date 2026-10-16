@@ -15,7 +15,18 @@ metadata:
   name: Team:QA
   annotations:
     architecture/description: |
-      Example quality assurance team that uses a storage server of hall A
-      for its load tests.
+      Example quality assurance team that holds the compute partition of the
+      shared test cluster for its hypervisor regression tests.
+    architecture/tags: team,testing
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: BusinessActor
+metadata:
+  name: Team:Kernel
+  annotations:
+    architecture/description: |
+      Example kernel team that holds the kernel partition of the shared test
+      cluster.
     architecture/tags: team,testing
 spec: {}

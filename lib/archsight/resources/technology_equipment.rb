@@ -44,8 +44,9 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
       cycle) and of the `TechnologyDevice`s it holds (a rack, a delivered hardware block)
     - A technology service or node is `realizedBy` the TechnologyEquipment it runs on or over (a network service by the link)
     - TechnologyEquipment is optional: nodes and services can be `locatedAt` a facility directly
-    - TechnologyEquipment is `ownedBy` the team (`BusinessActor`) or `BusinessRole` responsible for it and `usedBy`
-      the teams that work with it (a lab rack)
+    - TechnologyEquipment is `ownedBy` the team (`BusinessActor`) or `BusinessRole` responsible for operating it and
+      `servedBy` the team it is dedicated to (a partition of a shared test cluster); `equipment/purpose` says what for.
+      The devices of a partition are normally served by the same team; `archsight lint` warns when one is not
     - A `BusinessContract` `covers` the equipment it obliges the provider to deliver, and the `ImplementationWorkPackage` that
       installs or changes it `affects` it
   MD
@@ -60,10 +61,15 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
              filter: :word,
              summary: true
 
+  annotation "equipment/purpose",
+             description: "What the equipment is dedicated to, e.g. hypervisor regression tests",
+             title: "Purpose",
+             filter: :word
+
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :composedOf, :technologyEquipment, :TechnologyEquipment
   relation :composedOf, :technologyDevices, :TechnologyDevice
   relation :ownedBy, :businessActors, :BusinessActor
   relation :ownedBy, :businessRoles, :BusinessRole
-  relation :usedBy, :businessActors, :BusinessActor
+  relation :servedBy, :businessActors, :BusinessActor
 end

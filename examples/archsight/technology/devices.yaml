@@ -125,7 +125,7 @@ kind: TechnologyDevice
 metadata:
   name: Device:Frankfurt:Storage02
   annotations:
-    architecture/description: Storage server in room 2, also used by QA for its load tests.
+    architecture/description: Storage server in room 2.
     device/type: server
     device/role: storage
     device/model: 4U storage server
@@ -136,9 +136,6 @@ spec:
   ownedBy:
     businessActors:
       - Team:Infrastructure
-  usedBy:
-    businessActors:
-      - Team:QA
   connectedTo:
     technologyDevices:
       - Device:Frankfurt:Switch:Core:n1

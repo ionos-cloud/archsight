@@ -36,7 +36,7 @@ There are two families of verbs:
 
 | Family | Verbs | Written on | Points to |
 |--------|-------|------------|-----------|
-| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `connects`, `usedBy`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
 | Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
 
 Rules:
@@ -203,9 +203,13 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
     Both are written on the network, so a switch attached to the network it builds closes no cycle.
 12. Cables are `connectedTo` between devices, declared once on one of the two ends. Cabling runs both ways by nature
     and is left out of the cycle check.
-13. A device or piece of TechnologyEquipment is `ownedBy` the team (BusinessActor) or BusinessRole responsible
-    for it and `usedBy` the teams that work with it, such as a test machine or a lab rack. Both point down to the
-    team, which points to nothing further.
+13. Devices, equipment, nodes and networks are `ownedBy` the team (BusinessActor) or BusinessRole that operates
+    them. Devices, equipment and nodes are `servedBy` the team they are dedicated to (ArchiMate serving: the
+    technology serves the actor), such as the servers of a shared test cluster partitioned among teams;
+    `device/purpose` and `equipment/purpose` say what for ("kernel regression tests"). A partition is equipment
+    `servedBy` its team and `composedOf` its devices, which then need no team of their own. Both relations point
+    down to the team, which points to nothing further. On a TechnologyFacility, `servedBy` stays the operator of
+    the site.
 
 **Checked by `archsight lint`**
 
@@ -220,6 +224,7 @@ As above, these are **warnings** in the "Modeling warnings" section and never fa
 | `TechnologyDevice 'Device:Server01' is located at no TechnologyFacility` | 10 |
 | `TechnologyDevice 'Device:Switch01' is connectedTo itself` | 12 |
 | `TechnologyDevice 'Device:Router01' is a router that realizes no TechnologyCommunicationNetwork` | 11 |
+| `TechnologyDevice 'Device:a:server-3' is servedBy 'Kernel:Team', not by the team of its equipment ('Compute:Team')` | 13 |
 
 Nested facilities need no location of their own (the outermost facility has it), and TechnologyEquipment that is part of other
 TechnologyEquipment, or composed of placed parts, needs no facility of its own. The same holds for a device inside a
@@ -590,8 +595,8 @@ Relations are written on the element that is placed (see [Direction of Relations
 | `TechnologyFacility` | `locatedAt` | `Location` |
 | `TechnologyFacility` | `composedOf` | `TechnologyFacility` (nested sites, the rooms of a data center) |
 | `TechnologyFacility` | `servedBy` | `BusinessActor` (the operator) |
-| `TechnologyDevice`, `TechnologyEquipment` | `ownedBy` | `BusinessActor`, `BusinessRole` (responsible for it) |
-| `TechnologyDevice`, `TechnologyEquipment` | `usedBy` | `BusinessActor` (the teams working with it, e.g. testing) |
+| `TechnologyDevice`, `TechnologyEquipment`, `TechnologyNode`, `TechnologyCommunicationNetwork` | `ownedBy` | `BusinessActor`, `BusinessRole` (the team that operates it) |
+| `TechnologyDevice`, `TechnologyEquipment`, `TechnologyNode` | `servedBy` | `BusinessActor` (the team it is dedicated to, e.g. a test partition) |
 
 `locatedAt` with many targets is the point: a service that runs in three data centers is **one** service with three
 `locatedAt` relations. A `locatedAt` target that is not a TechnologyFacility (or, from a facility, a Location) is rejected by

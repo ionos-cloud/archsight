@@ -55,12 +55,13 @@ class TechnologyDeviceTest < Minitest::Test
       name: Server2
       annotations:
         device/type: server
+        device/purpose: kernel regression tests
     spec:
       locatedAt:
         technologyFacilities: [Room2]
       connectedTo:
         technologyDevices: [SwitchN1]
-      usedBy:
+      servedBy:
         businessActors: [Team:QA]
     ---
     apiVersion: architecture/v1alpha1
@@ -113,6 +114,7 @@ class TechnologyDeviceTest < Minitest::Test
       name: Rack1
       annotations:
         equipment/type: rack
+        equipment/purpose: hypervisor regression tests
     spec:
       locatedAt:
         technologyFacilities: [Room1]
@@ -120,7 +122,7 @@ class TechnologyDeviceTest < Minitest::Test
         technologyDevices: [Server1]
       ownedBy:
         businessRoles: [Role:DeviceOwner]
-      usedBy:
+      servedBy:
         businessActors: [Team:QA]
     ---
     apiVersion: architecture/v1alpha1
@@ -150,6 +152,10 @@ class TechnologyDeviceTest < Minitest::Test
     spec:
       realizedBy:
         technologyDevices: [Server1, Server2]
+      ownedBy:
+        businessActors: [Team:Ops]
+      servedBy:
+        businessActors: [Team:QA]
     ---
     apiVersion: architecture/v1alpha1
     kind: TechnologyCommunicationNetwork
@@ -162,6 +168,8 @@ class TechnologyDeviceTest < Minitest::Test
         technologyDevices: [CoreSwitch, Router1]
       connects:
         technologyDevices: [Server1, Server2]
+      ownedBy:
+        businessRoles: [Role:DeviceOwner]
   YAML
 
   def with_db(yaml = RESOURCES)
@@ -204,17 +212,48 @@ class TechnologyDeviceTest < Minitest::Test
     end
   end
 
-  def test_teams_own_and_use_devices_and_equipment
+  def test_teams_own_and_are_served_by_devices_equipment_nodes_and_networks
     with_db do |db|
       ops = instance(db, "BusinessActor", "Team:Ops")
       qa = instance(db, "BusinessActor", "Team:QA")
       owner = instance(db, "BusinessRole", "Role:DeviceOwner")
 
       assert_equal ["Server1"], incoming(ops, "TechnologyDevice", :ownedBy)
-      assert_equal ["Server2"], incoming(qa, "TechnologyDevice", :usedBy)
-      assert_equal ["Rack1"], incoming(qa, "TechnologyEquipment", :usedBy)
+      assert_equal ["Hypervisors"], incoming(ops, "TechnologyNode", :ownedBy)
+      assert_equal ["Server2"], incoming(qa, "TechnologyDevice", :servedBy)
+      assert_equal ["Rack1"], incoming(qa, "TechnologyEquipment", :servedBy)
+      assert_equal ["Hypervisors"], incoming(qa, "TechnologyNode", :servedBy)
       assert_equal ["Rack1"], incoming(owner, "TechnologyEquipment", :ownedBy)
+      assert_equal ["Management"], incoming(owner, "TechnologyCommunicationNetwork", :ownedBy)
     end
+  end
+
+  def test_purpose_is_free_text_on_devices_and_equipment
+    with_db do |db|
+      assert_equal "kernel regression tests", instance(db, "TechnologyDevice", "Server2").annotations["device/purpose"]
+      assert_equal "hypervisor regression tests", instance(db, "TechnologyEquipment", "Rack1").annotations["equipment/purpose"]
+    end
+  end
+
+  def test_warns_about_a_device_served_apart_from_its_partition
+    yaml = RESOURCES.sub("  ownedBy:\n    businessActors: [Team:Ops]\n---\n",
+                         "  ownedBy:\n    businessActors: [Team:Ops]\n  servedBy:\n    businessActors: [Team:Ops]\n---\n")
+
+    refute_equal RESOURCES, yaml
+    with_db(yaml) do |db|
+      messages = device_warnings(db).map { |w| w.sub(/\A.*?: /, "") }
+
+      assert_equal ["TechnologyDevice 'Server1' is servedBy 'Team:Ops', not by the team of its equipment ('Team:QA')"], messages
+    end
+  end
+
+  def test_a_device_served_like_its_partition_or_not_at_all_is_fine
+    yaml = RESOURCES.sub("  ownedBy:\n    businessActors: [Team:Ops]\n---\n",
+                         "  ownedBy:\n    businessActors: [Team:Ops]\n  servedBy:\n    businessActors: [Team:QA]\n---\n")
+
+    refute_equal RESOURCES, yaml
+    with_db(yaml) { |db| assert_empty device_warnings(db) }
+    with_db { |db| assert_empty device_warnings(db) } # Server1 names no team: served through Rack1
   end
 
   def test_the_example_lints_clean_and_without_device_warnings
@@ -311,7 +350,9 @@ class TechnologyDeviceTest < Minitest::Test
     end
     %w[BusinessActor BusinessRole].each do |kind|
       assert_includes reachable.call("TechnologyDevice"), kind
-      refute_includes reachable.call(kind), "TechnologyDevice", "#{kind} must not lead back to a device"
+      %w[TechnologyDevice TechnologyEquipment TechnologyNode TechnologyCommunicationNetwork].each do |technology|
+        refute_includes reachable.call(kind), technology, "#{kind} must not lead back to #{technology}"
+      end
     end
   end
 end
