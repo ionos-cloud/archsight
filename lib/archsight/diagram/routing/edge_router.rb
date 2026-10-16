@@ -41,14 +41,15 @@ module Archsight
       def candidate_paths(a, b, style, from_shape: "rectangle", to_shape: "rectangle", obstacles: [])
         # A straight axis-aligned line joins the straight family (and the
         # automatic choice), listed first so it wins ties against the
-        # diagonal. An explicit `style "orthogonal"` keeps its bends.
+        # diagonal. It is orthogonal too (no bend at all), so an explicit
+        # `style "orthogonal"` takes it as well and only never goes diagonal.
         aligned = StraightPath.aligned_paths(a, b, from_shape: from_shape, to_shape: to_shape)
         straight = [StraightPath.straight_path(a, b, from_shape: from_shape, to_shape: to_shape)]
         orthogonal = OrthogonalPath.orthogonal_candidates(a, b, obstacles)
 
         case style
         when "straight" then aligned + straight
-        when "orthogonal" then orthogonal
+        when "orthogonal" then aligned + orthogonal
         else aligned + straight + orthogonal
         end
       end
@@ -71,8 +72,13 @@ module Archsight
       # Charged relative to the best candidate in the same crossing class
       # rather than absolutely, so however large it is it never tips the
       # balance against `CROSSING_PENALTY`: a bridge that clears a box still
-      # beats a bend-free line through it.
+      # beats a bend-free line through it. An extra bend never costs more
+      # than `TURN_LENGTH_FACTOR` times the route's own length, though: a
+      # short zig-zag still beats a one-corner detour more than three times
+      # its length (out of a box's side and all the way along it instead of
+      # a short jog off its top).
       TURN_PENALTY = 300.0
+      TURN_LENGTH_FACTOR = 2.0
 
       # Two edges running right along each other for a stretch reads as
       # clutter too, but far more mildly than either one cutting through a
@@ -130,7 +136,8 @@ module Archsight
           # Folded into `length` (rather than a separate term) so the native
           # selection kernels, which only know crossings and length, apply it too.
           extra_turns = turns[i] - fewest_turns[crossings[i]]
-          { path: path, crossing: crossings[i], length: lengths[i] + (TURN_PENALTY * extra_turns) + off_center_cost(path) }
+          turn_cost = [TURN_PENALTY, lengths[i] * TURN_LENGTH_FACTOR].min * extra_turns
+          { path: path, crossing: crossings[i], length: lengths[i] + turn_cost + off_center_cost(path) }
         end
       end
 

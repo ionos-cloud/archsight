@@ -512,8 +512,7 @@ class DiagramRendererTest < Minitest::Test
   def test_steers_a_converging_edge_off_a_sibling_edge_s_line_when_an_equally_clear_alternative_exists
     # Regression test: two sibling boxes both connecting to the same
     # wide target end up funneling through the same corner point
-    # (`single_turn_horizontal_first`'s exit-side isn't available since
-    # both boxes' x sit inside the target's span), so their final
+    # (each turns once, above the target's center), so their final
     # segment into the target is identical -- routed independently,
     # neither edge has any reason to avoid the other's line. Refining
     # against sibling paths should steer one of them onto a route that
@@ -527,8 +526,9 @@ class DiagramRendererTest < Minitest::Test
     SRC
     graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
     boxes = {
-      "kubestore" => Archsight::Diagram::Layout::Box.new(100, 0, 100, 60),
-      "kubecrypt" => Archsight::Diagram::Layout::Box.new(300, 0, 100, 60),
+      # both centers on the target's ends (60..360), too near its corners to drop straight into it
+      "kubestore" => Archsight::Diagram::Layout::Box.new(60, 0, 100, 60),
+      "kubecrypt" => Archsight::Diagram::Layout::Box.new(360, 0, 100, 60),
       "k8s_api" => Archsight::Diagram::Layout::Box.new(210, 300, 300, 60)
     }
     Archsight::Diagram::Layout::Result.new(boxes: boxes, width: 500, height: 400)
