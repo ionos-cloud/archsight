@@ -35,6 +35,9 @@ spec:
   locatedAt:
     technologyFacilities:
       - Facility:Frankfurt:Campus
+  ownedBy:
+    businessActors:
+      - Team:Infrastructure
   realizedBy:
     technologyDevices:
       - Device:Frankfurt:Switch:Core

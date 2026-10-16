@@ -133,6 +133,9 @@ spec:
   locatedAt:
     technologyFacilities:
       - Facility:Frankfurt:HallA:Room2
+  ownedBy:
+    businessActors:
+      - Team:Infrastructure
   connectedTo:
     technologyDevices:
       - Device:Frankfurt:Switch:Core:n1
@@ -176,6 +179,9 @@ metadata:
     device/type: switch
     device/role: core
 spec:
+  ownedBy:
+    businessActors:
+      - Team:Infrastructure
   composedOf:
     technologyDevices:
       - Device:Frankfurt:Switch:Core:n0

@@ -53,6 +53,7 @@ class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resource
     - A network is `realizedBy` the `TechnologyDevice`s that build it (its switches and routers) and `connects` the
       devices attached to it (servers, firewalls, appliances). Both are written on the network, so a switch that is
       also attached to the network it builds closes no cycle
+    - A network is `ownedBy` the team (`BusinessActor`) or `BusinessRole` that operates it
   MD
 
   icon "network"
@@ -83,4 +84,6 @@ class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resource
   relation :realizedBy, :technologySystemSoftware, :TechnologySystemSoftware
   relation :realizedBy, :applicationComponents, :ApplicationComponent
   relation :realizedBy, :applicationServices, :ApplicationService
+  relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
 end

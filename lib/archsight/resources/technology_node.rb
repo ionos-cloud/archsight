@@ -43,6 +43,11 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
 
     A node is `servedBy` the `TechnologyCommunicationNetwork`s it is attached to (management, public, an overlay).
 
+    ## Teams
+
+    A node is `ownedBy` the team (`BusinessActor`) or `BusinessRole` that operates it and `servedBy` the team it is
+    dedicated to (a test cluster held by one team).
+
     ## Physical realization
 
     A node is `realizedBy` the `TechnologyEquipment` it consists of or stands on (a router on its rack); see `TechnologyEquipment`.
@@ -82,6 +87,8 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   relation :servedBy, :technologyServices, :TechnologyService
   relation :servedBy, :technologyCommunicationNetworks, :TechnologyCommunicationNetwork
   relation :servedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessActors, :BusinessActor
+  relation :ownedBy, :businessRoles, :BusinessRole
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :realizedBy, :technologyEquipment, :TechnologyEquipment
   relation :realizedBy, :technologyDevices, :TechnologyDevice
