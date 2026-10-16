@@ -4,7 +4,7 @@ module Archsight
   module Diagram
     # Every spacing/sizing/font-size value the layout and renderer use, in
     # one place, so a diagram can pick a denser set for larger graphs:
-    # `default` > `cozy` > `compact`. Selected per diagram with a top-level
+    # `default` > `cozy` > `compact` > `tight`. Selected per diagram with a top-level
     # `theme "cozy"` statement, or overridden from outside
     # (`render(theme:)`, `--theme`).
     #
@@ -113,7 +113,12 @@ module Archsight
         title_inset_x: 6.0, group_title_baseline: 14.0, boundary_title_baseline: 15.0
       )
 
-      THEMES = [DEFAULT, COZY, COMPACT].to_h { |t| [t.name, t] }.freeze
+      # `compact` with component boxes that hug their label: ~6px above and
+      # below it instead of ~15px, 4px beside it instead of 8px, for very
+      # large graphs. Fonts, containers, gaps and actors stay as `compact`.
+      TIGHT = COMPACT.with(name: "tight", node_height: 26.0, node_label_padding: 8.0)
+
+      THEMES = [DEFAULT, COZY, COMPACT, TIGHT].to_h { |t| [t.name, t] }.freeze
     end
   end
 end

@@ -1009,6 +1009,27 @@ class DiagramLayoutTest < Minitest::Test
     assert_equal 3, widths.uniq.length
   end
 
+  def test_tight_theme_boxes_hug_their_label
+    theme = Archsight::Diagram::Theme::TIGHT
+    source = <<~SRC
+      group "g" {
+        component "a" { label "Managed authoritative anycast DNS" }
+        component "b" { label "Beta" }
+        a -> b
+      }
+    SRC
+    graph = build_graph(source)
+    tight = Archsight::Diagram::Layout.compute(graph, theme: theme)
+    compact = Archsight::Diagram::Layout.compute(graph, theme: Archsight::Diagram::Theme::COMPACT)
+    box = tight.boxes["a"]
+    text_width = Archsight::Diagram::TextMetrics.rendered_width("Managed authoritative anycast DNS", font_size: theme.node_font_size)
+
+    assert_in_delta text_width + 8.0, box.width, 0.01
+    assert_in_delta 26.0, box.height, 0.01
+    assert_operator tight.width, :<, compact.width
+    assert_operator tight.height, :<, compact.height
+  end
+
   def test_a_labeled_edge_never_shrinks_a_stack_s_explicit_larger_gap
     source = <<~SRC
       stack "s" {
