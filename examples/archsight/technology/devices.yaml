@@ -1,0 +1,238 @@
+# Physical devices of hall A in Frankfurt: two rooms (fire compartments), per room two hypervisors, a storage
+# server, a firewall, a core router and one member of the core switch virtual chassis. See the page
+# "Infrastructure Modeling" and "Choosing the Kind: Infrastructure" in the modeling guide.
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Server01
+  annotations:
+    architecture/description: Hypervisor in room 1, cabled to the core switch member n0 of its room.
+    device/type: server
+    device/role: hypervisor
+    device/model: 2U server
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Server02
+  annotations:
+    architecture/description: Hypervisor in room 1, cabled to the core switch member n0 of its room.
+    device/type: server
+    device/role: hypervisor
+    device/model: 2U server
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Storage01
+  annotations:
+    architecture/description: Storage server in room 1.
+    device/type: server
+    device/role: storage
+    device/model: 4U storage server
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Firewall01
+  annotations:
+    architecture/description: Firewall of room 1, on the core switch member n0.
+    device/type: firewall
+    device/role: edge
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Switch:Core:n0
+  annotations:
+    architecture/description: Member n0 of the core switch virtual chassis, standing in room 1. Cross-room link to n1.
+    device/type: switch
+    device/role: core
+    device/model: 48-port 100G switch
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Server03
+  annotations:
+    architecture/description: Hypervisor in room 2, cabled to the core switch member n1 of its room.
+    device/type: server
+    device/role: hypervisor
+    device/model: 2U server
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Server04
+  annotations:
+    architecture/description: Hypervisor in room 2, cabled to the core switch member n1 of its room.
+    device/type: server
+    device/role: hypervisor
+    device/model: 2U server
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Storage02
+  annotations:
+    architecture/description: Storage server in room 2.
+    device/type: server
+    device/role: storage
+    device/model: 4U storage server
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Firewall02
+  annotations:
+    architecture/description: Firewall of room 2, on the core switch member n1.
+    device/type: firewall
+    device/role: edge
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Switch:Core:n1
+  annotations:
+    architecture/description: Member n1 of the core switch virtual chassis, standing in room 2.
+    device/type: switch
+    device/role: core
+    device/model: 48-port 100G switch
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Switch:Core
+  annotations:
+    architecture/description: The core switch, one virtual chassis of two members, one per room, so losing a room keeps the switch running.
+    device/type: switch
+    device/role: core
+spec:
+  composedOf:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Router01
+  annotations:
+    architecture/description: Core router 1, cabled to both core switch members and to router 2.
+    device/type: router
+    device/role: core
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+      - Device:Frankfurt:Switch:Core:n1
+      - Device:Frankfurt:Router02
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Frankfurt:Router02
+  annotations:
+    architecture/description: Core router 2, cabled to both core switch members.
+    device/type: router
+    device/role: core
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room2
+  connectedTo:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core:n0
+      - Device:Frankfurt:Switch:Core:n1
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Node:Frankfurt:Hypervisors
+  annotations:
+    architecture/description: The hypervisors of hall A as one logical node, realized by the four physical servers, two per room.
+    infrastructure/type: bare-metal
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA
+  servedBy:
+    technologyCommunicationNetworks:
+      - Network:Management:Frankfurt
+  realizedBy:
+    technologyDevices:
+      - Device:Frankfurt:Server01
+      - Device:Frankfurt:Server02
+      - Device:Frankfurt:Server03
+      - Device:Frankfurt:Server04

@@ -23,11 +23,14 @@ class Archsight::Resources::TechnologyFacility < Archsight::Resources::Base
     - Offices
     - Edge sites
     - Parts of a site (campus, building, hall), nested with `composedOf`
+    - Rooms: a server room or fire compartment (`facility/type: room`) the data center is `composedOf`; devices stand
+      in it, which makes it a failure domain
 
     ## Not this kind
 
     - A country, metro or region is a `Location`
-    - A rack, cage or fabric inside the site is `TechnologyEquipment`; a server is a `TechnologyNode` `locatedAt` the facility
+    - A rack, cage or fabric inside the site is `TechnologyEquipment`; a server is a `TechnologyDevice` (or a logical
+      `TechnologyNode`) `locatedAt` the facility
     - A data center is never a `TechnologyNode` and never an annotation on other elements
 
     Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
@@ -35,9 +38,9 @@ class Archsight::Resources::TechnologyFacility < Archsight::Resources::Base
     ## How it connects
 
     - Things that run at a facility point to it with `locatedAt`: `TechnologyNode`, `TechnologyService`,
-      `TechnologySystemSoftware` and `TechnologyEquipment`. One element can be located at many facilities (one cluster that
-      runs in three data centers is one element with three relations, not three copies)
-    - A facility is `locatedAt` a `Location` and `composedOf` other facilities (campus, hall)
+      `TechnologySystemSoftware`, `TechnologyEquipment` and `TechnologyDevice`. One element can be located at many
+      facilities (one cluster that runs in three data centers is one element with three relations, not three copies)
+    - A facility is `locatedAt` a `Location` and `composedOf` other facilities (campus, hall, room)
     - A facility is `servedBy` the `BusinessActor` that operates it
     - The facility page lists what is located there (incoming `locatedAt`), grouped by kind
 
@@ -51,7 +54,7 @@ class Archsight::Resources::TechnologyFacility < Archsight::Resources::Base
   annotation "facility/type",
              description: "Kind of site",
              title: "TechnologyFacility Type",
-             enum: %w[data-center colocation office edge],
+             enum: %w[data-center colocation office edge room],
              filter: :word,
              summary: true
 

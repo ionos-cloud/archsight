@@ -57,6 +57,21 @@ A rack such as [[TechnologyEquipment/Equipment:Frankfurt:HallA:Rack01]] is `loca
 [[TechnologyEquipment/Equipment:Backbone]] is `composedOf` the links. The logical backbone service
 [[TechnologyService/Network:Backbone]] is `realizedBy` it.
 
+## Devices and rooms
+
+Hall A is `composedOf` two rooms, [[TechnologyFacility/Facility:Frankfurt:HallA:Room1]] and
+[[TechnologyFacility/Facility:Frankfurt:HallA:Room2]] (`facility/type: room`), each a fire compartment. Every physical
+machine is a `TechnologyDevice` `locatedAt` its room, so the room page lists what is lost with it.
+
+- The servers are cabled to the core switch member of their room (`connectedTo`, declared once per cable).
+- The core switch [[TechnologyDevice/Device:Frankfurt:Switch:Core]] is one virtual chassis `composedOf` its members
+  n0 and n1, one per room. [[TechnologyCommunicationNetwork/Network:Management:Frankfurt]] is `realizedBy` the chassis
+  and `connects` the servers and firewalls; the underlay is `realizedBy` the two core routers.
+- The logical node [[TechnologyNode/Node:Frankfurt:Hypervisors]] is `realizedBy` the four servers, and the rack
+  [[TechnologyEquipment/Equipment:Frankfurt:HallA:Rack01]] is `composedOf` the two it holds.
+
+![Hall A, room by room](site-rooms.asd)
+
 ## Networks
 
 - [[TechnologyCommunicationNetwork/Network:Underlay:Frankfurt-Madrid]] is the routed underlay between the sites.

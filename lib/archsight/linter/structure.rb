@@ -8,6 +8,7 @@ module Archsight
     class Structure
       # Network types that run over another network and need one that serves them
       OVERLAY_TYPES = %w[overlay vpn].freeze
+      NETWORK_DEVICE_TYPES = %w[switch router].freeze
 
       def initialize(database)
         @database = database
@@ -26,7 +27,10 @@ module Archsight
           link_not_between_two_facilities,
           overlay_without_underlay,
           facility_without_location,
-          equipment_without_facility
+          equipment_without_facility,
+          device_without_facility,
+          device_connected_to_itself,
+          network_device_realizing_no_network
         ].flatten.sort
       end
 
@@ -176,6 +180,40 @@ module Archsight
           next if targets(equipment, :locatedAt, :technologyFacilities).any?
 
           warning(equipment, "is located at no TechnologyFacility")
+        end
+      end
+
+      # A device that is part of equipment (a rack) or of another device (a virtual chassis) is placed through its
+      # whole, and a chassis through its members
+      def device_without_facility
+        parts = owners_by_target("TechnologyDevice", :composedOf, :technologyDevices)
+        racked = owners_by_target("TechnologyEquipment", :composedOf, :technologyDevices)
+        instances("TechnologyDevice").filter_map do |device|
+          next if parts.key?(device) || racked.key?(device) || targets(device, :composedOf, :technologyDevices).any?
+          next if targets(device, :locatedAt, :technologyFacilities).any?
+
+          warning(device, "is located at no TechnologyFacility")
+        end
+      end
+
+      def device_connected_to_itself
+        instances("TechnologyDevice").filter_map do |device|
+          next unless targets(device, :connectedTo, :technologyDevices).include?(device)
+
+          warning(device, "is connectedTo itself")
+        end
+      end
+
+      # The members of a virtual chassis or stack realize the network through the chassis
+      def network_device_realizing_no_network
+        realized = owners_by_target("TechnologyCommunicationNetwork", :realizedBy, :technologyDevices)
+        members = owners_by_target("TechnologyDevice", :composedOf, :technologyDevices)
+        instances("TechnologyDevice").filter_map do |device|
+          type = device.annotations["device/type"]
+          next unless NETWORK_DEVICE_TYPES.include?(type)
+          next if realized.key?(device) || members.key?(device)
+
+          warning(device, "is a #{type} that realizes no TechnologyCommunicationNetwork")
         end
       end
     end

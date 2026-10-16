@@ -24,11 +24,13 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
     - Physical clusters (storage arrays, hardware pools) that technology nodes run on
     - Links between facilities (fibre routes, carrier circuits, `equipment/type: link`) and backbones made of them
 
-    Model individual servers and VMs as `TechnologyNode`; use TechnologyEquipment only when the physical grouping matters.
+    Model individual physical machines as `TechnologyDevice` and VMs as `TechnologyNode`; use TechnologyEquipment only
+    when the physical grouping matters.
 
     ## Not this kind
 
-    - A machine that runs software (server, VM, appliance) is a `TechnologyNode`
+    - A single physical machine (server, switch, router, appliance) is a `TechnologyDevice`; a VM or host role is a
+      `TechnologyNode`
     - The network that runs over the links is a `TechnologyCommunicationNetwork` `realizedBy` the equipment
     - A link is one element `locatedAt` its two facilities, not a `TechnologyService`
 
@@ -38,8 +40,8 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
 
     - TechnologyEquipment is `locatedAt` the facilities it stands in. A link between facilities is one TechnologyEquipment that is
       `locatedAt` both end facilities
-    - TechnologyEquipment is `composedOf` other TechnologyEquipment: a rack of its devices, a backbone of its links. The target must be
-      TechnologyEquipment too and the chain must not form a cycle
+    - TechnologyEquipment is `composedOf` other TechnologyEquipment (a backbone of its links; the chain must not form a
+      cycle) and of the `TechnologyDevice`s it holds (a rack, a delivered hardware block)
     - A technology service or node is `realizedBy` the TechnologyEquipment it runs on or over (a network service by the link)
     - TechnologyEquipment is optional: nodes and services can be `locatedAt` a facility directly
     - A `BusinessContract` `covers` the equipment it obliges the provider to deliver, and the `ImplementationWorkPackage` that
@@ -58,4 +60,5 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
 
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :composedOf, :technologyEquipment, :TechnologyEquipment
+  relation :composedOf, :technologyDevices, :TechnologyDevice
 end

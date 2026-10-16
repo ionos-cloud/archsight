@@ -37,6 +37,7 @@ Current icon assignments for each resource type:
 | MotivationStakeholder | `user-crown` | <i class="iconoir-user-crown"></i> |
 | TechnologyCommunicationNetwork | `network` | <i class="iconoir-network"></i> |
 | TechnologyEquipment | `cpu` | <i class="iconoir-cpu"></i> |
+| TechnologyDevice | `server` | <i class="iconoir-server"></i> |
 | TechnologyFacility | `building` | <i class="iconoir-building"></i> |
 | Location | `map-pin` | <i class="iconoir-map-pin"></i> |
 | TechnologyNode | `server-connection` | <i class="iconoir-server-connection"></i> |
