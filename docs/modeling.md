@@ -30,13 +30,13 @@ Implementation & Migration layer describes change across all of them. A relation
 to what that element depends on, is served by, or is answered by. Following relations from a high-level element
 therefore walks down to people, code and infrastructure, and the relations form a DAG: nothing may lead back to where
 it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components and services may depend on each
-other at runtime). `specializes`, `composedOf` and `aggregates` are checked per verb, see "Concept and Implementation" and "Deployment".
+other at runtime, and `connectedTo`, because cables between devices run both ways). `specializes`, `composedOf` and `aggregates` are checked per verb, see "Concept and Implementation" and "Deployment".
 
 There are two families of verbs:
 
 | Family | Verbs | Written on | Points to |
 |--------|-------|------------|-----------|
-| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
 | Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
 
 Rules:
@@ -145,17 +145,18 @@ The chain is part of `examples/archsight` (`strategy/`, `business/`, `services/`
 
 ## Choosing the Kind: Infrastructure
 
-Infrastructure is modeled in four tiers: **where** (Location, TechnologyFacility), **physical** (TechnologyEquipment), **network**
-(TechnologyCommunicationNetwork) and **compute** (TechnologyNode, TechnologySystemSoftware, TechnologyService,
-TechnologyArtifact). The same principle holds as above: the test decides the kind, not the name.
+Infrastructure is modeled in five tiers: **where** (Location, TechnologyFacility), **physical** (TechnologyEquipment),
+**device** (TechnologyDevice), **network** (TechnologyCommunicationNetwork) and **compute** (TechnologyNode,
+TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same principle holds as above: the test decides the kind, not the name.
 
 | Kind | Question | Test | Name |
 |------|----------|------|------|
 | Location | In which region or country is it? | A place on a map, not a building; holds facilities | the place ("Location:Germany:Frankfurt") |
 | TechnologyFacility | In which building or site does hardware stand? | Has an address and can be visited; can be nested (campus, hall) | the site ("Facility:Frankfurt:HallA") |
 | TechnologyEquipment | Which physical thing can you touch? | Racks, fabrics, fibre routes, carrier circuits; no software of its own | the thing and its place ("Equipment:Link:Frankfurt-Madrid") |
+| TechnologyDevice | Which single machine stands in the room? | One server, switch, router, firewall or appliance with a serial number; it is cabled | the host ("Device:Frankfurt:Server01") |
 | TechnologyCommunicationNetwork | What carries data between nodes? | Has a network role (`network/type`); exists beyond any single link | role and scope ("Network:Management:Frankfurt") |
-| TechnologyNode | On which machine does software run? | A server, VM or appliance with a lifecycle of its own | the host or host role ("Node:Frankfurt:Web01") |
+| TechnologyNode | On which machine does software run? | A VM, host role or logical group of machines with a lifecycle of its own | the host or host role ("Node:Frankfurt:Web01") |
 | TechnologySystemSoftware | What software hosts other software or data? | An operating system, database cluster, routing stack, platform | the product and role ("Tech:Routing:EVPN") |
 | TechnologyService | What does infrastructure offer to its consumers? | Consumed without knowing which nodes run it | the offering ("Network:Backbone", "Postgres") |
 | TechnologyArtifact | Which file is built and deployed? | A repository, image, package or binary | the artifact ("Repo:payments-api") |
@@ -165,12 +166,14 @@ TechnologyArtifact). The same principle holds as above: the test decides the kin
 1. Is it a country, metro or region? Location.
 2. Is it a building, campus, hall or site that can be visited? TechnologyFacility.
 3. Is it a physical thing (rack, switch fabric, fibre, circuit) without software of its own? TechnologyEquipment.
-4. Does it carry data between nodes, with a role such as underlay, overlay, management, public or VPN?
+4. Is it one physical machine (server, switch, router, firewall, appliance) whose room or cabling matters?
+   TechnologyDevice.
+5. Does it carry data between nodes, with a role such as underlay, overlay, management, public or VPN?
    TechnologyCommunicationNetwork.
-5. Is it a machine (physical or virtual) that software runs on? TechnologyNode.
-6. Is it software that hosts other software, data or traffic? TechnologySystemSoftware.
-7. Is it something consumed by others without them knowing how it is run? TechnologyService.
-8. Is it a file that is built and deployed? TechnologyArtifact.
+6. Is it a machine (virtual, or a host role) that software runs on? TechnologyNode.
+7. Is it software that hosts other software, data or traffic? TechnologySystemSoftware.
+8. Is it something consumed by others without them knowing how it is run? TechnologyService.
+9. Is it a file that is built and deployed? TechnologyArtifact.
 
 **Rules**
 
@@ -192,6 +195,14 @@ TechnologyArtifact). The same principle holds as above: the test decides the kin
    `ApplicationService` (ArchiMate cross-layer realization). This holds even when the software runs on the nodes the
    network serves: point at the application component, not at the node's system software, which would close a cycle
    (network → system software → node → network).
+10. One `TechnologyDevice` per physical machine, `locatedAt` its room (a TechnologyFacility of `facility/type: room`
+    the data center is `composedOf`). A group of machines with one role stays a logical `TechnologyNode` that is
+    `realizedBy` its devices; a rack or hardware block is TechnologyEquipment `composedOf` them; a virtual chassis or
+    stack is a device `composedOf` its members.
+11. A network is `realizedBy` the devices that build it (switches, routers) and `connects` the devices attached to it.
+    Both are written on the network, so a switch attached to the network it builds closes no cycle.
+12. Cables are `connectedTo` between devices, declared once on one of the two ends. Cabling runs both ways by nature
+    and is left out of the cycle check.
 
 **Checked by `archsight lint`**
 
@@ -203,9 +214,14 @@ As above, these are **warnings** in the "Modeling warnings" section and never fa
 | `TechnologyCommunicationNetwork 'Network:Overlay:EVPN' is an overlay network served by no network` | 3 |
 | `TechnologyFacility 'Facility:Madrid:DC' is located at no Location` | where |
 | `TechnologyEquipment 'Equipment:Rack01' is located at no TechnologyFacility` | where |
+| `TechnologyDevice 'Device:Server01' is located at no TechnologyFacility` | 10 |
+| `TechnologyDevice 'Device:Switch01' is connectedTo itself` | 12 |
+| `TechnologyDevice 'Device:Router01' is a router that realizes no TechnologyCommunicationNetwork` | 11 |
 
 Nested facilities need no location of their own (the outermost facility has it), and TechnologyEquipment that is part of other
-TechnologyEquipment, or composed of placed parts, needs no facility of its own.
+TechnologyEquipment, or composed of placed parts, needs no facility of its own. The same holds for a device inside a
+rack or a virtual chassis, and for a chassis whose members are placed; the members of a chassis realize the network
+through the chassis.
 
 **Example chain**
 
@@ -220,6 +236,21 @@ TechnologyEquipment "Equipment:Backbone"                              ↓
        ↑ realizedBy                                     TechnologyCommunicationNetwork "Network:Management:Frankfurt"
 TechnologyService "Network:Backbone"
 ```
+
+Devices, one level further down (hall A of the example):
+
+```
+TechnologyCommunicationNetwork "Network:Management:Frankfurt"
+       │ realizedBy                                  │ connects
+       ↓                                             ↓
+TechnologyDevice "Device:Frankfurt:Switch:Core"     TechnologyDevice "Device:Frankfurt:Server01" ──locatedAt──> TechnologyFacility "Facility:Frankfurt:HallA:Room1"
+       │ composedOf                                  │ connectedTo                                        ↑ composedOf
+       ↓                                             ↓                                             TechnologyFacility "Facility:Frankfurt:HallA"
+TechnologyDevice "Device:Frankfurt:Switch:Core:n0" ←─┘
+```
+
+The physical machines of hall A, two rooms with their servers, switches, routers and firewalls, are in
+`examples/archsight/technology/devices.yaml`, drawn room by room on the same example page.
 
 The overlay `Network:Overlay:EVPN` is `servedBy` the underlay and `realizedBy` the routing software
 `Tech:Routing:EVPN`. All of it is in `examples/archsight/technology/` (`facilities.yaml`, `networks.yaml`), walked
@@ -504,6 +535,8 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 | `TechnologyCommunicationNetwork` | `locatedAt` | `TechnologyFacility`, `Location` (many) |
 | `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyEquipment` (the fabric), `TechnologySystemSoftware` (routing stack, VPN software) |
 | `TechnologyCommunicationNetwork` | `realizedBy` | `ApplicationComponent`, `ApplicationService` (software that builds the network: an SDN agent, a network operator) |
+| `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyDevice` (the switches and routers that build it) |
+| `TechnologyCommunicationNetwork` | `connects` | `TechnologyDevice` (the devices attached to it) |
 | `TechnologyNode` | `servedBy` | `TechnologyCommunicationNetwork` |
 
 - **Underlay and overlay:** the underlay *serves* the overlay, so the overlay is `servedBy` the underlay. A BGP-EVPN
@@ -516,7 +549,9 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 - **Nesting and metro regions:** a network that supports a metro region is `locatedAt` the `Location` and
   `composedOf` the networks of its sites. `composedOf` and `specializes` only point at networks and must not form a
   cycle; `archsight lint` reports cycles of `composedOf`, `specializes` and `servedBy`.
-- **Attachment:** a node is `servedBy` the networks it is attached to; the network page lists them.
+- **Attachment:** a node is `servedBy` the networks it is attached to; the network page lists them. A physical
+  device is attached the other way round: the network `connects` it, so the network can also be `realizedBy` the
+  same switch without a cycle.
 
 ```
 # all overlay networks
@@ -542,14 +577,15 @@ center is not a computational resource.
 | Location | For a country, metro or region |
 | TechnologyFacility | For a data center, colocation, office or edge site (`facility/type`), also a campus or hall inside one |
 | TechnologyEquipment | Optional: racks, network fabrics, physical clusters inside a facility (`equipment/type`) |
+| TechnologyDevice | Optional: one physical machine, `locatedAt` its room (`facility/type: room`) |
 
 Relations are written on the element that is placed (see [Direction of Relations](#direction-of-relations)):
 
 | From | Verb | To |
 |------|------|----|
-| `TechnologyNode`, `TechnologyService`, `TechnologySystemSoftware`, `TechnologyEquipment` | `locatedAt` | `TechnologyFacility` (many) |
+| `TechnologyNode`, `TechnologyService`, `TechnologySystemSoftware`, `TechnologyEquipment`, `TechnologyDevice` | `locatedAt` | `TechnologyFacility` (many) |
 | `TechnologyFacility` | `locatedAt` | `Location` |
-| `TechnologyFacility` | `composedOf` | `TechnologyFacility` (nested sites) |
+| `TechnologyFacility` | `composedOf` | `TechnologyFacility` (nested sites, the rooms of a data center) |
 | `TechnologyFacility` | `servedBy` | `BusinessActor` (the operator) |
 
 `locatedAt` with many targets is the point: a service that runs in three data centers is **one** service with three

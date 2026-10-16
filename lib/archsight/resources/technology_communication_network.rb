@@ -50,6 +50,9 @@ class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resource
     - An overlay that software builds is `realizedBy` that `ApplicationComponent` or `ApplicationService` (an SDN agent,
       a network operator, a load-balancer controller), also when the software runs on the nodes the network serves
     - A `TechnologyNode` is `servedBy` the networks it is attached to; the network page lists them
+    - A network is `realizedBy` the `TechnologyDevice`s that build it (its switches and routers) and `connects` the
+      devices attached to it (servers, firewalls, appliances). Both are written on the network, so a switch that is
+      also attached to the network it builds closes no cycle
   MD
 
   icon "network"
@@ -75,6 +78,8 @@ class Archsight::Resources::TechnologyCommunicationNetwork < Archsight::Resource
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :locatedAt, :locations, :Location
   relation :realizedBy, :technologyEquipment, :TechnologyEquipment
+  relation :realizedBy, :technologyDevices, :TechnologyDevice
+  relation :connects, :technologyDevices, :TechnologyDevice
   relation :realizedBy, :technologySystemSoftware, :TechnologySystemSoftware
   relation :realizedBy, :applicationComponents, :ApplicationComponent
   relation :realizedBy, :applicationServices, :ApplicationService

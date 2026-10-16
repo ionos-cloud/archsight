@@ -26,7 +26,7 @@ kind: TechnologyCommunicationNetwork
 metadata:
   name: Network:Management:Frankfurt
   annotations:
-    architecture/description: Management network of the Frankfurt campus.
+    architecture/description: Management network of the Frankfurt campus, built by the core switch and connecting the servers and firewalls of hall A.
     network/type: management
 spec:
   specializes:
@@ -35,6 +35,19 @@ spec:
   locatedAt:
     technologyFacilities:
       - Facility:Frankfurt:Campus
+  realizedBy:
+    technologyDevices:
+      - Device:Frankfurt:Switch:Core
+  connects:
+    technologyDevices:
+      - Device:Frankfurt:Server01
+      - Device:Frankfurt:Server02
+      - Device:Frankfurt:Server03
+      - Device:Frankfurt:Server04
+      - Device:Frankfurt:Storage01
+      - Device:Frankfurt:Storage02
+      - Device:Frankfurt:Firewall01
+      - Device:Frankfurt:Firewall02
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyCommunicationNetwork
@@ -49,6 +62,10 @@ spec:
     technologyFacilities:
       - Facility:Frankfurt:Campus
       - Facility:Madrid:DC
+  realizedBy:
+    technologyDevices:
+      - Device:Frankfurt:Router01
+      - Device:Frankfurt:Router02
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyCommunicationNetwork

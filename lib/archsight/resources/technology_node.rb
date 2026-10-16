@@ -31,6 +31,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     - A building or data center is a `TechnologyFacility`; a rack or fabric is `TechnologyEquipment`
     - Software running on the node (database, routing stack) is `TechnologySystemSoftware`
     - One node per host role is often enough; many identical hosts are one node `locatedAt` several facilities
+    - A single physical machine whose room or cabling matters is a `TechnologyDevice`; the node is `realizedBy` it
 
     Which kind to pick: "Choosing the Kind: Infrastructure" in the modeling guide.
 
@@ -45,6 +46,8 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     ## Physical realization
 
     A node is `realizedBy` the `TechnologyEquipment` it consists of or stands on (a router on its rack); see `TechnologyEquipment`.
+    A logical node (a host role, "the hypervisors of the platform") is `realizedBy` the `TechnologyDevice`s, the
+    physical machines, that make it up.
 
     ## Concept and implementation
 
@@ -81,6 +84,7 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   relation :servedBy, :businessActors, :BusinessActor
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :realizedBy, :technologyEquipment, :TechnologyEquipment
+  relation :realizedBy, :technologyDevices, :TechnologyDevice
   relation :specializes, :technologyNodes, :TechnologyNode
   relation :composedOf, :technologyNodes, :TechnologyNode
   relation :assignedTo, :technologyArtifacts, :TechnologyArtifact

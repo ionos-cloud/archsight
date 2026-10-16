@@ -11,9 +11,10 @@ module Archsight
 
     # Relations the cycle check leaves out. Relations are followed from the dependent to what it relies on, so
     # the declared ones form a DAG; `dependsOn` is the exception because components may depend on each other at
-    # runtime. The derived relations (`mentions`, `depicts`) are sideways views and are not declared, so they
+    # runtime, and `connectedTo` because cabling between devices is cyclic by nature (a ring, a mesh, both ends of
+    # a cable). The derived relations (`mentions`, `depicts`) are sideways views and are not declared, so they
     # never enter the check.
-    CYCLE_EXEMPT_VERBS = %i[dependsOn].freeze
+    CYCLE_EXEMPT_VERBS = %i[dependsOn connectedTo].freeze
 
     # Structure relations between elements of one kind (specialization, composition, aggregation). Each verb is
     # checked on its own: a chain of one of them must not lead back to where it started. They stay out of the

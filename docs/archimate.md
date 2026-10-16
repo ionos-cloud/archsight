@@ -152,7 +152,7 @@ call-offs, SLAs and amendments) and Product as `BusinessProduct`. Business Objec
 | **Path** | A link between two or more technology internal active structure elements, through which these elements can exchange data, energy, or material. |
 | **Communication Network** | A set of structures and behaviors that connects devices or system software for transmission, routing, and reception of data. |
 
-**Supported in archsight:** Communication Network (`TechnologyCommunicationNetwork`) is modelled in the Technology layer. Path is not: a link between facilities is `TechnologyEquipment`. See [Logical Networks](/doc/modeling) and, for which kind to pick, [Choosing the Kind: Infrastructure](modeling.md#choosing-the-kind-infrastructure).
+**Supported in archsight:** Device (`TechnologyDevice`) and Communication Network (`TechnologyCommunicationNetwork`) are modelled in the Technology layer. A device is one physical machine; the cable between two devices is the ArchiMate association `connectedTo`, a network is `realizedBy` its switches and routers and `connects` the devices attached to it. Path is not modelled: a link between facilities is `TechnologyEquipment`. See [Logical Networks](/doc/modeling) and, for which kind to pick, [Choosing the Kind: Infrastructure](modeling.md#choosing-the-kind-infrastructure).
 
 ### Behavior Elements
 

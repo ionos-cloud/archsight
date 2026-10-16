@@ -46,9 +46,31 @@ kind: TechnologyFacility
 metadata:
   name: Facility:Frankfurt:HallA
   annotations:
-    architecture/description: Data center hall A of the Frankfurt campus.
+    architecture/description: Data center hall A of the Frankfurt campus, split into two rooms (fire compartments).
     facility/type: data-center
     facility/stage: productive
+spec:
+  composedOf:
+    technologyFacilities:
+      - Facility:Frankfurt:HallA:Room1
+      - Facility:Frankfurt:HallA:Room2
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyFacility
+metadata:
+  name: Facility:Frankfurt:HallA:Room1
+  annotations:
+    architecture/description: Server room 1 of hall A, a fire compartment of its own. The devices standing here are lost together.
+    facility/type: room
+spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyFacility
+metadata:
+  name: Facility:Frankfurt:HallA:Room2
+  annotations:
+    architecture/description: Server room 2 of hall A, the second fire compartment.
+    facility/type: room
 spec: {}
 ---
 apiVersion: architecture/v1alpha1
@@ -79,12 +101,16 @@ kind: TechnologyEquipment
 metadata:
   name: Equipment:Frankfurt:HallA:Rack01
   annotations:
-    architecture/description: Rack 01 in hall A, holding the web servers.
+    architecture/description: Rack 01 in hall A, holding the web servers and the first hypervisors.
     equipment/type: rack
 spec:
   locatedAt:
     technologyFacilities:
       - Facility:Frankfurt:HallA
+  composedOf:
+    technologyDevices:
+      - Device:Frankfurt:Server01
+      - Device:Frankfurt:Server02
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologyNode
