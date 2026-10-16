@@ -136,6 +136,21 @@ class ConfluenceExporterTest < Minitest::Test
     assert_equal ["airgap"], @fake.pages["42"].labels
   end
 
+  # tags are labels, not part of the body: a new tag changes the labels, not the page
+  def test_a_changed_tag_updates_the_labels_without_a_new_version
+    write_page("guide", "Hello\n", confluence: URL, tags: "airgap")
+    run_export(force: true)
+    version = @fake.pages["42"].version
+    write_page("guide", "Hello\n", confluence: URL, tags: "airgap, sovereign")
+
+    result = run_export.first
+
+    assert_equal :exported, result.status
+    assert_includes result.message, "labels updated"
+    assert_equal version, @fake.pages["42"].version
+    assert_equal %w[airgap sovereign], @fake.pages["42"].labels.sort
+  end
+
   def test_tags_are_made_valid_label_names
     labels = Archsight::Export::Confluence::Labels
 
