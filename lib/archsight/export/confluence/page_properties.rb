@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require "erb"
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "../../markdown"
 require_relative "../../helpers/macros"
 
 module Archsight
@@ -69,7 +68,7 @@ module Archsight
             kept << live(match)
             "ARCHSIGHTKEPT#{kept.length - 1}X"
           end.gsub("<", "&lt;") # raw HTML is not allowed, it could break the storage XML
-          html = Kramdown::Document.new(marked, input: "GFM", auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot]).to_html.strip
+          html = Archsight::Markdown.unwrapped(marked, auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot]).to_html.strip
           html.sub(%r{\A<p>(.*)</p>\z}m, '\1').gsub(/ARCHSIGHTKEPT(\d+)X/) { kept.fetch(Regexp.last_match(1).to_i) }
         end
 

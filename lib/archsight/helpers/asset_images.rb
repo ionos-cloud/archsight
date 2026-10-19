@@ -2,8 +2,7 @@
 
 require "cgi"
 require "erb"
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "../markdown"
 require_relative "../assets"
 
 module Archsight
@@ -52,7 +51,7 @@ module Archsight
       # Problems with the image references of a markdown text.
       # @return [Array<Hash>] `{ reference:, status: :outside|:type|:missing, path: }`
       def audit(markdown, base_dir:, resources_dir:)
-        html = Kramdown::Document.new(markdown.to_s, input: "GFM").to_html
+        html = Archsight::Markdown.document(markdown).to_html
         html.scan(IMG).filter_map do |tag|
           reference = attribute(tag, SRC)
           next if reference.nil? || Assets.external?(reference)
@@ -65,7 +64,7 @@ module Archsight
       # The existing .asd files a markdown text embeds (for the linter)
       # @return [Array<Array(String, String)>] normalized asset path and real file
       def asd_files(markdown, base_dir:, resources_dir:)
-        html = Kramdown::Document.new(markdown.to_s, input: "GFM").to_html
+        html = Archsight::Markdown.document(markdown).to_html
         html.scan(IMG).filter_map do |tag|
           reference = attribute(tag, SRC)
           next if reference.nil? || Assets.external?(reference)

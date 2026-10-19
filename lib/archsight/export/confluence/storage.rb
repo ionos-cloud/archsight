@@ -3,8 +3,7 @@
 require "erb"
 require "uri"
 require "digest"
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "../../markdown"
 require_relative "../../assets"
 require_relative "../../diagram"
 require_relative "../../helpers/macros"
@@ -125,7 +124,7 @@ module Archsight
         # @param header [String] storage format of the page properties, shown top left next to the banner
         # @return [Converted]
         def convert(markdown, toc: false, header: "")
-          document = Kramdown::Document.new(protect(markdown), input: "GFM", auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot])
+          document = Archsight::Markdown.unwrapped(protect(markdown), auto_ids: false, entity_output: :as_char, smart_quotes: %w[apos apos quot quot])
           html, = Converter.convert(document.root, document.options.merge(storage: self))
           Converted.new(body: layout(header, banner, (toc ? %(<ac:structured-macro ac:name="toc" />\n) : "") + html), attachments: @attachments, problems: @problems)
         end
