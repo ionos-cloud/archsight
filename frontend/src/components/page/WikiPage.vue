@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import '../../css/page.css'
 import { renderMermaidIn } from '../../composables/useMermaid.js'
 import { renderDrawioIn } from '../../composables/useDrawio.js'
 import { highlightCodeBlocks } from '../../composables/useHighlight.js'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
+import { anchorTarget } from '../../composables/useRouteFocus.js'
 import { useEmbeds } from '../../composables/useEmbeds.js'
 import EmbeddedKind from './EmbeddedKind.vue'
 
@@ -19,6 +21,8 @@ const props = defineProps({
   editName: { type: String, default: null }, // shows the pen link to the editor of this page
 })
 
+const route = useRoute()
+const router = useRouter()
 const bodyEl = ref(null)
 const activeId = ref(null)
 const minLevel = computed(() => Math.min(...(props.toc.map((e) => e.level) || [1])))
@@ -34,6 +38,8 @@ async function renderBody() {
   }
   // views and analyses load on their own: the page is shown before they are done
   scanEmbeds(bodyEl.value)
+  // a link to a section (`/pages/x#part`, a reload) arrives before the content: its target is there only now
+  anchorTarget(route.hash)?.scrollIntoView()
   updateActive()
 }
 
@@ -65,8 +71,11 @@ onBeforeUnmount(() => {
 
 watch(() => props.html, renderBody, { immediate: true, flush: 'post' })
 
+// through the router, so the section is in the URL and back returns to where the reader was
 function scrollTo(id) {
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  const hash = `#${id}`
+  if (route.hash === hash) anchorTarget(hash)?.scrollIntoView({ behavior: 'smooth' })
+  else router.push({ query: route.query, hash })
   activeId.value = id
 }
 </script>

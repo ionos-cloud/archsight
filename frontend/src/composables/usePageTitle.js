@@ -24,8 +24,10 @@ export function titleFor(route) {
   }
 }
 
+// A jump to a #section is the same page: it keeps the title the page set
 export function installPageTitle(router) {
   router.afterEach((to, from, failure) => {
-    if (!failure) setTitle(...titleFor(to))
+    if (failure || (from.matched.length && to.fullPath.split('#')[0] === from.fullPath.split('#')[0])) return
+    setTitle(...titleFor(to))
   })
 }
