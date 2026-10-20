@@ -36,6 +36,16 @@ class ExecutorTest < Minitest::Test
     assert_includes TestExecutionHandler.execution_log, "Import:Test"
   end
 
+  def test_every_import_keeps_its_cache_out_of_spotlight
+    cache_root = File.join(@tmp_dir, "cache")
+    create_import("Import:Test", handler: "test", config: { "cacheRoot" => cache_root })
+
+    executor = Archsight::Import::Executor.new(database: create_database, resources_dir: @tmp_dir, verbose: false, output: StringIO.new)
+    executor.run!
+
+    assert_path_exists File.join(cache_root, ".metadata_never_index")
+  end
+
   def test_runs_imports_in_dependency_order
     # Create imports with dependencies via generates relation
     # Import:First generates Import:Second, so Second depends on First

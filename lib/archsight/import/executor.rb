@@ -442,6 +442,7 @@ class Archsight::Import::Executor
       progress: import_progress,
       shared_writer: @shared_writer
     )
+    Archsight::Import.never_index(handler.cache_root)
     handler.execute
     remove_stale_outputs(import, handler.owned_outputs)
     @mutex.synchronize { @ran_this_run.add(import.name) }
