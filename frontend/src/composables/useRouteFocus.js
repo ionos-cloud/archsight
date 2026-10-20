@@ -28,11 +28,23 @@ export function installRouteFocus(router) {
   })
 }
 
-// A new page starts at the top, back and forward return to where the page was, a #anchor scrolls to its target;
-// a change of the query only stays where it is
+// The element a #anchor of the URL names (heading ids are not always valid CSS selectors), null if there is none yet
+export function anchorTarget(hash) {
+  if (!hash || hash.length < 2) return null
+  try {
+    return document.getElementById(decodeURIComponent(hash.slice(1)))
+  } catch {
+    return document.getElementById(hash.slice(1))
+  }
+}
+
+// A new page starts at the top, back and forward return to where the page was, a #anchor scrolls to its target
+// (smoothly on the same page); a change of the query only stays where it is. The content of a page loads after
+// the navigation, so a target that is not there yet is scrolled to by the page once it is (WikiPage).
 export function scrollBehavior(to, from, savedPosition) {
   if (savedPosition) return savedPosition
-  if (to.hash) return { el: to.hash }
+  const target = anchorTarget(to.hash)
+  if (target) return { el: target, behavior: to.path === from.path ? 'smooth' : 'auto' }
   if (to.path === from.path) return false
   return { top: 0 }
 }
