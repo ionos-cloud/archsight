@@ -43,6 +43,13 @@ class ConfluenceStorageTest < Minitest::Test
     flunk "not well-formed storage XML: #{e.message}\n#{body}"
   end
 
+  def test_the_newlines_of_the_source_do_not_reach_confluence
+    body = convert("line one\nline two\n\nhard  \nbreak\n").body
+
+    assert_includes body, "<p>line one line two</p>"
+    assert_includes body, "<p>hard<br />break</p>"
+  end
+
   def test_banner_says_the_page_is_generated_and_names_the_source
     body = convert("hi\n").body
 

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "markdown"
 
 module Archsight
   # PageTree builds the sidebar tree, breadcrumbs and tables of contents for Page resources
@@ -63,7 +62,7 @@ module Archsight
 
     # Flat table of contents [{level:, id:, text:}] of a markdown body
     def self.toc(markdown)
-      doc = Kramdown::Document.new(markdown.to_s, input: "GFM")
+      doc = Archsight::Markdown.document(markdown)
       entries = [] #: Array[Hash[String, untyped]]
       collect_toc(doc.to_toc, entries)
       entries

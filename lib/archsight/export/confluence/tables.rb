@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require "erb"
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "../../markdown"
 require_relative "../../view_table"
 require_relative "../../helpers/macros"
 require_relative "diagram_links"
@@ -67,7 +66,7 @@ module Archsight
           return "" if text.to_s.strip.empty?
 
           safe = text.gsub(%r{<(?!(?:https?://|mailto:))}, "&lt;")
-          html = Kramdown::Document.new(safe, input: "GFM", entity_output: :as_char, auto_ids: false).to_html.strip
+          html = Archsight::Markdown.unwrapped(safe, entity_output: :as_char, auto_ids: false).to_html.strip
           html.match(%r{\A<p>((?:(?!</?p>).)*)</p>\z}m) ? Regexp.last_match(1) : html
         end
 

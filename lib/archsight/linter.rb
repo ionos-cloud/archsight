@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "kramdown"
+require_relative "markdown"
 require_relative "helpers"
 require_relative "linter/structure"
 
@@ -319,7 +319,7 @@ module Archsight
       return if instance.annotations.key?("generated/script")
 
       begin
-        Kramdown::Document.new(value, input: "GFM")
+        Archsight::Markdown.document(value)
       rescue StandardError => e
         @errors << "#{instance.path_ref}: Markdown syntax error in annotation '#{key}': #{e.message}"
       end

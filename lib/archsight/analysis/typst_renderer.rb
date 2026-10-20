@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "../markdown"
 require_relative "../diagram"
 
 module Archsight
@@ -192,7 +191,7 @@ module Archsight
       # ---- markdown -> Typst
 
       def markdown(source, inline: false)
-        root = Kramdown::Document.new(source.to_s, input: "GFM").root
+        root = Archsight::Markdown.document(source).root
         out = blocks(root.children)
         inline ? out.gsub(/\n\n+/, " #linebreak() ") : out
       end

@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require "erb"
-require "kramdown"
-require "kramdown-parser-gfm"
+require_relative "../../markdown"
 
 module Archsight
   module Export
@@ -90,8 +89,8 @@ module Archsight
           return "" if text.strip.empty?
 
           safe = text.gsub(%r{<(?!(?:https?://|mailto:))}, "&lt;")
-          Kramdown::Document.new(safe, input: "GFM", entity_output: :as_char, auto_ids: false, hard_wrap: false).to_html.strip
-                            .gsub(%r{<(br|hr|img)([^>]*?)\s*/?>}, '<\1\2 />')
+          Archsight::Markdown.unwrapped(safe, entity_output: :as_char, auto_ids: false).to_html.strip
+                             .gsub(%r{<(br|hr|img)([^>]*?)\s*/?>}, '<\1\2 />')
         end
 
         def h(text) = ERB::Util.html_escape(text)
