@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "fileutils"
+
 # Define import module namespaces
 module Archsight
   module Import
@@ -13,8 +15,31 @@ module Archsight
     #   expand it before use)
     def self.cache_root(override = nil)
       require "archsight/user_config"
-      override || Archsight::UserConfig.setting("import", "cache_root")&.to_s ||
-        File.join(Dir.home, ".cache", "archsight", "git")
+      override || Archsight::UserConfig.setting("import", "cache_root")&.to_s || File.join(cache_dir, "git")
+    end
+
+    # The cache directory of Archsight, ~/.cache/archsight
+    def self.cache_dir = File.join(Dir.home, ".cache", "archsight")
+
+    # Tells Spotlight (macOS) not to index this
+    NEVER_INDEX = ".metadata_never_index"
+
+    # Makes sure the clones are not indexed by Spotlight: the marker file in ~/.cache/archsight, or in the cache root
+    # itself when it is somewhere else. Run before every import; a directory that cannot be written is left alone,
+    # the import does not depend on it.
+    # @param root [String] the cache root (Handler#cache_root)
+    # @return [String, nil] the marker file, nil if it could not be written
+    def self.never_index(root)
+      dir = File.expand_path(root)
+      dir = cache_dir if dir.start_with?("#{cache_dir}/")
+      marker = File.join(dir, NEVER_INDEX)
+      return marker if File.exist?(marker)
+
+      FileUtils.mkdir_p(dir)
+      FileUtils.touch(marker)
+      marker
+    rescue SystemCallError
+      nil
     end
 
     # The entries of `import/dependsOn`: import names and glob patterns

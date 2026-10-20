@@ -2,6 +2,9 @@
 
 ENV["RACK_ENV"] = "test"
 ENV["APP_ENV"] = "test"
+# Imports put their cache (clones, the Spotlight marker) here, never in the home directory of the developer
+require "tmpdir"
+ENV["ARCHSIGHT_IMPORT_CACHE_ROOT"] = File.join(Dir.tmpdir, "archsight-test-cache-#{Process.pid}")
 
 # Suppress warnings from third-party gems (rouge, kramdown)
 $VERBOSE = nil
@@ -25,3 +28,4 @@ $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "archsight"
 
 require "minitest/autorun"
+Minitest.after_run { FileUtils.rm_rf(ENV.fetch("ARCHSIGHT_IMPORT_CACHE_ROOT")) if ENV["ARCHSIGHT_IMPORT_CACHE_ROOT"]&.include?("archsight-test-cache-") }
