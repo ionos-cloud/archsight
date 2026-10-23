@@ -1,18 +1,14 @@
-// "Archsight" at the bottom left of every printed page. Chromium 131 and later draws it from the page's margin box
-// (`@page { @bottom-left }` in print.css). Firefox and Safari do not support margin boxes, so there it is an element
-// fixed to the page, which those browsers repeat on every printed page. It exists only while printing. Call once
-// (main.js).
-function supportsMarginBoxes() {
-  // only Chromium browsers have userAgentData; the version is that of the engine
-  const chromium = navigator.userAgentData?.brands?.find((brand) => brand.brand === 'Chromium')
-  return !!chromium && Number(chromium.version) >= 131
-}
-
+// "Archsight" at the bottom left of every printed page: an element fixed to the page, which the browsers repeat on
+// every printed page. It exists only while printing. Call once (main.js).
+//
+// It is an element and not the page's margin box (`@page { @bottom-left }`) because a margin box lives in the page
+// margin, and the margins of a print are the user's choice: "None", "Minimum" or custom margins in the print dialog
+// replace the `@page` margin, and the margin box has no room left. An element in the page area is always there.
 export function usePrintWatermark() {
   let element = null
 
   window.addEventListener('beforeprint', () => {
-    if (element || supportsMarginBoxes()) return
+    if (element) return
     element = document.createElement('div')
     element.className = 'print-watermark'
     element.setAttribute('aria-hidden', 'true')

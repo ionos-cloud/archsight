@@ -2,25 +2,20 @@
    the cards lose their frame and shadow, and "Archsight" stands in the bottom left corner of every page. */
 @page {
   margin: 14mm 14mm 20mm;
-
-  /* the watermark: the page's own bottom-left margin box, so it stands on every page and never over the content.
-     Only Chromium 131+ supports margin boxes; elsewhere usePrintWatermark adds .print-watermark while printing. */
-  @bottom-left {
-    content: 'Archsight';
-    font: 600 9pt var(--pico-font-family-sans-serif, sans-serif);
-    letter-spacing: 0.04em;
-    color: rgba(0, 0, 0, 0.35);
-  }
 }
 
 @media print {
-  /* the watermark where margin boxes are not supported (see usePrintWatermark): fixed, so every page gets it, at the
-     bottom left of the page area; below the content, so it never covers text */
+  /* the watermark (see usePrintWatermark): fixed, so every page gets it, at the bottom left of the page area, whatever
+     margins the print uses. The body leaves room for it, so it does not cover text, and it is on top: the body's
+     white background would hide it behind the content. */
+  body {
+    padding-bottom: 8mm;
+  }
+
   .print-watermark {
     position: fixed;
     left: 0;
     bottom: 0;
-    z-index: -1;
     font: 600 9pt var(--pico-font-family-sans-serif, sans-serif);
     letter-spacing: 0.04em;
     color: rgba(0, 0, 0, 0.35);
@@ -61,7 +56,7 @@
 
   .content {
     display: block;
-    margin: 0;
+    margin: 14mm 14mm 20mm;
     padding: 0;
   }
 
