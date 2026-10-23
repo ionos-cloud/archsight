@@ -22,7 +22,6 @@ const SYMBOLS = {
 const LABELS = {
   'architecture/kind': 'Architecture style',
   'architecture/size': 'Architecture size',
-  'component/dependents': 'Used by',
 }
 
 // Annotations shown first in the Details table: how a resource is classified, before the rest
@@ -33,7 +32,6 @@ export const LEAD_KEYS = [
   'architecture/kind',
   'architecture/size',
   'architecture/tags',
-  'component/dependents',
 ]
 
 export function symbolFor(key, value) {
@@ -42,12 +40,4 @@ export function symbolFor(key, value) {
 
 export function labelFor(key) {
   return LABELS[key] || null
-}
-
-// A plain value in words where the bare number would not say what it counts
-export function displayValue(key, value) {
-  if (key !== 'component/dependents') return value
-  const count = Number(value)
-  if (!Number.isFinite(count)) return value
-  return count === 0 ? 'No other component' : `${count} ${count === 1 ? 'component' : 'components'}`
 }

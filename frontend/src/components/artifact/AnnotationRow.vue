@@ -2,7 +2,7 @@
 import { keyHint } from '../../composables/useKeyHint.js'
 import { ref, computed } from 'vue'
 import { useInternalLinks } from '../../composables/useInternalLinks.js'
-import { labelFor, displayValue } from '../../composables/useAnnotationSymbols.js'
+import { labelFor } from '../../composables/useAnnotationSymbols.js'
 import TagChips from './TagChips.vue'
 
 const props = defineProps({
@@ -10,7 +10,6 @@ const props = defineProps({
   value: [String, Number, Boolean],
   kind: String,
   format: { type: String, default: null },
-  link: { type: String, default: null },
 })
 
 const mdEl = ref(null)
@@ -52,7 +51,7 @@ const tagValues = computed(() => {
       <TagChips v-else-if="tagValues.length" :kind="kind" :annotation-key="annotationKey" :values="tagValues" />
       <template v-else>
         <a v-if="isUrl" :href="value" target="_blank">{{ value }}</a>
-        <template v-else>{{ displayValue(annotationKey, value) }}</template>
+        <template v-else>{{ value }}</template>
       </template>
     </td>
   </tr>
