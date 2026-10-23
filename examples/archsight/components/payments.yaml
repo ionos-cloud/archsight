@@ -10,6 +10,9 @@ metadata:
     component/type: executable
     component/role: service
 spec:
+  dependsOn:
+    applicationInterfaces:
+      - CardVault:Lookup
   realizedThrough:
     technologyArtifacts:
       - Repo:payments-api
@@ -34,3 +37,19 @@ spec:
   servedBy:
     technologyServices:
       - Payments:Cluster
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: CardVault:API
+  annotations:
+    architecture/description: |
+      Stores the card behind a token and answers lookups of it. It exposes an internal API to the payments
+      components, which is also the example for the reachability of an interface (`servedBy` networks).
+    architecture/tags: example,payments
+    component/type: executable
+    component/role: service
+spec:
+  exposes:
+    applicationInterfaces:
+      - CardVault:Lookup

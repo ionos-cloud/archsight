@@ -190,6 +190,9 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
    with `composedOf` (metro network → site networks, campus → halls, backbone → links).
 7. A network that supports a metro region is `locatedAt` the Location and `composedOf` the networks of its sites.
 8. Nodes attach to networks with `servedBy` and stand in facilities with `locatedAt`.
+   An `ApplicationInterface` is `servedBy` the networks on which it can be reached. Write them only when they are
+   known: an interface without a network makes no claim about its reachability, and an analysis cannot tell "not
+   reachable" from "not recorded".
 9. An overlay that software builds (an SDN agent wiring tenant networks on each host, an operator creating VXLAN
    segments, a load-balancer controller announcing public addresses) is `realizedBy` that `ApplicationComponent` or
    `ApplicationService` (ArchiMate cross-layer realization). This holds even when the software runs on the nodes the
@@ -546,6 +549,7 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 | `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyDevice` (the switches and routers that build it) |
 | `TechnologyCommunicationNetwork` | `connects` | `TechnologyDevice` (the devices attached to it) |
 | `TechnologyNode` | `servedBy` | `TechnologyCommunicationNetwork` |
+| `ApplicationInterface` | `servedBy` | `TechnologyCommunicationNetwork` (the networks on which it can be reached) |
 
 - **Underlay and overlay:** the underlay *serves* the overlay, so the overlay is `servedBy` the underlay. A BGP-EVPN
   network that carries customer workloads is one `overlay` network served by the underlay and realized by the routing
@@ -560,6 +564,10 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 - **Attachment:** a node is `servedBy` the networks it is attached to; the network page lists them. A physical
   device is attached the other way round: the network `connects` it, so the network can also be `realizedBy` the
   same switch without a cycle.
+- **Reachability of an interface:** an `ApplicationInterface` is `servedBy` the networks on which it can be reached,
+  next to the `TechnologyInterface` that carries it. With `api/authenticationMethod` this is the exposure of the
+  interface (see the example analysis `Analysis:Interface:ExposedWithoutAuthentication`). Leave it out when the
+  networks are not known.
 
 ```
 # all overlay networks
