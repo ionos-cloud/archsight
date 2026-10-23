@@ -623,12 +623,10 @@ paths:
                 type: object
                 properties:
                   html:
-                    type: string
-                    nullable: true
+                    type: [string, "null"]
                     description: '`<figure class="asd-diagram">` with the SVG'
                   error:
-                    type: string
-                    nullable: true
+                    type: [string, "null"]
         '400':
           description: Body is not JSON with a `source` string
           content:
@@ -708,9 +706,11 @@ paths:
       summary: Requirements of a selection of resources
       description: |
         The requirements that the resources selected by `of` realize (`implemented`), partially realize
-        (`partial`) or plan (`planned`), merged over all of them: one entry per requirement with the best status and
-        the resources it comes from (`by`). Sorted by priority (must, should, may, none), then name. `story` is
-        rendered HTML.
+        (`partial`) or plan (`planned`), merged over all of them: one entry per requirement, with the best status
+        any of the resources gives it and the resources it comes from (`by`, each with its own status). Sorted by
+        priority (must, should, may, requirements without a priority last), then name. `story` is rendered HTML.
+        `priority` and `status` filter the merged entries, so `status=partial` lists requirements whose best
+        status is partial.
       operationId: getRequirements
       tags:
         - Search
@@ -725,14 +725,14 @@ paths:
         - name: priority
           in: query
           required: false
-          description: Comma separated list, only requirements with one of these priorities
+          description: Comma separated list, only requirements with one of these priorities (must, should, may)
           schema:
             type: string
           example: must,should
         - name: status
           in: query
           required: false
-          description: Comma separated list, only requirements with one of these statuses
+          description: Comma separated list, only requirements with one of these statuses (implemented, partial, planned)
           schema:
             type: string
           example: implemented,partial
@@ -743,33 +743,42 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [query, total, query_time_ms, requirements]
                 properties:
                   query:
                     type: string
+                    description: The `of` query as given
                   total:
                     type: integer
+                    description: Number of requirements returned
                   query_time_ms:
                     type: number
                   requirements:
                     type: array
                     items:
                       type: object
+                      required: [name, status, priority, story, by]
                       properties:
                         name:
                           type: string
+                          description: Name of the MotivationRequirement
                         status:
                           type: string
                           enum: [implemented, partial, planned]
+                          description: The best status among the resources in `by`
                         priority:
-                          type: string
-                          nullable: true
+                          type: [string, "null"]
+                          enum: [must, should, may, null]
+                          description: Priority of the requirement, null if it has none
                         story:
-                          type: string
-                          nullable: true
+                          type: [string, "null"]
+                          description: The requirement's story as rendered HTML, null if it has none
                         by:
                           type: array
+                          description: The selected resources that realize, partially realize or plan the requirement, best status first
                           items:
                             type: object
+                            required: [kind, name, status]
                             properties:
                               kind:
                                 type: string
@@ -778,12 +787,118 @@ paths:
                               status:
                                 type: string
                                 enum: [implemented, partial, planned]
+                                description: The status this resource gives the requirement
+              example:
+                query: 'ApplicationService: name =~ "Backup"'
+                total: 1
+                query_time_ms: 1.4
+                requirements:
+                  - name: "Requirement:Restore"
+                    status: partial
+                    priority: must
+                    story: "<p>As an operator I can restore a backup.</p>"
+                    by:
+                      - kind: ApplicationService
+                        name: Backup
+                        status: partial
         '400':
-          description: Invalid query, or an unknown priority or status
+          description: |
+            `of` is missing or `priority` or `status` holds an unknown value (`BadRequest`), or `of` is not a valid
+            query (`QueryError`, which also returns the query)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/QueryError'
+                oneOf:
+                  - $ref: '#/components/schemas/Error'
+                  - $ref: '#/components/schemas/QueryError'
+
+  /api/v1/openapi.yaml:
+    get:
+      summary: This OpenAPI document
+      description: |
+        The OpenAPI 3.1 description of this API. The fixed endpoints are written by hand; the schema of every kind
+        (its annotations with type, enum and description, its `spec` and its relations), the list of kinds and the
+        instance detail are generated from the model, so they always describe the kinds this server has.
+      operationId: getOpenApi
+      tags:
+        - Operations
+      responses:
+        '200':
+          description: The OpenAPI document
+          content:
+            text/yaml:
+              schema:
+                type: string
+
+  /maintenance/restart:
+    post:
+      summary: Restart the server
+      description: |
+        Stops the server so that its supervisor (for example a Kubernetes Deployment) starts it again with fresh
+        data. Only available when the server was started with `--enable-restart` (or
+        `ARCHSIGHT_RESTART_ENABLED=true`); otherwise it answers 404. When a restart token is configured it must be
+        sent in the `X-Restart-Token` header.
+      operationId: restart
+      tags:
+        - Operations
+      parameters:
+        - name: X-Restart-Token
+          in: header
+          required: false
+          description: The configured restart token (required when the server has one)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The server shuts down
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, message]
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                ok: true
+                message: Server shutting down
+        '401':
+          description: The restart token is missing or wrong
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: The restart endpoint is not enabled
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /kinds/{kind}/dot:
+    get:
+      summary: Get the graph of a kind as DOT
+      description: The GraphViz DOT graph of the resources of a kind and the relations between them.
+      operationId: getKindDot
+      tags:
+        - Graph
+      parameters:
+        - $ref: '#/components/parameters/kind'
+      responses:
+        '200':
+          description: GraphViz DOT source
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Unknown kind
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /dot:
     get:
@@ -1343,13 +1458,11 @@ components:
               items:
                 type: string
         format:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Rendering hint of the annotation (tag_word, tag_list, markdown, link, ...)
           example: tag_word
         type:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Short name of the value type when the annotation declares one (Integer, Float, Time, Person, ...)
           example: Integer
 
@@ -1684,26 +1797,22 @@ components:
       type: object
       properties:
         yaml:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Generated source text, YAML or (for pages) markdown with frontmatter (null if validation failed)
         format:
           type: string
           enum: [yaml, markdown]
           description: Format of `yaml`. Pages (kind Page) are stored as markdown files and replaced as a whole file
         errors:
-          type: array
-          nullable: true
+          type: [array, "null"]
           items:
             type: string
           description: Validation errors (null if valid)
         path_ref:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "File path reference (edit mode only, e.g., path/file.yaml:5; just the file for markdown pages)"
         content_hash:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Content hash (edit mode only, for optimistic locking)
 
     SaveRequest:

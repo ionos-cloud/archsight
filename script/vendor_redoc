@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Vendors ReDoc (https://github.com/Redocly/redoc, MIT) into lib/archsight/web/public/vendor/redoc
+# so the API docs page (/docs/api) is served by Archsight itself and a new upstream release cannot
+# break it: `cdn.redoc.ly/redoc/latest` became an ES module in 3.x and no longer works as a classic
+# script.
+#
+#   script/vendor_redoc          # the version in vendor/redoc/VERSION (2.5.4 if there is none)
+#   script/vendor_redoc 2.5.4    # a specific npm version (then commit the result)
+#
+# Only the standalone bundle (a classic script that defines window.Redoc) and the licence files are
+# copied.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/.." && pwd)"
+target="$root/lib/archsight/web/public/vendor/redoc"
+default_version="2.5.4"
+version="${1:-$(cat "$target/VERSION" 2>/dev/null || echo "$default_version")}"
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+
+echo "Fetching redoc@$version from npm..."
+(cd "$work" && npm pack "redoc@$version" --silent >/dev/null && tar xzf ./*.tgz)
+
+echo "Copying into ${target#"$root"/}..."
+mkdir -p "$target"
+rm -f "$target/redoc.standalone.js" "$target/redoc.standalone.js.LICENSE.txt" "$target/LICENSE"
+cp "$work/package/bundles/redoc.standalone.js" "$target/redoc.standalone.js"
+[ -f "$work/package/bundles/redoc.standalone.js.LICENSE.txt" ] &&
+  cp "$work/package/bundles/redoc.standalone.js.LICENSE.txt" "$target/redoc.standalone.js.LICENSE.txt"
+cp "$work/package/LICENSE" "$target/LICENSE"
+printf '%s\n' "$version" > "$target/VERSION"
+
+echo "Done: $(du -sh "$target" | cut -f1)."

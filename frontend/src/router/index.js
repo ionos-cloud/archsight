@@ -54,12 +54,6 @@ const routes = [
     name: 'error',
     component: () => import('../components/layout/ErrorPage.vue'),
   },
-  {
-    path: '/docs/api',
-    name: 'api-docs',
-    component: () => import('../components/layout/ApiDocsPage.vue'),
-    meta: { fullscreen: true },
-  },
 ]
 
 const router = createRouter({

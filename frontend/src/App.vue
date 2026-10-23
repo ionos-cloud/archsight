@@ -7,7 +7,6 @@ import NavigationBar from './components/layout/NavigationBar.vue'
 import SidebarPanel from './components/layout/SidebarPanel.vue'
 
 const route = useRoute()
-const fullscreen = computed(() => route.meta.fullscreen)
 
 const kinds = ref(null)
 const kindsError = ref(null)
@@ -61,16 +60,11 @@ provide('reloadPages', loadPages)
 </script>
 
 <template>
-  <template v-if="fullscreen">
-    <router-view />
-  </template>
-  <template v-else>
-    <NavigationBar />
-    <main class="container-fluid">
-      <SidebarPanel :kinds="kinds" :pages="pages" :page-filters="pageFilters" />
-      <div class="content">
-        <router-view />
-      </div>
-    </main>
-  </template>
+  <NavigationBar />
+  <main class="container-fluid">
+    <SidebarPanel :kinds="kinds" :pages="pages" :page-filters="pageFilters" />
+    <div class="content">
+      <router-view />
+    </div>
+  </main>
 </template>

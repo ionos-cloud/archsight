@@ -11,6 +11,7 @@ gem "rake", "~> 13.0"
 gem "bundler-audit"
 gem "json", ">= 2.21.2" # CVE-2026-33210: format string injection, CVE-2026-54696: heap buffer overflow, CVE-2026-71847: freed buffer dereference
 
+gem "json_schemer", require: false # validates the OpenAPI document and the API responses against it (test/openapi_test.rb)
 gem "minitest", ">= 5.16"
 gem "rack-test", require: false
 gem "simplecov", require: false

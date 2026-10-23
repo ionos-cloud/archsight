@@ -7,6 +7,7 @@ require_relative "page_helpers"
 require_relative "requirements_helpers"
 require_relative "analysis_helpers"
 require_relative "../../assets"
+require_relative "../../openapi"
 
 module Archsight; end
 module Archsight::Web; end
@@ -220,8 +221,7 @@ module Archsight::Web::API::Routes
   # GET /api/v1/openapi.yaml - OpenAPI specification
   get "/api/v1/openapi.yaml" do
     content_type "text/yaml"
-    spec_path = File.join(__dir__, "openapi", "spec.yaml")
-    File.read(spec_path)
+    Archsight::OpenAPI.document.to_yaml
   end
 
   # Convenience aliases with .json suffix
