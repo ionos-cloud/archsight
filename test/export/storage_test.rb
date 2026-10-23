@@ -38,6 +38,11 @@ class ConfluenceStorageTest < Minitest::Test
     storage.convert(markdown, toc: toc)
   end
 
+  # The name of the draw.io attachment of a diagram: its stem and a hash of the content (a changed diagram is a new attachment)
+  def diagram_name(result, stem)
+    result.attachments.keys.find { |name| name.match?(/\A#{Regexp.escape(stem)}-\h{8}\z/) }
+  end
+
   def well_formed!(body)
     REXML::Document.new(%(<root xmlns:ac="a" xmlns:ri="r">#{body}</root>))
   rescue REXML::ParseException => e
@@ -182,15 +187,19 @@ class ConfluenceStorageTest < Minitest::Test
 
       assert_empty result.problems
       assert_equal 2, result.body.scan('ac:name="drawio"').length
-      assert_includes result.body, '<ac:parameter ac:name="diagramName">flow</ac:parameter>'
-      assert_includes result.body, '<ac:parameter ac:name="diagramName">p-diagram-1</ac:parameter>'
-      assert_equal %w[flow flow.png p-diagram-1 p-diagram-1.png], result.attachments.keys.sort
-      xml = result.attachments["flow"].data
+      flow = diagram_name(result, "flow")
+      block = diagram_name(result, "p-diagram-1")
+
+      assert flow && block, "diagram attachments are named after the diagram and a hash of its content"
+      assert_includes result.body, %(<ac:parameter ac:name="diagramName">#{flow}</ac:parameter>)
+      assert_includes result.body, %(<ac:parameter ac:name="diagramName">#{block}</ac:parameter>)
+      assert_equal ["#{flow}.png", "#{block}.png"].sort, result.attachments.keys.grep(/\.png\z/).sort
+      xml = result.attachments[flow].data
       well_formed!(xml)
 
       assert_includes xml, "shape=image"
       assert_includes xml, "image=data:image/svg+xml,"
-      assert_equal "application/vnd.jgraph.mxfile", result.attachments["flow"].content_type
+      assert_equal "application/vnd.jgraph.mxfile", result.attachments[flow].content_type
     end
   end
 
@@ -202,8 +211,10 @@ class ConfluenceStorageTest < Minitest::Test
 
       refute_includes plain.body, "drawio"
       assert_equal ["logo.svg"], plain.attachments.keys
-      assert_includes native.body, '<ac:parameter ac:name="diagramName">logo</ac:parameter>'
-      assert_includes native.attachments["logo"].data, 'pageWidth="10" pageHeight="20"'
+      logo = diagram_name(native, "logo")
+
+      assert_includes native.body, %(<ac:parameter ac:name="diagramName">#{logo}</ac:parameter>)
+      assert_includes native.attachments[logo].data, 'pageWidth="10" pageHeight="20"'
     end
   end
 
@@ -240,7 +251,8 @@ class ConfluenceStorageTest < Minitest::Test
   def test_the_wrapped_drawio_diagram_keeps_the_confluence_links
     File.write(File.join(@dir, "pages/linked.asd"), %(component "a" { label "A"; resource "other" }\n))
     with_fake_drawio_cli do
-      xml = convert("![Linked](linked.asd)\n", drawio: true).attachments["linked"].data
+      result = convert("![Linked](linked.asd)\n", drawio: true)
+      xml = result.attachments[diagram_name(result, "linked")].data
       svg = Base64.decode64(xml[%r{image=data:image/svg\+xml,([A-Za-z0-9+/=]+)}, 1])
 
       assert_includes svg, 'href="https://wiki.example.com/pages/viewpage.action?pageId=55"'
@@ -261,6 +273,19 @@ class ConfluenceStorageTest < Minitest::Test
     assert_includes result.problems.join, "leaves the resources directory"
   end
 
+  def test_a_changed_diagram_is_a_new_attachment_so_the_macro_shows_it
+    File.write(File.join(@dir, "pages/flow.drawio"), "<mxfile><diagram/></mxfile>")
+    with_fake_drawio_cli do
+      first = convert("![Diagram](flow.drawio)\n", drawio: true)
+      again = convert("![Diagram](flow.drawio)\n", drawio: true)
+      File.write(File.join(@dir, "pages/flow.drawio"), "<mxfile><diagram name='changed'/></mxfile>")
+      changed = convert("![Diagram](flow.drawio)\n", drawio: true)
+
+      assert_equal diagram_name(first, "flow"), diagram_name(again, "flow"), "the same diagram keeps its attachment"
+      refute_equal diagram_name(first, "flow"), diagram_name(changed, "flow")
+    end
+  end
+
   def test_drawio_becomes_a_macro_with_the_diagram_and_a_preview_attached
     File.write(File.join(@dir, "pages/flow.drawio"), "<mxfile><diagram/></mxfile>")
     result = nil
@@ -269,10 +294,13 @@ class ConfluenceStorageTest < Minitest::Test
 
     assert_empty result.problems
     assert_includes result.body, 'ac:name="drawio"'
-    assert_includes result.body, '<ac:parameter ac:name="diagramName">flow</ac:parameter>'
+    flow = diagram_name(result, "flow")
+
+    assert flow
+    assert_includes result.body, %(<ac:parameter ac:name="diagramName">#{flow}</ac:parameter>)
     refute_includes result.body, "<p><ac:structured-macro ac:name=\"drawio\""
-    assert_equal %w[flow flow.png], result.attachments.keys.sort
-    assert_equal "PNGDATA", result.attachments["flow.png"].data
+    assert_equal [flow, "#{flow}.png"].sort, result.attachments.keys.sort
+    assert_equal "PNGDATA", result.attachments["#{flow}.png"].data
   ensure
     ENV.delete("ARCHSIGHT_DRAWIO_CLI")
   end

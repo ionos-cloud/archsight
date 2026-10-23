@@ -408,13 +408,12 @@ module Archsight
           %(<p><ac:image><ri:attachment ri:filename="#{h(filename)}" /></ac:image></p>\n)
         end
 
-        # The diagram file of a draw.io macro and its `.png` preview, which must share the name
+        # The diagram file of a draw.io macro and its `.png` preview, which must share the name. The name carries a hash
+        # of the content: the macro shows revision 1 of the attachment it names, so a changed diagram uploaded under the
+        # old name (as a new version of it) would not be shown. A new name is a new attachment, the old one is removed.
         # @return [String] the name the macro refers to
         def attach_diagram(stem, xml, png)
-          sha = Digest::SHA256.hexdigest(xml)
-          name = stem
-          taken = ->(file, data) { @attachments.key?(file) && @attachments[file].data != data }
-          name = "#{stem}-#{sha[0, 8]}" if taken.call(stem, xml) || taken.call("#{stem}.png", png)
+          name = "#{stem}-#{Digest::SHA256.hexdigest(xml)[0, 8]}"
           @attachments[name] = Attachment.new(filename: name, data: xml, content_type: MXFILE)
           @attachments["#{name}.png"] = Attachment.new(filename: "#{name}.png", data: png, content_type: "image/png")
           name
