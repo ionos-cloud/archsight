@@ -7,6 +7,7 @@ require "time"
 require_relative "../../version"
 require_relative "../../assets"
 require_relative "../../helpers"
+require_relative "../../git_source"
 require_relative "client"
 require_relative "credentials"
 require_relative "page_url"
@@ -117,7 +118,8 @@ module Archsight
           storage = Storage.new(page_name: page.name, source: relative_source(page),
                                 base_dir: Assets.base_dir_for(page, resources_dir: @resources_dir).to_s,
                                 resources_dir: @resources_dir, wiki: Helpers::WikiLinks.new(@database), page_id: id, base: url.base,
-                                drawio: drawio?, diagram_links: DiagramLinks.new(@database), database: @database)
+                                drawio: drawio?, diagram_links: DiagramLinks.new(@database), database: @database,
+                                git: GitSource.locate(page.path_ref.path.to_s))
           storage.convert(body_of(page), toc: page.annotations["page/toc"] == "yes", header: PageProperties.xml(page))
         end
 
