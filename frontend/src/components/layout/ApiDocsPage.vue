@@ -7,9 +7,9 @@ const router = useRouter()
 const container = ref(null)
 const error = ref(null)
 
+// ReDoc is vendored (script/vendor_redoc), pinned: the CDN's `latest` is an ES module since 3.x and no longer a classic script
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    if (window.Redoc) return resolve()
     const script = document.createElement('script')
     script.src = src
     script.onload = resolve
@@ -20,7 +20,7 @@ function loadScript(src) {
 
 onMounted(async () => {
   try {
-    await loadScript('https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js')
+    await loadScript('/vendor/redoc/redoc.standalone.js')
     window.Redoc.init('/api/v1/openapi.yaml', {}, container.value)
   } catch (e) {
     error.value = e.message
