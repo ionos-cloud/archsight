@@ -833,7 +833,7 @@ class APITest < Minitest::Test
     item = operation.dig("responses", "200", "content", "application/json", "schema", "properties", "requirements", "items")["properties"]
     statuses = Archsight::Requirements::STATUSES.values
 
-    assert_equal Archsight::Requirements::PRIORITIES, item["priority"]["enum"]
+    assert_equal Archsight::Requirements::PRIORITIES + [nil], item["priority"]["enum"]
     assert_equal statuses, item["status"]["enum"]
     assert_equal statuses, item.dig("by", "items", "properties", "status", "enum")
     assert_equal(%w[of priority status], operation["parameters"].map { |p| p["name"] })

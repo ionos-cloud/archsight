@@ -623,12 +623,10 @@ paths:
                 type: object
                 properties:
                   html:
-                    type: string
-                    nullable: true
+                    type: [string, "null"]
                     description: '`<figure class="asd-diagram">` with the SVG'
                   error:
-                    type: string
-                    nullable: true
+                    type: [string, "null"]
         '400':
           description: Body is not JSON with a `source` string
           content:
@@ -769,13 +767,11 @@ paths:
                           enum: [implemented, partial, planned]
                           description: The best status among the resources in `by`
                         priority:
-                          type: string
-                          enum: [must, should, may]
-                          nullable: true
+                          type: [string, "null"]
+                          enum: [must, should, may, null]
                           description: Priority of the requirement, null if it has none
                         story:
-                          type: string
-                          nullable: true
+                          type: [string, "null"]
                           description: The requirement's story as rendered HTML, null if it has none
                         by:
                           type: array
@@ -815,6 +811,94 @@ paths:
                 oneOf:
                   - $ref: '#/components/schemas/Error'
                   - $ref: '#/components/schemas/QueryError'
+
+  /api/v1/openapi.yaml:
+    get:
+      summary: This OpenAPI document
+      description: |
+        The OpenAPI 3.1 description of this API. The fixed endpoints are written by hand; the schema of every kind
+        (its annotations with type, enum and description, its `spec` and its relations), the list of kinds and the
+        instance detail are generated from the model, so they always describe the kinds this server has.
+      operationId: getOpenApi
+      tags:
+        - Operations
+      responses:
+        '200':
+          description: The OpenAPI document
+          content:
+            text/yaml:
+              schema:
+                type: string
+
+  /maintenance/restart:
+    post:
+      summary: Restart the server
+      description: |
+        Stops the server so that its supervisor (for example a Kubernetes Deployment) starts it again with fresh
+        data. Only available when the server was started with `--enable-restart` (or
+        `ARCHSIGHT_RESTART_ENABLED=true`); otherwise it answers 404. When a restart token is configured it must be
+        sent in the `X-Restart-Token` header.
+      operationId: restart
+      tags:
+        - Operations
+      parameters:
+        - name: X-Restart-Token
+          in: header
+          required: false
+          description: The configured restart token (required when the server has one)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The server shuts down
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, message]
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                ok: true
+                message: Server shutting down
+        '401':
+          description: The restart token is missing or wrong
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: The restart endpoint is not enabled
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /kinds/{kind}/dot:
+    get:
+      summary: Get the graph of a kind as DOT
+      description: The GraphViz DOT graph of the resources of a kind and the relations between them.
+      operationId: getKindDot
+      tags:
+        - Graph
+      parameters:
+        - $ref: '#/components/parameters/kind'
+      responses:
+        '200':
+          description: GraphViz DOT source
+          content:
+            text/plain:
+              schema:
+                type: string
+        '404':
+          description: Unknown kind
+          content:
+            text/plain:
+              schema:
+                type: string
 
   /dot:
     get:
@@ -1374,13 +1458,11 @@ components:
               items:
                 type: string
         format:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Rendering hint of the annotation (tag_word, tag_list, markdown, link, ...)
           example: tag_word
         type:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Short name of the value type when the annotation declares one (Integer, Float, Time, Person, ...)
           example: Integer
 
@@ -1715,26 +1797,22 @@ components:
       type: object
       properties:
         yaml:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Generated source text, YAML or (for pages) markdown with frontmatter (null if validation failed)
         format:
           type: string
           enum: [yaml, markdown]
           description: Format of `yaml`. Pages (kind Page) are stored as markdown files and replaced as a whole file
         errors:
-          type: array
-          nullable: true
+          type: [array, "null"]
           items:
             type: string
           description: Validation errors (null if valid)
         path_ref:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: "File path reference (edit mode only, e.g., path/file.yaml:5; just the file for markdown pages)"
         content_hash:
-          type: string
-          nullable: true
+          type: [string, "null"]
           description: Content hash (edit mode only, for optimistic locking)
 
     SaveRequest:
