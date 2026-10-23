@@ -11,8 +11,9 @@ module Archsight::Web::API; end
 module Archsight::Web::API::Docs
   extend Sinatra::Extension
 
+  # A page of its own, not the single page app: ReDoc must not get the app's CSS (Pico restyles every <code>)
   get "/docs/api" do
-    serve_vue
+    send_file File.join(settings.public_folder, "vendor", "redoc", "api.html"), type: :html
   end
 
   # GET /api/v1/docs/resources/:filename — auto-generated resource docs

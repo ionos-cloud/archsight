@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API - Archsight</title>
+  <link rel="icon" href="/favicon.ico">
+  <style>
+    /* ReDoc brings its own styles. This page is not part of the single page app on purpose: none of the app's CSS
+       (Pico styles every <code>, headings, tables) reaches it. */
+    html, body { margin: 0; padding: 0; background: #fff; }
+    #back {
+      position: fixed; top: 12px; right: 12px; z-index: 100; padding: 6px 14px;
+      background: #fff; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      font: 13px/1.4 system-ui, sans-serif; color: #0172ad; text-decoration: none;
+    }
+    #error { margin: 24px; font: 14px/1.4 system-ui, sans-serif; color: #c62828; }
+  </style>
+</head>
+<body>
+  <a id="back" href="/">&larr; Back</a>
+  <p id="error" role="alert" hidden></p>
+  <div id="redoc"></div>
+  <script src="/vendor/redoc/redoc.standalone.js"></script>
+  <script src="/vendor/redoc/api.js"></script>
+</body>
+</html>

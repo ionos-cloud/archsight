@@ -36,6 +36,22 @@ class OpenAPITest < Minitest::Test
     assert_equal @document, YAML.safe_load(last_response.body)
   end
 
+  # ReDoc gets a page of its own: the single page app would give it Pico, which restyles every <code>
+  def test_the_api_page_is_standalone_and_loads_the_vendored_redoc
+    get "/docs/api"
+
+    assert_predicate last_response, :ok?
+    assert_includes last_response.content_type, "text/html"
+    assert_includes last_response.body, "/vendor/redoc/redoc.standalone.js"
+    refute_includes last_response.body, "/vue/", "no part of the single page app"
+    refute_includes last_response.body, 'rel="stylesheet"', "none of the app's CSS"
+    %w[redoc.standalone.js api.js].each do |file|
+      get "/vendor/redoc/#{file}"
+
+      assert_predicate last_response, :ok?, file
+    end
+  end
+
   def test_every_reference_resolves
     missing = refs(@document).uniq.reject { |ref| resolve(ref) }
 
@@ -115,7 +131,7 @@ class OpenAPITest < Minitest::Test
   end
 
   # Pages of the browser (the single page app and its redirects) are not part of the API
-  BROWSER_ROUTES = %w[/doc/:filename /doc/resources/:filename /docs/api /kinds/:kind /kinds/:kind/generate /kinds/:kind/new
+  BROWSER_ROUTES = %w[/doc/:filename /doc/resources/:filename /kinds/:kind /kinds/:kind/generate /kinds/:kind/new
                       /kinds/:kind/instances/:instance /kinds/:kind/instances/:name/edit /kinds/:kind/instances/:name/generate].freeze
 
   def test_every_api_route_is_documented

@@ -19,7 +19,6 @@ export function titleFor(route) {
     case 'page': return [name]
     case 'doc': return [filename]
     case 'error': return ['Error']
-    case 'api-docs': return ['API']
     default: return []
   }
 }
