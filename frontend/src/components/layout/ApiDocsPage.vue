@@ -51,3 +51,15 @@ onMounted(async () => {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 </style>
+
+<!-- not scoped: ReDoc builds its own DOM -->
+<style>
+/* Pico styles every <code> (light background, grey text). ReDoc's JSON samples sit on a dark panel and colour their
+   tokens for it, so they would be white on light grey. */
+.api-docs-page .redoc-json code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+</style>
