@@ -1,0 +1,25 @@
+apiVersion: architecture/v1alpha1
+kind: Analysis
+metadata:
+  name: Analysis:Interface:ExposedWithoutAuthentication
+  annotations:
+    analysis/handler: ruby
+    analysis/description: Interfaces without authentication, the networks they can be reached on and the components that call them
+    analysis/timeout: 30s
+    analysis/script: |
+      heading("Interfaces without authentication")
+
+      unauthenticated = instances(:ApplicationInterface).select { |interface| annotation(interface, "api/authenticationMethod") == "none" }
+      rows = unauthenticated.sort_by { |interface| name(interface) }.map do |interface|
+        networks = outgoing(interface, :TechnologyCommunicationNetwork).map { |network| name(network) }
+        callers = incoming(interface, :ApplicationComponent).select { |component| component.relations(:dependsOn, :applicationInterfaces).include?(interface) }.map { |component| name(component) }
+        [name(interface), networks.empty? ? "not recorded" : networks.sort.join(", "), callers.sort.join(", ")]
+      end
+
+      if rows.empty?
+        info("Every interface has an authentication method")
+      else
+        text("An interface without networks makes no claim about where it can be reached: it is listed as *not recorded*.")
+        table(headers: ["Interface", "Networks", "Called by"], rows: rows)
+      end
+spec: {}

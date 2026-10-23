@@ -1,0 +1,17 @@
+apiVersion: architecture/v1alpha1
+kind: ApplicationInterface
+metadata:
+  name: CardVault:Lookup
+  annotations:
+    architecture/description: |
+      Internal API that returns the stored card behind a token. It trusts every caller and listens on all
+      addresses, so what it exposes depends on the networks that can reach it: `servedBy` lists them, here the
+      management network of the campus and the tenant overlay.
+    architecture/tags: example,payments
+    api/authenticationMethod: none
+    api/authorization: none
+spec:
+  servedBy:
+    technologyCommunicationNetworks:
+      - Network:Management:Frankfurt
+      - Network:Overlay:Tenant

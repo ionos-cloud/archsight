@@ -25,6 +25,17 @@ class Archsight::Resources::ApplicationInterface < Archsight::Resources::Base
     - gRPC services
     - Message queues (producer/consumer interfaces)
     - WebSocket endpoints
+
+    ## Reachability
+
+    An interface is `servedBy` the `TechnologyInterface` that carries it (a protocol, an authentication method) and
+    by the `TechnologyCommunicationNetwork`s on which it can be reached, just as a `TechnologyNode` attaches to the
+    networks it is on. Together with `api/authenticationMethod` this decides the exposure of the interface: an
+    interface without authentication on an internal network is a different risk than on a network that
+    internet-facing components attach to. The network page lists the interfaces as incoming "served by".
+
+    Write the networks only when they are known. An interface without a network makes no claim about where it can
+    be reached.
   MD
 
   icon "usb"
@@ -47,6 +58,7 @@ class Archsight::Resources::ApplicationInterface < Archsight::Resources::Base
              enum: ["none", "hard coded", "pbac", "abac", "rbac"]
 
   relation :servedBy, :technologyComponents, :TechnologyInterface
+  relation :servedBy, :technologyCommunicationNetworks, :TechnologyCommunicationNetwork
   relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :serves, :dataObjects, :DataObject
 end
