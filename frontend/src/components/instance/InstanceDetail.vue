@@ -24,6 +24,7 @@ import WorkflowInfo from '../artifact/WorkflowInfo.vue'
 import AgenticTools from '../artifact/AgenticTools.vue'
 import LicenseInfo from '../artifact/LicenseInfo.vue'
 import ExternalLinks from '../artifact/ExternalLinks.vue'
+import LifecycleInfo from '../artifact/LifecycleInfo.vue'
 import AnnotationRow from '../artifact/AnnotationRow.vue'
 import { LEAD_KEYS } from '../../composables/useAnnotationSymbols.js'
 import { LAYERS as LAYER_DEFS, LAYER_IDS } from '../../composables/useLayers.js'
@@ -118,6 +119,8 @@ const SKIP_KEYS = new Set([
   'scc/languages', 'architecture/description', 'architecture/diagram', 'architecture/modules',
   'workflow/platforms', 'workflow/types',
   'agentic/tools', 'repository/artifacts', 'repository/git', 'repository/visibility',
+  // shown by LifecycleInfo; the number of dependents is the Incoming relations (the annotation stays for queries and filters)
+  'lifecycle/status', 'lifecycle/replacedBy', 'component/dependents',
 ])
 const SKIP_PATTERNS = [
   /^scc\/estimated(Cost|ScheduleMonths|People)$/,
@@ -126,6 +129,15 @@ const SKIP_PATTERNS = [
   /^repository\/$/,
   /^architecture\/.+\/modules$/,
 ]
+
+// the resources that refer to this one (all kinds and verbs, each counted once), for LifecycleInfo
+const incomingCount = computed(() => {
+  const found = new Set()
+  for (const [kind, verbs] of Object.entries(props.data.references || {})) {
+    for (const names of Object.values(verbs)) names.forEach((name) => found.add(`${kind}/${name}`))
+  }
+  return found.size
+})
 
 // how a resource is classified comes first (type, role, kind, tags), the rest keeps its order
 const customAnnotations = computed(() => {
@@ -283,6 +295,7 @@ function initPanZoomOnGraph() {
         <AgenticTools :annotations="annotations" :kind="kind" />
         <LicenseInfo :annotations="annotations" :kind="kind" />
         <ExternalLinks :annotations="annotations" />
+        <LifecycleInfo :annotations="annotations" :kind="kind" :links="data.annotation_links" :incoming="incomingCount" />
         <AnnotationRow
           v-for="[key, value] in customAnnotations"
           :key="key"
@@ -290,7 +303,6 @@ function initPanZoomOnGraph() {
           :value="value"
           :kind="kind"
           :format="data.annotation_formats?.[key] || null"
-          :link="data.annotation_links?.[key] ?? null"
         />
       </tbody>
     </table>

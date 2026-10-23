@@ -997,7 +997,7 @@ is a sidebar filter and query term (`lifecycle/status == "deprecated"`).
 |------------|---------|
 | `lifecycle/status` | The state above |
 | `lifecycle/activeAt`, `lifecycle/deprecatedAt`, `lifecycle/sunsetAt`, `lifecycle/endOfLifeAt` | When it happened or will happen (ISO 8601 date or time, checked by `archsight lint`) |
-| `lifecycle/replacedBy` | The resource that replaces it: a name for a resource of the same kind, `Kind/Name` for another kind (a component replaced by an `ApplicationService/...`). Shown as a link, `archsight lint` checks that it exists |
+| `lifecycle/replacedBy` | The resource that replaces it: a name for a resource of the same kind, `Kind/Name` for another kind (a component replaced by an `ApplicationService/...`). Shown as a link behind the status, `archsight lint` checks that it exists |
 | `lifecycle/reason` | Why, in markdown |
 
 ```yaml
@@ -1009,6 +1009,9 @@ metadata:
     lifecycle/sunsetAt: 2027-03-31
     lifecycle/replacedBy: ApplicationService/ExportV2
 ```
+
+The detail page shows the status, the replacement as a link and, for a `deprecated`, `sunset` or `end-of-life`
+resource, the number of resources that still refer to it (a link to its Incoming relations) on one line.
 
 ## Common Patterns
 
