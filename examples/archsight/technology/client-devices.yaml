@@ -1,0 +1,146 @@
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Laptop:Dev01
+  annotations:
+    architecture/description: A developer laptop. A client device needs no room; the platform node says which networks it uses.
+    architecture/tags: example,developer
+    device/type: laptop
+    device/model: Example Vendor Laptop 14
+    device/os: macos
+    device/osVersion: '15.1'
+    device/arch: arm64
+    device/ownership: company-owned
+    device/managed: managed
+    device/encryption: enabled
+    lifecycle/endOfLifeAt: 2029-06-30
+spec:
+  servedBy:
+    businessActors:
+      - Team:Kernel
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Workstation:Dev02
+  annotations:
+    architecture/description: A Linux developer workstation under a desk of the Frankfurt campus.
+    architecture/tags: example,developer
+    device/type: workstation
+    device/model: Example Vendor Tower
+    device/os: linux
+    device/osVersion: 24.04 LTS
+    device/arch: x86_64
+    device/ownership: company-owned
+    device/managed: managed
+    device/encryption: enabled
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:Campus
+  servedBy:
+    businessActors:
+      - Team:Kernel
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyDevice
+metadata:
+  name: Device:Workstation:Secure01
+  annotations:
+    architecture/description: |
+      A hardened workstation that runs the user's operating system virtualized beside other isolated sessions. The
+      product is in `device/model`: it is a workstation like any other, the protection need is in `asset/*`.
+    architecture/tags: example,restricted
+    device/type: workstation
+    device/model: Example Vendor Secure Workstation
+    device/os: linux
+    device/arch: x86_64
+    device/ownership: company-owned
+    device/managed: managed
+    device/encryption: enabled
+    asset/confidentiality: very-high
+spec:
+  servedBy:
+    businessActors:
+      - Team:Kernel
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:OS:macOS
+  annotations:
+    architecture/description: The operating system of the developer laptops.
+spec:
+  realizedBy:
+    technologyComponents:
+      - Node:Workstation:Developer
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologySystemSoftware
+metadata:
+  name: Tech:OS:Windows
+  annotations:
+    architecture/description: The guest operating system of the restricted session, virtualized on the secure workstation.
+spec:
+  realizedBy:
+    technologyComponents:
+      - Node:Workstation:Secure01:Restricted
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Node:Workstation:Developer
+  annotations:
+    architecture/description: |
+      The developer workstations as one logical node, realized by the machines that are inventoried. The networks they
+      use are written here, once for all of them.
+spec:
+  realizedBy:
+    technologyDevices:
+      - Device:Laptop:Dev01
+      - Device:Workstation:Dev02
+  servedBy:
+    technologyCommunicationNetworks:
+      - Network:Office:Frankfurt
+      - Network:VPN:Remote
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Node:Workstation:Secure01:Restricted
+  annotations:
+    architecture/description: The isolated session of the secure workstation that works on restricted data.
+    infrastructure/type: vm
+spec:
+  realizedBy:
+    technologyDevices:
+      - Device:Workstation:Secure01
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyCommunicationNetwork
+metadata:
+  name: Network:Office:Frankfurt
+  annotations:
+    architecture/description: The office network of the Frankfurt campus, where the developer machines are attached.
+    network/type: other
+spec:
+  locatedAt:
+    technologyFacilities:
+      - Facility:Frankfurt:Campus
+---
+apiVersion: architecture/v1alpha1
+kind: TechnologyCommunicationNetwork
+metadata:
+  name: Network:VPN:Remote
+  annotations:
+    architecture/description: |
+      The VPN that remote machines tunnel through. The secure workstation is named here (`connects`) because it
+      reaches only this network; the developer machines reach it through their platform node.
+    network/type: vpn
+spec:
+  servedBy:
+    technologyCommunicationNetworks:
+      - Network:Public
+  connects:
+    technologyDevices:
+      - Device:Workstation:Secure01

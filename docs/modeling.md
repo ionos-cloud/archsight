@@ -154,7 +154,7 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
 | Location | In which region or country is it? | A place on a map, not a building; holds facilities | the place ("Location:Germany:Frankfurt") |
 | TechnologyFacility | In which building or site does hardware stand? | Has an address and can be visited; can be nested (campus, hall) | the site ("Facility:Frankfurt:HallA") |
 | TechnologyEquipment | Which physical thing can you touch? | Racks, fabrics, fibre routes, carrier circuits; no software of its own | the thing and its place ("Equipment:Link:Frankfurt-Madrid") |
-| TechnologyDevice | Which single machine stands in the room? | One server, switch, router, firewall or appliance with a serial number; it is cabled | the host ("Device:Frankfurt:Server01") |
+| TechnologyDevice | Which single machine stands in the room? | One server, switch, router, firewall or appliance with a serial number (it is cabled), or one laptop, workstation or phone of a person or team | the host ("Device:Frankfurt:Server01") |
 | TechnologyCommunicationNetwork | What carries data between nodes? | Has a network role (`network/type`); exists beyond any single link | role and scope ("Network:Management:Frankfurt") |
 | TechnologyNode | On which machine does software run? | A VM, host role or logical group of machines with a lifecycle of its own | the host or host role ("Node:Frankfurt:Web01") |
 | TechnologySystemSoftware | What software hosts other software or data? | An operating system, database cluster, routing stack, platform | the product and role ("Tech:Routing:EVPN") |
@@ -166,8 +166,8 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
 1. Is it a country, metro or region? Location.
 2. Is it a building, campus, hall or site that can be visited? TechnologyFacility.
 3. Is it a physical thing (rack, switch fabric, fibre, circuit) without software of its own? TechnologyEquipment.
-4. Is it one physical machine (server, switch, router, firewall, appliance) whose room or cabling matters?
-   TechnologyDevice.
+4. Is it one physical machine (server, switch, router, firewall, appliance, laptop, workstation, phone) whose room,
+   cabling or operating system matters? TechnologyDevice.
 5. Does it carry data between nodes, with a role such as underlay, overlay, management, public or VPN?
    TechnologyCommunicationNetwork.
 6. Is it a machine (virtual, or a host role) that software runs on? TechnologyNode.
@@ -201,7 +201,8 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
 10. One `TechnologyDevice` per physical machine, `locatedAt` its room (a TechnologyFacility of `facility/type: room`
     the data center is `composedOf`). A group of machines with one role stays a logical `TechnologyNode` that is
     `realizedBy` its devices; a rack or hardware block is TechnologyEquipment `composedOf` them; a virtual chassis or
-    stack is a device `composedOf` its members.
+    stack is a device `composedOf` its members. A client device (`device/type` laptop, desktop, workstation,
+    thin-client, tablet, mobile) moves and needs no room; it may be `locatedAt` an office.
 11. A network is `realizedBy` the devices that build it (switches, routers) and `connects` the devices attached to it.
     Both are written on the network, so a switch attached to the network it builds closes no cycle.
 12. Cables are `connectedTo` between devices, declared once on one of the two ends. Cabling runs both ways by nature
@@ -213,6 +214,17 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
     `servedBy` its team and `composedOf` its devices, which then need no team of their own. Both relations point
     down to the team, which points to nothing further. On a TechnologyFacility, `servedBy` stays the operator of
     the site.
+14. A client device (developer workstation, laptop, phone) is a `TechnologyDevice` with a client `device/type` and
+    `device/os`, `device/osVersion`, `device/arch`, `device/ownership`, `device/managed` and `device/encryption`; the
+    vendor and product are in `device/model` (also for a hardened workstation that runs the user's operating system
+    virtualized beside other isolated sessions, which is a `workstation`). Model the individual machine when it is
+    inventoried, otherwise one `TechnologyNode` per client platform `realizedBy` the devices. The operating system is
+    `TechnologySystemSoftware` `realizedBy` the node, the image it is installed from an artifact the node is
+    `assignedTo`; each isolated session of a hardened workstation can be a node of its own. Network access is written
+    on the node (`servedBy` the networks it uses: the office, the VPN) or, for a single named machine, on the network
+    (`connects`), never on the device, because a network is `realizedBy` its switches and the reverse arrow would
+    close a cycle. A machine that reaches no network (air-gapped) has neither relation. Who uses it is the team or role
+    (`servedBy`), not a person; groups of machines are tags and the end of support is `lifecycle/endOfLifeAt`.
 
 **Checked by `archsight lint`**
 
@@ -224,7 +236,7 @@ As above, these are **warnings** in the "Modeling warnings" section and never fa
 | `TechnologyCommunicationNetwork 'Network:Overlay:EVPN' is an overlay network served by no network` | 3 |
 | `TechnologyFacility 'Facility:Madrid:DC' is located at no Location` | where |
 | `TechnologyEquipment 'Equipment:Rack01' is located at no TechnologyFacility` | where |
-| `TechnologyDevice 'Device:Server01' is located at no TechnologyFacility` | 10 |
+| `TechnologyDevice 'Device:Server01' is located at no TechnologyFacility` (not for client device types) | 10 |
 | `TechnologyDevice 'Device:Switch01' is connectedTo itself` | 12 |
 | `TechnologyDevice 'Device:Router01' is a router that realizes no TechnologyCommunicationNetwork` | 11 |
 | `TechnologyDevice 'Device:a:server-3' is servedBy 'Kernel:Team', not by the team of its equipment ('Compute:Team')` | 13 |
@@ -547,7 +559,7 @@ Which kind to pick is in [Choosing the Kind: Infrastructure](#choosing-the-kind-
 | `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyEquipment` (the fabric), `TechnologySystemSoftware` (routing stack, VPN software) |
 | `TechnologyCommunicationNetwork` | `realizedBy` | `ApplicationComponent`, `ApplicationService` (software that builds the network: an SDN agent, a network operator) |
 | `TechnologyCommunicationNetwork` | `realizedBy` | `TechnologyDevice` (the switches and routers that build it) |
-| `TechnologyCommunicationNetwork` | `connects` | `TechnologyDevice` (the devices attached to it) |
+| `TechnologyCommunicationNetwork` | `connects` | `TechnologyDevice` (the devices attached to it, a named workstation behind a VPN) |
 | `TechnologyNode` | `servedBy` | `TechnologyCommunicationNetwork` |
 | `ApplicationInterface` | `servedBy` | `TechnologyCommunicationNetwork` (the networks on which it can be reached) |
 
@@ -593,7 +605,7 @@ center is not a computational resource.
 | Location | For a country, metro or region |
 | TechnologyFacility | For a data center, colocation, office or edge site (`facility/type`), also a campus or hall inside one |
 | TechnologyEquipment | Optional: racks, network fabrics, physical clusters inside a facility (`equipment/type`) |
-| TechnologyDevice | Optional: one physical machine, `locatedAt` its room (`facility/type: room`) |
+| TechnologyDevice | Optional: one physical machine, `locatedAt` its room (`facility/type: room`); a client device (laptop, workstation, phone) needs no room |
 
 Relations are written on the element that is placed (see [Direction of Relations](#direction-of-relations)):
 

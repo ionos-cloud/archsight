@@ -9,6 +9,8 @@ module Archsight
       # Network types that run over another network and need one that serves them
       OVERLAY_TYPES = %w[overlay vpn].freeze
       NETWORK_DEVICE_TYPES = %w[switch router].freeze
+      # Client machines move: they need no room
+      CLIENT_DEVICE_TYPES = %w[laptop desktop workstation thin-client tablet mobile].freeze
 
       def initialize(database)
         @database = database
@@ -185,12 +187,13 @@ module Archsight
       end
 
       # A device that is part of equipment (a rack) or of another device (a virtual chassis) is placed through its
-      # whole, and a chassis through its members
+      # whole, and a chassis through its members. A client device (laptop, workstation, phone) is not placed.
       def device_without_facility
         parts = owners_by_target("TechnologyDevice", :composedOf, :technologyDevices)
         racked = owners_by_target("TechnologyEquipment", :composedOf, :technologyDevices)
         instances("TechnologyDevice").filter_map do |device|
           next if parts.key?(device) || racked.key?(device) || targets(device, :composedOf, :technologyDevices).any?
+          next if CLIENT_DEVICE_TYPES.include?(device.annotations["device/type"])
           next if targets(device, :locatedAt, :technologyFacilities).any?
 
           warning(device, "is located at no TechnologyFacility")

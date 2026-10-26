@@ -355,4 +355,114 @@ class TechnologyDeviceTest < Minitest::Test
       end
     end
   end
+
+  # Client devices: a laptop and a workstation of a platform node that uses networks, a secure workstation that a network
+  # names, and a server that still needs a room
+  CLIENTS = <<~YAML
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: TechnologyDevice
+    metadata:
+      name: Laptop1
+      annotations:
+        device/type: laptop
+        device/os: macos
+        device/osVersion: '15.1'
+        device/arch: arm64
+        device/ownership: company-owned
+        device/managed: managed
+        device/encryption: enabled
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: TechnologyDevice
+    metadata:
+      name: Workstation1
+      annotations:
+        device/type: workstation
+        device/os: linux
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: TechnologyDevice
+    metadata:
+      name: Secure1
+      annotations:
+        device/type: workstation
+        device/model: Example Vendor Secure Workstation
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: TechnologyNode
+    metadata:
+      name: Developers
+    spec:
+      realizedBy:
+        technologyDevices: [Laptop1, Workstation1]
+      servedBy:
+        technologyCommunicationNetworks: [Office]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: TechnologyCommunicationNetwork
+    metadata:
+      name: Office
+      annotations:
+        network/type: other
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: TechnologyCommunicationNetwork
+    metadata:
+      name: Tunnel
+      annotations:
+        network/type: other
+    spec:
+      connects:
+        technologyDevices: [Secure1]
+  YAML
+
+  def test_client_device_types_and_attributes_are_enums
+    klass = Archsight::Resources::TechnologyDevice
+    valid = { "device/type" => %w[laptop desktop workstation thin-client tablet mobile], "device/os" => %w[windows macos linux freebsd openbsd netbsd android ios chromeos],
+              "device/arch" => %w[x86_64 arm64 riscv64], "device/ownership" => %w[company-owned leased byod], "device/managed" => %w[managed unmanaged],
+              "device/encryption" => %w[enabled disabled] }
+
+    valid.each do |key, values|
+      values.each { |value| assert klass.annotation_matching(key).valid?(value), "#{key} #{value}" }
+      refute klass.annotation_matching(key).valid?("toaster"), key
+    end
+    assert_empty klass.annotations.select { |a| a.key.start_with?("device/") && a.enum }.map(&:key) - klass.annotations.select(&:filterable?).map(&:key)
+  end
+
+  def test_the_operating_system_is_a_summary_annotation_within_the_limit
+    summary = Archsight::Resources::TechnologyDevice.summary_annotations.map(&:key)
+
+    assert_includes summary, "device/os"
+    assert_operator summary.length, :<=, Archsight::Resources::Base::MAX_SUMMARY_ANNOTATIONS
+  end
+
+  def test_a_client_device_needs_no_room
+    with_db(CLIENTS) { |db| assert_empty device_warnings(db) }
+  end
+
+  def test_a_server_without_a_room_still_warns_next_to_client_devices
+    server = "---\napiVersion: architecture/v1alpha1\nkind: TechnologyDevice\nmetadata:\n  name: Server9\n  annotations:\n    device/type: server\nspec: {}\n"
+
+    with_db(CLIENTS + server) do |db|
+      assert_equal(["TechnologyDevice 'Server9' is located at no TechnologyFacility"], device_warnings(db).map { |w| w.sub(/\A.*?: /, "") })
+    end
+  end
+
+  def test_network_access_is_written_on_the_node_or_on_the_network_never_a_cycle
+    with_db(CLIENTS) do |db|
+      node = instance(db, "TechnologyNode", "Developers")
+      office = instance(db, "TechnologyCommunicationNetwork", "Office")
+      secure = instance(db, "TechnologyDevice", "Secure1")
+
+      assert_equal ["Developers"], incoming(office, "TechnologyNode", :servedBy)
+      assert_equal %w[Laptop1 Workstation1], node.relations(:realizedBy, :technologyDevices).map(&:name).sort
+      assert_equal ["Tunnel"], incoming(secure, "TechnologyCommunicationNetwork", :connects)
+      assert_empty Archsight::Linter.new(db).validate
+    end
+  end
 end
