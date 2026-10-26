@@ -53,3 +53,23 @@ spec:
   exposes:
     applicationInterfaces:
       - CardVault:Lookup
+---
+apiVersion: architecture/v1alpha1
+kind: ApplicationComponent
+metadata:
+  name: Payments:ClusterOperator
+  annotations:
+    architecture/description: |
+      The operator that creates the payments cluster and keeps it in its desired state (`provisions`). It runs on
+      the compute platform (`servedBy`), not in the cluster it builds: the cluster keeps running while the operator is
+      down and only changes stop.
+    architecture/tags: example,payments
+    component/type: executable
+    component/role: operator
+spec:
+  provisions:
+    technologyServices:
+      - Payments:Cluster
+  servedBy:
+    technologyServices:
+      - Tech:Compute
