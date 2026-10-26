@@ -8,6 +8,9 @@ metadata:
       components point to it with `servedBy`, so its page lists what runs here.
     architecture/tags: example,payments
 spec:
+  operatedBy:
+    businessActors:
+      - Team:Infrastructure
   locatedAt:
     technologyFacilities:
       - Facility:Frankfurt:Campus

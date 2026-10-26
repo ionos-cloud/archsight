@@ -50,6 +50,12 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     "servedBy" from ApplicationComponent on its page. An ApplicationService that is `servedBy` the service uses it as a
     whole; list a cluster there only when the service's own components run in it.
 
+    ## Teams
+
+    A service is `maintainedBy` the team (`BusinessActor`) that builds and changes it and `operatedBy` the team
+    (`BusinessActor` or `BusinessRole`) that runs it in production. Build and run are often different teams, which is
+    the point of writing both. `servedBy` stays "who uses it". Both are optional.
+
     ## Provisioning
 
     A service that software creates (clusters built by an infrastructure-as-code operator, a database cluster
@@ -75,6 +81,9 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
   relation :suppliedBy, :technologyComponents, :TechnologySystemSoftware
   relation :specializes, :technologyServices, :TechnologyService
   relation :servedBy, :businessActors, :BusinessActor
+  relation :maintainedBy, :businessActors, :BusinessActor
+  relation :operatedBy, :businessActors, :BusinessActor
+  relation :operatedBy, :businessRoles, :BusinessRole
   relation :locatedAt, :technologyFacilities, :TechnologyFacility
   relation :realizedBy, :technologyEquipment, :TechnologyEquipment
   relation :realizes, :motivationRequirements, :MotivationRequirement

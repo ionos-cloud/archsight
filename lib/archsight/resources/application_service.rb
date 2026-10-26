@@ -35,6 +35,12 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
     the other service's components listed again; a service that many others use is modeled once. A service whose only component has the same name is a smell. See
     the modeling guide, "Choosing the Kind".
 
+    ## Teams
+
+    A service is `maintainedBy` the team (`BusinessActor`) that builds and changes it and `operatedBy` the team
+    (`BusinessActor` or `BusinessRole`) that runs it in production. Build and run are often different teams, which is
+    the point of writing both. `servedBy` stays "who uses it". Both are optional.
+
     ## Security and risk modelling
 
     A service is an asset at risk (`asset/*` profile, protection needs) that loss events `affects`, a trigger target
@@ -230,6 +236,9 @@ class Archsight::Resources::ApplicationService < Archsight::Resources::Base
   relation :dependsOn, :applicationServices, :ApplicationService
   relation :servedBy, :businessActors, :BusinessActor
   relation :servedBy, :technologyServices, :TechnologyService
+  relation :maintainedBy, :businessActors, :BusinessActor
+  relation :operatedBy, :businessActors, :BusinessActor
+  relation :operatedBy, :businessRoles, :BusinessRole
   relation :realizes, :motivationConstraints, :MotivationConstraint
   relation :realizes, :motivationRequirements, :MotivationRequirement
   relation :partiallyRealizes, :motivationRequirements, :MotivationRequirement

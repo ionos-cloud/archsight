@@ -17,6 +17,12 @@ spec:
   servedBy:
     businessActors:
       - Archsight:Maintainers
+  maintainedBy:
+    businessActors:
+      - Archsight:Maintainers
+  operatedBy:
+    businessActors:
+      - Team:Infrastructure
 ---
 apiVersion: architecture/v1alpha1
 kind: ApplicationService

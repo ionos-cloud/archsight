@@ -17,7 +17,7 @@ const isTeam = computed(() => props.instance?.kind === 'BusinessActor')
 
 const ownedQuery = computed(() => {
   const name = props.instance?.name || ''
-  return `kind in ("ApplicationService", "ApplicationComponent") & ~> $(TechnologyArtifact: -{maintainedBy}> "${name}")`
+  return `kind in ("ApplicationService", "ApplicationComponent") & (-{maintainedBy, operatedBy}> "${name}" | ~> $(TechnologyArtifact: -{maintainedBy}> "${name}"))`
 })
 
 const membersList = computed(() => {
