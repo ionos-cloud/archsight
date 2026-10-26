@@ -77,7 +77,7 @@ const incoming = computed(() => {
         <div v-else class="relations-empty">None</div>
       </div>
 
-      <div class="relations-column relations-incoming">
+      <div id="incoming" class="relations-column relations-incoming">
         <h3><i class="iconoir-arrow-right"></i> Incoming</h3>
         <template v-if="incoming.length">
           <div v-for="(group, i) in incoming" :key="'in-' + i" class="relation-group">
