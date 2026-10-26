@@ -36,7 +36,7 @@ There are two families of verbs:
 
 | Family | Verbs | Written on | Points to |
 |--------|-------|------------|-----------|
-| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `provisions`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `operatedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `provisions`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
 | Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
 
 Rules:
@@ -616,6 +616,8 @@ Relations are written on the element that is placed (see [Direction of Relations
 | `TechnologyFacility` | `composedOf` | `TechnologyFacility` (nested sites, the rooms of a data center) |
 | `TechnologyFacility` | `servedBy` | `BusinessActor` (the operator) |
 | `TechnologyDevice`, `TechnologyEquipment`, `TechnologyNode`, `TechnologyCommunicationNetwork` | `ownedBy` | `BusinessActor`, `BusinessRole` (the team that operates it) |
+| `ApplicationComponent`, `ApplicationService`, `TechnologyService` | `operatedBy` | `BusinessActor`, `BusinessRole` (the team that runs it in production) |
+| `ApplicationComponent`, `ApplicationService`, `TechnologyService` | `maintainedBy` | `BusinessActor` (the team that builds and changes it) |
 | `TechnologyDevice`, `TechnologyEquipment`, `TechnologyNode` | `servedBy` | `BusinessActor` (the team it is dedicated to, e.g. a test partition) |
 
 `locatedAt` with many targets is the point: a service that runs in three data centers is **one** service with three

@@ -55,6 +55,13 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     works in queries like a tag but is not a sidebar filter, as there are too many distinct values. Deployable forms (container image, chart, package) are `TechnologyArtifact`s, not
     component types.
 
+    ## Teams
+
+    A component is `maintainedBy` the team (`BusinessActor`) that builds and changes it and `operatedBy` the team
+    (`BusinessActor` or `BusinessRole`) that runs it in production. Build and run are often different teams, which is
+    the point of writing both. Both are optional; without a direct `maintainedBy`, the build team is the one that
+    maintains the component's `TechnologyArtifact`s.
+
     ## Where it runs
 
     A component is `servedBy` the `TechnologyService` it is deployed on (a product's cluster, a managed platform) and
@@ -426,6 +433,9 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   relation :servedBy, :technologyComponents, :TechnologySystemSoftware
   relation :servedBy, :technologyServices, :TechnologyService
   relation :provisions, :technologyServices, :TechnologyService
+  relation :maintainedBy, :businessActors, :BusinessActor
+  relation :operatedBy, :businessActors, :BusinessActor
+  relation :operatedBy, :businessRoles, :BusinessRole
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationComponents, :ApplicationComponent
