@@ -50,6 +50,13 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     "servedBy" from ApplicationComponent on its page. An ApplicationService that is `servedBy` the service uses it as a
     whole; list a cluster there only when the service's own components run in it.
 
+    ## Provisioning
+
+    A service that software creates (clusters built by an infrastructure-as-code operator, a database cluster
+    reconciled by a controller) is `provisions`-ed by that `ApplicationComponent`. The relation is written on the
+    component and points down to the service; the service page lists it as incoming "provisions". It says who builds
+    the service, `suppliedBy` says what the service is made of (the system software).
+
     ## Concept and implementation
 
     A service can `specialize` another service (ArchiMate specialization): the general service is the concept, the

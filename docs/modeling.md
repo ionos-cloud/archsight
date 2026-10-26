@@ -36,7 +36,7 @@ There are two families of verbs:
 
 | Family | Verbs | Written on | Points to |
 |--------|-------|------------|-----------|
-| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `provisions`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
 | Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
 
 Rules:
@@ -700,13 +700,19 @@ depend on each other, so `dependsOn` is exempt from the cycle check. In `example
 
 ### Where a Component Runs
 
-Three relations say what something runs on; each answers a different question:
+These relations say what something runs on or builds; each answers a different question:
 
 | Relation | Means | Example |
 |----------|-------|---------|
 | ApplicationComponent `servedBy technologyServices` | the platform service the component is deployed on | `Payments:API` runs in `Payments:Cluster` |
 | ApplicationComponent `servedBy technologySystemSoftware` | the runtime it runs on | a Kubernetes distribution, a JVM |
 | ApplicationService `servedBy technologyServices` | a platform service the service as a whole uses | a managed database, the clusters of its own components |
+| ApplicationComponent `provisions technologyServices` | the platform service the component creates and keeps in its desired state | an operator that builds the clusters of a product |
+
+`provisions` is written on the component, like every relation, so it points down to what the component creates: the
+service page lists its provisioner as incoming, and the impact of a provisioner is its outgoing relations (the
+services it builds). It is not a runtime dependency: a provisioned service keeps running while its provisioner is
+down, only changes stop. `suppliedBy` on the service stays for what it is made of (the system software).
 
 Deployment importers (Argo CD, Helm, Cluster API) know every cluster a deployable runs in and write the relation per
 component. Keep the service-level relation to the clusters of the service's own components: a sidecar or agent that

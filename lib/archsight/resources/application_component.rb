@@ -62,6 +62,13 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
     importers write the service per component, so a sidecar or agent deployed into many clusters shows where it runs
     without making its own service look like it runs in all of them.
 
+    A component that creates technology services is `provisions` them: a controller, operator, pipeline or job that
+    builds and reconciles the clusters, database clusters or VM pools of a product (Crossplane, Cluster API, a
+    Terraform controller). It is written on the component, which points down to what it creates, like `servedBy`; the
+    service page lists the component as incoming "provisions". `servedBy` says where the component itself runs,
+    `provisions` what it builds, and a service that is built elsewhere keeps running while its provisioner is down,
+    only changes stop. The impact of a provisioner is what it reaches: its outgoing relations.
+
     The computed `component/dependents` counts the components that depend on this one, which tells shared libraries
     and modules from components nobody consumes.
 
@@ -418,6 +425,7 @@ class Archsight::Resources::ApplicationComponent < Archsight::Resources::Base
   relation :realizedBy, :technologyComponents, :TechnologyNode
   relation :servedBy, :technologyComponents, :TechnologySystemSoftware
   relation :servedBy, :technologyServices, :TechnologyService
+  relation :provisions, :technologyServices, :TechnologyService
   relation :exposes, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationInterfaces, :ApplicationInterface
   relation :dependsOn, :applicationComponents, :ApplicationComponent
