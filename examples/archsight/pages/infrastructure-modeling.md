@@ -76,6 +76,22 @@ machine is a `TechnologyDevice` `locatedAt` its room, so the room page lists wha
   [[BusinessActor/Team:QA]] holds the compute partition for hypervisor regression tests, [[BusinessActor/Team:Kernel]]
   the kernel partition, so a team page lists the hardware the team holds.
 
+## Client devices
+
+A developer machine is a `TechnologyDevice` too, of a client `device/type` (`laptop`, `workstation`, `mobile`, ...) with its
+operating system, architecture, ownership and management state: [[TechnologyDevice/Device:Laptop:Dev01]] is a macOS laptop,
+[[TechnologyDevice/Device:Workstation:Dev02]] a Linux workstation. A client device moves and needs no room, so
+`archsight lint` does not ask for one.
+
+- The machines share one logical node, [[TechnologyNode/Node:Workstation:Developer]], `realizedBy` them; the operating
+  system is [[TechnologySystemSoftware/Tech:OS:macOS]] `realizedBy` that node. The networks they use are written once on
+  the node (`servedBy` the office network and the VPN), not per laptop.
+- A single named machine is `connects`-ed by its network: [[TechnologyCommunicationNetwork/Network:VPN:Remote]] names
+  [[TechnologyDevice/Device:Workstation:Secure01]], a hardened workstation (a `workstation` whose `device/model` says which
+  product) that runs its user's Windows in an isolated session, [[TechnologyNode/Node:Workstation:Secure01:Restricted]].
+  A machine that reaches no network (air-gapped) has neither relation.
+- The device itself never points to a network: a network is `realizedBy` its switches, so the reverse arrow would close a cycle.
+
 ```view
 apiVersion: architecture/v1alpha1
 kind: View
