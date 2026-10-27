@@ -10,6 +10,10 @@ module Archsight
     # Included sources may include others. An include inside a container takes blocks and edges only: a
     # `dataflow` or a `theme`/`legend`/`ranks` setting belongs to the whole diagram, so it is left out there
     # and reported in `Result#warnings`.
+    # `include "x" { prefix "p_" }` puts the prefix in front of every id the included diagram defines (nodes and
+    # dataflows, and the references to them inside it), so the same diagram can be included more than once;
+    # a node without a `label` keeps showing its unprefixed id. References to ids the diagram does not define
+    # are left alone: they name nodes of the including diagram.
     # Edges need no such care, they are resolved by id once the whole graph is built, so a fragment may link to
     # nodes of the diagram that includes it and the other way round.
     class Includes
@@ -69,7 +73,8 @@ module Archsight
         @sources[path] = source
         parsed = parse(path, source)
         parsed = drop_whole_diagram_statements(path, parsed, stmt.line) unless top
-        splice(parsed, stack + [path], top: top)
+        statements = splice(parsed, stack + [path], top: top)
+        stmt.prefix ? Prefixer.new(stmt.prefix).apply(statements) : statements
       end
 
       def load(path, line)
@@ -96,6 +101,67 @@ module Archsight
           @warnings << "include #{path.inspect} (line #{line}): the #{what} (line #{s.line}) is ignored, it only applies when included at the top level"
         end
         kept
+      end
+
+      # Puts a prefix in front of the ids a list of statements defines, and in front of the references to them
+      class Prefixer
+        def initialize(prefix)
+          @prefix = prefix
+          @defined = {}
+        end
+
+        def apply(statements)
+          collect(statements)
+          statements.each { |stmt| rename(stmt) }
+          statements
+        end
+
+        private
+
+        # Anonymous layers/stacks have ids no one can reference and that are unique already
+        def collect(statements)
+          statements.each do |stmt|
+            case stmt
+            when AST::Block
+              @defined[stmt.id] = true unless stmt.anonymous?
+              collect(stmt.children)
+            when AST::DataFlow then @defined[stmt.id] = true
+            end
+          end
+        end
+
+        def rename(stmt)
+          case stmt
+          when AST::Block then rename_block(stmt)
+          when AST::Edge
+            stmt.from = ref(stmt.from)
+            stmt.to = ref(stmt.to)
+          when AST::DataFlow then rename_dataflow(stmt)
+          end
+        end
+
+        def rename_block(block)
+          unless block.anonymous?
+            block.attrs["label"] ||= block.id # the label defaults to the id
+            block.id = ref(block.id)
+          end
+          block.children.each { |child| rename(child) }
+        end
+
+        def rename_dataflow(flow)
+          flow.attrs["label"] ||= flow.id
+          flow.id = ref(flow.id)
+          flow.hops.map! { |hop| hop.is_a?(AST::DataFlowGroup) ? rename_group(hop) : ref(hop) }
+        end
+
+        def rename_group(group)
+          group.branches.each { |branch| branch.hops.map! { |hop| ref(hop) } }
+          group
+        end
+
+        def ref(id)
+          @defined[id] ? "#{@prefix}#{id}" : id
+        end
       end
     end
   end

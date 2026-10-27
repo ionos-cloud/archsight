@@ -316,6 +316,8 @@ include "file://shared/network.asd"
 web -> db
 ```
 
+The options of an `include` go in braces after the path (`prefix`, see below).
+
 | Path | Included diagram |
 |------|------------------|
 | `archsight://<Kind>/<name>` | the `architecture/diagram` annotation of that resource |
@@ -328,6 +330,25 @@ wherever a `layer` or `stack` can: at the top level or inside a container
 diagrams may include others (up to 8 levels, 100 includes in all; a cycle is an
 error). Nodes are one namespace across all of it, so an id defined twice is an
 error, and an edge in either part may name a node of the other.
+
+### Including a diagram more than once
+
+Ids are one namespace, so including the same diagram twice would define
+every node twice. A `prefix` puts a string in front of every id the
+included diagram defines (nodes and dataflows, and the references to them inside
+it):
+
+```
+include "archsight://ApplicationComponent/Platform:Server" { prefix "a_" }
+include "archsight://ApplicationComponent/Platform:Server" { prefix "b_" }
+a_web -> b_db
+```
+
+A node without a `label` keeps showing its unprefixed id, and the same
+id from different includes no longer clashes. A reference inside the included diagram to an id it
+does not define names a node of the including diagram and stays as it is. Prefixes
+nest: a diagram included with `prefix "o_"` that itself includes one with `prefix "in_"` has
+`o_in_...` ids.
 
 Dataflows and `theme`/`legend`/`ranks` apply to the whole diagram: an included
 diagram holding them keeps them when it is included at the top level, and they are

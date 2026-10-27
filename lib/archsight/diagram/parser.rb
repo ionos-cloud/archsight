@@ -15,7 +15,8 @@ module Archsight
     # Grammar (informal):
     #   program    := statement*
     #   statement  := block | dataflow | edge | setting | include
-    #   include    := "include" STRING [";"]   -- top level, or where a container may hold blocks and edges
+    #   include    := "include" STRING ["{" "prefix" STRING "}"] [";"]
+    #                 -- top level, or where a container may hold blocks and edges
     #   setting    := ("theme" | "legend" | "ranks") STRING [";"]   -- top level only
     #   block      := (CONTAINER_KEYWORD | LEAF_KEYWORD) [STRING] "{" (attr | block | edge | include)* "}"
     #                 -- the id is required except for ANONYMOUS_KEYWORDS
@@ -152,8 +153,25 @@ module Archsight
       def include_statement
         keyword = cursor.advance
         path = cursor.advance
+        prefix = include_options(path.value) if cursor.check(:lbrace)
         cursor.consume(:semi)
-        AST::Include.new(path: path.value, line: keyword.line)
+        AST::Include.new(path: path.value, prefix: prefix, line: keyword.line)
+      end
+
+      # `{ prefix "cs_" }` after an include: the only option
+      def include_options(path)
+        cursor.advance
+        options = {}
+        until cursor.check(:rbrace)
+          line = cursor.current.line
+          key, value = cursor.check(:ident) ? attr : cursor.expect(:ident, "expected 'prefix' in the options of include #{path.inspect}")
+          raise ParseError, "unknown option '#{key}' of include #{path.inspect} at line #{line} (only 'prefix')" unless key == "prefix"
+          raise ParseError, "the prefix of include #{path.inspect} at line #{line} is empty" if value.empty?
+
+          store_attr(options, key, value, line, "include #{path.inspect}")
+        end
+        cursor.expect(:rbrace, "expected '}' to close the options of include #{path.inspect}")
+        options["prefix"]
       end
 
       # `theme "compact"`, `legend "right"` -- `theme -> x` is still an edge
