@@ -24,7 +24,7 @@ module Archsight::Web::API::PageHelpers
       next if counts.empty?
 
       { key: annotation.key, title: annotation.title, filter_type: annotation.filter.to_s,
-        values: counts.sort.map { |value, count| { value: value, count: count } } }
+        values: counts.sort_by { |value, count| [-count, value.to_s] }.map { |value, count| { value: value, count: count } } }
     end
   end
 

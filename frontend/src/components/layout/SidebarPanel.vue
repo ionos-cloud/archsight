@@ -19,6 +19,24 @@ const route = useRoute()
 const currentKind = computed(() => route.params.kind)
 const filters = ref([])
 
+// a filter with many values (tags) shows the most used ones; the rest is behind "more"
+const FILTER_LIMIT = 50
+const expanded = ref(new Set())
+
+function visibleValues(f) {
+  return expanded.value.has(f.key) ? f.values : f.values.slice(0, FILTER_LIMIT)
+}
+
+function hiddenCount(f) {
+  return Math.max(0, f.values.length - FILTER_LIMIT)
+}
+
+function toggleExpanded(key) {
+  const next = new Set(expanded.value)
+  if (!next.delete(key)) next.add(key)
+  expanded.value = next
+}
+
 // Pages and Kinds are tabs; the route picks the one that matches what is being viewed
 // (see useSidebarTab), and search follows the tab
 const { chosenTab, selectTab: chooseTab, TABS } = useSidebarTab()
@@ -69,6 +87,7 @@ function isCurrentKind(kindName) {
 }
 
 watch(currentKind, async (kind) => {
+  expanded.value = new Set()
   if (!kind) { filters.value = []; return }
   try {
     filters.value = await getKindFilters(kind)
@@ -126,9 +145,12 @@ function filterQuery(key, value) {
         </div>
         <nav class="annotation-filter">
           <div class="filter-chips">
-            <router-link v-for="v in f.values" :key="v.value" class="filter-chip" :to="pageFilterQuery(f.key, v.value)">
+            <router-link v-for="v in visibleValues(f)" :key="v.value" class="filter-chip" :to="pageFilterQuery(f.key, v.value)">
               {{ v.value }} <span class="kind-count">{{ v.count }}</span>
             </router-link>
+            <button v-if="hiddenCount(f)" type="button" class="filter-chip filter-more" @click="toggleExpanded(f.key)">
+              {{ expanded.has(f.key) ? 'show less' : `… ${hiddenCount(f)} more` }}
+            </button>
           </div>
         </nav>
       </div>
@@ -170,13 +192,16 @@ function filterQuery(key, value) {
           <div class="filter-label" :title="f.description">{{ f.title }}</div>
           <div class="filter-chips">
             <router-link
-              v-for="val in f.values"
-              :key="val"
+              v-for="v in visibleValues(f)"
+              :key="v.value"
               class="filter-chip"
-              :to="filterQuery(f.key, val)"
+              :to="filterQuery(f.key, v.value)"
             >
-              {{ val }}
+              {{ v.value }} <span class="kind-count">{{ v.count }}</span>
             </router-link>
+            <button v-if="hiddenCount(f)" type="button" class="filter-chip filter-more" @click="toggleExpanded(f.key)">
+              {{ expanded.has(f.key) ? 'show less' : `… ${hiddenCount(f)} more` }}
+            </button>
           </div>
         </div>
       </nav>
@@ -396,6 +421,13 @@ function filterQuery(key, value) {
   text-decoration: none;
   color: var(--pico-color);
   transition: all 0.2s ease;
+}
+
+.filter-more {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+  color: var(--pico-muted-color);
 }
 
 .filter-chip:hover {

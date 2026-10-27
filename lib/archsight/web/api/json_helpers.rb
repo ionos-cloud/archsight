@@ -190,7 +190,7 @@ module Archsight::Web::API::JsonHelpers
         title: annotation.title,
         description: annotation.description,
         filter_type: annotation.filter.to_s,
-        values: values
+        values: values.map { |value, count| { value: value, count: count } }
       }
     end
   end

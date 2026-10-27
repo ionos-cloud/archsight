@@ -1581,9 +1581,16 @@ components:
           description: Filter type (e.g., "select", "boolean")
         values:
           type: array
+          description: Available values with the number of instances using them, most used first
           items:
-            type: string
-          description: Available values for the filter
+            type: object
+            required: [value, count]
+            properties:
+              value:
+                type: string
+              count:
+                type: integer
+                description: Number of instances with this value
 
     AnalysisResult:
       type: object

@@ -68,6 +68,13 @@ class DatabaseTest < Minitest::Test
     assert_kind_of Array, filters
   end
 
+  def test_filters_for_kind_values_have_counts_most_used_first
+    @db.filters_for_kind("ApplicationComponent").map(&:last).each do |values|
+      values.each { |value, count| assert_operator count, :>=, 1, value }
+      assert_equal values.sort_by { |value, count| [-count, value.to_s] }, values
+    end
+  end
+
   def test_filters_for_nonexistent_kind
     filters = @db.filters_for_kind("NonexistentKind")
 

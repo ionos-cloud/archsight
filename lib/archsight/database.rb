@@ -109,11 +109,12 @@ module Archsight
       matches.first if matches.one?
     end
 
-    # Collect unique annotation values across all instances of a kind
+    # Annotation values across all instances of a kind with the number of instances using each,
+    # most used first (ties by value): [[value, count], ...]
     def annotation_values(kind, annotation)
       instances = instances_by_kind(kind).values
-      values = instances.flat_map { |inst| Array(annotation.value_for(inst)) }
-      values.compact.uniq.sort
+      counts = instances.flat_map { |inst| Array(annotation.value_for(inst)).compact.uniq }.tally
+      counts.sort_by { |value, count| [-count, value.to_s] }
     end
 
     # Get filterable annotations with their values for a kind (excludes empty)
