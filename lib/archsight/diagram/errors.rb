@@ -5,5 +5,6 @@ module Archsight
     class Error < StandardError; end
     class ParseError < Error; end
     class GraphError < Error; end
+    class IncludeError < Error; end
   end
 end

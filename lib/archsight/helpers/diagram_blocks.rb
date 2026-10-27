@@ -18,6 +18,7 @@ module Archsight
     module DiagramBlocks
       BLOCK = %r{<pre><code class="language-asd">(.*?)</code></pre>}m
       CACHE_LIMIT = 256
+      INCLUDE = /\binclude\s+"/
 
       @cache = {}
       @cache_lock = Mutex.new
@@ -26,11 +27,11 @@ module Archsight
 
       # @return [Array(String, Hash{String => String})] HTML with a placeholder per
       #   asd block, and the rendered replacement for each placeholder
-      def extract(html, resolver: nil)
+      def extract(html, resolver: nil, includes: nil)
         diagrams = {}
         replaced = html.gsub(BLOCK) do |block|
           placeholder = "<!--asd-diagram:#{diagrams.size}-->"
-          diagrams[placeholder] = render_block(::CGI.unescapeHTML(Regexp.last_match(1)), block, resolver: resolver)
+          diagrams[placeholder] = render_block(::CGI.unescapeHTML(Regexp.last_match(1)), block, resolver: resolver, includes: includes)
           placeholder
         end
         [replaced, diagrams]
@@ -44,9 +45,9 @@ module Archsight
 
       # A whole diagram definition (the `architecture/diagram` annotation) as
       # inline SVG, or the error box plus the source if it doesn't render.
-      def render_diagram(source, resolver: nil)
+      def render_diagram(source, resolver: nil, includes: nil)
         escaped = ::Rack::Utils.escape_html(source)
-        render_block(source, %(<pre><code class="language-asd">#{escaped}</code></pre>), resolver: resolver)
+        render_block(source, %(<pre><code class="language-asd">#{escaped}</code></pre>), resolver: resolver, includes: includes)
       end
 
       # A diagram for the editor preview: the same SVG (and cache) as a rendered page, but a diagram that
@@ -54,8 +55,8 @@ module Archsight
       # that repeats the source, which the editor already shows.
       #
       # @return [Hash] `{ html: "<figure ...>", error: nil }` or `{ html: nil, error: "message" }`
-      def preview(source, resolver: nil)
-        { html: render_svg(source, resolver: resolver), error: nil }
+      def preview(source, resolver: nil, includes: nil)
+        { html: render_svg(source, resolver: resolver, includes: includes), error: nil }
       rescue Archsight::Diagram::Error => e
         { html: nil, error: e.message }
       end
@@ -73,40 +74,54 @@ module Archsight
       # `resource "..."` references resolve against the database, which can
       # change under a cached render (a reload, an edit), so the outcome of
       # each reference is part of the key.
-      def render_block(source, original, resolver: nil)
-        render_svg(source, resolver: resolver)
+      def render_block(source, original, resolver: nil, includes: nil)
+        render_svg(source, resolver: resolver, includes: includes)
       rescue Archsight::Diagram::Error => e
         message = ::Rack::Utils.escape_html(e.message)
         %(<div class="asd-diagram-error"><p><strong>Diagram error:</strong> #{message}</p>#{original}</div>)
       end
 
       # @raise [Archsight::Diagram::Error] if the source does not render
-      def render_svg(source, resolver: nil)
-        key = fingerprint(source, resolver: resolver)
+      def render_svg(source, resolver: nil, includes: nil)
+        key = fingerprint(source, resolver: resolver, includes: includes)
         cached(key) do
-          svg = Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver)
+          warnings = [] #: Array[String]
+          svg = Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver, includes: includes, warnings: warnings)
+          warnings.each { |message| warn "Diagram: #{message}" }
           %(<figure class="asd-diagram">#{svg.sub(/\A<\?xml[^>]*\?>\s*/, "")}</figure>)
         end
       end
 
       # The cache key of a diagram: its source plus how each `resource` reference resolves right now. It
-      # changes exactly when the rendered diagram would, so it is also a good ETag.
-      def fingerprint(source, resolver: nil)
-        ::Digest::SHA256.hexdigest([source, resolutions(source, resolver)].inspect)[0, 12]
+      # changes exactly when the rendered diagram would, so it is also a good ETag. The diagrams it includes
+      # are part of it: their sources, and how their `resource` references resolve.
+      def fingerprint(source, resolver: nil, includes: nil)
+        included = included_sources(source, includes)
+        ::Digest::SHA256.hexdigest([source, included, resolutions([source, *included.values], resolver)].inspect)[0, 12]
       end
 
       # A diagram as a standalone SVG document (what the assets API serves for an .asd file), cached by
       # fingerprint like the inline diagrams.
       # @raise [Archsight::Diagram::Error] if the source does not render
-      def standalone_svg(source, resolver: nil)
-        key = fingerprint(source, resolver: resolver)
-        cached("svg-#{key}") { Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver) }
+      def standalone_svg(source, resolver: nil, includes: nil)
+        key = fingerprint(source, resolver: resolver, includes: includes)
+        cached("svg-#{key}") { Archsight::Diagram.render(source, id_prefix: "asd#{key}", resolver: resolver, includes: includes) }
       end
 
-      def resolutions(source, resolver)
+      # `{ path => source }` of the diagrams `source` includes, recursively; empty for a source that includes
+      # none (checked on the text first: most diagrams include nothing and need not be parsed twice)
+      # @raise [Archsight::Diagram::Error] if the source or an included one is not a valid diagram
+      def included_sources(source, includes)
+        return {} unless includes && source.match?(INCLUDE)
+
+        Archsight::Diagram.expand(source, includes: includes).sources
+      end
+
+      def resolutions(sources, resolver)
         return [] unless resolver
 
-        source.scan(/\bresource\s+"([^"]*)"/).flatten.uniq.map { |reference| [reference, resolver.call(reference)] }
+        references = sources.flat_map { |source| source.scan(/\bresource\s+"([^"]*)"/).flatten }
+        references.uniq.map { |reference| [reference, resolver.call(reference)] }
       end
 
       def cached(key)

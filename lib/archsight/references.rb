@@ -26,9 +26,10 @@ module Archsight
     # Adds the derived relations to every resource of the database.
     def derive!(database)
       finder = Finder.new(database)
+      includes = Helpers::DiagramIncludes.for(database)
       database.instances.values.flat_map(&:values).each do |inst|
         text_sources(inst).each { |markdown| mentions(markdown, finder).each { |target| link(inst, :mentions, target) } }
-        diagram_sources(inst, database).each { |source| depictions(source, finder).each { |target| link(inst, :depicts, target) } }
+        diagram_sources(inst, database).each { |source| depictions(source, finder, includes).each { |target| link(inst, :depicts, target) } }
       end
     end
 
@@ -44,8 +45,8 @@ module Archsight
     # The resources the nodes of a diagram source name with `resource "..."`; a source that is not a valid diagram
     # names none.
     # @return [Array<Base>]
-    def depictions(source, finder)
-      Diagram.resource_references(source).filter_map { |reference| finder.reference(reference) }
+    def depictions(source, finder, includes = nil)
+      Diagram.resource_references(source, includes: includes).filter_map { |reference| finder.reference(reference) }
     rescue Diagram::Error
       []
     end

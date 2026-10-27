@@ -43,6 +43,7 @@ archsight diagram three_tier.asd --relation=all    # also show control/data-flow
 archsight diagram overview.asd --theme=compact     # denser spacing + smaller fonts (or cozy, tight)
 archsight diagram overview.asd --legend=bottom     # legend below (or right/left/top/none; default auto)
 archsight diagram *.asd                            # render every file to its own .svg
+archsight diagram app.asd --resources=model/       # resolve include \"file://...\" paths from this directory
 archsight diagram --format *.asd                   # re-indent the sources in place
 archsight diagram --format --check *.asd           # list unformatted sources, exit 1 if any (CI)
 ```
@@ -297,6 +298,48 @@ resource database, so there `resource` is accepted but inert -- no link and
 no broken styling. Library users pass a `resolver:` to `Diagram.render`
 (any `call(reference)` returning a URL, `nil` for a resource that exists but has nowhere to link to (the node stays as it is), `:missing` or `:ambiguous`, see
 `Archsight::Helpers::ResourceResolver`) and, to collect failures, `unresolved: []`.
+
+## Including diagrams
+
+`include "<path>"` splices another diagram in at that position, so a part
+that several diagrams share (a platform, a network, a team's services) is
+written once:
+
+```
+group "app" {
+  component "web" { label "Web server" }
+  stack {
+    include "archsight://ApplicationComponent/Platform:Database"
+  }
+}
+include "file://shared/network.asd"
+web -> db
+```
+
+| Path | Included diagram |
+|------|------------------|
+| `archsight://<Kind>/<name>` | the `architecture/diagram` annotation of that resource |
+| `file://<path>` | an `.asd` file, relative to the resources directory (also in nested includes) |
+
+A path that leaves the resources directory (`..`, absolute paths, symlinks
+pointing out) or is not an `.asd` file is refused. An `include` stands
+wherever a `layer` or `stack` can: at the top level or inside a container
+(not inside a leaf like `component`, and not together with `columns`). Included
+diagrams may include others (up to 8 levels, 100 includes in all; a cycle is an
+error). Nodes are one namespace across all of it, so an id defined twice is an
+error, and an edge in either part may name a node of the other.
+
+Dataflows and `theme`/`legend`/`ranks` apply to the whole diagram: an included
+diagram holding them keeps them when it is included at the top level, and they are
+ignored, with a warning, when it is included inside a container. The warning is
+written to the server log and listed by `archsight lint`.
+
+A missing resource or file, a bad path or a broken included diagram fails the
+diagram with an error that names the include (`archsight lint` reports it). Standalone
+`archsight diagram` takes `file://` paths relative to `--resources DIR` (default:
+the directory of the input) and has no `archsight://`. Library users pass `includes:` to
+`Diagram.render`, any `call(path)` returning the source or `:missing`, `:forbidden` or `:invalid`
+(see `Archsight::Helpers::DiagramIncludes`), and `warnings: []` to collect the warnings.
 
 ## Diagrams in markdown
 

@@ -470,4 +470,30 @@ class DiagramParserTest < Minitest::Test
     assert_match(/duplicate attribute 'style' in edge a -> b at line 1/, edge.message)
     assert_match(/duplicate attribute 'color' in dataflow "f"/, flow.message)
   end
+
+  def test_include_is_a_statement_at_the_top_level_and_in_containers
+    stmts = Archsight::Diagram::Parser.parse(%(include "file://a.asd"\ngroup "g" { include "archsight://K/n"; component "c" { } }\n))
+
+    assert_equal [Archsight::Diagram::AST::Include, Archsight::Diagram::AST::Block], stmts.map(&:class)
+    assert_equal "file://a.asd", stmts.first.path
+    assert_equal ["archsight://K/n"], stmts.last.children.grep(Archsight::Diagram::AST::Include).map(&:path)
+  end
+
+  def test_include_is_not_allowed_in_a_leaf_block
+    error = assert_raises(Archsight::Diagram::ParseError) { Archsight::Diagram::Parser.parse(%(component "a" { include "x" }\n)) }
+
+    assert_includes error.message, "cannot contain"
+  end
+
+  def test_include_cannot_be_combined_with_columns
+    source = %(group "g" { columns "2"; component "a" { } include "x" }\n)
+
+    assert_raises(Archsight::Diagram::ParseError) { Archsight::Diagram::Parser.parse(source) }
+  end
+
+  def test_a_node_may_still_be_named_include
+    stmts = Archsight::Diagram::Parser.parse(%(component "include" { }\ninclude -> other\n))
+
+    assert_kind_of Archsight::Diagram::AST::Edge, stmts.last
+  end
 end

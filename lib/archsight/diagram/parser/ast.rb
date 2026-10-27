@@ -43,6 +43,10 @@ module Archsight
       # own attrs at graph-resolution time).
       DataFlowBranch = Struct.new(:hops, :attrs, :line, keyword_init: true)
 
+      # `include "<path>"` -- another diagram spliced in at this position (see `Includes`). Parsed like any
+      # statement, replaced by the included statements before the graph is built, so nothing downstream sees it.
+      Include = Struct.new(:path, :line, keyword_init: true)
+
       # A top-level diagram-wide `key "value"` setting -- currently only
       # `theme "compact"` (see `Theme`).
       Setting = Struct.new(:key, :value, :line, keyword_init: true)

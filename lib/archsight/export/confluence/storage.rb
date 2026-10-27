@@ -146,10 +146,15 @@ module Archsight
         # A diagram from asd source (fenced block, .asd file) as block XML
         def diagram(source, stem)
           stem ||= "#{@page_name}-diagram-#{@diagrams += 1}"
-          figure(Archsight::Diagram.render(source, resolver: @diagram_links), stem)
+          figure(Archsight::Diagram.render(source, resolver: @diagram_links, includes: diagram_includes), stem)
         rescue Archsight::Diagram::Error => e
           problem("diagram #{stem}: #{e.message}")
           ""
+        end
+
+        # `include "file://..."` / `archsight://...` in a diagram: the page's database, else only files of the resources directory
+        def diagram_includes
+          Helpers::DiagramIncludes.new(@database, resources_dir: @resources_dir)
         end
 
         # An image that must not sit inside a paragraph (a diagram), nil for ordinary images

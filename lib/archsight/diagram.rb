@@ -5,6 +5,7 @@ require_relative "diagram/style/theme"
 require_relative "diagram/parser/lexer"
 require_relative "diagram/parser"
 require_relative "diagram/parser/ast"
+require_relative "diagram/includes"
 require_relative "diagram/graph"
 require_relative "diagram/resource_links"
 require_relative "diagram/layout"
@@ -33,9 +34,14 @@ module Archsight
     # `resolver` turns a node's `resource "..."` reference into a link (see
     # `ResourceLinks`); `unresolved`, if an Array, collects the references it
     # couldn't resolve.
+    # `includes` loads the diagrams that `include "<path>"` statements name (see `Includes`); without it
+    # a source that includes anything does not render. `warnings`, if an Array, collects what the includes left
+    # out (see `Includes`).
     def self.render(source, relation_filter: Relations::DEFAULT_FILTER, profile: nil, style: nil, theme: nil, legend: nil, id_prefix: nil,
-                    resolver: nil, unresolved: nil)
-      statements = time(profile, :parse) { Parser.parse(source) }
+                    resolver: nil, unresolved: nil, includes: nil, warnings: nil)
+      statements = time(profile, :parse) do
+        expand(source, includes: includes).tap { |expanded| warnings&.concat(expanded.warnings) }.statements
+      end
       graph = time(profile, :graph) do
         Graph.build(statements).tap { |g| ResourceLinks.apply(g, resolver, unresolved) }
       end
@@ -47,8 +53,18 @@ module Archsight
     # The `resource "..."` references of the nodes of a diagram source, in order and without duplicates. Parses and
     # builds the graph but does not lay it out, so it is cheap enough to run over every diagram of a model.
     # @raise [Archsight::Diagram::Error] if the source is not a valid diagram
-    def self.resource_references(source)
-      Graph.build(Parser.parse(source)).nodes_by_id.values.filter_map { |node| node.attrs["resource"] }.uniq
+    def self.resource_references(source, includes: nil)
+      Graph.build(expand(source, includes: includes).statements).nodes_by_id.values.filter_map { |node| node.attrs["resource"] }.uniq
+    end
+
+    # Parses `source` and splices in the diagrams it includes.
+    # @return [Includes::Result] the statements, and the sources that were included (`{ path => source }`)
+    # @raise [Archsight::Diagram::Error] if the source or an included one is not a valid diagram
+    def self.expand(source, includes: nil)
+      statements = Parser.parse(source)
+      return Includes::Result.new(statements: statements, sources: {}, warnings: []) unless Includes.includes?(statements)
+
+      Includes.expand(statements, includes)
     end
 
     def self.time(profile, key)
