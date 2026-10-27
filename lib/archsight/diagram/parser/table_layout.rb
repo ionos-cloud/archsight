@@ -20,6 +20,8 @@ module Archsight
 
           raise ParseError, "#{label} at line #{line}: columns must be a positive integer, got #{raw.inspect}" unless raw.match?(/\A[1-9]\d*\z/)
 
+          raise ParseError, "#{label} at line #{line}: columns cannot be combined with include (the included blocks are not known yet)" if children.any?(AST::Include)
+
           blocks, edges = children.partition { |c| c.is_a?(AST::Block) }
           count = [raw.to_i, blocks.length].min
           return children if blocks.empty?

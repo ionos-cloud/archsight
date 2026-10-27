@@ -3,6 +3,7 @@
 require "optparse"
 require_relative "."
 require_relative "formatter"
+require_relative "../helpers/diagram_includes"
 
 module Archsight
   module Diagram
@@ -79,6 +80,8 @@ module Archsight
           opts.on("-p", "--profile", "Print stage timing stats after each render") do
             options[:profile] = true
           end
+          opts.on("--resources=DIR", "Directory that include \"file://...\" paths are relative to " \
+                                     "(default: the input file's directory)") { |v| options[:resources] = v }
           opts.on("--format", "Re-indent the inputs in place instead of rendering them (-o: write a single input there)") do
             options[:format] = true
           end
@@ -155,7 +158,9 @@ module Archsight
         total_start = Process.clock_gettime(Process::CLOCK_MONOTONIC) if profile
 
         svg = Archsight::Diagram.render(File.read(input), relation_filter: options[:relation_filter], profile: stats,
-                                                          style: options[:style], theme: options[:theme], legend: options[:legend])
+                                                          style: options[:style], theme: options[:theme], legend: options[:legend],
+                                                          includes: includes_for(input, options), warnings: warnings = [])
+        warnings.each { |message| warn "archsight-diagram: #{input}: #{message}" }
 
         write_start = Process.clock_gettime(Process::CLOCK_MONOTONIC) if profile
         File.write(output, svg)
@@ -170,6 +175,11 @@ module Archsight
       rescue Errno::ENOENT => e
         warn "archsight-diagram: #{e.message}"
         1
+      end
+
+      # Standalone, `include` reads `file://` paths only (there is no model for `archsight://`)
+      def includes_for(input, options)
+        Helpers::DiagramIncludes.new(nil, resources_dir: options[:resources] || File.dirname(File.expand_path(input)))
       end
 
       def print_stats(stats, total_start)

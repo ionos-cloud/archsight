@@ -161,7 +161,8 @@ class Archsight::Web::Application < Sinatra::Base
       html = Archsight::Markdown.document(data).to_html
       html = Archsight::Helpers::AssetImages.rewrite(html, base_dir: base, resources_dir: Archsight.resources_dir) if base
       # ```asd blocks become placeholders until the text passes below are done (see DiagramBlocks)
-      html, diagrams = Archsight::Helpers::DiagramBlocks.extract(html, resolver: Archsight::Helpers::ResourceResolver.new(db))
+      html, diagrams = Archsight::Helpers::DiagramBlocks.extract(html, resolver: Archsight::Helpers::ResourceResolver.new(db),
+                                                                       includes: Archsight::Helpers::DiagramIncludes.for(db))
       # so are ```view and ```requirements blocks (see ViewBlocks, RequirementsBlocks)
       html, views = Archsight::Helpers::ViewBlocks.extract(html)
       html, requirements = Archsight::Helpers::RequirementsBlocks.extract(html)

@@ -179,9 +179,10 @@ module Archsight::Web::API::Routes
       resolver = Archsight::Helpers::ResourceResolver.new(db)
       headers "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; sandbox"
       cache_control :public, :must_revalidate, max_age: 0
-      etag Archsight::Helpers::DiagramBlocks.fingerprint(source, resolver: resolver)
+      includes = Archsight::Helpers::DiagramIncludes.for(db)
+      etag Archsight::Helpers::DiagramBlocks.fingerprint(source, resolver: resolver, includes: includes)
       content_type "image/svg+xml"
-      Archsight::Helpers::DiagramBlocks.standalone_svg(source, resolver: resolver)
+      Archsight::Helpers::DiagramBlocks.standalone_svg(source, resolver: resolver, includes: includes)
     rescue Archsight::Diagram::Error => e
       json_error("Diagram does not render: #{e.message}", status: 422, error_type: "DiagramError")
     end
@@ -201,7 +202,7 @@ module Archsight::Web::API::Routes
     json_error("A JSON body with a 'source' string is required", status: 400, error_type: "BadRequest") unless source.is_a?(String)
 
     resolver = Archsight::Helpers::ResourceResolver.new(db)
-    json_response(Archsight::Helpers::DiagramBlocks.preview(source, resolver: resolver))
+    json_response(Archsight::Helpers::DiagramBlocks.preview(source, resolver: resolver, includes: Archsight::Helpers::DiagramIncludes.for(db)))
   end
 
   # POST /api/v1/kinds/Analysis/instances/:name/execute - Execute an analysis

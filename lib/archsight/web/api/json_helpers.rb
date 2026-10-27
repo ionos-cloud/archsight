@@ -106,7 +106,8 @@ module Archsight::Web::API::JsonHelpers
     source = annotations[DIAGRAM_ANNOTATION_KEY]
     return unless source.is_a?(String) && !source.strip.empty?
 
-    Archsight::Helpers::DiagramBlocks.render_diagram(source, resolver: Archsight::Helpers::ResourceResolver.new(db))
+    Archsight::Helpers::DiagramBlocks.render_diagram(source, resolver: Archsight::Helpers::ResourceResolver.new(db),
+                                                             includes: Archsight::Helpers::DiagramIncludes.for(db))
   end
 
   # The values of markdown annotations are rendered to HTML: architecture/description and every annotation the

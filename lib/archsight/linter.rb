@@ -24,6 +24,7 @@ module Archsight
     def initialize(database)
       @database = database
       @errors = []
+      @diagram_warnings = []
     end
 
     def validate
@@ -47,7 +48,7 @@ module Archsight
     # annotations their kind marks `deprecated:`. They are not errors, so they do not make `archsight lint` fail.
     def warnings
       renamed = @database.respond_to?(:deprecations) ? @database.deprecations.map(&:to_s) : []
-      renamed + deprecated_annotations
+      renamed + deprecated_annotations + @diagram_warnings
     end
 
     # Structural modeling checks (rules of "Choosing the Kind", see Linter::Structure). Warnings, never errors.
@@ -402,12 +403,19 @@ module Archsight
     # Renders with the same resolver the web UI uses, so a `resource` reference that would show as a broken link there is reported here
     def render_diagram_source(instance, where, source)
       unresolved = []
-      Archsight::Diagram.render(source, resolver: Helpers::ResourceResolver.new(@database), unresolved: unresolved)
+      warnings = []
+      Archsight::Diagram.render(source, resolver: Helpers::ResourceResolver.new(@database), unresolved: unresolved,
+                                        includes: diagram_includes, warnings: warnings)
+      warnings.each { |message| @diagram_warnings << "#{instance.path_ref}: Diagram in #{where}: #{message}" }
       unresolved.each do |u|
         @errors << "#{instance.path_ref}: Diagram resource link #{u[:reference].inspect} #{u[:reason]} in #{where} (node #{u[:node].inspect}, line #{u[:line]})"
       end
     rescue Archsight::Diagram::Error => e
       @errors << "#{instance.path_ref}: Diagram error in #{where}: #{e.message}"
+    end
+
+    def diagram_includes
+      @diagram_includes ||= Helpers::DiagramIncludes.for(@database)
     end
 
     def validate_view_fields(instance)

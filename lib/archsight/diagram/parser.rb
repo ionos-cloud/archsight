@@ -14,9 +14,11 @@ module Archsight
     #
     # Grammar (informal):
     #   program    := statement*
-    #   statement  := block | dataflow | edge | setting
+    #   statement  := block | dataflow | edge | setting | include
+    #   include    := "include" STRING ["{" "namespace" STRING "}"] [";"]
+    #                 -- top level, or where a container may hold blocks and edges
     #   setting    := ("theme" | "legend" | "ranks") STRING [";"]   -- top level only
-    #   block      := (CONTAINER_KEYWORD | LEAF_KEYWORD) [STRING] "{" (attr | block | edge)* "}"
+    #   block      := (CONTAINER_KEYWORD | LEAF_KEYWORD) [STRING] "{" (attr | block | edge | include)* "}"
     #                 -- the id is required except for ANONYMOUS_KEYWORDS
     #   dataflow   := "dataflow" STRING "{" (hop | hop_group | attr)* "}"
     #                 -- needs >= 2 hops (per branch, if a hop_group is present);
@@ -45,6 +47,7 @@ module Archsight
       # `layer`/`stack` may be used without an id, purely as a layout hint
       # (see AST::Block#anonymous) — a `group`/`boundary` always renders a
       # visible box, so an unnamed one wouldn't make sense the same way.
+      NAMESPACE = /\A[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*\z/
       ANONYMOUS_KEYWORDS = %w[layer stack].freeze
       SETTING_KEYWORDS = %w[theme legend ranks].freeze
       EDGE_ARROWS = {
@@ -55,13 +58,16 @@ module Archsight
 
       attr_reader :cursor
 
-      def self.parse(source)
-        new(source).parse
+      # `anon_scope` namespaces the ids of anonymous layers/stacks, so the statements of an included
+      # source (parsed on its own) never collide with those of the including one.
+      def self.parse(source, anon_scope: nil)
+        new(source, anon_scope: anon_scope).parse
       end
 
-      def initialize(source)
+      def initialize(source, anon_scope: nil)
         @cursor = TokenCursor.new(Lexer.new(source).tokenize)
         @anon_counter = 0
+        @anon_scope = anon_scope
       end
 
       def parse
@@ -75,6 +81,8 @@ module Archsight
       def statement
         if check_block_keyword?
           block
+        elsif include_directive?
+          include_statement
         elsif cursor.check(:ident, "dataflow") && cursor.peek_type(1) == :string
           DataflowParser.new(cursor).parse
         elsif cursor.check(:ident) && EDGE_ARROWS.key?(cursor.peek_type(1))
@@ -108,22 +116,16 @@ module Archsight
         children = []
 
         parse_attrs_until_rbrace(attrs, label, expected: "an attribute, a nested block, an edge") do
-          if check_block_keyword?
-            children << block
-            true
-          elsif cursor.check(:ident) && EDGE_ARROWS.key?(cursor.peek_type(1))
-            children << edge
-            true
-          else
-            false
-          end
+          child = container_child
+          children << child if child
+          child
         end
 
         cursor.expect(:rbrace, "expected '}' to close #{label}")
 
         if LEAF_KEYWORDS.include?(kind_token.value) && !children.empty?
           raise ParseError, "#{label} at line #{kind_token.line} cannot " \
-                            "contain nested blocks or edges (did you mean 'group'?)"
+                            "contain nested blocks, edges or includes (did you mean 'group'?)"
         end
 
         raise ParseError, "#{label} at line #{kind_token.line}: columns only applies to containers" if LEAF_KEYWORDS.include?(kind_token.value) && attrs.key?("columns")
@@ -131,6 +133,46 @@ module Archsight
         children = expand_columns(attrs, children, label, kind_token.line)
 
         AST::Block.new(kind: kind, id: id, anonymous: anonymous, attrs: attrs, children: children, line: kind_token.line)
+      end
+
+      # The nested block, edge or include at the cursor, nil if it is something else (an attribute)
+      def container_child
+        if check_block_keyword?
+          block
+        elsif include_directive?
+          include_statement
+        elsif cursor.check(:ident) && EDGE_ARROWS.key?(cursor.peek_type(1))
+          edge
+        end
+      end
+
+      # `include "<path>"` -- `include -> x` is still an edge, so a node may be named "include"
+      def include_directive?
+        cursor.check(:ident, "include") && cursor.peek_type(1) == :string
+      end
+
+      def include_statement
+        keyword = cursor.advance
+        path = cursor.advance
+        namespace = include_options(path.value) if cursor.check(:lbrace)
+        cursor.consume(:semi)
+        AST::Include.new(path: path.value, namespace: namespace, line: keyword.line)
+      end
+
+      # `{ namespace "cs" }` after an include: the only option
+      def include_options(path)
+        cursor.advance
+        options = {}
+        until cursor.check(:rbrace)
+          line = cursor.current.line
+          key, value = cursor.check(:ident) ? attr : cursor.expect(:ident, "expected 'namespace' in the options of include #{path.inspect}")
+          raise ParseError, "unknown option '#{key}' of include #{path.inspect} at line #{line} (only 'namespace')" unless key == "namespace"
+          raise ParseError, "the namespace #{value.inspect} of include #{path.inspect} at line #{line} must be a name like \"cs\" or \"a.b\"" unless value.match?(NAMESPACE)
+
+          store_attr(options, key, value, line, "include #{path.inspect}")
+        end
+        cursor.expect(:rbrace, "expected '}' to close the options of include #{path.inspect}")
+        options["namespace"]
       end
 
       # `theme "compact"`, `legend "right"` -- `theme -> x` is still an edge
@@ -145,7 +187,7 @@ module Archsight
 
       def next_anonymous_id
         @anon_counter += 1
-        "__asd_anon_#{@anon_counter}"
+        "__asd_anon_#{@anon_scope}#{@anon_counter}"
       end
 
       # What a human should see identifying this block in an error message
