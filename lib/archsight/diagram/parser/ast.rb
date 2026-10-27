@@ -43,10 +43,10 @@ module Archsight
       # own attrs at graph-resolution time).
       DataFlowBranch = Struct.new(:hops, :attrs, :line, keyword_init: true)
 
-      # `include "<path>" [{ prefix "p_" }]` -- another diagram spliced in at this position (see `Includes`).
+      # `include "<path>" [{ namespace "cs" }]` -- another diagram spliced in at this position (see `Includes`).
       # Parsed like any statement, replaced by the included statements before the graph is built, so nothing
-      # downstream sees it. `prefix`, if any, is put in front of every id the included diagram defines.
-      Include = Struct.new(:path, :prefix, :line, keyword_init: true)
+      # downstream sees it. `namespace`, if any, puts `<namespace>.` in front of every id the included diagram defines.
+      Include = Struct.new(:path, :namespace, :line, keyword_init: true)
 
       # A top-level diagram-wide `key "value"` setting -- currently only
       # `theme "compact"` (see `Theme`).

@@ -10,7 +10,7 @@ module Archsight
     # Included sources may include others. An include inside a container takes blocks and edges only: a
     # `dataflow` or a `theme`/`legend`/`ranks` setting belongs to the whole diagram, so it is left out there
     # and reported in `Result#warnings`.
-    # `include "x" { prefix "p_" }` puts the prefix in front of every id the included diagram defines (nodes and
+    # `include "x" { namespace "cs" }` puts `cs.` in front of every id the included diagram defines (nodes and
     # dataflows, and the references to them inside it), so the same diagram can be included more than once;
     # a node without a `label` keeps showing its unprefixed id. References to ids the diagram does not define
     # are left alone: they name nodes of the including diagram.
@@ -74,7 +74,7 @@ module Archsight
         parsed = parse(path, source)
         parsed = drop_whole_diagram_statements(path, parsed, stmt.line) unless top
         statements = splice(parsed, stack + [path], top: top)
-        stmt.prefix ? Prefixer.new(stmt.prefix).apply(statements) : statements
+        stmt.namespace ? Namespacer.new(stmt.namespace).apply(statements) : statements
       end
 
       def load(path, line)
@@ -103,10 +103,10 @@ module Archsight
         kept
       end
 
-      # Puts a prefix in front of the ids a list of statements defines, and in front of the references to them
-      class Prefixer
-        def initialize(prefix)
-          @prefix = prefix
+      # Puts `<namespace>.` in front of the ids a list of statements defines, and of the references to them
+      class Namespacer
+        def initialize(namespace)
+          @prefix = "#{namespace}."
           @defined = {}
         end
 

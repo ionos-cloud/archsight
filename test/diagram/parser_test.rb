@@ -497,14 +497,15 @@ class DiagramParserTest < Minitest::Test
     assert_kind_of Archsight::Diagram::AST::Edge, stmts.last
   end
 
-  def test_include_takes_a_prefix
-    stmts = Archsight::Diagram::Parser.parse(%(include "file://a.asd" { prefix "cs_" }\ninclude "file://b.asd"\n))
+  def test_include_takes_a_namespace
+    stmts = Archsight::Diagram::Parser.parse(%(include "file://a.asd" { namespace "cs" }\ninclude "file://b.asd"\n))
 
-    assert_equal ["cs_", nil], stmts.map(&:prefix)
+    assert_equal ["cs", nil], stmts.map(&:namespace)
   end
 
   def test_include_options_are_checked
-    ['include "x" { color "red" }', 'include "x" { prefix "" }', 'include "x" { prefix "a"; prefix "b" }', 'include "x" { prefix }'].each do |source|
+    ['include "x" { color "red" }', 'include "x" { namespace "" }', 'include "x" { namespace "a b" }', 'include "x" { namespace "a."}',
+     'include "x" { namespace "a"; namespace "b" }', 'include "x" { namespace }'].each do |source|
       assert_raises(Archsight::Diagram::ParseError, source) { Archsight::Diagram::Parser.parse("#{source}\n") }
     end
   end

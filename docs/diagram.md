@@ -316,7 +316,7 @@ include "file://shared/network.asd"
 web -> db
 ```
 
-The options of an `include` go in braces after the path (`prefix`, see below).
+The options of an `include` go in braces after the path (`namespace`, see below).
 
 | Path | Included diagram |
 |------|------------------|
@@ -334,21 +334,21 @@ error, and an edge in either part may name a node of the other.
 ### Including a diagram more than once
 
 Ids are one namespace, so including the same diagram twice would define
-every node twice. A `prefix` puts a string in front of every id the
+every node twice. A `namespace` puts `<namespace>.` in front of every id the
 included diagram defines (nodes and dataflows, and the references to them inside
 it):
 
 ```
-include "archsight://ApplicationComponent/Platform:Server" { prefix "a_" }
-include "archsight://ApplicationComponent/Platform:Server" { prefix "b_" }
-a_web -> b_db
+include "archsight://ApplicationComponent/Platform:Server" { namespace "a" }
+include "archsight://ApplicationComponent/Platform:Server" { namespace "b" }
+a.web -> b.db
 ```
 
-A node without a `label` keeps showing its unprefixed id, and the same
+A node without a `label` keeps showing its own id (`web`, not `a.web`), and the same
 id from different includes no longer clashes. A reference inside the included diagram to an id it
-does not define names a node of the including diagram and stays as it is. Prefixes
-nest: a diagram included with `prefix "o_"` that itself includes one with `prefix "in_"` has
-`o_in_...` ids.
+does not define names a node of the including diagram and stays as it is. Namespaces
+nest: a diagram included with `namespace "o"` that itself includes one with `namespace "in"` has
+`o.in.…` ids. A namespace is a name of letters, digits, `_` and `-`, joined by dots.
 
 Dataflows and `theme`/`legend`/`ranks` apply to the whole diagram: an included
 diagram holding them keeps them when it is included at the top level, and they are

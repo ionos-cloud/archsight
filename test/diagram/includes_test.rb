@@ -135,40 +135,40 @@ class DiagramIncludesTest < Minitest::Test
 
   def edges(statements) = statements.flat_map { |s| s.is_a?(Archsight::Diagram::AST::Block) ? edges(s.children) : [s] }.grep(Archsight::Diagram::AST::Edge)
 
-  def test_the_same_diagram_can_be_included_twice_with_prefixes
-    source = %(component "outer" { }\ninclude "pair" { prefix "a_" }\ninclude "pair" { prefix "b_" }\n)
+  def test_the_same_diagram_can_be_included_twice_with_namespaces
+    source = %(component "outer" { }\ninclude "pair" { namespace "a" }\ninclude "pair" { namespace "b" }\n)
     all = ids(expand(source).statements)
 
     assert_equal all.uniq, all
-    assert_equal %w[outer a_g a_web a_db b_g b_web b_db], all
+    assert_equal %w[outer a.g a.web a.db b.g b.web b.db], all
   end
 
   def test_a_prefix_renames_the_references_inside_but_not_those_to_the_including_diagram
-    statements = expand(%(include "pair" { prefix "a_" }\n)).statements
+    statements = expand(%(include "pair" { namespace "a" }\n)).statements
 
-    assert_equal([%w[a_web a_db], %w[a_web outer]], edges(statements).map { |e| [e.from, e.to] })
+    assert_equal([%w[a.web a.db], %w[a.web outer]], edges(statements).map { |e| [e.from, e.to] })
     flows = statements.grep(Archsight::Diagram::AST::DataFlow)
 
-    assert_equal %w[a_flow a_fan], flows.map(&:id)
-    assert_equal %w[a_web a_db], flows.first.hops
-    assert_equal [%w[a_db], %w[outer]], flows.last.hops.last.branches.map(&:hops)
+    assert_equal %w[a.flow a.fan], flows.map(&:id)
+    assert_equal %w[a.web a.db], flows.first.hops
+    assert_equal [%w[a.db], %w[outer]], flows.last.hops.last.branches.map(&:hops)
   end
 
-  def test_a_prefixed_node_keeps_showing_its_own_name
-    svg = Archsight::Diagram.render(%(component "outer" { }\ninclude "pair" { prefix "a_" }\n), includes: LOADER)
+  def test_a_namespaced_node_keeps_showing_its_own_name
+    svg = Archsight::Diagram.render(%(component "outer" { }\ninclude "pair" { namespace "a" }\n), includes: LOADER)
 
     assert_includes svg, "asd-node-a_web"
     assert_includes svg, ">web<"
     assert_includes svg, ">DB<"
   end
 
-  def test_prefixes_nest
-    loader = ->(path) { path == "inner" ? %(component "x" { }\nx -> y\n) : %(include "inner" { prefix "in_" }\ncomponent "y" { }\nin_x -> y\n) }
-    statements = expand(%(include "outer" { prefix "o_" }\n), loader: loader).statements
+  def test_namespaces_nest
+    loader = ->(path) { path == "inner" ? %(component "x" { }\nx -> y\n) : %(include "inner" { namespace "in" }\ncomponent "y" { }\nin.x -> y\n) }
+    statements = expand(%(include "outer" { namespace "o" }\n), loader: loader).statements
 
-    assert_equal %w[o_in_x o_y], ids(statements)
+    assert_equal %w[o.in.x o.y], ids(statements)
     # `y` is a node of the diagram that includes `inner`, so it is part of the outer namespace
-    assert_equal([%w[o_in_x o_y], %w[o_in_x o_y]], edges(statements).map { |e| [e.from, e.to] })
+    assert_equal([%w[o.in.x o.y], %w[o.in.x o.y]], edges(statements).map { |e| [e.from, e.to] })
   end
 
   def test_without_a_prefix_the_same_diagram_twice_is_a_duplicate_id_error

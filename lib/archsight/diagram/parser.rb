@@ -15,7 +15,7 @@ module Archsight
     # Grammar (informal):
     #   program    := statement*
     #   statement  := block | dataflow | edge | setting | include
-    #   include    := "include" STRING ["{" "prefix" STRING "}"] [";"]
+    #   include    := "include" STRING ["{" "namespace" STRING "}"] [";"]
     #                 -- top level, or where a container may hold blocks and edges
     #   setting    := ("theme" | "legend" | "ranks") STRING [";"]   -- top level only
     #   block      := (CONTAINER_KEYWORD | LEAF_KEYWORD) [STRING] "{" (attr | block | edge | include)* "}"
@@ -47,6 +47,7 @@ module Archsight
       # `layer`/`stack` may be used without an id, purely as a layout hint
       # (see AST::Block#anonymous) — a `group`/`boundary` always renders a
       # visible box, so an unnamed one wouldn't make sense the same way.
+      NAMESPACE = /\A[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*\z/
       ANONYMOUS_KEYWORDS = %w[layer stack].freeze
       SETTING_KEYWORDS = %w[theme legend ranks].freeze
       EDGE_ARROWS = {
@@ -153,25 +154,25 @@ module Archsight
       def include_statement
         keyword = cursor.advance
         path = cursor.advance
-        prefix = include_options(path.value) if cursor.check(:lbrace)
+        namespace = include_options(path.value) if cursor.check(:lbrace)
         cursor.consume(:semi)
-        AST::Include.new(path: path.value, prefix: prefix, line: keyword.line)
+        AST::Include.new(path: path.value, namespace: namespace, line: keyword.line)
       end
 
-      # `{ prefix "cs_" }` after an include: the only option
+      # `{ namespace "cs" }` after an include: the only option
       def include_options(path)
         cursor.advance
         options = {}
         until cursor.check(:rbrace)
           line = cursor.current.line
-          key, value = cursor.check(:ident) ? attr : cursor.expect(:ident, "expected 'prefix' in the options of include #{path.inspect}")
-          raise ParseError, "unknown option '#{key}' of include #{path.inspect} at line #{line} (only 'prefix')" unless key == "prefix"
-          raise ParseError, "the prefix of include #{path.inspect} at line #{line} is empty" if value.empty?
+          key, value = cursor.check(:ident) ? attr : cursor.expect(:ident, "expected 'namespace' in the options of include #{path.inspect}")
+          raise ParseError, "unknown option '#{key}' of include #{path.inspect} at line #{line} (only 'namespace')" unless key == "namespace"
+          raise ParseError, "the namespace #{value.inspect} of include #{path.inspect} at line #{line} must be a name like \"cs\" or \"a.b\"" unless value.match?(NAMESPACE)
 
           store_attr(options, key, value, line, "include #{path.inspect}")
         end
         cursor.expect(:rbrace, "expected '}' to close the options of include #{path.inspect}")
-        options["prefix"]
+        options["namespace"]
       end
 
       # `theme "compact"`, `legend "right"` -- `theme -> x` is still an edge
