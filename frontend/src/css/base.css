@@ -278,11 +278,21 @@ article>header h2 {
 }
 
 /* Responsive layout */
+@media all and (max-width: 799px) {
+  main:not(.sidebar-open) > .sidebar {
+    display: none;
+  }
+}
+
 @media all and (min-width: 800px) {
   main {
     display: flex;
     flex-direction: row;
     gap: 1rem;
+  }
+
+  main.sidebar-collapsed > .sidebar {
+    display: none;
   }
 
   .content {

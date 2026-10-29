@@ -2,6 +2,7 @@
 import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { reload as apiReload } from '../../api/client.js'
+import { toggleSidebar } from '../../composables/useSidebarCollapsed.js'
 
 const router = useRouter()
 const reloadKinds = inject('reloadKinds')
@@ -24,8 +25,19 @@ async function reload() {
 </script>
 
 <template>
-  <!-- one segmented control: reload and help -->
+  <!-- one segmented control: hide sidebar, reload and help -->
   <div class="nav-actions" role="group" aria-label="Actions">
+    <button
+      type="button"
+      class="nav-action sidebar-hide"
+      aria-controls="sidebar"
+      aria-expanded="true"
+      title="Hide sidebar"
+      aria-label="Hide sidebar"
+      @click="toggleSidebar"
+    >
+      <i class="iconoir-sidebar-collapse" aria-hidden="true"></i>
+    </button>
     <a class="nav-action" href="#" title="Reload" aria-label="Reload" @click.prevent="reload">
       <i :class="['iconoir-reload-window', { spinning: reloading }]" aria-hidden="true"></i>
     </a>
@@ -36,14 +48,18 @@ async function reload() {
 </template>
 
 <style scoped>
-/* icon-only, a shared hairline between the two */
+/* icon-only, a shared hairline between the buttons */
 .nav-actions {
   display: inline-flex;
   width: auto; /* Pico's [role="group"] makes a group full width and adds a bottom margin */
   margin: 0;
 }
 
-.nav-action {
+/* Pico sizes buttons in a [role="group"] on its own (width: 100%), so every action sets its size
+   explicitly and the <button> matches the links */
+.nav-actions .nav-action {
+  box-sizing: border-box;
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -51,6 +67,8 @@ async function reload() {
   height: 2rem;
   margin: 0;
   padding: 0;
+  font: inherit;
+  line-height: 1;
   color: var(--pico-muted-color);
   background-color: var(--pico-card-background-color);
   border: 1px solid var(--pico-muted-border-color);
@@ -58,7 +76,7 @@ async function reload() {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.nav-action + .nav-action {
+.nav-actions .nav-action + .nav-action {
   margin-left: -1px; /* the two borders become one line */
 }
 
@@ -75,6 +93,13 @@ async function reload() {
   color: var(--pico-primary);
   background-color: color-mix(in srgb, var(--pico-primary) 12%, var(--pico-card-background-color));
   position: relative; /* keeps the hovered edge above its neighbour */
+}
+
+/* below 800px the sidebar is stacked above the content, there is nothing to hide */
+@media all and (max-width: 799px) {
+  .nav-actions .sidebar-hide {
+    display: none;
+  }
 }
 
 .nav-action i {

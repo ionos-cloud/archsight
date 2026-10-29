@@ -15,7 +15,8 @@
 .wiki-page > .page-body { grid-area: body; min-width: 0; }
 .wiki-page > .page-foot { grid-area: foot; }
 
-/* the sidebar takes ~300px, so the rail only fits when the window is really wide */
+/* the sidebar takes ~300px, so the rail only fits when the window is really wide
+   (1200px when the sidebar is collapsed) */
 @media (min-width: 1500px) {
   .wiki-page.has-toc {
     grid-template-columns: minmax(0, 1fr) 11rem;
@@ -25,6 +26,23 @@
   }
 
   .wiki-page.has-toc > .page-toc {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 1200px) {
+  main.sidebar-collapsed .wiki-page.has-toc {
+    grid-template-columns: minmax(0, 1fr) 11rem;
+    grid-template-areas: 'head toc' 'body toc' 'foot toc';
+    grid-template-rows: auto 1fr auto;
+    column-gap: 2rem;
+  }
+
+  main.sidebar-collapsed .wiki-page.has-toc > .page-toc {
     position: sticky;
     top: 1rem;
     align-self: start;
