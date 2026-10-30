@@ -368,6 +368,8 @@ class DiagramGraphTest < Minitest::Test
   def test_rejects_an_unknown_shape_tint_extend_and_gap_on_nodes
     assert_match(/unknown shape "circel" on component "a".*did you mean "circle"/, build_error(%(component "a" { shape "circel" }\n)))
     assert_match(/unknown tint "bleu" on component "a".*did you mean "blue"/, build_error(%(component "a" { tint "bleu" }\n)))
+    assert_match(/unknown anchor "middle" on layer "l".*expected one of top, bottom, left, right, center/, build_error(%(layer "l" { anchor "middle" }\n)))
+    assert_match(/unknown attribute "anchor" on component "a"/, build_error(%(component "a" { anchor "top" }\n)))
     assert_match(/unknown extend "yes" on layer "l".*expected one of true, false, height/, build_error(%(layer "l" { extend "yes" }\n)))
     assert_match(/unknown extend "height" on component "a".*expected one of true, false\z/, build_error(%(component "a" { extend "height" }\n)))
     assert_match(/invalid gap "wide" on group "g"/, build_error(%(group "g" { gap "wide" }\n)))

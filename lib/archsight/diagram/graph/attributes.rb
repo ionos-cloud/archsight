@@ -27,13 +27,14 @@ module Archsight
         NODE = %w[label tint link resource extend].freeze
         LEAF_KINDS = %i[component application api database queue actor file].freeze
         LEAF = (NODE + %w[shape]).freeze
-        CONTAINER = (NODE + %w[gap ranks columns]).freeze
+        CONTAINER = (NODE + %w[gap ranks columns anchor]).freeze
         EDGE = %w[label style relation tint].freeze
         DATAFLOW = %w[label color].freeze
 
         EDGE_STYLES = %w[straight orthogonal].freeze
         LEAF_EXTEND = %w[true false].freeze
         CONTAINER_EXTEND = %w[true false height].freeze
+        ANCHORS = %w[top bottom left right center].freeze
 
         # `40` (pixels), `150%` (of the default), `+20%`/`-50%` (relative);
         # see `GapSpec`.
@@ -116,6 +117,7 @@ module Archsight
           when "tint" then check_value!(key, value, Tints.names, where, line)
           when "ranks" then check_value!(key, value, ranks_modes, where, line)
           when "extend" then check_value!(key, value, leaf?(block) ? LEAF_EXTEND : CONTAINER_EXTEND, where, line)
+          when "anchor" then check_value!(key, value, ANCHORS, where, line)
           when "gap" then check_format!(key, value, GAP_FORMAT, "a pixel count (40), a percentage (150%) or a signed one (+20%, -50%)", where, line)
           when "link" then check_link!(value, where, line)
           when "resource" then check_resource!(value, block, where, line)
