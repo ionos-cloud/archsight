@@ -108,7 +108,7 @@ function filterQuery(key, value) {
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside id="sidebar" class="sidebar">
     <div class="sidebar-head">
       <div v-if="hasPages" class="sidebar-tabs" role="tablist" aria-label="Browse" @keydown="onTabKeydown">
         <button

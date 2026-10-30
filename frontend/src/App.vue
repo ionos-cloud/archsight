@@ -3,6 +3,7 @@ import { ref, provide, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getKinds, getPages } from './api/client.js'
 import { useSidebarTabFollowsRoute } from './composables/useSidebarTab.js'
+import { useSidebarCollapsed } from './composables/useSidebarCollapsed.js'
 import NavigationBar from './components/layout/NavigationBar.vue'
 import SidebarPanel from './components/layout/SidebarPanel.vue'
 
@@ -37,6 +38,7 @@ async function loadPages() {
 loadPages()
 
 useSidebarTabFollowsRoute(route)
+const { collapsed, mobileOpen } = useSidebarCollapsed()
 
 // name -> title of every page in the tree (menus included), for views that list pages by name
 const pageTitles = computed(() => {
@@ -61,7 +63,7 @@ provide('reloadPages', loadPages)
 
 <template>
   <NavigationBar />
-  <main class="container-fluid">
+  <main class="container-fluid" :class="{ 'sidebar-collapsed': collapsed, 'sidebar-open': mobileOpen }">
     <SidebarPanel :kinds="kinds" :pages="pages" :page-filters="pageFilters" />
     <div class="content">
       <router-view />

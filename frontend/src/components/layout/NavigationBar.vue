@@ -3,7 +3,9 @@ import { watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useSearchScope, searchParams } from '../../composables/useSearchScope.js'
 import { useSearchBox } from '../../composables/useSearchBox.js'
+import { useSidebarCollapsed } from '../../composables/useSidebarCollapsed.js'
 
+const { collapsed, toggleSidebar, mobileOpen, toggleMobileSidebar } = useSidebarCollapsed()
 const router = useRouter()
 const route = useRoute()
 const { scope, placeholder } = useSearchScope()
@@ -28,6 +30,19 @@ watch(scope, (value) => {
           </router-link>
         </strong>
       </li>
+      <li v-if="collapsed" class="sidebar-toggle-item">
+        <button
+          type="button"
+          class="sidebar-toggle"
+          aria-controls="sidebar"
+          aria-expanded="false"
+          aria-label="Show sidebar"
+          title="Show sidebar"
+          @click="toggleSidebar"
+        >
+          <i class="iconoir-sidebar-expand" aria-hidden="true"></i>
+        </button>
+      </li>
     </ul>
     <ul class="nav-search">
       <li class="search-container">
@@ -41,6 +56,21 @@ watch(scope, (value) => {
         />
         <button v-if="query" type="button" class="search-clear" aria-label="Clear search" title="Clear" @click="clear">
           <i class="iconoir-xmark" aria-hidden="true"></i>
+        </button>
+      </li>
+    </ul>
+    <ul v-if="!mobileOpen" class="menu-toggle-list">
+      <li>
+        <button
+          type="button"
+          class="sidebar-toggle"
+          aria-controls="sidebar"
+          aria-expanded="false"
+          aria-label="Open menu"
+          title="Open menu"
+          @click="toggleMobileSidebar"
+        >
+          <i class="iconoir-menu" aria-hidden="true"></i>
         </button>
       </li>
     </ul>
@@ -58,6 +88,57 @@ watch(scope, (value) => {
 .nav-link i {
   flex-shrink: 0;
   line-height: 1;
+}
+
+/* narrow windows: the sidebar is right below, so the bar needs less air than Pico's nav items give */
+@media all and (max-width: 799px) {
+  nav > ul > li {
+    padding-top: 0.5rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
+/* the menu button of narrow windows, right of the search; wide windows have the sidebar button */
+.menu-toggle-list {
+  flex: 0 0 auto;
+}
+
+@media all and (min-width: 800px) {
+  .menu-toggle-list {
+    display: none;
+  }
+}
+
+/* shown only while the sidebar is hidden; below 800px the menu button takes over */
+.sidebar-toggle-item {
+  display: none;
+}
+
+@media all and (min-width: 800px) {
+  .sidebar-toggle-item {
+    display: inline-block; /* list-item would draw a list marker */
+  }
+}
+
+.sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--pico-border-radius);
+  background: transparent;
+  color: var(--pico-muted-color);
+  cursor: pointer;
+}
+
+.sidebar-toggle:hover,
+.sidebar-toggle:focus-visible {
+  background-color: var(--tint);
+  color: var(--pico-color);
 }
 
 .search-container {
