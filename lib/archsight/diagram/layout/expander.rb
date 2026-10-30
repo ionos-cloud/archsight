@@ -97,9 +97,15 @@ module Archsight
               # their own (now wider) box -- explaining a rank that visibly
               # spills outside its container despite matching its siblings'
               # width exactly.
-              center = own_target / 2.0
+              #
+              # The room they get is the *inner* one -- the target minus the
+              # node's own padding (and title bar), as in the single-child
+              # case below -- or they would sit flush on its border; the
+              # centerline is the middle of that inner area.
+              inner = own_target - inset(node, axis)
+              center = leading_inset(node, axis) + (inner / 2.0)
               node.children.each do |c|
-                expand(c, axis, own_target, inherited: extend)
+                expand(c, axis, inner, inherited: extend)
                 axis.set_position(@boxes[c.id], center)
               end
             end
@@ -120,6 +126,12 @@ module Archsight
         # available to a single child filling it -- the node's own
         # `layout_padding`/`layout_title_height` (nothing, for an anonymous
         # `layer`/`stack`, since it renders no box to pad).
+        # The padding (plus title bar, on the height axis) before the content.
+        def leading_inset(node, axis)
+          padding = node.layout_padding(@theme)
+          axis == Axis::HEIGHT ? padding + node.layout_title_height(@theme) : padding
+        end
+
         def inset(node, axis)
           padding = 2 * node.layout_padding(@theme)
           axis == Axis::HEIGHT ? padding + node.layout_title_height(@theme) : padding
