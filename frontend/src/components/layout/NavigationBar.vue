@@ -59,18 +59,18 @@ watch(scope, (value) => {
         </button>
       </li>
     </ul>
-    <ul class="menu-toggle-list">
+    <ul v-if="!mobileOpen" class="menu-toggle-list">
       <li>
         <button
           type="button"
           class="sidebar-toggle"
           aria-controls="sidebar"
-          :aria-expanded="mobileOpen"
-          :aria-label="mobileOpen ? 'Close menu' : 'Open menu'"
-          :title="mobileOpen ? 'Close menu' : 'Open menu'"
+          aria-expanded="false"
+          aria-label="Open menu"
+          title="Open menu"
           @click="toggleMobileSidebar"
         >
-          <i :class="mobileOpen ? 'iconoir-xmark' : 'iconoir-menu'" aria-hidden="true"></i>
+          <i class="iconoir-menu" aria-hidden="true"></i>
         </button>
       </li>
     </ul>

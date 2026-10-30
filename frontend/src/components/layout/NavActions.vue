@@ -2,11 +2,17 @@
 import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { reload as apiReload } from '../../api/client.js'
-import { toggleSidebar } from '../../composables/useSidebarCollapsed.js'
+import { toggleSidebar, toggleMobileSidebar } from '../../composables/useSidebarCollapsed.js'
 
 const router = useRouter()
 const reloadKinds = inject('reloadKinds')
 const reloading = ref(false)
+
+// wide windows hide the sidebar for good, narrow ones close the menu again
+function hideSidebar() {
+  if (window.matchMedia('(min-width: 800px)').matches) toggleSidebar()
+  else toggleMobileSidebar()
+}
 
 async function reload() {
   reloading.value = true
@@ -29,12 +35,12 @@ async function reload() {
   <div class="nav-actions" role="group" aria-label="Actions">
     <button
       type="button"
-      class="nav-action sidebar-hide"
+      class="nav-action"
       aria-controls="sidebar"
       aria-expanded="true"
       title="Hide sidebar"
       aria-label="Hide sidebar"
-      @click="toggleSidebar"
+      @click="hideSidebar"
     >
       <i class="iconoir-sidebar-collapse" aria-hidden="true"></i>
     </button>
@@ -93,13 +99,6 @@ async function reload() {
   color: var(--pico-primary);
   background-color: color-mix(in srgb, var(--pico-primary) 12%, var(--pico-card-background-color));
   position: relative; /* keeps the hovered edge above its neighbour */
-}
-
-/* below 800px the sidebar is stacked above the content, there is nothing to hide */
-@media all and (max-width: 799px) {
-  .nav-actions .sidebar-hide {
-    display: none;
-  }
 }
 
 .nav-action i {
