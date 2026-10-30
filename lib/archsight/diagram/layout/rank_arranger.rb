@@ -74,7 +74,9 @@ module Archsight
         def arrange_layer(group, children)
           max_height = children.map { |c| @boxes[c.id].height }.max
           children.each do |c|
-            @boxes[c.id].height = max_height if !c.leaf? && c.extend_height?
+            next if c.leaf? || !c.extend_height?
+
+            Expander.new(@boxes, theme: @theme).grow_height(c, max_height)
           end
 
           gap = group.gap(@theme.sibling_gap)
