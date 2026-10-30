@@ -34,6 +34,24 @@ class MarkdownTest < Minitest::Test
     assert_equal "<p><code>x y</code></p>\n", unwrapped("`x\ny`")
   end
 
+  def test_a_wiki_link_label_does_not_turn_a_line_into_a_table_row
+    out = html("- Related: [[A/B|b]], [[C/D|d]] more")
+
+    assert_equal "<ul>\n  <li>Related: [[A/B|b]], [[C/D|d]] more</li>\n</ul>\n", out
+    refute_includes out, "<table"
+  end
+
+  def test_a_wiki_link_label_in_a_table_cell_stays_in_the_cell
+    out = html("| a | b |\n|---|---|\n| [[X/Y|z]] | 2 |\n")
+
+    assert_includes out, "<td>[[X/Y|z]]</td>"
+  end
+
+  def test_pipes_in_code_are_left_alone
+    assert_includes html("```\n[[q|r]]\n```"), "<code>[[q|r]]\n</code>"
+    assert_includes html("see `[[q|r]]` here"), "<code>[[q|r]]</code>"
+  end
+
   def test_options_are_passed_on
     assert_equal "<h1>Title</h1>\n", Archsight::Markdown.document("# Title", auto_ids: false).to_html
   end
