@@ -865,6 +865,84 @@ class DiagramLayoutTest < Minitest::Test
     assert_operator plain.height, :<, tall.height
   end
 
+  def test_extend_height_inside_a_stack_pushes_the_ranks_below_it_down_to_line_up_across_layer_columns
+    source = <<~SRC
+      layer {
+        boundary "left" {
+          extend "height"
+          stack {
+            stack "pools" {
+              extend "height"
+              component "p1" { label "P1" }
+            }
+            component "bb1" { label "BB" }
+          }
+        }
+        boundary "mid" {
+          stack {
+            stack "pools2" {
+              component "p2" { label "P2" }
+              component "p3" { label "P3" }
+              component "p4" { label "P4" }
+            }
+            component "bb2" { label "BB" }
+          }
+        }
+      }
+    SRC
+    result = Archsight::Diagram::Layout.compute(build_graph(source))
+
+    assert_in_delta result.boxes["bb2"].bottom, result.boxes["bb1"].bottom, 0.01
+    assert_in_delta result.boxes["bb2"].top, result.boxes["bb1"].top, 0.01
+    assert_in_delta result.boxes["left"].bottom, result.boxes["mid"].bottom, 0.01
+    assert_operator result.boxes["pools"].height, :>, result.boxes["p1"].height
+  end
+
+  def test_anchor_bottom_keeps_the_content_of_an_extended_box_at_its_bottom
+    source = <<~SRC
+      layer {
+        stack "short" {
+          label "Short"
+          extend "height"
+          anchor "bottom"
+          component "a" { label "A" }
+        }
+        stack "tall" {
+          label "Tall"
+          component "c" { label "C" }
+          component "d" { label "D" }
+          component "e" { label "E" }
+        }
+      }
+    SRC
+    result = Archsight::Diagram::Layout.compute(build_graph(source))
+
+    short = result.boxes["short"]
+    a = result.boxes["a"]
+
+    assert_in_delta short.bottom - Archsight::Diagram::Theme::DEFAULT.padding, a.bottom, 0.01
+    assert_in_delta result.boxes["tall"].bottom, short.bottom, 0.01
+  end
+
+  def test_anchor_right_keeps_the_content_of_a_widened_box_at_its_right
+    source = <<~SRC
+      stack {
+        extend "true"
+        component "wide" { label "A Very Long Label To Force This Rank Extremely Wide" }
+        group "g" {
+          anchor "right"
+          extend "false"
+          component "x" { label "X" }
+          component "y" { label "Y" }
+        }
+      }
+    SRC
+    result = Archsight::Diagram::Layout.compute(build_graph(source))
+    content_right = [result.boxes["x"].right, result.boxes["y"].right].max
+
+    assert_in_delta result.boxes["g"].right - Archsight::Diagram::Theme::DEFAULT.padding, content_right, 0.01
+  end
+
   def test_extend_height_leaves_inherited_width_extension_untouched
     source = <<~SRC
       stack "s" {

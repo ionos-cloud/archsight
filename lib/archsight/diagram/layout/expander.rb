@@ -106,14 +106,62 @@ module Archsight
             return
           end
 
-          recenter_children(node, axis, extra / 2.0) if extra.positive?
+          recenter_children(node, axis, node.anchor_shift(axis, extra, default: :center)) if extra.positive?
 
           return unless node.children.length == 1
 
           expand(node.children.first, axis, own_target - inset(node, axis), inherited: extend)
         end
 
+        # `extend "height"`: grows `node` to `target` height keeping its
+        # content top-aligned (or at its `anchor`), then hands the extra room to whatever inside
+        # can absorb it -- a `stack` child carrying `extend "height"`
+        # itself (the first such one in a stack's column gets all of it, and
+        # the ranks below it move down, so e.g. a footer rank lines up
+        # across columns), reached through single-child wrappers such as a
+        # `boundary` around a `stack`.
+        def grow_height(node, target)
+          box = @boxes[node.id]
+          extra = target - box.height
+          return if extra <= 0
+
+          box.height = target
+          return if node.children.empty?
+
+          # An explicit `anchor` decides where the content sits; otherwise a
+          # stack (or a wrapper around one) hands the room to its
+          # `extend "height"` child, and anything else stays top-aligned.
+          delta = node.anchor_shift(Axis::HEIGHT, extra, default: :top)
+          return recenter_children(node, Axis::HEIGHT, delta) if delta.positive?
+
+          if node.children.length == 1
+            inner = node.children.first
+            grow_top_aligned(inner, extra) if inner.stack? || inner.extend_height?
+          elsif node.stack?
+            absorb_in_stack(node, extra)
+          end
+        end
+
         private
+
+        # Grows a child by `extra` keeping its top edge where it is (box
+        # positions are centers, so the center moves down by half of it).
+        def grow_top_aligned(node, extra)
+          grow_height(node, @boxes[node.id].height + extra)
+          @boxes[node.id].y += extra / 2.0
+        end
+
+        # Gives `extra` to the first child of the `stack` `node` marked
+        # `extend "height"`, and shifts every later rank down by it.
+        def absorb_in_stack(node, extra)
+          ordered = node.children.sort_by { |c| @boxes[c.id].y }
+          index = ordered.index(&:extend_height?)
+          return unless index
+
+          grower = ordered[index]
+          grow_top_aligned(grower, extra)
+          ordered[(index + 1)..].each { |c| @boxes[c.id].y += extra }
+        end
 
         # How much of a container's size on `axis` is reserved by its own
         # padding (and, on the height axis, its title bar) rather than
