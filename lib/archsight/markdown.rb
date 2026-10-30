@@ -14,9 +14,25 @@ module Archsight
     # Raw HTML whose text is kept as it is
     VERBATIM = %w[pre code script style textarea].freeze
 
+    # Fenced code and inline code, which are left as written
+    CODE = /(^[ \t]*(?:`{3,}|~{3,}).*?^[ \t]*(?:`{3,}|~{3,})[ \t]*$|`+[^`\n].*?`+)/m
+    WIKI_LINK_PIPE = /\[\[[^\]\n]*\]\]/
+
     def self.document(text, **)
-      Kramdown::Document.new(text.to_s, **OPTIONS, **)
+      Kramdown::Document.new(protect_wiki_link_pipes(text.to_s), **OPTIONS, **)
     end
+
+    # Kramdown reads every line with a `|` as a table row, which would cut `[[Target|label]]` in two (a list item
+    # "Related: [[A/B|b]], [[C/D|d]]" became one table row). An escaped pipe is a plain `|` again in the HTML,
+    # which is what WikiLinks expects; code is untouched, it would show the backslash.
+    def self.protect_wiki_link_pipes(text)
+      return text unless text.include?("[[") && text.include?("|")
+
+      text.split(CODE).each_with_index.map do |part, index|
+        index.odd? ? part : part.gsub(WIKI_LINK_PIPE) { |link| link.gsub(/(?<!\\)\|/, "\\\\|") }
+      end.join
+    end
+    private_class_method :protect_wiki_link_pipes
 
     # The document without the newlines of the source in its text, for a target that keeps a newline instead of
     # reading it as a space (Confluence): a soft line break becomes a space, the newline after a line break goes.
