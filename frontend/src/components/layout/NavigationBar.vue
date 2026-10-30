@@ -108,7 +108,7 @@ watch(scope, (value) => {
 
 @media all and (min-width: 800px) {
   .sidebar-toggle-item {
-    display: list-item;
+    display: inline-block; /* list-item would draw a list marker */
   }
 }
 
