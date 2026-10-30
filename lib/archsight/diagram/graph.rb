@@ -55,7 +55,12 @@ module Archsight
           end
         end
 
-        raw_edges.each { |e| Attributes.check_edge!(e) }
+        raw_edges.each do |e|
+          Attributes.check_edge!(e)
+          [e.from, e.to].each do |id|
+            raise GraphError, "edge #{e.from} -> #{e.to} (line #{e.line}) connects to spacer #{id.inspect}, which is never drawn" if @nodes_by_id[id]&.spacer?
+          end
+        end
         raw_dataflows.each_with_object({}) do |df, seen|
           if (first = seen[df.id])
             raise GraphError, "duplicate dataflow id #{df.id.inspect} (line #{df.line}, first defined at line #{first})"

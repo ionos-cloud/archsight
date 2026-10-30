@@ -27,6 +27,8 @@ module Archsight
         # and a container's `<g>` also wraps its children's, so the document
         # tree mirrors the source's own nesting.
         def render(body, node)
+          return if node.spacer?
+
           if node.anonymous?
             # A layout hint only — no box/label of its own.
             node.children.each { |c| render(body, c) }

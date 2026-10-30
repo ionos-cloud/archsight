@@ -157,11 +157,12 @@ module Archsight
           @rank_arranger.arrange_children(node, node.children)
           w, h = fit_group_and_normalize_children(node)
         end
-        @boxes[node.id] = Box.new(0.0, 0.0, w, h)
+        @boxes[node.id] = Box.new(0.0, 0.0, [w, node.min_size(Axis::WIDTH)].max, [h, node.min_size(Axis::HEIGHT)].max)
       end
 
       def leaf_size(node)
         return node.layout_size if node.legend_entry?
+        return [0.0, 0.0] if node.spacer?
 
         longest = TextMetrics.longest_line_length(node.label)
         extra_height = TextMetrics.extra_height(node.label, line_height: @theme.label_line_height)

@@ -980,6 +980,118 @@ class DiagramLayoutTest < Minitest::Test
     assert_operator boxes["c1"].height, :>, boxes["c2"].height
   end
 
+  def test_align_top_lines_up_the_tops_of_a_layer_s_children_and_align_left_a_stack_s_lefts
+    layer = Archsight::Diagram::Layout.compute(build_graph(<<~SRC)).boxes
+      layer {
+        align "top"
+        component "a" { label "A" }
+        stack "tall" { component "b" { label "B" }  component "c" { label "C" } }
+      }
+    SRC
+    assert_in_delta layer["a"].top, layer["tall"].top, 0.01
+
+    stack = Archsight::Diagram::Layout.compute(build_graph(<<~SRC)).boxes
+      stack {
+        align "left"
+        component "a" { label "A" }
+        component "wide" { label "A Very Long Label To Force This Rank Wide" }
+      }
+    SRC
+    assert_in_delta stack["wide"].left, stack["a"].left, 0.01
+  end
+
+  def test_width_height_are_minimum_sizes_and_padding_is_per_container
+    boxes = Archsight::Diagram::Layout.compute(build_graph(<<~SRC)).boxes
+      component "big" { width "300"; height "120"; label "X" }
+      group "g" { padding "50"; component "in" { label "I" } }
+    SRC
+    assert_in_delta 300.0, boxes["big"].width, 0.01
+    assert_in_delta 120.0, boxes["big"].height, 0.01
+    assert_in_delta boxes["g"].left + 50.0, boxes["in"].left, 0.01
+  end
+
+  def test_spacer_takes_room_without_being_drawn_or_listed
+    source = <<~SRC
+      stack {
+        gap "0"
+        component "a" { label "A" }
+        spacer "s" { height "40" }
+        component "b" { label "B" }
+      }
+    SRC
+    boxes = Archsight::Diagram::Layout.compute(build_graph(source)).boxes
+
+    assert_in_delta 40.0, boxes["b"].top - boxes["a"].bottom, 0.01
+    refute_includes Archsight::Diagram.render(source), ">s<"
+  end
+
+  def test_extend_width_stretches_only_the_direct_children
+    source = <<~SRC
+      stack {
+        component "wide" { label "A Very Long Label To Force This Rank Extremely Wide" }
+        layer "row" {
+          extend "width"
+          component "a" { label "A" }
+          component "b" { label "B" }
+        }
+      }
+    SRC
+    boxes = Archsight::Diagram::Layout.compute(build_graph(source)).boxes
+    pad = Archsight::Diagram::Theme::DEFAULT.padding
+
+    assert_in_delta boxes["wide"].left + pad, boxes["a"].left, 0.01
+    assert_in_delta boxes["wide"].right - pad, boxes["b"].right, 0.01
+  end
+
+  def test_a_stack_child_with_extend_height_takes_the_room_before_an_anchor_on_its_container_does
+    source = <<~SRC
+      layer {
+        boundary "left" {
+          extend "height"
+          anchor "bottom"
+          stack {
+            stack "pools" {
+              extend "height"
+              component "p1" { label "P1" }
+            }
+            component "bb1" { label "BB" }
+          }
+        }
+        boundary "mid" {
+          stack {
+            component "p2" { label "P2" }
+            component "p3" { label "P3" }
+            component "p4" { label "P4" }
+            component "bb2" { label "BB" }
+          }
+        }
+      }
+    SRC
+    boxes = Archsight::Diagram::Layout.compute(build_graph(source)).boxes
+
+    assert_in_delta boxes["bb2"].top, boxes["bb1"].top, 0.01
+    assert_operator boxes["pools"].height, :>, boxes["p1"].height * 2
+  end
+
+  def test_extend_keeps_a_multi_child_container_s_stretched_children_inside_its_padding
+    source = <<~SRC
+      stack {
+        extend "true"
+        component "wide" { label "A Very Long Label To Force This Rank Extremely Wide" }
+        stack "box" {
+          component "a" { label "A" }
+          component "b" { label "B" }
+        }
+      }
+    SRC
+    boxes = Archsight::Diagram::Layout.compute(build_graph(source)).boxes
+    pad = Archsight::Diagram::Theme::DEFAULT.padding
+
+    assert_in_delta boxes["box"].left + pad, boxes["a"].left, 0.01
+    assert_in_delta boxes["box"].right - pad, boxes["a"].right, 0.01
+    assert_in_delta boxes["box"].left + pad, boxes["b"].left, 0.01
+  end
+
   def test_extend_height_leaves_inherited_width_extension_untouched
     source = <<~SRC
       stack "s" {

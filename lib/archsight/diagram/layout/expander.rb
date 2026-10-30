@@ -79,7 +79,7 @@ module Archsight
           # content is force-simulated in both dimensions with no such
           # convention, so `extend` is inert for them (their `main_axis` is
           # `nil`) -- they always fall through to the plain recenter below.
-          if node.children.length > 1 && extend && node.ranked?
+          if node.children.length > 1 && (extend || (node.extend_width? && axis == Axis::WIDTH)) && node.ranked?
             if axis == node.main_axis
               stretch_children(node, axis, extra, extend)
             else
@@ -97,9 +97,15 @@ module Archsight
               # their own (now wider) box -- explaining a rank that visibly
               # spills outside its container despite matching its siblings'
               # width exactly.
-              center = own_target / 2.0
+              #
+              # The room they get is the *inner* one -- the target minus the
+              # node's own padding (and title bar), as in the single-child
+              # case below -- or they would sit flush on its border; the
+              # centerline is the middle of that inner area.
+              inner = own_target - inset(node, axis)
+              center = leading_inset(node, axis) + (inner / 2.0)
               node.children.each do |c|
-                expand(c, axis, own_target, inherited: extend)
+                expand(c, axis, inner, inherited: extend)
                 axis.set_position(@boxes[c.id], center)
               end
             end
@@ -128,23 +134,34 @@ module Archsight
           box.height = target
           return if node.children.empty?
 
-          # An explicit `anchor` decides where the content sits; otherwise a
-          # stack (or a wrapper around one) hands the room to its
-          # `extend "height"` child, and anything else stays top-aligned.
-          delta = node.anchor_shift(Axis::HEIGHT, extra, default: :top)
-          return recenter_children(node, Axis::HEIGHT, delta) if delta.positive?
+          # Room goes to whatever inside takes it (an `extend "height"` child
+          # of a stack/layer, possibly behind a wrapper); only when nothing
+          # does, the content sits at the node's `anchor` (default: top).
+          unless absorbs?(node)
+            delta = node.anchor_shift(Axis::HEIGHT, extra, default: :top)
+            return recenter_children(node, Axis::HEIGHT, delta) if delta.positive?
+          end
 
           if node.layer?
             fill_layer(node, extra)
           elsif node.children.length == 1
             inner = node.children.first
-            grow_top_aligned(inner, extra) if inner.stack? || inner.extend_height?
+            grow_top_aligned(inner, extra) if inner.extend_height? || absorbs?(inner)
           elsif node.stack?
             absorb_in_stack(node, extra)
           end
         end
 
         private
+
+        # True if growing `node` by `extend "height"` hands the extra room to
+        # something inside it (see `grow_height`).
+        def absorbs?(node)
+          return false if node.leaf? || node.children.empty?
+          return node.children.any?(&:extend_height?) if node.layer? || node.stack?
+
+          node.children.length == 1 && (node.children.first.extend_height? || absorbs?(node.children.first))
+        end
 
         # A grown `layer`'s `extend "height"` children fill the new height
         # too (they were only matched to their tallest sibling before).
@@ -180,6 +197,12 @@ module Archsight
         # available to a single child filling it -- the node's own
         # `layout_padding`/`layout_title_height` (nothing, for an anonymous
         # `layer`/`stack`, since it renders no box to pad).
+        # The padding (plus title bar, on the height axis) before the content.
+        def leading_inset(node, axis)
+          padding = node.layout_padding(@theme)
+          axis == Axis::HEIGHT ? padding + node.layout_title_height(@theme) : padding
+        end
+
         def inset(node, axis)
           padding = 2 * node.layout_padding(@theme)
           axis == Axis::HEIGHT ? padding + node.layout_title_height(@theme) : padding

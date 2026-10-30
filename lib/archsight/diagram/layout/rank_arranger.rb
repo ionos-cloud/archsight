@@ -81,7 +81,7 @@ module Archsight
 
           gap = group.gap(@theme.sibling_gap)
           Stacker.new(@boxes).pack(
-            children, axis: Axis::WIDTH, default_gap: gap, related_gap: gap,
+            children, axis: Axis::WIDTH, default_gap: gap, related_gap: gap, align: group.align_mode,
                       label_gaps: @rank_topology.label_gap_requirements(group, children)
           )
         end
@@ -114,7 +114,7 @@ module Archsight
             children, axis: Axis::HEIGHT, default_gap: group.gap(@theme.stack_gap),
                       related_gap: group.gap(@theme.sibling_gap),
                       label_gaps: @rank_topology.rank_label_gaps(rank_edges),
-                      related_pairs: rank_edges.map { |(ra, rb, _e)| [ra.id, rb.id].sort }
+                      related_pairs: rank_edges.map { |(ra, rb, _e)| [ra.id, rb.id].sort }, align: group.align_mode
           )
         end
       end

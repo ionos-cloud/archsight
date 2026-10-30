@@ -42,7 +42,7 @@ module Archsight
       include TableLayout
 
       CONTAINER_KEYWORDS = %w[group layer stack boundary].freeze
-      LEAF_KEYWORDS = %w[component application api database queue actor file].freeze
+      LEAF_KEYWORDS = %w[component application api database queue actor file spacer].freeze
       BLOCK_KEYWORDS = (CONTAINER_KEYWORDS + LEAF_KEYWORDS).freeze
       # `layer`/`stack` may be used without an id, purely as a layout hint
       # (see AST::Block#anonymous) — a `group`/`boundary` always renders a

@@ -144,10 +144,15 @@ hint for near misses), never silently ignored.
 | `tint` | nodes, containers, edges | `gray`, `blue`, `indigo`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `brown` |
 | `link` | nodes, containers | `http(s)://…`, `mailto:…` or a relative URL |
 | `resource` | nodes, containers | a resource name (`Archsight:Web`) or `Kind/Name` (`ApplicationService/Archsight:Web`); see *Linking to resources* |
-| `extend` | nodes, containers | `true`, `false`; containers also `height` |
+| `extend` | nodes, containers | `true`, `false`; containers also `height`, `width` |
+| `align` | `layer`, `stack` | layer: `top`, `center`, `bottom`; stack: `left`, `center`, `right` |
+| `width`, `height` | nodes, containers | minimum size in pixels |
+| `padding` | containers | inner padding in pixels (default from the theme) |
 | `anchor` | containers | `top`, `bottom`, `left`, `right`, `center` |
 
 `extend "height"` on a direct child of a `layer` grows it to its tallest sibling. Inside such a box (also through a `boundary` around a `stack`), a `stack` child carrying `extend "height"` takes the extra height and moves the ranks below it down, so e.g. a footer rank lines up across the columns. The child can be a `layer` too; its own `extend "height"` children then fill the layer's new height.
+
+`align` sets where the children of a `layer` (vertically) or a `stack` (horizontally) sit when they differ in size; the default centers them. `extend "width"` makes a container stretch its own direct children to its width, without the cascade of `extend "true"`. `width`/`height` are minimum sizes: a box is never smaller than its content. `spacer "id" { height "40" }` is an invisible filler of the given size (no label, no legend entry, no edges), e.g. to push a box down in a stack.
 
 `anchor` says where a container's content sits when its box grows: `bottom` (or `top`) when it is made taller, `right` (or `left`) when it is made wider, `center` for the middle. Default: top for `extend "height"`, centered otherwise. It is not inherited, and has no effect on a box whose room is taken by a stack child with `extend "height"`.
 | `shape` | leaves | `rectangle`, `circle`, `cylinder`, `pipe`, `actor`, `file`, `module` |
