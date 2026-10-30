@@ -42,7 +42,7 @@ async function reload() {
       aria-label="Hide sidebar"
       @click="hideSidebar"
     >
-      <i class="iconoir-sidebar-collapse" aria-hidden="true"></i>
+      <i class="iconoir-sidebar-collapse hide-icon" aria-hidden="true"></i>
     </button>
     <a class="nav-action" href="#" title="Reload" aria-label="Reload" @click.prevent="reload">
       <i :class="['iconoir-reload-window', { spinning: reloading }]" aria-hidden="true"></i>
@@ -104,6 +104,13 @@ async function reload() {
 .nav-action i {
   font-size: var(--fs-md);
   line-height: 1;
+}
+
+/* below 800px the sidebar sits above the content: the panel and its arrow point up, not left */
+@media all and (max-width: 799px) {
+  .hide-icon {
+    transform: rotate(90deg);
+  }
 }
 
 .spinning {
