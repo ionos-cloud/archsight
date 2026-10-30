@@ -28,7 +28,7 @@ module Archsight
         # `related_pairs`, otherwise `default_gap`; a label gap is only a
         # minimum on top of that (room for the label), so it can widen the
         # gap but never shrink a larger one -- e.g. an explicit `gap "150"`.
-        def pack(children, axis:, default_gap:, related_gap:, label_gaps: {}, related_pairs: [])
+        def pack(children, axis:, default_gap:, related_gap:, label_gaps: {}, related_pairs: [], align: nil)
           return if children.empty?
 
           cross = axis.cross
@@ -45,9 +45,23 @@ module Archsight
 
             size = axis.size(box)
             pos += size / 2.0
-            cross.set_position(box, centerline)
+            cross.set_position(box, cross_position(box, cross, centerline, align))
             axis.set_position(box, pos)
             pos += size / 2.0
+          end
+        end
+
+        private
+
+        # `align`: `nil` centers the child on the shared centerline; `:leading`
+        # / `:trailing` sit it against that cross-axis edge of the widest
+        # sibling instead.
+        def cross_position(box, cross, centerline, align)
+          half = cross.size(box) / 2.0
+          case align
+          when :leading then half
+          when :trailing then (2 * centerline) - half
+          else centerline
           end
         end
       end

@@ -138,7 +138,7 @@ module Archsight
 
         def collect_leaves(nodes)
           nodes.each do |n|
-            n.leaf? ? @leaf_nodes << n : collect_leaves(n.children)
+            n.leaf? ? (@leaf_nodes << n unless n.spacer?) : collect_leaves(n.children)
           end
         end
       end

@@ -122,7 +122,7 @@ module Archsight
         # untouched.
         def extend?(inherited)
           raw = attrs["extend"]
-          return inherited if raw.nil? || raw == "height"
+          return inherited if raw.nil? || %w[height width].include?(raw)
 
           raw != "false"
         end
@@ -136,6 +136,28 @@ module Archsight
         def extend_height?
           attrs["extend"] == "height"
         end
+
+        # `extend "width"`: this container alone stretches its own direct
+        # children to its new width, without the cascade `extend "true"` starts.
+        def extend_width?
+          attrs["extend"] == "width"
+        end
+
+        # `align` of a layer/stack (cross axis): `:leading`, `:trailing` or
+        # `nil` for the default, centered.
+        def align_mode
+          case attrs["align"]
+          when "top", "left" then :leading
+          when "bottom", "right" then :trailing
+          end
+        end
+
+        # Minimum size from the `width`/`height` attrs along `axis`, else 0.
+        def min_size(axis)
+          attrs[axis == Axis::WIDTH ? "width" : "height"].to_f
+        end
+
+        def spacer? = false
 
         # Where this container's content sits when its box grows by `extra`
         # along `axis`: the `anchor` attr (`top`/`bottom` for height,
@@ -165,7 +187,7 @@ module Archsight
         # The padding and title band `Layout` reserves inside a container's
         # box -- none for an anonymous `layer`/`stack`, which never draws a
         # box of its own; `Legend::Frame` has its own fixed ones.
-        def layout_padding(theme) = anonymous? ? 0.0 : theme.padding
+        def layout_padding(theme) = anonymous? ? 0.0 : (attrs["padding"]&.to_f || theme.padding)
         def layout_title_height(theme) = anonymous? ? 0.0 : theme.title_height
 
         # See `Legend::Entry`, sized by `Layout` from its row instead of from
@@ -228,6 +250,14 @@ module Archsight
         def default_shape = "file"
       end
 
+      # An invisible, label-less filler (`width`/`height` give its size): pushes
+      # its neighbours apart in a layer/stack. Never drawn, listed or wired.
+      class Spacer < Node
+        def leaf? = true
+        def spacer? = true
+        def label = ""
+      end
+
       class Group < Node; end
 
       class Boundary < Node
@@ -245,7 +275,7 @@ module Archsight
 
       Node::KIND_CLASSES = {
         component: Component, application: Application, api: Api, database: Database,
-        queue: Queue, actor: Actor, file: FileNode, group: Group, boundary: Boundary, layer: Layer, stack: Stack
+        queue: Queue, actor: Actor, file: FileNode, spacer: Spacer, group: Group, boundary: Boundary, layer: Layer, stack: Stack
       }.freeze
     end
   end

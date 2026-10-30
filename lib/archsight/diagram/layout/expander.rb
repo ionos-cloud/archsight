@@ -79,7 +79,7 @@ module Archsight
           # content is force-simulated in both dimensions with no such
           # convention, so `extend` is inert for them (their `main_axis` is
           # `nil`) -- they always fall through to the plain recenter below.
-          if node.children.length > 1 && extend && node.ranked?
+          if node.children.length > 1 && (extend || (node.extend_width? && axis == Axis::WIDTH)) && node.ranked?
             if axis == node.main_axis
               stretch_children(node, axis, extra, extend)
             else

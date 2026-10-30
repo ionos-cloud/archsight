@@ -24,17 +24,22 @@ module Archsight
       # container. Keep these tables in step with the readers in
       # `Graph::Node`/`Graph::Edge`/`Graph::DataFlow` and with `docs/diagram.md`.
       module Attributes
-        NODE = %w[label tint link resource extend].freeze
-        LEAF_KINDS = %i[component application api database queue actor file].freeze
+        NODE = %w[label tint link resource extend width height].freeze
+        LEAF_KINDS = %i[component application api database queue actor file spacer].freeze
         LEAF = (NODE + %w[shape]).freeze
-        CONTAINER = (NODE + %w[gap ranks columns anchor]).freeze
+        CONTAINER = (NODE + %w[gap ranks columns anchor align padding]).freeze
         EDGE = %w[label style relation tint].freeze
         DATAFLOW = %w[label color].freeze
 
         EDGE_STYLES = %w[straight orthogonal].freeze
         LEAF_EXTEND = %w[true false].freeze
-        CONTAINER_EXTEND = %w[true false height].freeze
+        CONTAINER_EXTEND = %w[true false height width].freeze
         ANCHORS = %w[top bottom left right center].freeze
+        # `align`: where a layer's (`top`/`bottom`) or stack's (`left`/`right`)
+        # children sit on the cross axis; see `Layout::Stacker`.
+        ALIGNS = { layer: %w[top center bottom], stack: %w[left center right] }.freeze
+        # `width`/`height` (minimum size) and `padding`: plain pixel counts.
+        SIZE_FORMAT = /\A\d+(\.\d+)?\z/
 
         # `40` (pixels), `150%` (of the default), `+20%`/`-50%` (relative);
         # see `GapSpec`.
@@ -117,11 +122,21 @@ module Archsight
           when "tint" then check_value!(key, value, Tints.names, where, line)
           when "ranks" then check_value!(key, value, ranks_modes, where, line)
           when "extend" then check_value!(key, value, leaf?(block) ? LEAF_EXTEND : CONTAINER_EXTEND, where, line)
+          when "align" then check_align!(value, block, where, line)
+          when "width", "height" then check_format!(key, value, SIZE_FORMAT, "a pixel count (120)", where, line)
+          when "padding" then check_format!(key, value, SIZE_FORMAT, "a pixel count (20)", where, line)
           when "anchor" then check_value!(key, value, ANCHORS, where, line)
           when "gap" then check_format!(key, value, GAP_FORMAT, "a pixel count (40), a percentage (150%) or a signed one (+20%, -50%)", where, line)
           when "link" then check_link!(value, where, line)
           when "resource" then check_resource!(value, block, where, line)
           end
+        end
+
+        def check_align!(value, block, where, line)
+          allowed = ALIGNS[block.kind]
+          raise GraphError, "align only applies to a layer or stack, not #{where} (line #{line})" unless allowed
+
+          check_value!("align", value, allowed, where, line)
         end
 
         def check_value!(key, value, allowed, where, line)
