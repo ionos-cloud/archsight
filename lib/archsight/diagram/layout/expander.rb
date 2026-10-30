@@ -128,23 +128,34 @@ module Archsight
           box.height = target
           return if node.children.empty?
 
-          # An explicit `anchor` decides where the content sits; otherwise a
-          # stack (or a wrapper around one) hands the room to its
-          # `extend "height"` child, and anything else stays top-aligned.
-          delta = node.anchor_shift(Axis::HEIGHT, extra, default: :top)
-          return recenter_children(node, Axis::HEIGHT, delta) if delta.positive?
+          # Room goes to whatever inside takes it (an `extend "height"` child
+          # of a stack/layer, possibly behind a wrapper); only when nothing
+          # does, the content sits at the node's `anchor` (default: top).
+          unless absorbs?(node)
+            delta = node.anchor_shift(Axis::HEIGHT, extra, default: :top)
+            return recenter_children(node, Axis::HEIGHT, delta) if delta.positive?
+          end
 
           if node.layer?
             fill_layer(node, extra)
           elsif node.children.length == 1
             inner = node.children.first
-            grow_top_aligned(inner, extra) if inner.stack? || inner.extend_height?
+            grow_top_aligned(inner, extra) if inner.extend_height? || absorbs?(inner)
           elsif node.stack?
             absorb_in_stack(node, extra)
           end
         end
 
         private
+
+        # True if growing `node` by `extend "height"` hands the extra room to
+        # something inside it (see `grow_height`).
+        def absorbs?(node)
+          return false if node.leaf? || node.children.empty?
+          return node.children.any?(&:extend_height?) if node.layer? || node.stack?
+
+          node.children.length == 1 && (node.children.first.extend_height? || absorbs?(node.children.first))
+        end
 
         # A grown `layer`'s `extend "height"` children fill the new height
         # too (they were only matched to their tallest sibling before).

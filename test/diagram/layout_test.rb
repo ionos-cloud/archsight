@@ -1043,6 +1043,36 @@ class DiagramLayoutTest < Minitest::Test
     assert_in_delta boxes["wide"].right - pad, boxes["b"].right, 0.01
   end
 
+  def test_a_stack_child_with_extend_height_takes_the_room_before_an_anchor_on_its_container_does
+    source = <<~SRC
+      layer {
+        boundary "left" {
+          extend "height"
+          anchor "bottom"
+          stack {
+            stack "pools" {
+              extend "height"
+              component "p1" { label "P1" }
+            }
+            component "bb1" { label "BB" }
+          }
+        }
+        boundary "mid" {
+          stack {
+            component "p2" { label "P2" }
+            component "p3" { label "P3" }
+            component "p4" { label "P4" }
+            component "bb2" { label "BB" }
+          }
+        }
+      }
+    SRC
+    boxes = Archsight::Diagram::Layout.compute(build_graph(source)).boxes
+
+    assert_in_delta boxes["bb2"].top, boxes["bb1"].top, 0.01
+    assert_operator boxes["pools"].height, :>, boxes["p1"].height * 2
+  end
+
   def test_extend_height_leaves_inherited_width_extension_untouched
     source = <<~SRC
       stack "s" {
