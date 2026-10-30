@@ -147,7 +147,7 @@ hint for near misses), never silently ignored.
 | `extend` | nodes, containers | `true`, `false`; containers also `height` |
 | `anchor` | containers | `top`, `bottom`, `left`, `right`, `center` |
 
-`extend "height"` on a direct child of a `layer` grows it to its tallest sibling. Inside such a box (also through a `boundary` around a `stack`), a `stack` child carrying `extend "height"` takes the extra height and moves the ranks below it down, so e.g. a footer rank lines up across the columns.
+`extend "height"` on a direct child of a `layer` grows it to its tallest sibling. Inside such a box (also through a `boundary` around a `stack`), a `stack` child carrying `extend "height"` takes the extra height and moves the ranks below it down, so e.g. a footer rank lines up across the columns. The child can be a `layer` too; its own `extend "height"` children then fill the layer's new height.
 
 `anchor` says where a container's content sits when its box grows: `bottom` (or `top`) when it is made taller, `right` (or `left`) when it is made wider, `center` for the middle. Default: top for `extend "height"`, centered otherwise. It is not inherited, and has no effect on a box whose room is taken by a stack child with `extend "height"`.
 | `shape` | leaves | `rectangle`, `circle`, `cylinder`, `pipe`, `actor`, `file`, `module` |

@@ -134,7 +134,9 @@ module Archsight
           delta = node.anchor_shift(Axis::HEIGHT, extra, default: :top)
           return recenter_children(node, Axis::HEIGHT, delta) if delta.positive?
 
-          if node.children.length == 1
+          if node.layer?
+            fill_layer(node, extra)
+          elsif node.children.length == 1
             inner = node.children.first
             grow_top_aligned(inner, extra) if inner.stack? || inner.extend_height?
           elsif node.stack?
@@ -143,6 +145,16 @@ module Archsight
         end
 
         private
+
+        # A grown `layer`'s `extend "height"` children fill the new height
+        # too (they were only matched to their tallest sibling before).
+        def fill_layer(node, extra)
+          room = @boxes[node.id].height - inset(node, Axis::HEIGHT)
+          node.children.select(&:extend_height?).each do |c|
+            grow = room - @boxes[c.id].height
+            grow_top_aligned(c, grow) if grow.positive? && extra.positive?
+          end
+        end
 
         # Grows a child by `extra` keeping its top edge where it is (box
         # positions are centers, so the center moves down by half of it).

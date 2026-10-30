@@ -943,6 +943,43 @@ class DiagramLayoutTest < Minitest::Test
     assert_in_delta result.boxes["g"].right - Archsight::Diagram::Theme::DEFAULT.padding, content_right, 0.01
   end
 
+  def test_extend_height_on_a_layer_in_a_stack_fills_the_column_and_its_extend_height_children_follow
+    source = <<~SRC
+      layer {
+        boundary "left" {
+          extend "height"
+          stack {
+            layer "row" {
+              extend "height"
+              boundary "c1" {
+                extend "height"
+                component "p1" { label "P1" }
+              }
+              boundary "c2" { component "p2" { label "P2" } }
+            }
+            component "bb1" { label "BB" }
+          }
+        }
+        boundary "mid" {
+          stack {
+            stack "pools" {
+              component "p3" { label "P3" }
+              component "p4" { label "P4" }
+              component "p5" { label "P5" }
+            }
+            component "bb2" { label "BB" }
+          }
+        }
+      }
+    SRC
+    result = Archsight::Diagram::Layout.compute(build_graph(source))
+    boxes = result.boxes
+
+    assert_in_delta boxes["bb2"].top, boxes["bb1"].top, 0.01
+    assert_in_delta boxes["row"].bottom - Archsight::Diagram::Theme::DEFAULT.padding, boxes["c1"].bottom, 0.01
+    assert_operator boxes["c1"].height, :>, boxes["c2"].height
+  end
+
   def test_extend_height_leaves_inherited_width_extension_untouched
     source = <<~SRC
       stack "s" {
