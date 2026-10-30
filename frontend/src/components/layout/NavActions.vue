@@ -110,7 +110,7 @@ async function reload() {
    so the panel and its arrow point up, not left */
 @media all and (max-width: 799px) {
   .nav-actions .nav-action {
-    width: 3.5rem;
+    width: 4.25rem;
   }
 
   .hide-icon {

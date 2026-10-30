@@ -90,6 +90,14 @@ watch(scope, (value) => {
   line-height: 1;
 }
 
+/* narrow windows: the sidebar is right below, so the bar needs less air than Pico's nav items give */
+@media all and (max-width: 799px) {
+  nav > ul > li {
+    padding-top: 0.5rem;
+    padding-bottom: 0.25rem;
+  }
+}
+
 /* the menu button of narrow windows, right of the search; wide windows have the sidebar button */
 .menu-toggle-list {
   flex: 0 0 auto;
