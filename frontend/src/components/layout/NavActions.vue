@@ -106,8 +106,13 @@ async function reload() {
   line-height: 1;
 }
 
-/* below 800px the sidebar sits above the content: the panel and its arrow point up, not left */
+/* below 800px (touch): wider buttons are easier to hit, and the sidebar sits above the content,
+   so the panel and its arrow point up, not left */
 @media all and (max-width: 799px) {
+  .nav-actions .nav-action {
+    width: 3.5rem;
+  }
+
   .hide-icon {
     transform: rotate(90deg);
   }
