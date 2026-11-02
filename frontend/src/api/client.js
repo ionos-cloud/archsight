@@ -147,3 +147,23 @@ export async function saveYaml(kind, name, yaml, contentHash) {
   })
   return res.json()
 }
+
+// URL of the PDF of a page (kind 'Page' or none) or of any other resource
+export function pdfUrl(kind, name) {
+  const n = encodeURIComponent(name)
+  return !kind || kind === 'Page'
+    ? `${BASE}/pages/${n}/pdf`
+    : `${BASE}/kinds/${encodeURIComponent(kind)}/instances/${n}/pdf`
+}
+
+// URL of the sample document (inline PDF) in the look of a pdf Config
+// (`part`: 'cover' or 'page' for a document of just that page)
+export function configPreviewUrl(name, part) {
+  const query = part ? `?part=${encodeURIComponent(part)}` : ''
+  return `${BASE}/kinds/Config/instances/${encodeURIComponent(name)}/preview${query}`
+}
+
+// URL of an asset (image, logo) of the resources directory, given by its path relative to it
+export function assetUrl(path) {
+  return `${BASE}/assets/${String(path).split('/').map(encodeURIComponent).join('/')}`
+}

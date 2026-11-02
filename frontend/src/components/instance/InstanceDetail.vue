@@ -10,6 +10,7 @@ import { renderDrawioIn } from '../../composables/useDrawio.js'
 import { useEmbeds } from '../../composables/useEmbeds.js'
 import EmbeddedKind from '../page/EmbeddedKind.vue'
 import EmbedButton from '../common/EmbedButton.vue'
+import PdfButton from '../common/PdfButton.vue'
 import RelationsGrid from './RelationsGrid.vue'
 import ModuleGraph from './ModuleGraph.vue'
 import RequirementsSection from './RequirementsSection.vue'
@@ -222,6 +223,7 @@ function initPanZoomOnGraph() {
       </div>
       <div class="header-actions">
         <EmbedButton :kind="kind" :name="data.name" />
+        <PdfButton :kind="kind" :name="data.name" />
         <router-link
           v-if="!generatedScript"
           class="btn-header"

@@ -249,7 +249,13 @@
 
 /* ---------- edit link: a pen at the top right of the page head ---------- */
 .wiki-page > .page-head { position: relative; }
-.wiki-page .page-head h1 { padding-right: 2.5rem; }
+.wiki-page .page-head h1 { padding-right: 4.75rem; }
+
+.wiki-page .page-head .page-pdf {
+  position: absolute;
+  top: 0;
+  right: 2.25rem;
+}
 
 .wiki-page .page-edit {
   position: absolute;

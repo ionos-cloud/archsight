@@ -9,6 +9,7 @@ import { useInternalLinks } from '../../composables/useInternalLinks.js'
 import { anchorTarget } from '../../composables/useRouteFocus.js'
 import { useEmbeds } from '../../composables/useEmbeds.js'
 import EmbeddedKind from './EmbeddedKind.vue'
+import PdfButton from '../common/PdfButton.vue'
 
 // The reading layout of wiki pages and documentation: breadcrumb, title, optional properties, a contents
 // rail that follows the scroll position and the body, whose code, diagrams and embeds are rendered here.
@@ -84,6 +85,7 @@ function scrollTo(id) {
   <article :class="['wiki-page', { 'has-toc': toc.length }]">
     <div class="page-head">
       <slot name="actions"></slot>
+      <PdfButton v-if="editName && !$slots.actions" class="page-pdf" :name="editName" compact />
       <router-link
         v-if="editName && !$slots.actions"
         class="page-edit"
