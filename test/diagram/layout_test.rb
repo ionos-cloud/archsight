@@ -865,6 +865,25 @@ class DiagramLayoutTest < Minitest::Test
     assert_operator plain.height, :<, tall.height
   end
 
+  def test_extend_keeps_a_multi_child_container_s_stretched_children_inside_its_padding
+    source = <<~SRC
+      stack {
+        extend "true"
+        component "wide" { label "A Very Long Label To Force This Rank Extremely Wide" }
+        stack "box" {
+          component "a" { label "A" }
+          component "b" { label "B" }
+        }
+      }
+    SRC
+    boxes = Archsight::Diagram::Layout.compute(build_graph(source)).boxes
+    pad = Archsight::Diagram::Theme::DEFAULT.padding
+
+    assert_in_delta boxes["box"].left + pad, boxes["a"].left, 0.01
+    assert_in_delta boxes["box"].right - pad, boxes["a"].right, 0.01
+    assert_in_delta boxes["box"].left + pad, boxes["b"].left, 0.01
+  end
+
   def test_extend_height_leaves_inherited_width_extension_untouched
     source = <<~SRC
       stack "s" {
