@@ -55,6 +55,7 @@ function tagQuery(tag) {
     :toc="page.toc"
     :backlinks="page.backlinks"
     :edit-name="page.name"
+    :slides="page.slides"
   >
     <template v-if="$slots.actions" #actions><slot name="actions"></slot></template>
     <template #properties>

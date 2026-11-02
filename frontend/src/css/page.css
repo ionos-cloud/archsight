@@ -277,3 +277,79 @@
   color: var(--accent);
   border-color: var(--line);
 }
+
+/* ---------- slide deck (a PDF or an HTML page shown above the summary) ---------- */
+.wiki-page .slides-block {
+  margin: 0 0 24px;
+}
+
+.wiki-page .slides-frame {
+  border: 1px solid var(--line);
+  background: var(--tint);
+}
+
+.wiki-page .slides-frame iframe {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+.wiki-page .slides-html iframe {
+  aspect-ratio: 16 / 9;
+}
+
+.wiki-page .slides-pdf iframe {
+  height: min(75vh, 46rem);
+}
+
+.wiki-page .slides-frame:fullscreen iframe {
+  height: 100vh;
+  aspect-ratio: auto;
+}
+
+.wiki-page .slides-poster {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 12rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.wiki-page .slides-poster img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.wiki-page .slides-play {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 6px 12px;
+  background: var(--pico-background-color);
+  color: var(--pico-color);
+  border: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+
+.wiki-page .slides-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.wiki-page .slides-actions button.btn-header {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--pico-primary);
+  font-size: inherit;
+}
