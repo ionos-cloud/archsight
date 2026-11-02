@@ -130,9 +130,26 @@ module Archsight
         # `extend "height"` on a direct child of a `layer` grows that
         # child's box to its tallest sibling's height, leaving its own
         # content top-aligned where it already sits. Never inherited --
-        # only the node carrying the attr is affected.
+        # only the node carrying the attr is affected. In a `stack` inside such a
+        # grown box it absorbs the extra height instead (see
+        # `Expander#grow_height`).
         def extend_height?
           attrs["extend"] == "height"
+        end
+
+        # Where this container's content sits when its box grows by `extra`
+        # along `axis`: the `anchor` attr (`top`/`bottom` for height,
+        # `left`/`right` for width, `center`), else `default`. Returns how
+        # far to shift the children (0 = leading edge, `extra` = trailing).
+        # Never inherited; a value for the other axis is ignored.
+        def anchor_shift(axis, extra, default:)
+          value = attrs["anchor"]
+          value = default.to_s unless (axis == Axis::HEIGHT ? %w[top bottom center] : %w[left right center]).include?(value)
+          case value
+          when "top", "left" then 0.0
+          when "bottom", "right" then extra.to_f
+          else extra / 2.0
+          end
         end
 
         def link
