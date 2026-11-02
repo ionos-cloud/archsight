@@ -10,6 +10,7 @@ import { anchorTarget } from '../../composables/useRouteFocus.js'
 import { useEmbeds } from '../../composables/useEmbeds.js'
 import EmbeddedKind from './EmbeddedKind.vue'
 import PdfButton from '../common/PdfButton.vue'
+import SlidesBlock from './SlidesBlock.vue'
 
 // The reading layout of wiki pages and documentation: breadcrumb, title, optional properties, a contents
 // rail that follows the scroll position and the body, whose code, diagrams and embeds are rendered here.
@@ -20,6 +21,7 @@ const props = defineProps({
   toc: { type: Array, default: () => [] }, // [{ level, id, text }]
   backlinks: { type: Array, default: () => [] }, // [{ name, title }]
   editName: { type: String, default: null }, // shows the pen link to the editor of this page
+  slides: { type: Object, default: null }, // the finished slide deck shown above the body, see SlidesBlock
 })
 
 const route = useRoute()
@@ -101,6 +103,7 @@ function scrollTo(id) {
       </div>
       <h1>{{ title }}</h1>
       <slot name="properties"></slot>
+      <SlidesBlock v-if="slides" :key="slides.url" :slides="slides" />
     </div>
 
     <aside v-if="toc.length" class="page-toc" aria-label="On this page">

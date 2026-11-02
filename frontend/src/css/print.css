@@ -45,7 +45,8 @@
   .copy-button,
   .view-pager,
   .svg-zoom-btn,
-  .graph-options {
+  .graph-options,
+  .slides-block {
     display: none !important;
   }
 

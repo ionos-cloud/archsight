@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Archsight in 10 minutes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: Arial, sans-serif; background: #0b3d91; color: #fff; height: 100vh; display: flex; flex-direction: column; }
+  main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 6vw; }
+  h1 { font-size: 5vw; margin-bottom: 2vw; }
+  p { font-size: 2.4vw; max-width: 60ch; line-height: 1.4; }
+  nav { display: flex; gap: 8px; padding: 12px; justify-content: center; }
+  button { font: inherit; padding: 6px 14px; border: 0; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+<main id="slide"></main>
+<nav><button id="prev">Previous</button><span id="pos"></span><button id="next">Next</button></nav>
+<script>
+  var slides = [
+    ["Archsight in 10 minutes", "Model the architecture, document it next to the model."],
+    ["Resources and relations", "Every resource has a kind, a layer and relations to other resources."],
+    ["Pages and menus", "Markdown pages sit in a menu tree beside the model."],
+    ["Views and analyses", "Ask questions of the model and embed the answers in pages."]
+  ];
+  var i = 0;
+  function show() {
+    document.getElementById("slide").innerHTML = "<h1></h1><p></p>";
+    document.querySelector("h1").textContent = slides[i][0];
+    document.querySelector("p").textContent = slides[i][1];
+    document.getElementById("pos").textContent = (i + 1) + " / " + slides.length;
+  }
+  function go(d) { i = Math.min(slides.length - 1, Math.max(0, i + d)); show(); }
+  document.getElementById("prev").onclick = function () { go(-1); };
+  document.getElementById("next").onclick = function () { go(1); };
+  document.addEventListener("keydown", function (e) { if (e.key === "ArrowRight") go(1); if (e.key === "ArrowLeft") go(-1); });
+  show();
+</script>
+</body>
+</html>

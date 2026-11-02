@@ -185,6 +185,21 @@ module Archsight::Web::API::Routes
     send_file file, type: type, disposition: :inline
   end
 
+  # GET /api/v1/decks/*path - The finished slide deck of a page (`slides:` in its frontmatter), a PDF or one
+  # self-contained HTML page. Same boundary as the assets (only these two types, only inside the resources directory,
+  # everything else the same 404). An HTML deck runs script, so it is only ever served with a sandbox policy.
+  get "/api/v1/decks/*" do
+    file = Archsight::Assets.deck_file_for(params["splat"].first, resources_dir: Archsight.resources_dir)
+    json_error("Deck not found", status: 404, error_type: "NotFound") unless file
+    json_error("Deck is too large", status: 413, error_type: "PayloadTooLarge") if File.size(file) > Archsight::Assets::MAX_BYTES
+
+    headers "X-Content-Type-Options" => "nosniff"
+    headers "Content-Security-Policy" => Archsight::Slides.csp if Archsight::Assets.html_deck?(file)
+    cache_control :public, :must_revalidate, max_age: 0
+    etag "#{File.mtime(file).to_i}-#{File.size(file)}"
+    send_file file, type: Archsight::Assets.deck_content_type(file), disposition: :inline
+  end
+
   # GET /api/v1/status/:colour/*text - The lozenge of a `{status:colour text}` macro, generated on the fly. The
   # URL fully determines the SVG, so it is cached for good.
   get "/api/v1/status/:colour/*" do
