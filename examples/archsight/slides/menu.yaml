@@ -1,0 +1,11 @@
+apiVersion: architecture/v1alpha1
+kind: PageMenu
+metadata:
+  name: Slides
+  annotations:
+    menu/title: Slides
+spec:
+  contains:
+    pages:
+      - archsight-intro
+      - archsight-intro-web

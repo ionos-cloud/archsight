@@ -208,6 +208,16 @@ jobs:
           check_pdf "http://localhost:4567/api/v1/kinds/BusinessProduct/instances/Archsight/pdf"
           check_pdf "http://localhost:4567/api/v1/kinds/Config/instances/Config:PDF:default/preview"
 
+          # Slide decks: a PDF is served as is, an HTML deck only inside the sandbox policy
+          check_pdf "http://localhost:4567/api/v1/decks/slides/archsight-intro/deck.pdf"
+          if curl -sfI "http://localhost:4567/api/v1/decks/slides/archsight-intro-web/deck.html" | grep -qi '^content-security-policy: sandbox allow-scripts'; then
+            echo "OK:   HTML deck is sandboxed"
+            PASS=$((PASS+1))
+          else
+            echo "FAIL: HTML deck is not served with the sandbox policy"
+            FAIL=$((FAIL+1))
+          fi
+
           echo "=== Results: $PASS passed, $FAIL failed ==="
 
           docker stop smoketest

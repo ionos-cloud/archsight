@@ -42,6 +42,7 @@ that is set but empty counts as not set.
 | `pdf.timeout` | `ARCHSIGHT_PDF_TIMEOUT` | Seconds a PDF may take to typeset before it is cancelled. Default `60` |
 | `pdf.remote_images` | `ARCHSIGHT_PDF_REMOTE_IMAGES` | `false` stops the PDF export from fetching images that a page embeds by URL (default: fetched, public hosts only) |
 | `pdf.max_analyses` | `ARCHSIGHT_PDF_MAX_ANALYSES` | How many `![[Analysis/...]]` embeds one PDF may run (each can take as long as its own timeout). Default `5`; further ones are shown as a note |
+| `slides.script_hosts` | `ARCHSIGHT_SLIDES_SCRIPT_HOSTS` | `https://` hosts (space or comma separated) from which an HTML [slide deck](/doc/slide-decks) may load scripts, styles and fonts. Default `https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com` |
 | `import.cache_root` | `ARCHSIGHT_IMPORT_CACHE_ROOT` | Where the GitHub, GitLab and repository imports clone repositories, and what importers of the resources repository get as `cache_root` / `ARCHSIGHT_CACHE_DIR`. Default `~/.cache/archsight/git`; an import's own `import/config/cacheRoot` wins, see [Importers of the Resources Repository](/doc/import#importers-of-the-resources-repository). Every import makes sure the clones are not indexed by Spotlight (macOS): an empty `.metadata_never_index` in `~/.cache/archsight`, or in the cache root when it is elsewhere |
 
 ## Command line
