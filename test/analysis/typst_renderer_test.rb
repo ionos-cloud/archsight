@@ -74,7 +74,7 @@ class TypstRendererTest < Minitest::Test
     typst = render(result(sections: [{ type: :table, headers: %w[A B], rows: [[NASTY, 2], ["only one"]] }]))
 
     assert_includes typst, "#table(columns: 2"
-    assert_includes typst, "[#strong[#\"A\"]]"
+    assert_includes typst, "table.header([#text(weight: \"semibold\")[#\"A\"]], [#text(weight: \"semibold\")[#\"B\"]])"
     assert_includes typst, %([#"#{NASTY.gsub("\\") { "\\\\" }.gsub('"') { '\\"' }}"])
     assert_includes typst, '[#""]' # short row is padded
   end
