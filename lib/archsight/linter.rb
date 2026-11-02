@@ -2,6 +2,7 @@
 
 require_relative "markdown"
 require_relative "helpers"
+require_relative "slides"
 require_relative "linter/structure"
 
 module Archsight
@@ -105,10 +106,22 @@ module Archsight
     end
 
     # Pages need exactly one menu and their [[links]] must resolve
+    # `slides:` and `cover:` of a page must point at files that are served
+    def validate_slides(page)
+      resources_dir = @database.path if @database.respond_to?(:path)
+      return unless resources_dir
+
+      Archsight::Slides.audit(page, resources_dir: resources_dir).each do |problem|
+        @errors << "#{page.path_ref}: Page '#{page.name}': #{problem}"
+      end
+    end
+
     def validate_page(page)
       menus = page.references.map { |r| r[:instance] }.select { |i| i.klass == "PageMenu" }.uniq
       @errors << "#{page.path_ref}: Page '#{page.name}' is not contained in any PageMenu" if menus.empty? && !page.home?
       @errors << "#{page.path_ref}: Page '#{page.name}' is contained in several PageMenus (#{menus.map(&:name).join(", ")})" if menus.length > 1
+
+      validate_slides(page)
 
       links = Archsight::Helpers::WikiLinks.new(@database)
       page.annotations["page/content"].to_s.gsub(Archsight::Helpers::Embeds::PATTERN, "").scan(Archsight::Helpers::WikiLinks::PATTERN).map { |match| match.first.strip }.each do |target|

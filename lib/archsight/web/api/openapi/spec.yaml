@@ -336,6 +336,65 @@ paths:
                 error: NotFound
                 message: Page 'nope' not found
 
+  /api/v1/decks/{path}:
+    get:
+      summary: Get a slide deck (PDF or self-contained HTML)
+      description: |
+        Serves the finished slide deck of a page (`slides:` in its frontmatter): a `.pdf` or one self-contained
+        `.html` file made by any slide tool. Archsight does not render slides, it serves the file and embeds it next
+        to the page. The URL is part of `slides.url` of `GET /api/v1/pages/{name}`.
+
+        The same boundary as the assets applies: regular files inside the resources directory, at most 25 MB, a path
+        that is outside, missing or of another type gets the same `404`.
+
+        An HTML deck is script of its author, so it is only ever served with a `Content-Security-Policy` that starts
+        with `sandbox allow-scripts` (no `allow-same-origin`): the deck cannot reach the API or the storage of
+        Archsight, also when the file is opened on its own. Scripts, styles and fonts may come from the hosts of the
+        setting `slides.script_hosts` (default: common CDNs).
+      operationId: getDeck
+      tags:
+        - Assets
+      parameters:
+        - name: path
+          in: path
+          required: true
+          description: Path relative to the resources directory, with a literal `/` between the segments
+          schema:
+            type: string
+          example: slides/example-deck/deck.pdf
+      responses:
+        '200':
+          description: The deck
+          headers:
+            Content-Security-Policy:
+              description: Only on HTML decks, the sandbox policy
+              schema:
+                type: string
+            X-Content-Type-Options:
+              description: Always `nosniff`
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+        '404':
+          description: No such deck
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: The file is larger than 25 MB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/status/{colour}/{text}:
     get:
       summary: Get the lozenge of a status macro
@@ -2211,9 +2270,26 @@ components:
           type: string
           description: Name of the page the menu opens, present when it opens one; the crumb links to it
 
+    PageSlides:
+      type: object
+      description: The finished slide deck of a page (`slides:` in the frontmatter), shown next to the page's summary
+      required: [url, filename, type, cover_url]
+      properties:
+        url:
+          type: string
+          description: Where the deck is served, `/api/v1/decks/<path>`
+        filename:
+          type: string
+        type:
+          type: string
+          enum: [pdf, html]
+        cover_url:
+          type: [string, 'null']
+          description: The cover image (`cover:` in the frontmatter) as an asset URL
+
     PageResponse:
       type: object
-      required: [name, title, status, author, owner, created, updated, properties, links, tags, toc, breadcrumb, html, backlinks]
+      required: [name, title, status, author, owner, created, updated, properties, links, tags, slides, toc, breadcrumb, html, backlinks]
       properties:
         name:
           type: string
@@ -2263,6 +2339,11 @@ components:
           type: array
           items:
             type: string
+        slides:
+          oneOf:
+            - $ref: '#/components/schemas/PageSlides'
+            - type: 'null'
+          description: The slide deck of the page, null if it has none or the file cannot be served
         toc:
           type: array
           description: Headings of the body; empty unless the frontmatter has `toc` `yes`

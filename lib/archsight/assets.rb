@@ -34,6 +34,13 @@ module Archsight
       ".drawio" => "application/xml",
       ".asd" => "image/svg+xml" # served rendered, see the assets route
     }.freeze
+    # Finished slide decks (see `page/slides`): a PDF, or one self-contained HTML page. They are served by their own door
+    # (`/api/v1/decks/<path>`), never as an image, because an HTML deck runs script (it is sandboxed when served).
+    DECK_TYPES = {
+      ".pdf" => "application/pdf",
+      ".html" => "text/html; charset=utf-8"
+    }.freeze
+    DECKS_PREFIX = "/api/v1/decks/"
     DRAWIO = ".drawio"
     ASD = ".asd"
 
@@ -105,8 +112,24 @@ module Archsight
     # @param path [String] relative to the resources directory, as received (it is normalized here, so callers cannot forget to)
     # @return [String, nil] absolute path, nil if there is no such servable asset
     def file_for(path, resources_dir:)
+      servable(path, TYPES, resources_dir)
+    end
+
+    # Like #file_for for a slide deck (PDF or HTML)
+    def deck_file_for(path, resources_dir:)
+      servable(path, DECK_TYPES, resources_dir)
+    end
+
+    # Why a normalized path is not served as a deck: :type or :missing; nil if it is served
+    def deck_problem(path, resources_dir:)
+      return :type unless DECK_TYPES.key?(File.extname(path).downcase)
+
+      deck_file_for(path, resources_dir: resources_dir) ? nil : :missing
+    end
+
+    def servable(path, types, resources_dir)
       normalized = normalize(path)
-      return nil unless normalized && TYPES.key?(File.extname(normalized).downcase)
+      return nil unless normalized && types.key?(File.extname(normalized).downcase)
 
       root = File.realpath(resources_dir)
       real = File.realpath(File.join(root, normalized))
@@ -117,6 +140,19 @@ module Archsight
 
     def content_type(path)
       TYPES.fetch(File.extname(path).downcase)
+    end
+
+    def deck_content_type(path)
+      DECK_TYPES.fetch(File.extname(path).downcase)
+    end
+
+    def html_deck?(path)
+      File.extname(path).casecmp?(".html")
+    end
+
+    # URL under which the API serves a normalized deck path
+    def deck_url_for(path)
+      DECKS_PREFIX + path.split("/").map { |segment| ERB::Util.url_encode(segment) }.join("/")
     end
 
     def drawio?(path)

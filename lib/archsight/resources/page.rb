@@ -76,6 +76,14 @@ class Archsight::Resources::Page < Archsight::Resources::Base
              title: "Properties",
              format: :multiline,
              sidebar: false
+  annotation "page/slides",
+             description: "Finished slide deck of the page: a .pdf or a self-contained .html file next to the page",
+             title: "Slides",
+             sidebar: false
+  annotation "page/cover",
+             description: "Cover image of the slide deck (a file next to the page)",
+             title: "Cover",
+             sidebar: false
   annotation "page/content",
              description: "Markdown body of the page",
              title: "Content",
