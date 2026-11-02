@@ -1,0 +1,19 @@
+---
+apiVersion: architecture/v1alpha1
+kind: Config
+metadata:
+  name: Config:PDF:default
+  annotations:
+    architecture/description: |
+      The look of exported PDF documents (colours, fonts, header and footer). Used for every PDF export
+      that does not name another template with the tag `pdf:template:<name>`.
+    config/type: pdf
+    pdf/color-primary: "#1f3a5f"
+    pdf/color-accent: "#2f7fd1"
+    pdf/color-text: "#1c1c1c"
+    pdf/color-muted: "#6b7280"
+    pdf/footer-text: Generated with Archsight
+    pdf/classification: Internal
+    pdf/lang: en
+    pdf/paper: a4
+spec: {}

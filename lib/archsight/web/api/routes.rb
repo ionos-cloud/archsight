@@ -6,6 +6,7 @@ require_relative "json_helpers"
 require_relative "page_helpers"
 require_relative "requirements_helpers"
 require_relative "analysis_helpers"
+require_relative "pdf_helpers"
 require_relative "../../assets"
 require_relative "../../openapi"
 
@@ -21,6 +22,7 @@ module Archsight::Web::API::Routes
   helpers Archsight::Web::API::PageHelpers
   helpers Archsight::Web::API::RequirementsHelpers
   helpers Archsight::Web::API::AnalysisHelpers
+  helpers Archsight::Web::API::PdfHelpers
 
   # Rendering is CPU work, previews are typed, not pasted
   MAX_DIAGRAM_SOURCE = 100_000
@@ -79,6 +81,26 @@ module Archsight::Web::API::Routes
       .merge(graph_layers: Archsight::GraphvisRenderer.default_graph_layers(instance.class.layer)))
   end
 
+  # GET /api/v1/kinds/Config/instances/:name/preview - A sample document in the look of a pdf Config (inline PDF)
+  get "/api/v1/kinds/Config/instances/:name/preview" do
+    config = db.instance_by_kind("Config", params[:name]) || db.instance_by_alias("Config", params[:name])
+    json_error("Instance '#{params[:name]}' not found", status: 404, error_type: "NotFound") unless config
+    json_error("Config '#{config.name}' is not of type #{Archsight::Pdf::Theme::TYPE}", status: 422, error_type: "UnprocessableEntity") unless config.annotations["config/type"].to_s.casecmp?(Archsight::Pdf::Theme::TYPE)
+
+    serve_pdf_preview(config)
+  end
+
+  # GET /api/v1/kinds/:kind/instances/:name/pdf - The resource as PDF document (Typst), see Archsight::Pdf
+  get "/api/v1/kinds/:kind/instances/:name/pdf" do
+    klass = Archsight::Resources[params[:kind]]
+    json_error("Kind '#{params[:kind]}' not found", status: 404, error_type: "NotFound") unless klass
+
+    instance = db.instance_by_kind(params[:kind], params[:name]) || db.instance_by_alias(params[:kind], params[:name])
+    json_error("Instance '#{params[:name]}' not found", status: 404, error_type: "NotFound") unless instance
+
+    serve_pdf(instance)
+  end
+
   # GET /api/v1/pages - Page tree built from PageMenu resources, page tags and filters and the home page
   # (shown at `/`; it is not in the tree unless a menu contains it)
   get "/api/v1/pages" do
@@ -93,6 +115,14 @@ module Archsight::Web::API::Routes
     json_error("Page '#{params[:name]}' not found", status: 404, error_type: "NotFound") unless page
 
     json_response(build_page_response(page))
+  end
+
+  # GET /api/v1/pages/:name/pdf - The page as PDF document (Typst), see Archsight::Pdf
+  get "/api/v1/pages/:name/pdf" do
+    page = db.instance_by_kind("Page", params[:name])
+    json_error("Page '#{params[:name]}' not found", status: 404, error_type: "NotFound") unless page
+
+    serve_pdf(page)
   end
 
   # GET /api/v1/search - Search with query language

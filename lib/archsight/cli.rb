@@ -356,6 +356,43 @@ module Archsight
       exit 1
     end
 
+    desc "pdf TARGET", "Export a page or resource as PDF (needs typst)"
+    long_desc <<~DESC
+      Typesets a page (TARGET is its name) or any other resource (TARGET is Kind/Name) as a PDF with Typst, the same
+      document the PDF button of the web UI downloads. The look comes from the Config of type pdf named default (or --template),
+      the tags pdf:cover, pdf:toc, pdf:landscape, pdf:draft and pdf:template:<name> steer the layout. The typst command
+      is taken from the PATH, or from ARCHSIGHT_PDF_TYPST / `pdf.typst` in ~/.config/archsight/archsight.yaml.
+      See the PDF Export page of the documentation.
+    DESC
+    option :output, aliases: "-o", type: :string, desc: "Output file (default: <name>.pdf in the current directory)"
+    option :template, type: :string, desc: "Name of the pdf Config to use (default: the tag or `default`)"
+    option :draft, type: :boolean, default: false, desc: "Add the draft watermark"
+    def pdf(target)
+      configure_resources
+      require "archsight/database"
+      require "archsight/pdf"
+
+      db = Archsight::Database.new(Archsight.resources_dir, compute_annotations: false)
+      begin
+        db.reload!
+      rescue Archsight::ResourceError => e
+        display_error_with_context(e.to_s)
+        exit 1
+      end
+
+      kind, name = target.include?("/") ? target.split("/", 2) : ["Page", target]
+      resource = Archsight::Resources[kind] && (db.instance_by_kind(kind, name) || db.instance_by_alias(kind, name))
+      abort "Error: #{kind} '#{name}' not found" unless resource
+
+      document = Archsight::Pdf.document(db, resource, template: options[:template], draft: options[:draft])
+      file = options[:output] || document.filename
+      File.binwrite(file, Archsight::Pdf.compile(document))
+      puts "Wrote #{file}"
+    rescue Archsight::Pdf::Error => e
+      warn "Error: #{e.message}"
+      exit 1
+    end
+
     desc "module SUBCOMMAND", "Module analysis commands (e.g. module graph PATH)"
     subcommand "module", ModuleCLI
 

@@ -40,7 +40,7 @@ Names are unique per kind. Several documents can share one file, separated by `-
 | Application | ApplicationService, ApplicationComponent, ApplicationInterface, DataObject | Which software? |
 | Technology | TechnologyService, TechnologyArtifact, TechnologyInterface, TechnologySystemSoftware, TechnologyNode | How is it built and run? |
 | Compliance | ComplianceEvidence | Can we prove it? |
-| Tooling | View, Import, Analysis | Queries, data sources, scripts |
+| Tooling | View, Import, Analysis, Config | Queries, data sources, scripts |
 | Docs | Page, PageMenu | The handbook you are reading |
 
 Every kind has a reference page under `/doc/resources/<kind>` with its annotations, relations and a template.

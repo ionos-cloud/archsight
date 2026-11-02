@@ -374,6 +374,234 @@ paths:
         "404":
           description: Unknown colour
 
+  "/api/v1/kinds/Config/instances/{name}/preview":
+    get:
+      summary: Preview the look of a PDF Config
+      description: A fixed sample document (cover page and a page with headings, list,
+        quote, table with status badges and code) in the look of one `Config` of type
+        `pdf`, typeset by Typst like every PDF export. Served inline, for showing it
+        in a page. Only the Config shapes the result, so a changed colour, font or logo
+        is visible at once. The response carries an `ETag` (fingerprint of the document
+        and the files it is made of) and answers `304` for a matching `If-None-Match`.
+      operationId: getConfigPreview
+      tags:
+      - PDF
+      parameters:
+      - name: name
+        in: path
+        required: true
+        description: Name of the Config, e.g. `Config:PDF:default`
+        schema:
+          type: string
+      - name: part
+        in: query
+        required: false
+        description: "`cover` or `page` for a document of just that page (the viewer needs no navigation); without it both pages"
+        schema:
+          type: string
+          enum:
+          - cover
+          - page
+      - name: If-None-Match
+        in: header
+        required: false
+        description: The `ETag` of a copy the client has; a match answers `304`
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The PDF
+          headers:
+            ETag:
+              schema:
+                type: string
+            Content-Disposition:
+              description: '`inline; filename="preview-<name>.pdf"`'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: The client's copy is current
+        '404':
+          description: No such Config
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: The Config is not of type `pdf`, or the sample could not be typeset
+            (message of typst)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '503':
+          description: typst is not installed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+
+  "/api/v1/kinds/{kind}/instances/{name}/pdf":
+    get:
+      summary: Download a resource as PDF
+      description: |
+        Returns one resource as a PDF document, laid out by Typst (`typst` must be installed, the container image has it).
+  
+        **What it contains**: a page is exported as written (headings, tables, images, `asd` diagrams as vector graphics,
+        `[[links]]` as their label); any other resource becomes a generated document with its description,
+        properties, relations and its `architecture/diagram`. Tags steer the layout: `pdf:cover`, `pdf:toc`,
+        `pdf:landscape`, `pdf:draft`, `pdf:template:<name>` and `version:<x>`.
+  
+        **Look**: colours, fonts, logo and the texts of header and footer come from the `Config` resource of type `pdf` named
+        `default` (or the one `template` / the tag names); without one a neutral look is used.
+  
+        The response carries an `ETag` (a fingerprint of everything the PDF is made from, so a changed page, image,
+        diagram or template changes it) and answers `304` for a matching `If-None-Match`.
+      operationId: getInstancePdf
+      tags:
+      - PDF
+      parameters:
+      - "$ref": "#/components/parameters/kind"
+      - "$ref": "#/components/parameters/name"
+      - name: template
+        in: query
+        required: false
+        description: Name of a `Config` of type `pdf` to use instead of the tag or `default`
+        schema:
+          type: string
+      - name: draft
+        in: query
+        required: false
+        description: "`1` adds the draft watermark"
+        schema:
+          type: string
+          enum:
+          - '1'
+      - name: If-None-Match
+        in: header
+        required: false
+        description: The `ETag` of a copy the client has; a match answers `304`
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The PDF
+          headers:
+            ETag:
+              schema:
+                type: string
+            Content-Disposition:
+              description: '`attachment; filename="<name>.pdf"`'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: The client's copy is current
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: The document could not be typeset (message of typst)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '503':
+          description: typst is not installed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+  "/api/v1/pages/{name}/pdf":
+    get:
+      summary: Download a page as PDF
+      description: |
+        Returns one page as a PDF document, laid out by Typst (`typst` must be installed, the container image has it).
+  
+        **What it contains**: a page is exported as written (headings, tables, images, `asd` diagrams as vector graphics,
+        `[[links]]` as their label); any other resource becomes a generated document with its description,
+        properties, relations and its `architecture/diagram`. Tags steer the layout: `pdf:cover`, `pdf:toc`,
+        `pdf:landscape`, `pdf:draft`, `pdf:template:<name>` and `version:<x>`.
+  
+        **Look**: colours, fonts, logo and the texts of header and footer come from the `Config` resource of type `pdf` named
+        `default` (or the one `template` / the tag names); without one a neutral look is used.
+  
+        The response carries an `ETag` (a fingerprint of everything the PDF is made from, so a changed page, image,
+        diagram or template changes it) and answers `304` for a matching `If-None-Match`.
+      operationId: getPagePdf
+      tags:
+      - PDF
+      parameters:
+      - "$ref": "#/components/parameters/name"
+      - name: template
+        in: query
+        required: false
+        description: Name of a `Config` of type `pdf` to use instead of the tag or `default`
+        schema:
+          type: string
+      - name: draft
+        in: query
+        required: false
+        description: "`1` adds the draft watermark"
+        schema:
+          type: string
+          enum:
+          - '1'
+      - name: If-None-Match
+        in: header
+        required: false
+        description: The `ETag` of a copy the client has; a match answers `304`
+        schema:
+          type: string
+      responses:
+        '200':
+          description: The PDF
+          headers:
+            ETag:
+              schema:
+                type: string
+            Content-Disposition:
+              description: '`attachment; filename="<name>.pdf"`'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: The client's copy is current
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '422':
+          description: The document could not be typeset (message of typst)
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+        '503':
+          description: typst is not installed
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Error"
+
   /api/v1/assets/{path}:
     get:
       summary: Get an asset (image or draw.io diagram)
@@ -2120,6 +2348,8 @@ tags:
     description: Search and query operations
   - name: Pages
     description: Wiki pages (markdown with frontmatter), the page tree and the home page
+  - name: PDF
+    description: Pages and resources as PDF documents (Typst)
   - name: Assets
     description: Images and draw.io diagrams that markdown embeds
   - name: Macros

@@ -25,6 +25,10 @@ ENV GEM_HOME=/usr/local/bundle
 ENV GEM_PATH=/usr/local/bundle:/usr/local/lib/ruby/gems/4.0.0
 ENV PATH="/usr/local/bundle/bin:${PATH}"
 
+# PDF export (Archsight::Pdf): typst typesets the documents, rsvg-convert turns the diagrams into vector graphics,
+# graphviz draws the dependency graph of a resource
+RUN apk add --no-cache typst rsvg-convert font-liberation font-dejavu font-noto-emoji graphviz
+
 RUN mkdir -p /resources
 
 ENV ARCHSIGHT_RESOURCES_DIR=/resources

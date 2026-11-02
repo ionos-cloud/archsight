@@ -161,6 +161,18 @@ jobs:
             fi
           }
 
+          # The URL answers a PDF (typst, rsvg-convert and graphviz are in the image)
+          check_pdf() {
+            URL=$1
+            if curl -sf -o /tmp/smoketest.pdf "$URL" && [ "$(head -c 4 /tmp/smoketest.pdf)" = "%PDF" ]; then
+              echo "OK:   $URL"
+              PASS=$((PASS+1))
+            else
+              echo "FAIL: $URL (expected a PDF)"
+              FAIL=$((FAIL+1))
+            fi
+          }
+
           echo "=== Smoketest ==="
 
           # Vue SPA HTML references a JS bundle
@@ -189,6 +201,12 @@ jobs:
 
           # API: OpenAPI spec
           check "http://localhost:4567/api/v1/openapi.yaml" "openapi"
+
+          # PDF export: a page, a resource (its diagram goes through rsvg-convert, its dependency graph through dot) and
+          # the preview of the PDF Config
+          check_pdf "http://localhost:4567/api/v1/pages/core-concepts/pdf"
+          check_pdf "http://localhost:4567/api/v1/kinds/BusinessProduct/instances/Archsight/pdf"
+          check_pdf "http://localhost:4567/api/v1/kinds/Config/instances/Config:PDF:default/preview"
 
           echo "=== Results: $PASS passed, $FAIL failed ==="
 

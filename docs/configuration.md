@@ -37,6 +37,11 @@ that is set but empty counts as not set.
 | `jira.server` | `ARCHSIGHT_JIRA_SERVER` | Name of the Jira server as Confluence knows it (the `server` parameter of its Jira macro). Needed by the Confluence export when Confluence has more than one Jira server: without it the exported `{jira:KEY}` macros have no server and Confluence shows an error |
 | `jira.server_id` | `ARCHSIGHT_JIRA_SERVER_ID` | Id of that server (the `serverId` parameter). Copy both from the storage format of a Jira macro that already works in Confluence (page "Edit in storage format") |
 | `jira.token` | `ARCHSIGHT_JIRA_TOKEN` | Reserved, nothing uses it yet |
+| `pdf.typst` | `ARCHSIGHT_PDF_TYPST` | Path of the `typst` command that typesets the [PDF export](/doc/pdf-export), if it is not on the `PATH` |
+| `pdf.dot` | `ARCHSIGHT_PDF_DOT` | Path of Graphviz' `dot` command that draws the dependency graph in the [PDF export](/doc/pdf-export), if it is not on the `PATH`. Without it the PDF of a resource has no graph |
+| `pdf.timeout` | `ARCHSIGHT_PDF_TIMEOUT` | Seconds a PDF may take to typeset before it is cancelled. Default `60` |
+| `pdf.remote_images` | `ARCHSIGHT_PDF_REMOTE_IMAGES` | `false` stops the PDF export from fetching images that a page embeds by URL (default: fetched, public hosts only) |
+| `pdf.max_analyses` | `ARCHSIGHT_PDF_MAX_ANALYSES` | How many `![[Analysis/...]]` embeds one PDF may run (each can take as long as its own timeout). Default `5`; further ones are shown as a note |
 | `import.cache_root` | `ARCHSIGHT_IMPORT_CACHE_ROOT` | Where the GitHub, GitLab and repository imports clone repositories, and what importers of the resources repository get as `cache_root` / `ARCHSIGHT_CACHE_DIR`. Default `~/.cache/archsight/git`; an import's own `import/config/cacheRoot` wins, see [Importers of the Resources Repository](/doc/import#importers-of-the-resources-repository). Every import makes sure the clones are not indexed by Spotlight (macOS): an empty `.metadata_never_index` in `~/.cache/archsight`, or in the cache root when it is elsewhere |
 
 ## Command line

@@ -7,6 +7,7 @@ import ViewDetail from './ViewDetail.vue'
 import AnalysisDetail from './AnalysisDetail.vue'
 import ImportDetail from './ImportDetail.vue'
 import PageDetail from './PageDetail.vue'
+import PdfConfigDetail from './PdfConfigDetail.vue'
 
 const props = defineProps({
   kind: String,
@@ -57,6 +58,7 @@ function kindMeta() {
     <AnalysisDetail v-else-if="kind === 'Analysis'" :data="data" :kind-meta="kindMeta()" />
     <ImportDetail v-else-if="kind === 'Import'" :data="data" :kind-meta="kindMeta()" />
     <PageDetail v-else-if="kind === 'Page'" :data="data" :kind-meta="kindMeta()" />
+    <PdfConfigDetail v-else-if="kind === 'Config' && data.metadata?.annotations?.['config/type'] === 'pdf'" :data="data" :kind-meta="kindMeta()" />
     <InstanceDetail v-else :data="data" :kind="kind" :kind-meta="kindMeta()" />
   </template>
 </template>
