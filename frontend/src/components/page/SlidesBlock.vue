@@ -29,9 +29,9 @@ function fullscreen() {
         allow="fullscreen"
         loading="lazy"
       ></iframe>
-      <button v-else type="button" class="slides-poster" @click="open = true">
+      <button v-else type="button" class="slides-poster" aria-label="Show the slides" title="Show the slides" @click="open = true">
         <img v-if="slides.cover_url" :src="slides.cover_url" alt="" />
-        <span class="slides-play"><i class="iconoir-play"></i> Show slides</span>
+        <span class="slides-play" aria-hidden="true"><i class="iconoir-play-solid"></i></span>
       </button>
     </div>
     <div class="slides-actions">

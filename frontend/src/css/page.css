@@ -285,7 +285,7 @@
 
 .wiki-page .slides-frame {
   /* poster and deck share one 16:9 box, as wide as fits the viewport height, so showing the deck does not resize it */
-  width: min(100%, calc(78vh * 16 / 9));
+  width: min(100%, 52rem, calc(78vh * 16 / 9));
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -331,12 +331,26 @@
   position: absolute;
   left: 16px;
   bottom: 16px;
-  padding: 6px 12px;
-  background: var(--pico-background-color);
-  color: var(--pico-color);
-  border: 1px solid var(--line);
-  font-size: var(--fs-sm);
-  line-height: 1.4;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.6);
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.wiki-page .slides-poster:hover .slides-play,
+.wiki-page .slides-poster:focus-visible .slides-play {
+  background: var(--accent);
+}
+
+.wiki-page .slides-poster:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -4px;
 }
 
 .wiki-page .slides-actions {
