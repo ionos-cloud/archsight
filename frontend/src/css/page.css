@@ -284,6 +284,10 @@
 }
 
 .wiki-page .slides-frame {
+  /* poster and deck share one 16:9 box, as wide as fits the viewport height, so showing the deck does not resize it */
+  width: min(100%, calc(78vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
   border: 1px solid var(--line);
   background: var(--tint);
 }
@@ -291,38 +295,35 @@
 .wiki-page .slides-frame iframe {
   display: block;
   width: 100%;
+  height: 100%;
   border: 0;
   background: #fff;
 }
 
-.wiki-page .slides-html iframe {
-  aspect-ratio: 16 / 9;
-}
-
-.wiki-page .slides-pdf iframe {
-  height: min(75vh, 46rem);
-}
-
-.wiki-page .slides-frame:fullscreen iframe {
-  height: 100vh;
+.wiki-page .slides-frame:fullscreen {
+  width: 100vw;
   aspect-ratio: auto;
+  border: 0;
 }
 
 .wiki-page .slides-poster {
   position: relative;
   display: block;
   width: 100%;
-  min-height: 12rem;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
+  line-height: 0;
   cursor: pointer;
 }
 
 .wiki-page .slides-poster img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -335,6 +336,7 @@
   color: var(--pico-color);
   border: 1px solid var(--line);
   font-size: var(--fs-sm);
+  line-height: 1.4;
 }
 
 .wiki-page .slides-actions {
