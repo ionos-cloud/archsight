@@ -13,6 +13,7 @@ const props = defineProps({
 })
 
 const svgHtml = ref('')
+const graphLoading = ref(false)
 const graphEl = ref(null)
 let panZoom = null
 const descEl = ref(null)
@@ -52,8 +53,13 @@ const graphTooLarge = computed(() => relationCount.value >= 50)
 
 onMounted(async () => {
   if (hasOutgoingRelations.value && !graphTooLarge.value) {
-    const dot = await getInstanceDot('Import', props.data.name)
-    svgHtml.value = dot ? await renderDot(dot) : ''
+    graphLoading.value = true
+    try {
+      const dot = await getInstanceDot('Import', props.data.name)
+      svgHtml.value = dot ? await renderDot(dot) : ''
+    } finally {
+      graphLoading.value = false
+    }
     await nextTick()
     initPanZoomOnGraph()
   }
@@ -100,7 +106,8 @@ function isUrl(v) {
     <div ref="descEl" v-if="description" class="description-box prose" v-html="description"></div>
 
     <template v-if="hasRelations">
-      <div v-if="hasOutgoingRelations && !graphTooLarge && svgHtml" class="graph-container">
+      <p v-if="graphLoading" class="graph-loading" aria-busy="true">Laying out graph...</p>
+      <div v-else-if="hasOutgoingRelations && !graphTooLarge && svgHtml" class="graph-container">
         <div id="graphviz" ref="graphEl" class="canvas" v-html="svgHtml"></div>
       </div>
       <p v-else-if="graphTooLarge" class="graph-too-large">

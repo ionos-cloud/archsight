@@ -18,12 +18,17 @@ const graphBox = ref(null)
 const graphEl = ref(null)
 let panZoom = null
 
+let request = 0
+
 async function load() {
+  const mine = ++request
   loading.value = true
   panZoom?.destroy()
   panZoom = null
   const dot = await getKindDot(props.kind)
-  svgHtml.value = dot ? await renderDot(dot) : ''
+  const laidOut = dot ? await renderDot(dot) : ''
+  if (mine !== request) return
+  svgHtml.value = laidOut
   nodeCount.value = (svgHtml.value.match(/class="node\b/g) || []).length
   loading.value = false
   await nextTick()
@@ -36,7 +41,7 @@ onUnmounted(() => { panZoom?.destroy() })
 </script>
 
 <template>
-  <p v-if="loading">Loading graph...</p>
+  <p v-if="loading" class="graph-loading" aria-busy="true">Laying out graph...</p>
   <p v-else-if="!nodeCount" class="kind-graph-note">No relations between {{ kind }} resources.</p>
   <template v-else>
     <p v-if="total > nodeCount" class="kind-graph-note">

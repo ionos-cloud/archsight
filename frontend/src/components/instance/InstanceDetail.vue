@@ -37,9 +37,11 @@ const props = defineProps({
 })
 
 const svgHtml = ref('')
+const graphLoading = ref(false)
 const graphEl = ref(null)
 const graphBox = ref(null)
 let graphLoaded = false
+let graphRequest = 0
 let panZoom = null
 
 // How far the dependency graph goes (null: all the way, remembered per browser) and which layers it follows (the
@@ -158,10 +160,18 @@ const customAnnotations = computed(() => {
 async function loadGraph() {
   if (graphLoaded || !hasOutgoingRelations.value) return
   graphLoaded = true
-  const dot = await getInstanceDot(props.kind, props.data.name, { depth: graphDepth.value, layers: graphLayers.value })
-  panZoom?.destroy()
-  panZoom = null
-  svgHtml.value = dot ? await renderDot(dot) : ''
+  const mine = ++graphRequest
+  graphLoading.value = true
+  try {
+    const dot = await getInstanceDot(props.kind, props.data.name, { depth: graphDepth.value, layers: graphLayers.value })
+    const svg = dot ? await renderDot(dot) : ''
+    if (mine !== graphRequest) return
+    panZoom?.destroy()
+    panZoom = null
+    svgHtml.value = svg
+  } finally {
+    if (mine === graphRequest) graphLoading.value = false
+  }
   await nextTick()
   initPanZoomOnGraph()
 }
@@ -247,7 +257,8 @@ function initPanZoomOnGraph() {
     </div>
     <div v-if="diagramHtml" v-show="view === 'diagram'" ref="diagramEl" class="asd-diagram-wrap" v-html="diagramHtml"></div>
 
-    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" ref="graphBox" class="graph-container">
+    <p v-if="graphLoading && !svgHtml && view === 'graph'" class="graph-loading" aria-busy="true">Laying out graph...</p>
+    <div v-if="hasOutgoingRelations && svgHtml" v-show="view === 'graph'" ref="graphBox" class="graph-container" :aria-busy="graphLoading">
       <div class="graph-options">
         <i class="iconoir-depth" title="Depth: how many steps the graph follows"></i>
         <div role="group" aria-label="Graph depth">

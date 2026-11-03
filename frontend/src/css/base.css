@@ -511,3 +511,22 @@ a.chip:hover,
   color: var(--pico-muted-color);
   font-size: var(--fs-2xs);
 }
+
+/* The wasm layout runs in a worker and can take seconds: a spinner (Pico's aria-busy) holds the place of the graph */
+.graph-loading {
+  min-height: 6rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  color: var(--pico-muted-color);
+}
+
+.graph-loading[aria-busy="true"]::before {
+  flex: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  background-size: 1.6rem;
+}

@@ -39,7 +39,7 @@ onUnmounted(() => { panZoom?.destroy() })
 <template>
   <article>
     <header><h2>{{ label }}</h2></header>
-    <div v-if="loading"><p>Loading graph...</p></div>
+    <p v-if="loading" class="graph-loading" aria-busy="true">Laying out graph...</p>
     <p v-else-if="error" class="graph-error"><i class="iconoir-warning-triangle"></i> {{ error }}</p>
     <div v-else-if="svgHtml" class="graph-container">
       <div ref="graphEl" class="canvas" v-html="svgHtml"></div>

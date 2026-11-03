@@ -29,6 +29,11 @@ function cleanBuildOutputPlugin() {
 
 export default defineConfig({
   plugins: [vue(), renameIndexPlugin(), cleanBuildOutputPlugin()],
+  // The layout worker is built next to the rest of the app (public/vue), which a build empties and git ignores
+  worker: {
+    format: 'es',
+    rollupOptions: { output: { chunkFileNames: 'vue/[name]-[hash].js', entryFileNames: 'vue/[name]-[hash].js', assetFileNames: 'vue/[name]-[hash][extname]' } }
+  },
   build: {
     outDir: '../lib/archsight/web/public',
     emptyOutDir: false,

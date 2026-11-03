@@ -1,17 +1,40 @@
 import graphCss from '../css/graph.css?raw'
 
-let graphvizModule = null
+let worker = null
+let nextId = 0
+const pending = new Map()
 
-async function ensureGraphviz() {
-  if (graphvizModule) return graphvizModule
-  const { Graphviz } = await import('@hpcc-js/wasm/graphviz')
-  graphvizModule = await Graphviz.load()
-  return graphvizModule
+function failAll(message) {
+  for (const { reject } of pending.values()) reject(new Error(message))
+  pending.clear()
+  worker?.terminate()
+  worker = null
+}
+
+function ensureWorker() {
+  if (worker) return worker
+  worker = new Worker(new URL('./graphviz.worker.js', import.meta.url), { type: 'module' })
+  worker.onmessage = ({ data: { id, svg, error } }) => {
+    const request = pending.get(id)
+    if (!request) return
+    pending.delete(id)
+    if (error) request.reject(new Error(error))
+    else request.resolve(svg)
+  }
+  worker.onerror = (event) => failAll(event.message || 'Graph layout failed')
+  return worker
+}
+
+function layout(dot) {
+  return new Promise((resolve, reject) => {
+    const id = nextId++
+    pending.set(id, { resolve, reject })
+    ensureWorker().postMessage({ id, dot })
+  })
 }
 
 export async function renderDot(dot) {
-  const gv = await ensureGraphviz()
-  let svg = gv.layout(dot, 'svg', 'dot')
+  let svg = await layout(dot)
 
   // Remove fixed width/height pt attributes from <svg> tag
   svg = svg.replace(/<svg width="[^"]*pt" height="[^"]*pt"/, '<svg')
