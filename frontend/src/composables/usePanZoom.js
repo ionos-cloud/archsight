@@ -44,6 +44,16 @@ function createZoomControls(container, instance, fullscreenTarget) {
   container.appendChild(controls)
 }
 
+// svg-pan-zoom's zoom is relative to the fitted view, which is tiny for a large graph, so a fixed cap (10x the fit)
+// never reaches readable size. Allow up to MAX_REAL_SCALE times the real size (1 = a node as drawn), at least the old 10x.
+const MIN_MAX_ZOOM = 10
+const MAX_REAL_SCALE = 4
+
+function allowZoomToReadableSize(instance) {
+  const fitScale = instance.getSizes().realZoom
+  if (fitScale > 0) instance.setMaxZoom(Math.max(MIN_MAX_ZOOM, MAX_REAL_SCALE / fitScale))
+}
+
 // fullscreenTarget: the element the full screen button shows full screen (default: the container), e.g. a wrapper
 // that also holds controls of its own
 export function initSvgPanZoom(svg, container, { fullscreenTarget = container } = {}) {
@@ -80,10 +90,11 @@ export function initSvgPanZoom(svg, container, { fullscreenTarget = container } 
     contain: false,
     center: true,
     minZoom: 0.1,
-    maxZoom: 10,
+    maxZoom: MIN_MAX_ZOOM,
     zoomScaleSensitivity: 0.3,
   })
 
+  allowZoomToReadableSize(instance)
   createZoomControls(container, instance, fullscreenTarget)
   container.classList.add('svg-pan-container')
   fullscreenTarget.classList.add('svg-pan-fullscreen')
@@ -92,6 +103,7 @@ export function initSvgPanZoom(svg, container, { fullscreenTarget = container } 
     instance.resize()
     instance.fit()
     instance.center()
+    allowZoomToReadableSize(instance)
   }
   window.addEventListener('resize', resizeHandler)
 
