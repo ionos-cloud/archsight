@@ -103,7 +103,12 @@ module Archsight
           body.raw(@text_renderer.wrap_link(representer.markup(cx, cy, w, h, id: @ids.id(node), **style), node.link))
           body.raw(@text_renderer.label_text(representer.label_x(box), representer.label_y(box, @theme), node.label,
                                              font_size: representer.label_font_size(@theme), link: node.link,
-                                             attrs: @ids.label_attrs(node), extra_class: hover_class(node)))
+                                             attrs: @ids.label_attrs(node), extra_class: label_class(node)))
+        end
+
+        # A `text` has no shape for the broken-link styling to dash, so its label is dimmed and dashed itself.
+        def label_class(node)
+          [hover_class(node), ("asd-broken-text" if node.kind == :text && node.broken_link)].compact.join(" ").then { |c| c unless c.empty? }
         end
       end
     end

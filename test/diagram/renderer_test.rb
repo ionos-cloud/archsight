@@ -1558,6 +1558,18 @@ class DiagramRendererTest < Minitest::Test
     assert_equal 1, doc.root.get_elements("//tspan[@class='asd-run-bold']").length
   end
 
+  def test_text_with_an_unresolved_resource_is_dimmed_and_dashed
+    svg = Archsight::Diagram.render(%(text "t" { label "x"; resource "Page/zzz" }\n), resolver: ->(_) { :missing })
+
+    assert_includes svg, "asd-broken-text"
+  end
+
+  def test_text_with_a_resolved_resource_is_one_link
+    svg = Archsight::Diagram.render(%(text "t" { label "x"; resource "Page/a" }\n), resolver: ->(_) { "/kinds/Page/instances/a" })
+
+    assert_equal 2, REXML::Document.new(svg).root.get_elements("//a[@href='/kinds/Page/instances/a']").length
+  end
+
   def test_text_rejects_shape_and_bad_width
     assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { shape "circle" }\n)) }
     assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { width "0" }\n)) }
