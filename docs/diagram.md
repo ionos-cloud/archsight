@@ -125,6 +125,11 @@ clean -> store
 - `database "id" { ... }` — a datastore (cylinder).
 - `queue "id" { ... }` — a queue/topic (hexagon).
 - `actor "id" { ... }` — an external user (stick figure, label below).
+- `text "id" { ... }` — a descriptive text block without box or fill. It is
+  sized like a component with the same label (same padding, same line height
+  for `\n` breaks); `**bold**`, `*italic*` and `[links](url)` work as in any
+  label. `width "N"` wraps the label at N characters per line. `link` or
+  `resource` makes the whole block one link (inline links are then ignored).
 
 A leaf's shape can be overridden explicitly with `shape "rectangle" |
 "circle" | "cylinder" | "hexagon" | "actor"`, though the keyword's default
@@ -145,6 +150,7 @@ hint for near misses), never silently ignored.
 | `link` | nodes, containers | `http(s)://…`, `mailto:…` or a relative URL |
 | `resource` | nodes, containers | a resource name (`Archsight:Web`) or `Kind/Name` (`ApplicationService/Archsight:Web`); see *Linking to resources* |
 | `extend` | nodes, containers | `true`, `false`; containers also `height` |
+| `width` | `text` | characters per line (positive integer); wraps the label |
 | `anchor` | containers | `top`, `bottom`, `left`, `right`, `center` |
 
 `extend "height"` on a direct child of a `layer` grows it to its tallest sibling. Inside such a box (also through a `boundary` around a `stack`), a `stack` child carrying `extend "height"` takes the extra height and moves the ranks below it down, so e.g. a footer rank lines up across the columns. The child can be a `layer` too; its own `extend "height"` children then fill the layer's new height.

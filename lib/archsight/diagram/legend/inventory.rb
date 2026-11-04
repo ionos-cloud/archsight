@@ -96,7 +96,7 @@ module Archsight
         # `tinted_containers` below), not a flat swatch, unless that same
         # tint is *also* used by a leaf elsewhere.
         def used_tints
-          names = @graph.nodes_by_id.values.reject(&:container?).filter_map(&:tint).uniq
+          names = @graph.nodes_by_id.values.reject { |n| n.container? || n.kind == :text }.filter_map(&:tint).uniq
           Tints.names.select { |n| names.include?(n) }.map { |n| Tints.for(n) }
         end
 
@@ -138,7 +138,11 @@ module Archsight
 
         def collect_leaves(nodes)
           nodes.each do |n|
-            n.leaf? ? @leaf_nodes << n : collect_leaves(n.children)
+            if n.leaf?
+              @leaf_nodes << n unless n.kind == :text
+            else
+              collect_leaves(n.children)
+            end
           end
         end
       end

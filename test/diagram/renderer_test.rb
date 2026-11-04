@@ -1550,6 +1550,27 @@ class DiagramRendererTest < Minitest::Test
 
   # link
 
+  def test_text_draws_no_box_and_wraps_markdown
+    doc = REXML::Document.new(Archsight::Diagram.render(%(text "t" { label "**Bold** and *italic* words"; width "12" }\n)))
+
+    assert_empty doc.root.get_elements("//rect[@id='asd-node-t__body' and @class!='asd-text-hit']")
+    assert_equal 2, doc.root.get_elements("//text/tspan[@dy]").length
+    assert_equal 1, doc.root.get_elements("//tspan[@class='asd-run-bold']").length
+  end
+
+  def test_text_rejects_shape_and_bad_width
+    assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { shape "circle" }\n)) }
+    assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { width "0" }\n)) }
+  end
+
+  def test_text_is_sized_like_a_component_with_the_same_label
+    sizes = %w[component text].map do |kw|
+      Archsight::Diagram.render(%(#{kw} "n" { label "a\\nb" }\n))[/<svg[^>]*viewBox="([^"]+)"/, 1]
+    end
+
+    assert_equal sizes.first, sizes.last
+  end
+
   def test_link_wraps_a_linked_leaf_s_shape_and_label_each_in_their_own_a_href
     source = %(component "a" { label "A"; link "https://example.com" }\n)
     doc = REXML::Document.new(Archsight::Diagram.render(source))

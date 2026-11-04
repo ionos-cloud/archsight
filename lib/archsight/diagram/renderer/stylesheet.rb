@@ -234,6 +234,7 @@ module Archsight
             .asd-run-bold { font-weight: bold; }
             .asd-run-italic { font-style: italic; }
             .asd-run-underline { text-decoration: underline; }
+            .asd-text-hit { fill: transparent; stroke: none; }
           CSS
         end
 
