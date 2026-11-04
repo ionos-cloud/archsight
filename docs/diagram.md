@@ -126,8 +126,10 @@ clean -> store
 - `queue "id" { ... }` — a queue/topic (hexagon).
 - `actor "id" { ... }` — an external user (stick figure, label below).
 - `text "id" { ... }` — a descriptive text block without box or fill. It is
-  sized like a component with the same label (same padding, same line height
-  for `\n` breaks); `**bold**`, `*italic*` and `[links](url)` work as in any
+  only as tall as its lines (one label line height per line, a little air
+  above and below) and as wide as its text, with no minimum width, so a
+  `stack` of one-line texts (each with its own `resource`) reads like a list;
+  `**bold**`, `*italic*` and `[links](url)` work as in any
   label. `width "N"` wraps the label at N characters per line. `link` or
   `resource` makes the whole block one link (inline links are then ignored).
 

@@ -1575,12 +1575,20 @@ class DiagramRendererTest < Minitest::Test
     assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { width "0" }\n)) }
   end
 
-  def test_text_is_sized_like_a_component_with_the_same_label
-    sizes = %w[component text].map do |kw|
-      Archsight::Diagram.render(%(#{kw} "n" { label "a\\nb" }\n))[/<svg[^>]*viewBox="([^"]+)"/, 1]
+  def test_text_is_only_as_tall_as_its_lines
+    height = lambda do |source|
+      Archsight::Diagram.render(source, theme: "tight")[/<svg[^>]*viewBox="([^"]+)"/, 1].split.last.to_f
     end
+    text = height.call(%(text "n" { label "a\\nb" }\n))
+    component = height.call(%(component "n" { label "a\\nb" }\n))
 
-    assert_equal sizes.first, sizes.last
+    assert_operator text, :<, component
+    # a stack of one-line texts is as tall as one text with the same lines, plus the gaps between them
+    lines = height.call(%(stack "s" {\n  text "a" { label "a" }\n  text "b" { label "b" }\n}\n))
+    one = height.call(%(stack "s" {\n  text "a" { label "a\\nb" }\n}\n))
+    theme = Archsight::Diagram::Theme::THEMES.fetch("tight")
+
+    assert_in_delta one + theme.stack_gap + (2 * Archsight::Diagram::Layout::TEXT_PADDING), lines, 0.01
   end
 
   def test_link_wraps_a_linked_leaf_s_shape_and_label_each_in_their_own_a_href
