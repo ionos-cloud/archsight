@@ -168,8 +168,11 @@ module Archsight
         @image&.call(src, alt) || "#emph[#{str(alt.empty? ? src : alt)}]"
       end
 
-      # Plain text, in which wiki links, embeds and the macros of the wiki are replaced
-      def text(value)
+      # Plain text, in which wiki links, embeds and the macros of the wiki are replaced. A single newline in the source
+      # is a soft break, a space as in CommonMark (a string literal would keep it as a line break); `<br>`, a backslash
+      # or two trailing spaces are the hard breaks, which are their own nodes.
+      def text(source)
+        value = source.gsub(/[ \t]*\n[ \t]*/, " ")
         out = +""
         pos = 0
         value.scan(INLINE) do
