@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "tempfile"
 require_relative "pdf_fixture"
 
 class PdfCompilerTest < Minitest::Test
@@ -36,6 +37,18 @@ class PdfCompilerTest < Minitest::Test
     assert pdf.start_with?("%PDF")
   end
 
+  SECTIONS = "# Title\n\n## One\n\nText.\n\n## Two\n\nText.\n\n# Second\n\nText.\n"
+
+  def test_headings_start_new_pages_as_the_config_asks
+    skip "typst is not installed" unless typst? && system("pdfinfo", "-v", out: File::NULL, err: File::NULL)
+
+    assert_equal 1, breaks_pages({}, "")
+    assert_equal 2, breaks_pages({ "pdf/break-before" => "1" }, "") # the first heading stays with the title block
+    assert_equal 1, breaks_pages({ "pdf/break-before" => "1" }, "pdf:no-breaks")
+    assert_equal 3, breaks_pages({ "pdf/keep-space" => "2:100%" }, "") # every later level 2 heading wants a whole page
+    assert_equal 4, breaks_pages({ "pdf/break-before" => "1", "pdf/keep-space" => "2:100%" }, "")
+  end
+
   def test_a_missing_binary_is_reported_as_unavailable
     compiler = Archsight::Pdf::Compiler.new(binary: "/nonexistent/typst")
 
@@ -62,5 +75,22 @@ class PdfCompilerTest < Minitest::Test
     cache.fetch("k0") { calls += 1 }
 
     assert_equal 4, calls
+  end
+
+  private
+
+  # Pages of SECTIONS typeset with a Config that has `annotations` and a page tagged `tags`
+  def breaks_pages(annotations, tags)
+    config = { "apiVersion" => "architecture/v1alpha1", "kind" => "Config", "spec" => {},
+               "metadata" => { "name" => "Config:PDF:breaks", "annotations" => { "config/type" => "pdf" }.merge(annotations) } }
+    File.write(File.join(@dir, "breaks.yaml"), YAML.dump(config))
+    File.write(File.join(@dir, "pages", "sections.md"), "---\ntitle: Sections\ntags: pdf:template:breaks#{", #{tags}" unless tags.empty?}\n---\n#{SECTIONS}")
+    @db.reload!
+    pdf = Archsight::Pdf.compile(Archsight::Pdf.document(@db, @db.instance_by_kind("Page", "sections"), resources_dir: @dir))
+    Tempfile.create(["sections", ".pdf"]) do |file|
+      file.binmode.write(pdf)
+      file.flush
+      `pdfinfo #{file.path}`[/^Pages:\s+(\d+)/, 1].to_i
+    end
   end
 end

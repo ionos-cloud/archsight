@@ -126,7 +126,22 @@ class Archsight::Resources::Config < Archsight::Resources::Base
              validator: ->(value) { Archsight::Resources::Config.pattern_error(value, LENGTH, "a length such as 16mm") },
              sidebar: false
 
+  annotation "pdf/break-before",
+             description: "Heading levels that always start a new page, comma-separated (e.g. 1, or 1,2). The first heading " \
+                          "of a document stays on the first page. A page tag pdf:no-breaks switches the breaks off",
+             title: "New page before",
+             sidebar: false,
+             validator: ->(value) { Archsight::Resources::Config.break_before_error(value) }
+  annotation "pdf/keep-space",
+             description: "Heading levels that start a new page when less than the given share of the page is left, as " \
+                          "level:share, comma-separated (e.g. 2:30% or 2:30%,3:20%)",
+             title: "Space a heading needs",
+             sidebar: false,
+             validator: ->(value) { Archsight::Resources::Config.keep_space_error(value) }
+
   HEADER_PARTS = %w[id version date owner].freeze
+  HEADING_LEVELS = (1..6).to_a.freeze
+  KEEP_SPACE = /\A([1-6]):(\d{1,3})%?\z/
 
   # Validator helpers: nil if the value is fine, else the message
   def self.pattern_error(value, pattern, expected)
@@ -143,5 +158,16 @@ class Archsight::Resources::Config < Archsight::Resources::Base
   def self.header_meta_error(value)
     unknown = value.to_s.split(",").map(&:strip) - HEADER_PARTS
     unknown.empty? ? nil : "unknown part #{unknown.join(", ")}; use #{HEADER_PARTS.join(", ")}"
+  end
+
+  def self.break_before_error(value)
+    levels = value.to_s.split(",").map(&:strip)
+    bad = levels.grep_v(/\A[1-6]\z/)
+    bad.empty? ? nil : "expected heading levels 1 to 6 such as 1,2, not #{bad.join(", ")}"
+  end
+
+  def self.keep_space_error(value)
+    bad = value.to_s.split(",").map(&:strip).reject { |part| (m = part.match(KEEP_SPACE)) && m[2].to_i.between?(1, 100) }
+    bad.empty? ? nil : "expected level:share such as 2:30%, not #{bad.join(", ")}"
   end
 end

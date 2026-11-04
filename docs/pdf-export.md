@@ -56,6 +56,7 @@ Tags of the page (`tags:` in the frontmatter) or of a resource (`architecture/ta
 | `pdf:landscape` | Landscape pages |
 | `pdf:draft` | A "draft" watermark on every page |
 | `pdf:no-graph` | Leave the dependency graph out of a resource's document |
+| `pdf:no-breaks` | Ignore the page breaks before headings that the Config asks for (`pdf/break-before`, `pdf/keep-space`) |
 | `pdf:template:<name>` | Use the pdf Config `<name>` instead of `default` |
 | `version:<x>` | The document version in the header (else the page property `Version`, else `1`) |
 
@@ -100,6 +101,11 @@ spec: {}
 | `pdf/header-meta` | Parts of the header line: `id, version, date, owner` |
 | `pdf/lang` | Language of the fixed texts: `en` or `de` |
 | `pdf/paper`, `pdf/margin` | `a4`, `a5` or `us-letter`; horizontal margin such as `16mm` |
+| `pdf/break-before` | Heading levels that always start a new page, e.g. `1` or `1,2` |
+| `pdf/keep-space` | `level:share` pairs: a heading of that level starts a new page when less than the share of the page is left, e.g. `2:30%` or `2:30%,3:20%` |
+
+The first heading of a document never breaks (it follows the title block or the contents). A level in `pdf/break-before` needs no
+share in `pdf/keep-space`. Without these settings headings flow as before (Typst keeps a heading with the text after it).
 
 Values are checked when they are loaded (and by `archsight lint`): something that is not a colour, a font name or a length is
 ignored and the default is used.

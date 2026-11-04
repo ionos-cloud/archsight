@@ -46,6 +46,7 @@
   classification: none,
   draft: false,
   landscape: false,
+  heading-breaks: true,
   body,
 ) = {
   let t = labels.at(theme.lang)
@@ -87,6 +88,26 @@
   show heading.where(level: 1): set text(size: 16pt)
   show heading.where(level: 2): set text(size: 13pt)
   show heading.where(level: 3): set text(size: 11pt)
+  // Page breaks before headings (theme: break-before = levels that always start a page, keep-space = (level, percent of
+  // the page that must be left)). The first heading follows the title block and stays there.
+  show heading: it => {
+    let first = query(selector(heading).before(it.location(), inclusive: false)).len() == 0
+    let share = theme.keep-space.find(p => p.at(0) == it.level)
+    if not heading-breaks or first or (it.level not in theme.break-before and share == none) {
+      it
+    } else if it.level in theme.break-before {
+      pagebreak(weak: true)
+      it
+    } else {
+      context {
+        let top = 22mm
+        let bottom = 16mm
+        let left = page.height - bottom - here().position().y
+        if left < (page.height - top - bottom) * share.at(1) / 100 { pagebreak(weak: true) }
+      }
+      it
+    }
+  }
   show link: set text(fill: theme.accent)
   // Tables have horizontal rules only: a stronger one under the header, a light one under every other row, no frame and
   // no vertical lines; the first column is flush with the text. Tables that pass their own stroke keep it.

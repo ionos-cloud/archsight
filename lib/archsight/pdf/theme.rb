@@ -28,7 +28,7 @@ module Archsight
       LOGO_TYPES = %w[.svg .png].freeze
 
       attr_reader :name, :colors, :fonts, :footer_text, :classification, :header_meta, :lang, :paper, :margin,
-                  :logo, :logo_light, :font_dir
+                  :logo, :logo_light, :font_dir, :break_before, :keep_space
 
       # @param template [Archsight::Resources::Config, nil]
       # @param resources_dir [String] logos and fonts are looked up below it
@@ -43,6 +43,8 @@ module Archsight
         @lang = LANGS.include?(ann["pdf/lang"]) ? ann["pdf/lang"] : "en"
         @paper = PAPERS.include?(ann["pdf/paper"]) ? ann["pdf/paper"] : "a4"
         @margin = ann["pdf/margin"].to_s.match?(Resources::Config::LENGTH) ? ann["pdf/margin"] : DEFAULT_MARGIN
+        @break_before = heading_levels(ann["pdf/break-before"])
+        @keep_space = space_shares(ann["pdf/keep-space"], @break_before)
         @logo = logo_file(ann["pdf/logo"], resources_dir)
         @logo_light = logo_file(ann["pdf/logo-light"], resources_dir) || @logo
         @font_dir = font_directory(ann["pdf/font-dir"], resources_dir)
@@ -74,12 +76,18 @@ module Archsight
           "logo: #{logo ? Typst.lit(logo) : "none"}", "logo-light: #{logo_light ? Typst.lit(logo_light) : "none"}",
           "footer-text: #{footer_text ? Typst.lit(footer_text) : "none"}",
           "header-meta: (#{header_meta.map { |p| Typst.lit(p) }.join(", ")},)",
-          "lang: #{Typst.lit(lang)}", "paper: #{Typst.lit(paper)}", "margin: #{margin}"
+          "lang: #{Typst.lit(lang)}", "paper: #{Typst.lit(paper)}", "margin: #{margin}",
+          "break-before: #{array(break_before)}", "keep-space: #{array(keep_space.map { |level, share| "(#{level}, #{share})" })}"
         ]
         "#let theme = (#{fields.join(", ")})\n"
       end
 
       private
+
+      # A Typst array of ready-made items; `()` is the empty one, `(x,)` has one item
+      def array(items)
+        items.empty? ? "()" : "(#{items.join(", ")},)"
+      end
 
       def color(value, default)
         value.to_s.strip.match?(Resources::Config::COLOR) ? value.to_s.strip : default
@@ -95,6 +103,22 @@ module Archsight
 
         parts = value.to_s.split(",").map(&:strip) & HEADER_PARTS
         parts.empty? ? HEADER_PARTS : parts
+      end
+
+      # @return [Array<Integer>] the heading levels that start a new page
+      def heading_levels(value)
+        value.to_s.split(",").map(&:strip).grep(/\A[1-6]\z/).map(&:to_i).uniq.sort
+      end
+
+      # @return [Array<Array(Integer, Integer)>] [level, percent of the page that must be left]; a level that always
+      #   breaks needs no share
+      def space_shares(value, always)
+        value.to_s.split(",").filter_map do |part|
+          match = part.strip.match(Resources::Config::KEEP_SPACE)
+          level = match && match[1].to_i
+          share = match && match[2].to_i
+          [level, share] if level && share.between?(1, 100) && !always.include?(level)
+        end.uniq(&:first)
       end
 
       def blank_to_nil(value)

@@ -45,4 +45,15 @@ class ConfigTest < Minitest::Test
     assert_nil error("pdf/header-meta", "id, version")
     refute_nil error("pdf/header-meta", "id, shoe")
   end
+
+  def test_heading_breaks
+    assert_nil error("pdf/break-before", "1, 2")
+    refute_nil error("pdf/break-before", "0")
+    refute_nil error("pdf/break-before", "1,x")
+    assert_nil error("pdf/keep-space", "2:30%, 3:20%")
+    assert_nil error("pdf/keep-space", "2:30")
+    refute_nil error("pdf/keep-space", "2:130%")
+    refute_nil error("pdf/keep-space", "7:30%")
+    refute_nil error("pdf/keep-space", "30%")
+  end
 end
