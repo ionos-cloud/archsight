@@ -21,6 +21,14 @@ class PdfMarkdownTest < Minitest::Test
     assert_includes out, '#" #strong[x] and $math$ "'
   end
 
+  def test_a_single_newline_is_a_space_and_a_hard_break_a_line_break
+    out = render("one line\nwrapped here  \nhard break")
+
+    assert_includes out, '#"one line wrapped here"'
+    assert_includes out, "#linebreak()"
+    refute_includes out, "\\n"
+  end
+
   def test_heading_offset
     assert_equal '#heading(level: 3)[#"Title"]', render("# Title", heading_offset: 2)
   end
