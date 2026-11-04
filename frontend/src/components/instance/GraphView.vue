@@ -30,7 +30,7 @@ function initPanZoomOnGraph() {
 <template>
   <article>
     <header><h2>Architecture Overview</h2></header>
-    <div v-if="loading"><p>Loading graph...</p></div>
+    <p v-if="loading" class="graph-loading" aria-busy="true">Laying out graph...</p>
     <div v-else class="graph-container graph-expand">
       <div id="graphviz" ref="graphEl" class="fullcanvas" v-html="svgHtml"></div>
     </div>
