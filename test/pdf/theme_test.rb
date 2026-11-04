@@ -86,4 +86,28 @@ class PdfThemeTest < Minitest::Test
     assert_includes source, 'logo: "logo.svg"'
     assert_includes source, 'lang: "de"'
   end
+
+  def test_heading_breaks_are_checked_and_listed_in_the_typst_source
+    assert_equal [], Archsight::Pdf::Theme.new.break_before
+    assert_includes Archsight::Pdf::Theme.new.to_typst, "break-before: (), keep-space: ()"
+
+    File.write(File.join(@dir, "breaks.yaml"), <<~YAML)
+      ---
+      apiVersion: architecture/v1alpha1
+      kind: Config
+      metadata:
+        name: Config:PDF:breaks
+        annotations:
+          config/type: pdf
+          pdf/break-before: "2, 1, x, 9, 1"
+          pdf/keep-space: "2:30%, 3:20, 1:50%, 4:200%, nonsense"
+      spec: {}
+    YAML
+    @db.reload!
+    theme = Archsight::Pdf::Theme.for(@db, "breaks")
+
+    assert_equal [1, 2], theme.break_before
+    assert_equal [[3, 20]], theme.keep_space # 2 and 1 always break, 4 is out of range
+    assert_includes theme.to_typst, "break-before: (1, 2,), keep-space: ((3, 20),)"
+  end
 end

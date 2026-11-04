@@ -26,6 +26,7 @@ module Archsight
     #   pdf:landscape           landscape pages
     #   pdf:draft               "draft" watermark
     #   pdf:no-graph            leave the dependency graph out of a resource document
+    #   pdf:no-breaks           ignore the page breaks before headings that the Config asks for
     #   pdf:template:<name>     pdf Config to use instead of `default`
     #   version:<x>             document version (else the page property Version, else 1)
     class Document
@@ -110,7 +111,7 @@ module Archsight
         <<~TYPST
           #import "archsight.typ": *
           #import "theme.typ": theme
-          #show: doc.with(#{args}, classification: #{opt(classification)}, draft: #{@draft}, landscape: #{@tags.include?("pdf:landscape")})
+          #show: doc.with(#{args}, classification: #{opt(classification)}, draft: #{@draft}, landscape: #{@tags.include?("pdf:landscape")}, heading-breaks: #{!@tags.include?("pdf:no-breaks")})
           #{front}
 
           #{body}
