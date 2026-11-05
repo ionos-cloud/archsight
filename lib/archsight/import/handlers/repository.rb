@@ -116,6 +116,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
 
   def update_repository
     run_git(%w[git fetch --quiet], @path)
+    repair_unborn_head if empty_repository?
     return if empty_repository? # Skip merge for empty repos
 
     # FETCH_HEAD may be absent when git fetch brings nothing new (e.g. no
@@ -131,6 +132,30 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     # If merge fails (diverged history), reset to remote state
     progress.warn("Merge failed: #{e.message}, resetting to remote")
     run_git(%w[git reset --hard FETCH_HEAD], @path)
+  end
+
+  # A clone made while the remote was empty keeps an unborn local branch: later fetches only
+  # advance the origin/* refs, so HEAD never gets a commit and the repository would be
+  # reported as empty. Point the local default branch at the remote one.
+  def repair_unborn_head
+    remote_ref = remote_default_ref
+    return unless remote_ref
+
+    progress.warn("Local HEAD has no commits but #{remote_ref} does, checking it out")
+    run_git(["git", "checkout", "--quiet", "-B", remote_ref.delete_prefix("origin/"), remote_ref], @path)
+  end
+
+  # The remote-tracking ref of the remote's default branch (`origin/main`), or nil when the
+  # remote has no commits.
+  def remote_default_ref
+    Open3.capture3("git", "remote", "set-head", "origin", "--auto", chdir: @path) # origin/HEAD is unset after an empty clone
+    out, _, status = Open3.capture3("git", "symbolic-ref", "--short", "refs/remotes/origin/HEAD", chdir: @path)
+    return out.strip if status.success? && resolve_ref(out.strip)
+
+    # the remote did not name a default branch: fall back to the branch the clone started on
+    branch, _, status = Open3.capture3("git", "symbolic-ref", "--short", "HEAD", chdir: @path)
+    candidate = "origin/#{branch.strip}"
+    candidate if status.success? && resolve_ref(candidate)
   end
 
   def empty_repository?
