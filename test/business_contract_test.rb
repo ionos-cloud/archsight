@@ -75,6 +75,9 @@ class BusinessContractTest < Minitest::Test
     spec:
       covers:
         applicationServices: [ComputeService]
+      stipulates:
+        motivationRequirements: [Req:Availability]
+        motivationConstraints: [Con:DataResidency]
     ---
     apiVersion: architecture/v1alpha1
     kind: BusinessContract
@@ -87,6 +90,18 @@ class BusinessContractTest < Minitest::Test
         technologyEquipment: [Block2]
       realizedThrough:
         implementationDeliverables: [Block2Delivered]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: MotivationRequirement
+    metadata:
+      name: Req:Availability
+    spec: {}
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: MotivationConstraint
+    metadata:
+      name: Con:DataResidency
+    spec: {}
     ---
     apiVersion: architecture/v1alpha1
     kind: ImplementationWorkPackage
@@ -140,6 +155,24 @@ class BusinessContractTest < Minitest::Test
       assert_equal ["Contract:Customer:Block2"], incoming(instance(db, "ImplementationDeliverable", "Block2Delivered"), "BusinessContract", :realizedThrough)
       assert_equal ["PrivateCloudOffering"], incoming(framework, "BusinessProduct", :aggregates)
     end
+  end
+
+  def test_a_contract_stipulates_requirements_and_constraints_shown_as_incoming
+    with_db do |db|
+      block1 = instance(db, "BusinessContract", "Contract:Customer:Block1")
+
+      assert_equal ["Req:Availability"], block1.relations(:stipulates, :motivationRequirements).map(&:name)
+      assert_equal ["Con:DataResidency"], block1.relations(:stipulates, :motivationConstraints).map(&:name)
+      assert_equal ["Contract:Customer:Block1"], incoming(instance(db, "MotivationRequirement", "Req:Availability"), "BusinessContract", :stipulates)
+      assert_equal ["Contract:Customer:Block1"], incoming(instance(db, "MotivationConstraint", "Con:DataResidency"), "BusinessContract", :stipulates)
+    end
+  end
+
+  def test_a_contract_cannot_stipulate_an_outcome
+    yaml = RESOURCES.sub("  stipulates:\n    motivationRequirements: [Req:Availability]", "  stipulates:\n    motivationOutcomes: [Req:Availability]")
+
+    refute_equal RESOURCES, yaml
+    assert_raises(Archsight::ResourceError) { with_db(yaml) { nil } }
   end
 
   def test_the_example_lints_clean

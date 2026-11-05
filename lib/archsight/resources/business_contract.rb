@@ -34,11 +34,16 @@ class Archsight::Resources::BusinessContract < Archsight::Resources::Base
     - It is `agreedBy` its parties: the actual organisations (the customer, the provider), not a generic role
     - It is `composedOf` its parts: call-offs, SLAs and amendments, which are contracts themselves (no cycles)
     - It `covers` what it obliges the provider to deliver: equipment, nodes, technology and application services
+    - It `stipulates` the `MotivationRequirement`s and `MotivationConstraint`s it makes binding: the legal basis of
+      an obligation. Link them instead of restating sizes, availability or response times in the description. A
+      requirement the provider derives itself (a design that refines a contractual obligation) is not stipulated by
+      a contract, it refers to the stipulated requirement it refines. A requirement can be stipulated by several
+      contracts (a framework and a call-off)
     - It is `realizedThrough` the `ImplementationDeliverable` that fulfils it; the `ImplementationWorkPackage` that
       `realizes` the deliverable `affects` the equipment it installs
 
     The other side shows these as incoming relations: the contracts an actor agreed, what covers a piece of
-    equipment or a service, the contract a deliverable fulfils.
+    equipment or a service, the contract a deliverable fulfils, and on a requirement the contracts that stipulate it.
   MD
 
   icon "journal-page"
@@ -68,5 +73,7 @@ class Archsight::Resources::BusinessContract < Archsight::Resources::Base
   relation :covers, :technologyNodes, :TechnologyNode
   relation :covers, :technologyServices, :TechnologyService
   relation :covers, :applicationServices, :ApplicationService
+  relation :stipulates, :motivationRequirements, :MotivationRequirement
+  relation :stipulates, :motivationConstraints, :MotivationConstraint
   relation :realizedThrough, :implementationDeliverables, :ImplementationDeliverable
 end
