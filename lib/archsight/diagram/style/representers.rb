@@ -275,6 +275,19 @@ module Archsight
         def legend_label = "Module"
       end
 
+      # Draws no box: a transparent rect only keeps the whole text block
+      # hoverable/clickable (a `link`/`resource` wraps it in an `<a>`).
+      class TextRepresenter < Base
+        def markup(cx, cy, w, h, id: nil, **)
+          m = Renderer::Markup.new
+          m.element("rect", id: part(id, "body"), x: fmt(cx - (w / 2.0)), y: fmt(cy - (h / 2.0)), width: fmt(w), height: fmt(h), class: "asd-text-hit")
+          m.to_s
+        end
+
+        def stretchable? = true
+        def legend_label = "Text"
+      end
+
       REGISTRY = {} # rubocop:disable Style/MutableConstant -- filled by .register
 
       def self.register(name, representer)
@@ -294,6 +307,7 @@ module Archsight
       register("actor", Actor.new)
       register("file", FileRepresenter.new)
       register("module", ModuleRepresenter.new)
+      register("text", TextRepresenter.new)
     end
   end
 end

@@ -1550,6 +1550,47 @@ class DiagramRendererTest < Minitest::Test
 
   # link
 
+  def test_text_draws_no_box_and_wraps_markdown
+    doc = REXML::Document.new(Archsight::Diagram.render(%(text "t" { label "**Bold** and *italic* words"; width "12" }\n)))
+
+    assert_empty doc.root.get_elements("//rect[@id='asd-node-t__body' and @class!='asd-text-hit']")
+    assert_equal 2, doc.root.get_elements("//text/tspan[@dy]").length
+    assert_equal 1, doc.root.get_elements("//tspan[@class='asd-run-bold']").length
+  end
+
+  def test_text_with_an_unresolved_resource_is_dimmed_and_dashed
+    svg = Archsight::Diagram.render(%(text "t" { label "x"; resource "Page/zzz" }\n), resolver: ->(_) { :missing })
+
+    assert_includes svg, "asd-broken-text"
+  end
+
+  def test_text_with_a_resolved_resource_is_one_link
+    svg = Archsight::Diagram.render(%(text "t" { label "x"; resource "Page/a" }\n), resolver: ->(_) { "/kinds/Page/instances/a" })
+
+    assert_equal 2, REXML::Document.new(svg).root.get_elements("//a[@href='/kinds/Page/instances/a']").length
+  end
+
+  def test_text_rejects_shape_and_bad_width
+    assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { shape "circle" }\n)) }
+    assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(text "t" { width "0" }\n)) }
+  end
+
+  def test_text_is_only_as_tall_as_its_lines
+    height = lambda do |source|
+      Archsight::Diagram.render(source, theme: "tight")[/<svg[^>]*viewBox="([^"]+)"/, 1].split.last.to_f
+    end
+    text = height.call(%(text "n" { label "a\\nb" }\n))
+    component = height.call(%(component "n" { label "a\\nb" }\n))
+
+    assert_operator text, :<, component
+    # a stack of one-line texts is as tall as one text with the same lines, plus the gaps between them
+    lines = height.call(%(stack "s" {\n  text "a" { label "a" }\n  text "b" { label "b" }\n}\n))
+    one = height.call(%(stack "s" {\n  text "a" { label "a\\nb" }\n}\n))
+    theme = Archsight::Diagram::Theme::THEMES.fetch("tight")
+
+    assert_in_delta one + theme.stack_gap + (2 * Archsight::Diagram::Layout::TEXT_PADDING), lines, 0.01
+  end
+
   def test_link_wraps_a_linked_leaf_s_shape_and_label_each_in_their_own_a_href
     source = %(component "a" { label "A"; link "https://example.com" }\n)
     doc = REXML::Document.new(Archsight::Diagram.render(source))

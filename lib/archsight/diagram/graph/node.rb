@@ -228,6 +228,21 @@ module Archsight
         def default_shape = "file"
       end
 
+      # A borderless, descriptive text block: sized and placed like a
+      # component with the same label (so `\n` and `width` wrapping give
+      # the same margins), but drawn without box or fill. `width "N"` wraps
+      # the label at N characters per line.
+      class TextNode < Node
+        def leaf? = true
+        def default_shape = "text"
+
+        def label
+          text = super
+          width = attrs["width"]
+          width ? TextMetrics.wrap(text, width.to_i) : text
+        end
+      end
+
       class Group < Node; end
 
       class Boundary < Node
@@ -245,7 +260,7 @@ module Archsight
 
       Node::KIND_CLASSES = {
         component: Component, application: Application, api: Api, database: Database,
-        queue: Queue, actor: Actor, file: FileNode, group: Group, boundary: Boundary, layer: Layer, stack: Stack
+        queue: Queue, actor: Actor, file: FileNode, text: TextNode, group: Group, boundary: Boundary, layer: Layer, stack: Stack
       }.freeze
     end
   end

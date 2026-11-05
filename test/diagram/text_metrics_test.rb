@@ -9,6 +9,18 @@ class DiagramTextMetricsTest < Minitest::Test
     assert_equal [["Control Plane@k8s", {}]], runs("Control Plane@k8s")
   end
 
+  def wrap(text, width) = Archsight::Diagram::TextMetrics.wrap(Archsight::Diagram::MarkdownText.detect(text), width)
+
+  def test_wraps_at_word_boundaries_and_keeps_existing_breaks
+    assert_equal "aaa bbb\nccc\nd", wrap("aaa bbb ccc\nd", 7)
+    assert_equal "averyverylongword\nx", wrap("averyverylongword x", 5)
+  end
+
+  def test_wrap_reopens_markers_on_each_line_and_keeps_links_whole
+    assert_equal "**ab**\n**cd**", wrap("**ab cd**", 2)
+    assert_equal "**a** [b](u)", wrap("**a** [b](u)", 3)
+  end
+
   def test_returns_no_runs_for_empty_text
     assert_empty runs("")
   end

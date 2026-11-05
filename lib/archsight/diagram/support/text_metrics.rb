@@ -127,6 +127,44 @@ module Archsight
         nil
       end
 
+      # `text` word-wrapped at `width` characters per line (plain
+      # characters: markdown markers take no room). Existing `\n` breaks
+      # stay. A marked-up run that crosses a break is closed on that line
+      # and re-opened on the next, so every line stays valid markdown-lite;
+      # a word longer than `width` gets its own line, never split.
+      def wrap(text, width)
+        wrapped = text.split("\n", -1).flat_map { |line| wrap_line(text, line, width) }.join("\n")
+        MarkdownText.like(text, wrapped)
+      end
+
+      def wrap_line(source, line, width)
+        chars = markdown_runs(MarkdownText.like(source, line)).flat_map { |content, style| content.each_char.map { |c| [c, style] } }
+        words = chars.chunk_while { |a, b| (a[0] == " ") == (b[0] == " ") }.reject { |w| w[0][0] == " " }
+        lines = words.each_with_object([]) do |word, acc|
+          if acc.any? && acc.last.length + 1 + word.length <= width
+            gap_style = acc.last.last[1] == word.first[1] ? word.first[1] : {}
+            acc.last.concat([[" ", gap_style]], word)
+          else
+            acc << word.dup
+          end
+        end
+        lines.empty? ? [line] : lines.map { |l| runs_to_markdown(source, l) }
+      end
+
+      MARKERS = { bold: "**", italic: "*", underline: "__" }.freeze
+
+      def runs_to_markdown(source, chars)
+        out = chars.chunk_while { |a, b| a[1] == b[1] }.map do |group|
+          content = group.map(&:first).join
+          style = group.first[1]
+          if style[:link] then "[#{content}](#{style[:link]})"
+          elsif (key = style.keys.first) then "#{MARKERS.fetch(key)}#{content}#{MARKERS.fetch(key)}"
+          else content
+          end
+        end.join
+        MarkdownText.like(source, out)
+      end
+
       # How much taller a label is than a single line, given the space
       # between stacked lines -- 0 for a one-line label.
       def extra_height(text, line_height:)

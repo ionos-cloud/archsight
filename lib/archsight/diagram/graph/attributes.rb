@@ -25,8 +25,11 @@ module Archsight
       # `Graph::Node`/`Graph::Edge`/`Graph::DataFlow` and with `docs/diagram.md`.
       module Attributes
         NODE = %w[label tint link resource extend].freeze
-        LEAF_KINDS = %i[component application api database queue actor file].freeze
+        LEAF_KINDS = %i[component application api database queue actor file text].freeze
         LEAF = (NODE + %w[shape]).freeze
+        # A `text` has no box to restyle (no `shape`), but may wrap at `width` characters.
+        TEXT = (NODE + %w[width]).freeze
+        WIDTH_FORMAT = /\A[1-9]\d*\z/
         CONTAINER = (NODE + %w[gap ranks columns anchor]).freeze
         EDGE = %w[label style relation tint].freeze
         DATAFLOW = %w[label color].freeze
@@ -47,7 +50,11 @@ module Archsight
         module_function
 
         def check_node!(block, ranks_modes:)
-          allowed = leaf?(block) ? LEAF : CONTAINER
+          allowed = if block.kind == :text
+                      TEXT
+                    else
+                      leaf?(block) ? LEAF : CONTAINER
+                    end
           where = "#{block.kind} #{block.anonymous ? "(anonymous)" : block.id.inspect}"
           block.attrs.each do |key, value|
             check_name!(key, allowed, where, block.line)
@@ -119,6 +126,7 @@ module Archsight
           when "extend" then check_value!(key, value, leaf?(block) ? LEAF_EXTEND : CONTAINER_EXTEND, where, line)
           when "anchor" then check_value!(key, value, ANCHORS, where, line)
           when "gap" then check_format!(key, value, GAP_FORMAT, "a pixel count (40), a percentage (150%) or a signed one (+20%, -50%)", where, line)
+          when "width" then check_format!(key, value, WIDTH_FORMAT, "a positive number of characters per line", where, line)
           when "link" then check_link!(value, where, line)
           when "resource" then check_resource!(value, block, where, line)
           end

@@ -27,6 +27,9 @@ module Archsight
     # between the ancestor boxes that are direct children of the group being
     # laid out, so connected subsystems are still pulled toward each other.
     class Layout
+      # Air above and below the lines of a `text` node.
+      TEXT_PADDING = 2.0
+
       Box = Struct.new(:x, :y, :width, :height) do
         # `left`/`right`/`top`/`bottom` fall through to a live computation
         # until `freeze_bounds!` runs -- every read during `Layout.compute`
@@ -171,8 +174,16 @@ module Archsight
           return [width, @theme.actor_figure_height + @theme.actor_label_height + extra_height]
         end
 
+        return text_size(node, extra_height) if node.kind == :text
+
         width = [label_width(node) + @theme.node_label_padding, @theme.node_min_width].max
         [width, @theme.node_height + extra_height]
+      end
+
+      # A text node has no box to pad out: one line height per line and a little air, and no minimum width, so a
+      # stack of one-line texts reads like the lines of a single multi-line one.
+      def text_size(node, extra_height)
+        [label_width(node) + @theme.node_label_padding, @theme.label_line_height + extra_height + (2 * TEXT_PADDING)]
       end
 
       def label_width(node)
