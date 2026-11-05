@@ -16,6 +16,7 @@ metadata:
   annotations:
     architecture/description: Regional cluster implemented with a hypervisor and a cluster API.
     infrastructure/type: vm
+    capacity/spareHosts: '1'
 spec:
   specializes:
     technologyNodes:

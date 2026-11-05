@@ -2,7 +2,7 @@
 
 # TechnologyNode represents physical infrastructure (VMs, servers, Kubernetes nodes)
 class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
-  include_annotations :git, :architecture, :asset, :risk
+  include_annotations :git, :architecture, :asset, :risk, :capacity
 
   description <<~MD
     Represents physical infrastructure hosting application components.
@@ -53,6 +53,13 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     A node is `realizedBy` the `TechnologyEquipment` it consists of or stands on (a router on its rack); see `TechnologyEquipment`.
     A logical node (a host role, "the hypervisors of the platform") is `realizedBy` the `TechnologyDevice`s, the
     physical machines, that make it up.
+
+    ## Spare hosts
+
+    A host role or pool keeps hosts in reserve (n+1). The reserve is a count, not a machine: any host can take the
+    role and the actual spare changes, so `capacity/spareHosts` holds the number on the node (not a flag on a
+    `TechnologyDevice`) and a `link/*` annotation the source. "N hosts, of which K spare" is the devices the node is
+    `realizedBy` and this count.
 
     ## Concept and implementation
 
