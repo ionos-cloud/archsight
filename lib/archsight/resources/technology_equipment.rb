@@ -2,7 +2,7 @@
 
 # TechnologyEquipment represents racks, fabrics and physical clusters inside a facility
 class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
-  include_annotations :git, :architecture
+  include_annotations :git, :architecture, :capacity
 
   description <<~MD
     Represents physical equipment inside a facility: racks, network fabrics, physical clusters.
@@ -49,6 +49,8 @@ class Archsight::Resources::TechnologyEquipment < Archsight::Resources::Base
       The devices of a partition are normally served by the same team; `archsight lint` warns when one is not
     - A `BusinessContract` `covers` the equipment it obliges the provider to deliver, and the `ImplementationWorkPackage` that
       installs or changes it `affects` it
+    - `capacity/spareHosts` is the number of hosts of a site or delivered block held in reserve (n+1); it is a count,
+      not a machine, so it is not a flag on a `TechnologyDevice`. The source goes into a `link/*` annotation
   MD
 
   icon "cpu"
