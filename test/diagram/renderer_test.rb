@@ -1550,6 +1550,24 @@ class DiagramRendererTest < Minitest::Test
 
   # link
 
+  def test_an_edge_into_a_sibling_pushed_by_extend_width_ends_at_its_new_position
+    source = <<~SRC
+      stack {
+        layer { component "a" { label "a very long label ........................................" } }
+        layer {
+          stack { extend "width"; component "m" { label "main" } }
+          stack { component "s" { label "aside" } }
+        }
+      }
+      m -> s
+    SRC
+    doc = REXML::Document.new(Archsight::Diagram.render(source))
+    target = doc.root.elements["//rect[@id='asd-node-s__body']"].attributes["x"].to_f
+    path = doc.root.elements["//path[@id='asd-edge-m__s__line']"].attributes["d"]
+
+    assert_in_delta target, path.scan(/-?\d+\.\d+/).last(2).first.to_f, 0.01
+  end
+
   def test_text_draws_no_box_and_wraps_markdown
     doc = REXML::Document.new(Archsight::Diagram.render(%(text "t" { label "**Bold** and *italic* words"; width "12" }\n)))
 
