@@ -435,7 +435,7 @@ Model **who** does **what** in business terms.
 
 **Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Role or Actor. How controls, requirements and evidence fit together is described under Relation Patterns below.
 
-**Contracts:** Product → aggregates → Contract (framework) → composedOf → Contract (call-off) → covers → Equipment, and the call-off → realizedThrough → Deliverable ← realizes ← Work Package → affects → Equipment. The contract is `agreedBy` the actual organisations (the customer and the provider), not a generic role. All relations are written on the more abstract element; the equipment, the actors and the deliverable show them as incoming ("covered by", "agreed contracts", "fulfils"). A contract is a `BusinessContract`, not a `DataObject` and not text in a description.
+**Contracts:** Product → aggregates → Contract (framework) → composedOf → Contract (call-off) → covers → Equipment, and the call-off → realizedThrough → Deliverable ← realizes ← Work Package → affects → Equipment. The contract is `agreedBy` the actual organisations (the customer and the provider), not a generic role. Contract → stipulates → Requirement / Constraint is the legal basis of an obligation, alongside Stakeholder → hasConcern (who wants it), Element → realizes (what fulfils it) and Evidence → satisfies (the proof); a requirement the provider derives itself is not stipulated by a contract but refers to the stipulated requirement it refines. Granularity follows `composedOf`: the framework contract stipulates the general obligations, an SLA its service levels, a call-off what was ordered with it. All relations are written on the more abstract element; the equipment, the actors and the deliverable show them as incoming ("covered by", "agreed contracts", "fulfils"). A contract is a `BusinessContract`, not a `DataObject` and not text in a description.
 
 ```yaml
 kind: BusinessProduct
@@ -457,7 +457,16 @@ spec:
   agreedBy:
     businessActors: [CustomerOrg, ProviderOrg]
   composedOf:
-    businessContracts: [Contract:Customer:Block1, Contract:Customer:Block2]
+    businessContracts: [Contract:Customer:Block1, Contract:Customer:Block2, Contract:Customer:SLA]
+---
+kind: BusinessContract
+metadata:
+  name: Contract:Customer:SLA
+  annotations:
+    contract/type: sla
+spec:
+  stipulates:
+    motivationRequirements: [Req:Availability, Req:ResponseTime]
 ---
 kind: BusinessContract
 metadata:

@@ -49,3 +49,16 @@ spec:
   realizes:
     outcomes:
       - Outcome:ArchitectureVisibility
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationRequirement
+metadata:
+  name: Requirement:Checkout:Availability
+  annotations:
+    architecture/description: |
+      The payment authorization is available 99.9% of the month. Binding
+      through the SLA of the checkout contract.
+    requirement/type: non-functional
+    requirement/priority: must
+    architecture/tags: example,payments
+spec: {}
