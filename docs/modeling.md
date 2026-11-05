@@ -30,13 +30,13 @@ Implementation & Migration layer describes change across all of them. A relation
 to what that element depends on, is served by, or is answered by. Following relations from a high-level element
 therefore walks down to people, code and infrastructure, and the relations form a DAG: nothing may lead back to where
 it started. `archsight lint` reports every cycle (only `dependsOn` is exempt, because components and services may depend on each
-other at runtime, and `connectedTo`, because cables between devices run both ways). `specializes`, `composedOf` and `aggregates` are checked per verb, see "Concept and Implementation" and "Deployment".
+other at runtime, and `connectedTo`, because cables between devices run both ways). `specializes`, `composedOf`, `aggregates` and `refinedBy` are checked per verb, see "Concept and Implementation" and "Deployment".
 
 There are two families of verbs:
 
 | Family | Verbs | Written on | Points to |
 |--------|-------|------------|-----------|
-| Responsibility and provider (down) | `performedBy`, `ownedBy`, `operatedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `provisions`, `connects`, `mitigatedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
+| Responsibility and provider (down) | `performedBy`, `ownedBy`, `operatedBy`, `executedBy`, `servedBy`, `guidedBy`, `maintainedBy`, `contributedBy`, `hasConcern`, `representedBy`, `realizedThrough`, `exposes`, `provisions`, `connects`, `mitigatedBy`, `refinedBy`, `influences`, `triggers`, `affects`, `assesses`, `contains`, `closedBy`, `compares` | the element that needs, uses or is concerned with something | what provides it or is responsible for it |
 | Realization (up) | `realizes`, `partiallyRealizes`, `plans`, `satisfies`, `evidencedBy` (on the evidenced element), `provides` | the concrete element | the abstract element it answers to (requirement, goal, capability, plateau) |
 
 Rules:
@@ -385,6 +385,8 @@ Model **why** the architecture exists.
 
 **Example chain:** Stakeholder "Security Team" → hasConcern → Goal "Achieve Compliance" → realizes → Requirement "Encrypt data at rest"; Stakeholder "Security Team" → representedBy → Actor "Security Office"
 
+**Refining a requirement:** a catalogue requirement (IT-Grundschutz, C5) is either taken as it is, or made more concrete: it is `refinedBy` the requirements derived from it (`spec.refinedBy.motivationRequirements`). The relation is written on the abstract requirement and points down like `composedOf`, so the chain reads top-down from the catalogue through the derived requirements to what realizes them; the derived requirement shows the catalogue requirement as incoming "refines". Chains must not form a cycle.
+
 **Source of a requirement:** the stakeholder that `hasConcern` for a requirement (directly, or for the goal the requirement answers) is its source, and the stakeholder is `representedBy` the `BusinessActor` or `BusinessRole` behind it: the actual organisation, not a generic "customer". This follows ArchiMate, where a stakeholder is a motivation role associated with the actor or role that plays it, and TOGAF, where the requirements repository records each requirement's source and the stakeholder map links stakeholders to organisation units. The requirement's page shows its stakeholders, the actor's page the stakeholder roles it represents. A source is optional.
 
 ### Strategy Layer
@@ -435,7 +437,7 @@ Model **who** does **what** in business terms.
 
 **Controls:** Process "Incident Response" → guidedBy → Control "Escalation Review" → ownedBy / executedBy → Role or Actor. How controls, requirements and evidence fit together is described under Relation Patterns below.
 
-**Contracts:** Product → aggregates → Contract (framework) → composedOf → Contract (call-off) → covers → Equipment, and the call-off → realizedThrough → Deliverable ← realizes ← Work Package → affects → Equipment. The contract is `agreedBy` the actual organisations (the customer and the provider), not a generic role. Contract → stipulates → Requirement / Constraint is the legal basis of an obligation, alongside Stakeholder → hasConcern (who wants it), Element → realizes (what fulfils it) and Evidence → satisfies (the proof); a requirement the provider derives itself is not stipulated by a contract but refers to the stipulated requirement it refines. Granularity follows `composedOf`: the framework contract stipulates the general obligations, an SLA its service levels, a call-off what was ordered with it. All relations are written on the more abstract element; the equipment, the actors and the deliverable show them as incoming ("covered by", "agreed contracts", "fulfils"). A contract is a `BusinessContract`, not a `DataObject` and not text in a description.
+**Contracts:** Product → aggregates → Contract (framework) → composedOf → Contract (call-off) → covers → Equipment, and the call-off → realizedThrough → Deliverable ← realizes ← Work Package → affects → Equipment. The contract is `agreedBy` the actual organisations (the customer and the provider), not a generic role. Contract → stipulates → Requirement / Constraint is the legal basis of an obligation, alongside Stakeholder → hasConcern (who wants it), Element → realizes (what fulfils it) and Evidence → satisfies (the proof); a requirement the provider derives itself is not stipulated by a contract but is linked from the stipulated requirement it refines (`refinedBy`). Granularity follows `composedOf`: the framework contract stipulates the general obligations, an SLA its service levels, a call-off what was ordered with it. All relations are written on the more abstract element; the equipment, the actors and the deliverable show them as incoming ("covered by", "agreed contracts", "fulfils"). A contract is a `BusinessContract`, not a `DataObject` and not text in a description.
 
 ```yaml
 kind: BusinessProduct
