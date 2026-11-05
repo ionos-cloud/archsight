@@ -11,6 +11,8 @@ metadata:
     device/type: server
     device/role: hypervisor
     device/model: 2U server
+    device/arch: x86_64
+    device/cpu: Ice Lake
 spec:
   locatedAt:
     technologyFacilities:
@@ -28,6 +30,8 @@ metadata:
     device/type: server
     device/role: hypervisor
     device/model: 2U server
+    device/arch: x86_64
+    device/cpu: Ice Lake
 spec:
   locatedAt:
     technologyFacilities:
@@ -95,6 +99,8 @@ metadata:
     device/type: server
     device/role: hypervisor
     device/model: 2U server
+    device/arch: x86_64
+    device/cpu: Sapphire Rapids
 spec:
   locatedAt:
     technologyFacilities:
