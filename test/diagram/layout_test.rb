@@ -820,6 +820,63 @@ class DiagramLayoutTest < Minitest::Test
                   Archsight::Diagram::Theme::DEFAULT.node_min_width].max, box.width
   end
 
+  WIDTH_SOURCE = <<~SRC
+    stack {
+      layer "wide" { component "a" { label "a very long label ........................................" } }
+      layer "narrow" {
+        stack "main" { %<extend>s component "m" { label "main" } }
+        stack "aside" { component "s" { label "aside" } }
+      }
+    }
+    m -> s
+  SRC
+
+  def test_extend_width_pushes_the_siblings_after_it_to_the_layer_s_right_edge
+    result = Archsight::Diagram::Layout.compute(build_graph(format(WIDTH_SOURCE, extend: %(extend "width";))))
+    wide = result.boxes["wide"]
+    narrow = result.boxes["narrow"]
+    main = result.boxes["main"]
+    aside = result.boxes["aside"]
+
+    assert_in_delta wide.width, narrow.width, 0.01
+    assert_operator main.left, :<, aside.left
+    assert_in_delta narrow.right - 30, aside.right, 0.01 # the layer's padding
+    assert_in_delta narrow.left + 30, main.left, 0.01
+    assert_operator main.width, :>, result.boxes["m"].width
+    # the content of the grown child stays left, at its natural size
+    assert_equal Archsight::Diagram::Theme::DEFAULT.node_min_width, result.boxes["m"].width
+  end
+
+  def test_without_extend_width_the_layer_content_stays_one_centered_block
+    result = Archsight::Diagram::Layout.compute(build_graph(format(WIDTH_SOURCE, extend: "")))
+    main = result.boxes["main"]
+    aside = result.boxes["aside"]
+
+    assert_in_delta main.right + Archsight::Diagram::Theme::DEFAULT.sibling_gap, aside.left, 0.01
+  end
+
+  def test_extend_width_anchor_right_puts_the_content_at_the_right_of_the_grown_child
+    result = Archsight::Diagram::Layout.compute(build_graph(format(WIDTH_SOURCE, extend: %(extend "width"; anchor "right";))))
+
+    assert_operator result.boxes["m"].right, :>, result.boxes["main"].left + result.boxes["main"].width - 31
+  end
+
+  def test_extend_width_children_share_the_spare_width_equally
+    source = <<~SRC
+      stack {
+        layer "wide" { component "a" { label "a very long label ........................................" } }
+        layer "narrow" {
+          stack "x" { extend "width"; component "m" { label "x" } }
+          stack "y" { extend "width"; component "n" { label "y" } }
+        }
+      }
+    SRC
+    result = Archsight::Diagram::Layout.compute(build_graph(source))
+
+    assert_in_delta result.boxes["x"].width, result.boxes["y"].width, 0.01
+    assert_in_delta result.boxes["narrow"].right - 30, result.boxes["y"].right, 0.01
+  end
+
   def test_extend_height_grows_a_layer_child_s_box_to_its_tallest_sibling_keeping_content_top_aligned
     source = <<~SRC
       layer {

@@ -36,7 +36,7 @@ module Archsight
 
         EDGE_STYLES = %w[straight orthogonal].freeze
         LEAF_EXTEND = %w[true false].freeze
-        CONTAINER_EXTEND = %w[true false height].freeze
+        CONTAINER_EXTEND = %w[true false height width].freeze
         ANCHORS = %w[top bottom left right center].freeze
 
         # `40` (pixels), `150%` (of the default), `+20%`/`-50%` (relative);

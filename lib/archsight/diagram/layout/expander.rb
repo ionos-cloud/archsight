@@ -71,6 +71,8 @@ module Archsight
 
           axis.set_size(box, own_target) if extra.positive?
 
+          return spread_width(node, extra) if extra.positive? && spreads_width?(node, axis)
+
           # `extend`'s multi-child stretching only kicks in for a ranked
           # node (`stack`/`layer`): both use `Stacker#pack`'s "every child's
           # cross-axis coordinate sits at half the shared width/height"
@@ -150,7 +152,44 @@ module Archsight
           end
         end
 
+        # `extend "width"`: grows `node` to `target` width keeping its content at its `anchor` (left by default),
+        # or, for a `layer`, hands the room to its own `extend "width"` children.
+        def grow_width(node, target)
+          box = @boxes[node.id]
+          extra = target - box.width
+          return if extra <= 0
+
+          box.width = target
+          return if node.children.empty?
+          return spread_width(node, extra) if spreads_width?(node, Axis::WIDTH)
+
+          recenter_children(node, Axis::WIDTH, node.anchor_shift(Axis::WIDTH, extra, default: :left))
+        end
+
         private
+
+        def spreads_width?(node, axis)
+          axis == Axis::WIDTH && node.layer? && node.children.any?(&:extend_width?)
+        end
+
+        # A layer made `extra` wider: its `extend "width"` children share the extra width equally and the
+        # children after them move right by what was added before them, keeping every gap (so the last
+        # sibling ends at the layer's right edge). The re-flow starts at the first child's original leading
+        # edge, like `stretch_children`.
+        def spread_width(node, extra)
+          ordered = node.children.sort_by { |c| Axis::WIDTH.position(@boxes[c.id]) }
+          gaps = ordered.each_cons(2).map { |a, b| gap_between(a, b, Axis::WIDTH) }
+          pos = Axis::WIDTH.leading_edge(@boxes[ordered.first.id])
+          growers = ordered.select(&:extend_width?)
+          share = extra / growers.length.to_f
+
+          ordered.each_with_index do |c, i|
+            grow_width(c, @boxes[c.id].width + share) if c.extend_width?
+            box = @boxes[c.id]
+            Axis::WIDTH.set_position(box, pos + (box.width / 2.0))
+            pos += box.width + (gaps[i] || 0.0)
+          end
+        end
 
         # A grown `layer`'s `extend "height"` children fill the new height
         # too (they were only matched to their tallest sibling before).

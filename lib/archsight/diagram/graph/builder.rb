@@ -10,6 +10,7 @@ module Archsight
         raise GraphError, "#{block.kind} has an empty id (line #{block.line})" if block.id.strip.empty?
 
         Attributes.check_node!(block, ranks_modes: RANKS_MODES)
+        raise GraphError, "extend \"width\" on #{block.kind} #{block.id.inspect} (line #{block.line}) only applies to a direct child of a layer" if block.attrs["extend"] == "width" && !parent&.layer?
 
         node = Node.for(id: block.id, kind: block.kind, attrs: block.attrs, children: [], parent: parent,
                         anonymous: block.anonymous, line: block.line)

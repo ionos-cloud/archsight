@@ -122,7 +122,7 @@ module Archsight
         # untouched.
         def extend?(inherited)
           raw = attrs["extend"]
-          return inherited if raw.nil? || raw == "height"
+          return inherited if raw.nil? || %w[height width].include?(raw)
 
           raw != "false"
         end
@@ -135,6 +135,15 @@ module Archsight
         # `Expander#grow_height`).
         def extend_height?
           attrs["extend"] == "height"
+        end
+
+        # `extend "width"` on a direct child of a `layer`: the child takes an
+        # equal share of the layer's spare width (when the layer is made
+        # wider than its content), which pushes the siblings after it to the
+        # right edge. Its own content stays at its `anchor` (left by
+        # default). Never inherited, like `extend "height"`.
+        def extend_width?
+          attrs["extend"] == "width"
         end
 
         # Where this container's content sits when its box grows by `extra`
