@@ -20,7 +20,7 @@ module Archsight
     # Structure relations between elements of one kind (specialization, composition, aggregation). Each verb is
     # checked on its own: a chain of one of them must not lead back to where it started. They stay out of the
     # general check above so that a cycle is reported once.
-    HIERARCHY_VERBS = %i[specializes composedOf aggregates].freeze
+    HIERARCHY_VERBS = %i[specializes composedOf aggregates refinedBy].freeze
 
     def initialize(database)
       @database = database
@@ -192,7 +192,7 @@ module Archsight
       report_cycles(graph) { |start, path| "#{start.path_ref}: #{start.klass} '#{start.name}' is part of a relation cycle (#{path})" }
     end
 
-    # `specializes`, `composedOf` and `aggregates` (one chain per verb) must not lead back to where they started
+    # `specializes`, `composedOf`, `aggregates` and `refinedBy` (one chain per verb) must not lead back to where they started
     def validate_hierarchy_cycles
       HIERARCHY_VERBS.each do |hierarchy_verb|
         graph = relation_graph { |verb| verb == hierarchy_verb }

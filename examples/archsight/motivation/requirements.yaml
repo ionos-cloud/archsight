@@ -62,3 +62,34 @@ metadata:
     requirement/priority: must
     architecture/tags: example,payments
 spec: {}
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationRequirement
+metadata:
+  name: Requirement:Backup:Catalogue
+  annotations:
+    architecture/description: |
+      A catalogue requirement (in the style of an IT-Grundschutz building
+      block): data is backed up regularly. It is not realized directly, it is
+      made concrete by the requirements it is refined by.
+    requirement/type: compliance
+    requirement/reference: itgs-2023
+    requirement/priority: must
+    architecture/tags: example,backup
+spec:
+  refinedBy:
+    motivationRequirements:
+      - Requirement:Backup:Daily
+---
+apiVersion: architecture/v1alpha1
+kind: MotivationRequirement
+metadata:
+  name: Requirement:Backup:Daily
+  annotations:
+    architecture/description: |
+      The derived requirement: every database is backed up daily and a restore
+      is tested quarterly.
+    requirement/type: functional
+    requirement/priority: must
+    architecture/tags: example,backup
+spec: {}

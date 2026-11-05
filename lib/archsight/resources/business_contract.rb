@@ -37,7 +37,7 @@ class Archsight::Resources::BusinessContract < Archsight::Resources::Base
     - It `stipulates` the `MotivationRequirement`s and `MotivationConstraint`s it makes binding: the legal basis of
       an obligation. Link them instead of restating sizes, availability or response times in the description. A
       requirement the provider derives itself (a design that refines a contractual obligation) is not stipulated by
-      a contract, it refers to the stipulated requirement it refines. A requirement can be stipulated by several
+      a contract, it is `refinedBy`-linked from the stipulated requirement it refines. A requirement can be stipulated by several
       contracts (a framework and a call-off)
     - It is `realizedThrough` the `ImplementationDeliverable` that fulfils it; the `ImplementationWorkPackage` that
       `realizes` the deliverable `affects` the equipment it installs

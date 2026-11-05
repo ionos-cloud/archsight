@@ -42,6 +42,15 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
     the requirement answers. The stakeholder is `representedBy` the actor or role behind it, so the chain reaches the
     actual organisation that asked for the requirement.
 
+    ## Refinement
+
+    A requirement is either taken as it is or made more concrete: the catalogue requirement (an IT-Grundschutz
+    building block requirement, a C5 criterion) is `refinedBy` the requirements derived from it, one or several, in
+    any depth. The relation is written on the more abstract requirement and points down, like `composedOf`; the
+    derived requirement shows the catalogue requirement as incoming "refines". Everything that realizes, plans or
+    satisfies the derived requirement thereby answers to the catalogue requirement as well. A catalogue requirement
+    taken as it is needs no relation: link it directly. The chain must not form a cycle (`archsight lint`).
+
     ## Security and risk modelling
 
     - **Control measure:** `requirement/type` `control-measure` is a measure that a control objective
@@ -78,6 +87,7 @@ class Archsight::Resources::MotivationRequirement < Archsight::Resources::Base
              title: "Story",
              format: :markdown
 
+  relation :refinedBy, :motivationRequirements, :MotivationRequirement
   relation :realizes, :outcomes, :MotivationOutcome
   relation :realizes, :motivationPrinciples, :MotivationPrinciple
 end

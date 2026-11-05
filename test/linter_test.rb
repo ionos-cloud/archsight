@@ -47,6 +47,21 @@ class LinterTest < Minitest::Test
     assert_match(/ImplementationPlateau 'Plateau:\w' is part of a relation cycle \(Plateau:\w -triggers-> Plateau:\w -triggers-> Plateau:\w -triggers-> Plateau:\w\)/, errors.first)
   end
 
+  def requirements(*chain)
+    chain.map { |name, refined| "---\napiVersion: architecture/v1alpha1\nkind: MotivationRequirement\nmetadata:\n  name: #{name}\nspec:\n  refinedBy:\n    motivationRequirements: #{refined.inspect}\n" }.join
+  end
+
+  def test_validate_reports_a_cycle_of_refined_by_per_verb
+    errors = lint_yaml(requirements(["Req:A", ["Req:B"]], ["Req:B", ["Req:A"]]))
+
+    assert_equal 1, errors.length
+    assert_match(/MotivationRequirement 'Req:\w' is part of a cycle of refinedBy relations/, errors.first)
+  end
+
+  def test_validate_accepts_a_chain_of_refined_by
+    assert_empty lint_yaml(requirements(["Req:A", ["Req:B", "Req:C"]], ["Req:B", ["Req:D"]], ["Req:C", []], ["Req:D", []]))
+  end
+
   def test_validate_reports_an_instance_that_points_at_itself
     errors = lint_yaml(plateaus(["Plateau:A", ["Plateau:A"]]))
 
