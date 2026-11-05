@@ -434,6 +434,14 @@ class TechnologyDeviceTest < Minitest::Test
     assert_empty klass.annotations.select { |a| a.key.start_with?("device/") && a.enum }.map(&:key) - klass.annotations.select(&:filterable?).map(&:key)
   end
 
+  def test_cpu_generation_is_a_filterable_free_text_annotation
+    klass = Archsight::Resources::TechnologyDevice
+
+    assert_predicate klass.annotation_matching("device/cpu"), :filterable?
+    assert klass.annotation_matching("device/cpu").valid?("Sapphire Rapids")
+    assert_equal "CPU Model", klass.annotation_matching("device/cpuModel").title
+  end
+
   def test_the_operating_system_is_a_summary_annotation_within_the_limit
     summary = Archsight::Resources::TechnologyDevice.summary_annotations.map(&:key)
 

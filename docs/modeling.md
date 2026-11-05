@@ -215,7 +215,7 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
     down to the team, which points to nothing further. On a TechnologyFacility, `servedBy` stays the operator of
     the site.
 14. A client device (developer workstation, laptop, phone) is a `TechnologyDevice` with a client `device/type` and
-    `device/os`, `device/osVersion`, `device/arch`, `device/ownership`, `device/managed` and `device/encryption`; the
+    `device/os`, `device/osVersion`, `device/arch` (the CPU generation of a server is `device/cpu`, the exact model `device/cpuModel`), `device/ownership`, `device/managed` and `device/encryption`; the
     vendor and product are in `device/model` (also for a hardened workstation that runs the user's operating system
     virtualized beside other isolated sessions, which is a `workstation`). Model the individual machine when it is
     inventoried, otherwise one `TechnologyNode` per client platform `realizedBy` the devices. The operating system is

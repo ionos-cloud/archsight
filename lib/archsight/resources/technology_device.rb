@@ -47,6 +47,13 @@ class Archsight::Resources::TechnologyDevice < Archsight::Resources::Base
     - Who uses it is the team or role (`servedBy`), not a person; a client device needs no room, `locatedAt` an
       office is optional
 
+    ## CPU generation
+
+    `device/arch` is the instruction set; `device/cpu` is the microarchitecture or generation ("Ice Lake",
+    "Zen 5") and `device/cpuModel` the exact model number. Hosts of one generation share the CPU features a VM can
+    be given and the live-migration domain, so `device/cpu == "Ice Lake"` lists them. The vendor product of the
+    machine stays in `device/model`.
+
     ## Not this kind
 
     - A VM, a Kubernetes node or a host role is a `TechnologyNode`
@@ -115,6 +122,13 @@ class Archsight::Resources::TechnologyDevice < Archsight::Resources::Base
              title: "Architecture",
              enum: %w[x86_64 arm64 riscv64 other],
              filter: :word
+  annotation "device/cpu",
+             description: "CPU microarchitecture or generation, e.g. Ice Lake, Sierra Forest, Zen 5",
+             title: "CPU",
+             filter: :word
+  annotation "device/cpuModel",
+             description: "Exact CPU model number, e.g. Xeon Gold 6338",
+             title: "CPU Model"
   annotation "device/ownership",
              description: "Who owns the device",
              title: "Ownership",
