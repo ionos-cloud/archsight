@@ -195,6 +195,7 @@ module Archsight
       def initialize(raw, path_ref)
         @raw = raw
         @path_ref = path_ref
+        @merged_refs = [] # : Array[LineReference]
         @references = []
         # Auto-discover annotation keys
         return unless annotations
@@ -372,6 +373,17 @@ module Archsight
         merged = Archsight::Helpers.deep_merge(@raw, inst.raw)
         union_list_annotations!(merged, inst.raw)
         @raw = merged
+        @merged_refs << inst.path_ref
+      end
+
+      # Every document this resource is made of (the first one, then the ones merged into it), as LineReferences
+      def source_refs
+        [path_ref, *@merged_refs].compact.uniq { |ref| [ref.path, ref.line_no] }
+      end
+
+      # True when an importer or generator wrote (part of) the resource: it carries a `generated/script` annotation
+      def generated?
+        !annotations["generated/script"].to_s.empty?
       end
 
       # Annotations hold strings, which replace each other on merge. The values of a list annotation (tags, aliases)

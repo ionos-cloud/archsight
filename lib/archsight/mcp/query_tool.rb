@@ -68,7 +68,8 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
       results = parsed_query.filter(db)
       total = results.length
 
-      # Omit kind from output when filtering by a specific kind (it's redundant)
+      # Complete output omits the kind when filtering by a specific kind (it's redundant); brief always names
+      # it, so a hit can feed analyze_resource(kind, name) without guessing
       omit_kind = !parsed_query.kind_filter.nil?
 
       # Count-only mode: return totals grouped by kind
@@ -86,9 +87,9 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
         paginated = results.sort_by(&:name).drop(offset).take(limit)
         resources = case output
                     when "brief"
-                      paginated.map { |r| Archsight::MCP.brief_summary(r, omit_kind: omit_kind) }
+                      paginated.map { |r| Archsight::MCP.brief_summary(r, with_source: true) }
                     else # "complete"
-                      paginated.map { |r| Archsight::MCP.complete_summary(r, omit_kind: omit_kind) }
+                      paginated.map { |r| Archsight::MCP.complete_summary(r, omit_kind: omit_kind, with_source: true) }
                     end
 
         result = {

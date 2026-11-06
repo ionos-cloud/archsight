@@ -13,6 +13,8 @@ module Archsight
     def self.const_get: (String | Symbol) -> singleton(Base)
 
     class Base
+      ANNOTATION_OPTIONS: Array[Symbol]
+
       attr_accessor raw: Hash[String, untyped]
       attr_accessor path_ref: LineReference
       attr_accessor references: Array[Hash[Symbol, untyped]]
@@ -70,6 +72,8 @@ module Archsight
       def relations_grouped: () -> Hash[String, Hash[String, Array[Base]]]
       def verify!: () -> void
       def merge!: (Base) -> Hash[String, untyped]
+      def source_refs: () -> Array[LineReference]
+      def generated?: () -> bool
       def union_list_annotations!: (Hash[String, untyped], Hash[String, untyped]) -> void
       def split_list: (String) -> Array[String]
 

@@ -91,7 +91,7 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
       name: name,
       spec: instance.spec,
       annotations: instance.annotations
-    }
+    }.merge(Archsight::MCP.source_info(instance))
 
     if depth.positive?
       # Include dependency trees
@@ -101,6 +101,7 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
     else
       # Just direct relations
       result[:relations] = Archsight::MCP.extract_relations(instance)
+      result[:related] = Archsight::MCP.related_sources(instance)
       result[:has_relations] = instance.has_relations?
     end
 

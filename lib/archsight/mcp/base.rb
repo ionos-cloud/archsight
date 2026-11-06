@@ -9,7 +9,7 @@ module Archsight::MCP
   class << self
     attr_accessor :db
 
-    def complete_summary(resource, omit_kind: false)
+    def complete_summary(resource, omit_kind: false, with_source: false)
       result = {
         name: resource.name,
         metadata: {
@@ -18,13 +18,40 @@ module Archsight::MCP
         spec: resource.spec
       }
       result[:kind] = resource.class.to_s.split("::").last unless omit_kind
-      result
+      with_source ? result.merge(source_info(resource)) : result
     end
 
-    def brief_summary(resource, omit_kind: false)
+    def brief_summary(resource, omit_kind: false, with_source: false)
       result = { name: resource.name }
-      result[:kind] = resource.class.to_s.split("::").last unless omit_kind
-      result
+      result[:kind] = kind_of(resource) unless omit_kind
+      with_source ? result.merge(source_info(resource)) : result
+    end
+
+    # Where the resource is defined: `source` ("path:line", relative to the resources root), `generated`
+    # (true = written by an importer, do not edit by hand) and, when several documents were merged into the
+    # resource, `sources` (every contributing file, hand-written ones included).
+    def source_info(resource)
+      refs = resource.source_refs
+      info = { source: format_ref(refs.first), generated: resource.generated? }
+      info[:sources] = refs.map { |ref| format_ref(ref) } if refs.length > 1
+      info
+    end
+
+    # `kind`, `name`, `source` and `generated` of each direct relation target, as [{kind:, name:, source:, generated:}]
+    def related_sources(instance)
+      targets = instance.class.relations.flat_map do |verb, kind_name, _|
+        instance.relations(verb, kind_name)
+      end
+      targets.uniq.map { |t| { kind: kind_of(t), name: t.name }.merge(source_info(t)) }
+    end
+
+    def format_ref(ref)
+      return nil unless ref
+
+      root = db.respond_to?(:path) ? db.path.to_s : ""
+      path = ref.path.to_s
+      path = path.delete_prefix(File.join(File.expand_path(root), "")) unless root.empty?
+      "#{path}:#{ref.line_no}"
     end
 
     def annotations_summary(resource, omit_kind: false)
