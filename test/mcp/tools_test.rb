@@ -96,6 +96,35 @@ class McpToolsTest < Minitest::Test
     refute result["resources"].first.key?("kind"), "kind should be omitted when filtering by specific kind"
   end
 
+  def test_query_tool_brief_has_kind_source_and_generated_with_kind_prefix
+    result = call_tool(Archsight::MCP::QueryTool, query: "TechnologyArtifact: repo-active", output: "brief")
+    hit = result["resources"].first
+
+    assert_equal "TechnologyArtifact", hit["kind"]
+    assert_equal "test:0", hit["source"]
+    refute hit["generated"]
+    refute hit.key?("sources")
+  end
+
+  def test_query_tool_marks_generated_and_merged_sources
+    inst = @db.add_instance("TechnologyArtifact", "gen", { "generated/script" => "import-x" })
+    other = Archsight::Resources["TechnologyArtifact"].new(inst.raw.dup, Archsight::LineReference.new("hand.yaml", 7))
+    inst.merge!(other)
+    result = call_tool(Archsight::MCP::QueryTool, query: "name == \"gen\"", output: "complete")
+    hit = result["resources"].first
+
+    assert hit["generated"]
+    assert_equal ["test:0", "hand.yaml:7"], hit["sources"]
+  end
+
+  def test_analyze_resource_shows_source_of_target_and_relations
+    result = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationComponent", name: "MyService")
+
+    assert_equal "test:0", result["source"]
+    assert_includes result["related"].map { |r| r["name"] }, "repo-active"
+    assert(result["related"].all? { |r| r.key?("source") && r.key?("generated") })
+  end
+
   def test_query_tool_brief_output
     result = call_tool(Archsight::MCP::QueryTool, query: "repo-active", output: "brief")
 
