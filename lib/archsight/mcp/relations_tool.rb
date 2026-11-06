@@ -17,6 +17,10 @@ class Archsight::MCP::RelationsTool < FastMcp::Tool
     kind="ApplicationComponent", name="Y", direction="in", target_kind="ApplicationService" - which services use Y
 
     A name that does not exist returns the closest matches across all kinds.
+
+    TYPICAL FLOW: find the exact name with query (output='brief'), then ask for one verb or one target kind here.
+    PITFALLS: kind and name are exact and case-sensitive; verbs are exact (a verb the resource does not have
+    gives a warning listing the verbs it has); 'in' relations are the ones other resources declare towards it.
   DESC
   arguments do
     required(:kind).filled(:string).description("Resource kind, e.g. ApplicationService")

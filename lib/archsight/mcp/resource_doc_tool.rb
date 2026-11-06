@@ -18,6 +18,11 @@ class Archsight::MCP::ResourceDocTool < FastMcp::Tool
        Includes description, available annotations, relations, and a YAML example template.
        Example: kind="TechnologyArtifact"
 
+    TYPICAL FLOW: list the kinds, then ask for one kind, with section=annotations to learn which annotation keys a
+    query filter can use, or section=relations to learn which verbs connect it to other kinds.
+    PITFALLS: kind names are exact and case-sensitive; without a kind only a one-line list comes back (not the
+    full documentation of every kind), so always name the kind you need.
+
     COMMON RESOURCE KINDS:
     • TechnologyArtifact - Code repositories, artifacts, and technology components
     • ApplicationComponent - Services and application building blocks

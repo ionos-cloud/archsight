@@ -157,6 +157,41 @@ class McpToolsTest < Minitest::Test
     refute call_tool(Archsight::MCP::QueryTool, query: "repo", output: "brief")["resources"].first.key?("matched_via")
   end
 
+  def test_query_tool_warns_about_unknown_annotation_keys
+    result = call_tool(Archsight::MCP::QueryTool, query: 'TechnologyArtifact: activity/statuss == "active"')
+
+    assert_equal 0, result["total"]
+    assert_match(%r{unknown annotation key "activity/statuss"; known keys for TechnologyArtifact: activity/status},
+                 result["warnings"].first)
+
+    without_kind = call_tool(Archsight::MCP::QueryTool, query: 'nonsense/key == "x"', output: "count")
+
+    assert_match(/closest known keys over all kinds/, without_kind["warnings"].first)
+
+    known = call_tool(Archsight::MCP::QueryTool, query: 'TechnologyArtifact: activity/status == "nope"')
+
+    assert_equal 0, known["total"]
+    refute known.key?("warnings")
+    refute call_tool(Archsight::MCP::QueryTool, query: "repo").key?("warnings")
+  end
+
+  def test_tool_descriptions_carry_pitfalls_and_flows
+    [Archsight::MCP::QueryTool, Archsight::MCP::AnalyzeResourceTool, Archsight::MCP::RelationsTool,
+     Archsight::MCP::ResourceDocTool, Archsight::MCP::ExecuteAnalysisTool].each do |tool|
+      assert_match(/PITFALLS/, tool.description, tool.tool_name)
+      assert_match(/TYPICAL FLOW/, tool.description, tool.tool_name)
+    end
+    assert_match(/orphans/, Archsight::MCP::QueryTool.description)
+    assert_match(/exclude_kinds/, Archsight::MCP::AnalyzeResourceTool.description)
+    assert_match(/no parameters/, Archsight::MCP::ExecuteAnalysisTool.description)
+  end
+
+  def test_execute_analysis_unknown_name_suggests_analyses
+    result = call_tool(Archsight::MCP::ExecuteAnalysisTool, name: "Analysis:Test:Simpel")
+
+    assert_match(%r{Did you mean: Analysis/Analysis:Test:Simple}, result["message"])
+  end
+
   def test_query_tool_brief_output
     result = call_tool(Archsight::MCP::QueryTool, query: "repo-active", output: "brief")
 
