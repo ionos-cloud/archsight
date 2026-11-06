@@ -57,13 +57,15 @@ class Archsight::MCP::SummaryTool < FastMcp::Tool
   private
 
   def summarize(instance, lens, per_section)
-    markdown = Archsight::Summary::Builder.new(Archsight::MCP.db, per_section: per_section).call(instance, lens_layer: lens)
+    info = Archsight::MCP.source_info(instance)
+    markdown = Archsight::Summary::Builder.new(Archsight::MCP.db, per_section: per_section)
+                                          .call(instance, lens_layer: lens, source: info)
     JSON.pretty_generate({
       kind: instance.klass,
       name: instance.name,
       layer: instance.class.layer,
       lens: lens || instance.class.layer
-    }.merge(Archsight::MCP.source_info(instance)).merge(summary: markdown))
+    }.merge(info).merge(summary: markdown))
   end
 
   # The resources called `name` (an alias counts, then the same name in another letter case), of `kind` or of any kind

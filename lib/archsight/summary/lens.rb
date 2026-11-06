@@ -13,7 +13,8 @@ module Archsight
     #
     # `out` = the resource points at the target (it declares the relation), `in` = the target points at it; `*` = every
     # verb. The built-in lenses below apply when the model has no Config of type `summary`; its annotation
-    # `summary/lens-<layer>` replaces the lens of that layer, so each layer is tuned on its own, without a release.
+    # `summary/lens-<layer>` replaces the lens of that layer and `summary/lens-<Kind>` the one of a single kind (the
+    # kind wins), so lenses are tuned without a release.
     module Lens
       TYPE = "summary" # the `config/type` of the Config that holds the lenses
       DEFAULT_CONFIG = "default"
@@ -39,12 +40,14 @@ module Archsight
           in assesses, influences: Assessed and influenced by
           out evidencedBy: Evidence
           out ownedBy: Owners
+          in mentions, depicts: Documented in
         LENS
         "strategy" => <<~LENS,
           out realizes: Realizes
           out servedBy: Served by
           in hasConcern: Stakeholders
           in realizes: Realized by
+          in mentions, depicts: Documented in
         LENS
         "implementation" => <<~LENS,
           out contains: Contains
@@ -56,6 +59,7 @@ module Archsight
           out realizes: Realizes
           in realizes: Realized by
           out performedBy, ownedBy: People
+          in mentions, depicts: Documented in
         LENS
         "business" => <<~LENS,
           out performedBy, ownedBy, executedBy, agreedBy: People
@@ -69,6 +73,7 @@ module Archsight
           out evidencedBy, provides: Evidence
           in performedBy, ownedBy, executedBy: Responsible for
           in maintainedBy, operatedBy, contributedBy: Maintains and operates
+          in mentions, depicts: Documented in
         LENS
         "application" => <<~LENS,
           out exposes: Interfaces
@@ -83,6 +88,7 @@ module Archsight
           out evidencedBy: Evidence
           in servedBy: Served
           in exposes: Exposed by
+          in mentions, depicts: Documented in
         LENS
         "technology" => <<~LENS,
           out servedBy, realizedBy, suppliedBy, realizedThrough: Built on
@@ -94,21 +100,66 @@ module Archsight
           out maintainedBy, operatedBy, ownedBy, contributedBy: Owners
           out realizes, partiallyRealizes, plans: Requirements
           out evidencedBy: Evidence
+          in mentions, depicts: Documented in
         LENS
         "other" => <<~LENS
           out *: Points at
           in *: Referenced by
+          in mentions, depicts: Documented in
+        LENS
+      }.freeze
+
+      # Kinds whose layer lens is too coarse; looked up before the lens of the layer
+      KIND_DEFAULTS = {
+        "BusinessActor" => <<~LENS,
+          in performedBy, executedBy: Performs
+          in ownedBy: Owns
+          in maintainedBy, operatedBy, contributedBy: Maintains and operates
+          out compositeOf: Composed of
+          in compositeOf: Part of
+          in representedBy: Represented as stakeholder
+          in agreedBy: Contracts
+          in servedBy: Serves
+          in mentions, depicts: Documented in
+        LENS
+        "ApplicationService" => <<~LENS,
+          out realizedThrough: Realized through
+          out dependsOn: Depends on
+          in dependsOn: Used by
+          in servedBy: Serves
+          out maintainedBy: Owners
+          out realizes, partiallyRealizes, plans: Requirements
+          out evidencedBy: Evidence
+          in mentions, depicts: Documented in
+        LENS
+        "MotivationAssessment" => <<~LENS
+          out assesses: Assesses
+          out influences: Influences
+          out mitigatedBy: Mitigated by
+          out ownedBy: Owners
+          in mentions, depicts: Documented in
         LENS
       }.freeze
 
       class << self
-        # The sections for a layer: the `summary/lens-<layer>` of the Config named `default` of type summary (or the first
-        # of that type), else the built-in lens of the layer
-        def for(database, layer)
-          text = configured(database, layer)
-          parse(text || DEFAULTS.fetch(layer, DEFAULTS["other"]))
-        rescue ParseError
-          parse(DEFAULTS.fetch(layer, DEFAULTS["other"])) # a bad Config (the linter reports it) must not break the summary
+        # The sections for a resource of `kind` in `layer`, from the first of: the `summary/lens-<Kind>` and then the
+        # `summary/lens-<layer>` of the Config named `default` of type summary (or the first of that type), the built-in
+        # lens of the kind, the built-in lens of the layer
+        def for(database, layer, kind: nil)
+          candidates = [configured(database, kind), configured(database, layer), KIND_DEFAULTS[kind], DEFAULTS[layer]]
+          candidates.compact.each do |text|
+            return parse(text)
+          rescue ParseError
+            next # a bad Config (the linter reports it) must not break the summary: the next candidate is used
+          end
+          parse(DEFAULTS["other"])
+        end
+
+        # nil when `suffix` of a `summary/lens-<suffix>` key is a layer or a kind, else the message
+        def key_error(suffix)
+          return nil if Archsight::Resources::LAYERS.include?(suffix) || Archsight::Resources[suffix]
+
+          "expected a layer (#{Archsight::Resources::LAYERS.join(", ")}) or a kind, not #{suffix}"
         end
 
         # Sections of lens text; raises ParseError naming the line
@@ -137,10 +188,12 @@ module Archsight
 
         private
 
-        def configured(database, layer)
+        def configured(database, key)
+          return nil unless key
+
           configs = database.instances_by_kind("Config").values.select { |c| c.annotations["config/type"].to_s.casecmp?(TYPE) }
           config = configs.find { |c| c.name == DEFAULT_CONFIG } || configs.first
-          text = config&.annotations&.[]("summary/lens-#{layer}").to_s
+          text = config&.annotations&.[]("summary/lens-#{key}").to_s
           text.strip.empty? ? nil : text
         end
 

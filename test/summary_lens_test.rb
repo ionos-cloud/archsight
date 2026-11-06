@@ -38,6 +38,22 @@ class SummaryLensTest < Minitest::Test
     end
   end
 
+  def test_kind_lenses_are_valid_name_real_kinds_and_end_with_documented_in
+    Lens::KIND_DEFAULTS.each do |kind, text|
+      assert_nil Lens.parse_error(text), kind
+      refute_nil Archsight::Resources[kind], kind
+    end
+    (Lens::DEFAULTS.values + Lens::KIND_DEFAULTS.values).each do |text|
+      assert_match(/^in mentions, depicts: Documented in$/, text)
+    end
+  end
+
+  def test_key_error_accepts_layers_and_kinds_only
+    assert_nil Lens.key_error("application")
+    assert_nil Lens.key_error("BusinessActor")
+    assert_match(/not Nope/, Lens.key_error("Nope"))
+  end
+
   def test_config_annotation_validates_the_lens
     annotation = Archsight::Resources::Config.annotation_matching("summary/lens-application")
 

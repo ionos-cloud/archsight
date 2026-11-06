@@ -249,7 +249,7 @@ class McpToolsTest < Minitest::Test
 
     text = call_tool(Archsight::MCP::SummaryTool, name: "MyService", per_section: 3)["summary"]
 
-    assert_match(/exposes: .*\(21 in total, 18 more: `relations\(kind: "ApplicationComponent", name: "MyService", verb: "exposes", direction: "out"\)`\)/, text)
+    assert_match(/- exposes \(21\): .*, \+18 more: `relations\(kind: "ApplicationComponent", name: "MyService", verb: "exposes", direction: "out"\)`/, text)
 
     small = Archsight::Summary::Builder.new(@db, max_chars: 400).call(@db.instance_by_kind("ApplicationComponent", "MyService"))
 
@@ -267,6 +267,57 @@ class McpToolsTest < Minitest::Test
     text = call_tool(Archsight::MCP::SummaryTool, name: "MyService")["summary"]
 
     assert_match(%r{## Needs\n- dependsOn \(step 1\): \[\[ApplicationComponent/Upstream\]\]\n- dependsOn \(step 2\): \[\[ApplicationComponent/Far\]\]}, text)
+  end
+
+  def test_summary_description_stops_before_a_list
+    @db.add_instance("ApplicationComponent", "Listed", {
+                       "architecture/description" => "Supports these things:\n- first\n- second\n\nSecond paragraph."
+                     })
+    text = call_tool(Archsight::MCP::SummaryTool, name: "Listed")["summary"]
+
+    assert_match(/\nSupports these things\z/, text)
+    refute_match(/first|Second paragraph/, text)
+  end
+
+  def test_summary_names_the_source_and_generated_resources
+    text = call_tool(Archsight::MCP::SummaryTool, name: "MyService")["summary"]
+
+    assert_match(/^Defined in `test:0`$/, text)
+
+    @db.add_instance("ApplicationComponent", "Imported", { "generated/script" => "import-x" })
+
+    assert_match(/Defined in `test:0` \(generated: change the importer or generator, not this file\)/,
+                 call_tool(Archsight::MCP::SummaryTool, name: "Imported")["summary"])
+  end
+
+  def test_summary_kind_lens_beats_layer_lens_and_config_kind_beats_all
+    @db.add_instance("BusinessActor", "Team", {})
+    @db.add_instance("ApplicationComponent", "Owned", {})
+    @db.link("ApplicationComponent", "Owned", :maintainedBy, :businessActors, "BusinessActor", "Team")
+
+    assert_match(%r{## Maintains and operates\n- maintainedBy: \[\[ApplicationComponent/Owned\]\]},
+                 call_tool(Archsight::MCP::SummaryTool, name: "Team")["summary"])
+
+    @db.add_instance("Config", "default", { "config/type" => "summary", "summary/lens-business" => "in maintainedBy: By layer" })
+
+    assert_match(/## By layer/, call_tool(Archsight::MCP::SummaryTool, name: "Team")["summary"])
+
+    config = @db.instances_by_kind("Config")["default"]
+    config.annotations["summary/lens-BusinessActor"] = "in maintainedBy: By kind"
+
+    assert_match(/## By kind/, call_tool(Archsight::MCP::SummaryTool, name: "Team")["summary"])
+
+    config.annotations["summary/lens-BusinessActor"] = "nonsense"
+
+    assert_match(/## By layer/, call_tool(Archsight::MCP::SummaryTool, name: "Team")["summary"])
+    assert_match(/## By layer/, call_tool(Archsight::MCP::SummaryTool, name: "Team", lens: "business")["summary"])
+  end
+
+  def test_summary_lists_the_pages_that_document_a_resource
+    page = @db.add_instance("Page", "Guide", {})
+    page.add_derived_relation(:mentions, @db.instance_by_kind("ApplicationComponent", "MyService"))
+
+    assert_match(%r{## Documented in\n- mentions: \[\[Page/Guide\]\]}, call_tool(Archsight::MCP::SummaryTool, name: "MyService")["summary"])
   end
 
   def test_summary_tool_description_has_an_example_per_layer

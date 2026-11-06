@@ -38,11 +38,14 @@ module Archsight
         @max_chars = max_chars
       end
 
-      # @param lens_layer [String, nil] the layer whose lens to use instead of the resource's own
+      # @param lens_layer [String, nil] the layer whose lens to use instead of the one of the resource's kind
+      # @param source [Hash, nil] where the resource is defined: {source: "path:line", generated: bool}
       # @return [String] markdown
-      def call(instance, lens_layer: nil)
+      def call(instance, lens_layer: nil, source: nil)
+        @source = source
         lens = lens_layer || instance.class.layer
-        blocks = Lens.for(@db, lens).filter_map { |section| block_for(instance, section) }
+        sections = Lens.for(@db, lens, kind: lens_layer ? nil : instance.klass)
+        blocks = sections.filter_map { |section| block_for(instance, section) }
         render_bounded(instance, lens, blocks)
       end
 
@@ -80,6 +83,7 @@ module Archsight
         meta = ["**#{kind}**", "#{layer} layer"]
         meta << "viewed through the #{lens} lens" if lens != layer
         lines = ["# #{link(instance)}", meta.join(" · ")]
+        lines << source_line if @source&.dig(:source)
         description = description_of(instance)
         lines << "" << description if description
         facts = facts_of(instance)
@@ -87,8 +91,17 @@ module Archsight
         lines
       end
 
+      def source_line
+        note = @source[:generated] ? " (generated: change the importer or generator, not this file)" : ""
+        "Defined in `#{@source[:source]}`#{note}"
+      end
+
+      # The opening of the description: its first paragraph up to a list, heading or code block, which stay in the
+      # resource itself
       def description_of(instance)
-        text = instance.annotations["architecture/description"].to_s.strip.split(/\n\s*\n/).first.to_s.gsub(/\s*\n\s*/, " ").strip
+        paragraph = instance.annotations["architecture/description"].to_s.strip.split(/\n\s*\n/).first.to_s
+        lines = paragraph.lines.take_while { |line| !line.match?(/\A\s*([-*+]\s|\d+[.)]\s|\#|```)/) }
+        text = lines.map(&:strip).join(" ").sub(/:\z/, "").strip
         return nil if text.empty?
 
         text.length > DESCRIPTION_CHARS ? "#{text[0, DESCRIPTION_CHARS - 1].rstrip}…" : text
@@ -161,11 +174,11 @@ module Archsight
 
       def group_line(group, per)
         shown = group.resources.first(per)
-        line = "- #{group.label}: #{shown.map { |r| link(r) }.join(", ")}"
-        rest = group.resources.length - shown.length
-        line += " (#{group.resources.length} in total, #{rest} more: `#{group.call}`)" if rest.positive?
-        line += " (#{group.resources.length})" if rest.zero? && group.resources.length > 1
-        line
+        total = group.resources.length
+        label = total > 1 ? "#{group.label} (#{total})" : group.label
+        line = "- #{label}: #{shown.map { |r| link(r) }.join(", ")}"
+        rest = total - shown.length
+        rest.positive? ? "#{line}, +#{rest} more: `#{group.call}`" : line
       end
 
       # Layers other than the one the lens shows that have directly related resources

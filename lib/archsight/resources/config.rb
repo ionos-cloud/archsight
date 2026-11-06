@@ -31,9 +31,12 @@ class Archsight::Resources::Config < Archsight::Resources::Base
 
     ## Summary lenses
 
-    The MCP `summary` tool explains a resource through a lens chosen by its layer. A Config of type `summary` (the one
-    named `default`) replaces the built-in lens of a layer with `summary/lens-<layer>` (`motivation`, `strategy`,
-    `implementation`, `business`, `application`, `technology`, `other`). One section per line,
+    The MCP `summary` tool explains a resource through a lens chosen by its kind or layer. A Config of type `summary`
+    (the one named `default`) replaces the built-in lens of a layer with `summary/lens-<layer>` (`motivation`, `strategy`,
+    `implementation`, `business`, `application`, `technology`, `other`) and the one of a single kind with
+    `summary/lens-<Kind>` (for example `summary/lens-BusinessActor`); the kind wins over the layer. The built-in lenses
+    end with `in mentions, depicts: Documented in` (the pages that describe the resource); a lens of your own has to
+    list it to keep that section. One section per line,
     `<out|in> <verb>[, <verb>...] [depth=N][: <title>]`; `out` = the resource declares the relation, `in` = the other
     resource points at it, `*` = every verb:
 
@@ -157,14 +160,12 @@ class Archsight::Resources::Config < Archsight::Resources::Base
              sidebar: false,
              validator: ->(value) { Archsight::Resources::Config.keep_space_error(value) }
 
-  Archsight::Resources::LAYERS.each do |layer|
-    annotation "summary/lens-#{layer}",
-               description: "Lens of the #{layer} layer for the MCP summary tool: one section per line, " \
-                            "`<out|in> <verb>[, <verb>] [depth=N][: <title>]`",
-               title: "Summary lens (#{layer})",
-               sidebar: false,
-               validator: ->(value) { Archsight::Summary::Lens.parse_error(value) }
-  end
+  annotation "summary/lens-*",
+             description: "Lens of a layer (summary/lens-application) or of one kind (summary/lens-BusinessActor) for the " \
+                          "MCP summary tool: one section per line, `<out|in> <verb>[, <verb>] [depth=N][: <title>]`",
+             title: "Summary lens",
+             sidebar: false,
+             validator: ->(value) { Archsight::Summary::Lens.parse_error(value) }
 
   HEADER_PARTS = %w[id version date owner].freeze
   HEADING_LEVELS = (1..6).to_a.freeze
