@@ -245,8 +245,8 @@ class Archsight::Query::Lexer
 
     # Allow letters, digits, underscores, hyphens, slashes, and dots in identifiers
     # This supports annotation paths like "activity/status" and "scc/language/Go/loc"
-    # and resource names like "teleport.e"
-    while @position < @input.length && @input[@position] =~ %r{[a-zA-Z0-9_\-/.]}
+    # and resource names like "teleport.e"; `*` is for key patterns such as text(link/*)
+    while @position < @input.length && @input[@position] =~ %r{[a-zA-Z0-9_\-/.*]}
       value += @input[@position]
       @position += 1
     end

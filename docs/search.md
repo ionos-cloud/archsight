@@ -13,6 +13,7 @@ The search box supports a powerful query language for filtering architecture res
 | `activity/status?` | Annotation exists (is set) |
 | `! activity/status?` | Annotation doesn't exist |
 | `-> ApplicationInterface` | Has relation to a kind |
+| `text =~ "failover"` | Any string annotation contains the text |
 
 ## Name Search
 
@@ -30,6 +31,24 @@ without spaces they are one word, found by name or alias like any other bare wor
     Archsight:CLI           # the resources named Archsight:CLI
     ITGS:A001               # the resource with the alias ITGS:A001
     ApplicationService:ITGS:A001   # the same, in one kind
+
+## Text Search
+
+`text` searches the content of resources: every string annotation (descriptions, titles, `link/*`, page content, ...)
+is checked for the pattern, case-insensitively, like `name =~`:
+
+    text =~ "failover"                  # any annotation mentions failover
+    text: "failover"                    # the same, short
+    text =~ /fail(over|back)/i          # regex literal with flags
+    text(architecture/description) =~ "standby"      # only this annotation
+    text(link/*, page/content) =~ "PROJ-1234"        # several keys, `*` is any run of characters
+    ApplicationService: text =~ "failover" & -> ApplicationComponent   # combined with anything else
+
+In a quoted string a backslash only escapes the next character (`"\d"` is `d`); write patterns with escapes as `/regex/`.
+
+A resource matches when one of the checked annotations matches. The MCP `query` tool shows the annotation and a short
+snippet around the match for each hit (`matched_text`). The bare word `text` is still a name search; text in YAML
+comments is not searched.
 
 ## Kind Filter
 

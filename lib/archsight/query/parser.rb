@@ -388,6 +388,8 @@ class Archsight::Query::Parser
     path = current_token.value
     advance
 
+    return parse_text_condition if path == "text" && text_condition_ahead?
+
     # Check if this is followed by an operator (annotation condition),
     # a question mark (existence check), or a bare identifier (name shortcut)
     if %i[EQ NEQ MATCH GT LT GTE LTE IN].include?(current_token.type)
@@ -401,6 +403,49 @@ class Archsight::Query::Parser
       # Bare identifier - treat as name =~ "identifier"
       Archsight::Query::AST::NameCondition.new("=~", Archsight::Query::AST::StringValue.new(glue_name(path)))
     end
+  end
+
+  # `text` starts a free-text condition when `=~`, `:` plus a value, or a key list in parentheses follows;
+  # otherwise it is the bare word "text" (a name search)
+  def text_condition_ahead?
+    case current_token.type
+    when :MATCH, :LPAREN then true
+    when :COLON then %i[STRING REGEX].include?(peek_token&.type)
+    else false
+    end
+  end
+
+  # text =~ "x" | text: "x" | text(architecture/description, link/*) =~ "x"
+  def parse_text_condition
+    keys = nil
+    if current_token.type == :LPAREN
+      advance
+      keys = parse_text_keys
+      expect(:RPAREN)
+    end
+
+    raise Archsight::Query::ParseError.new("Expected =~ or : after text", position: current_token.position, source: nil) unless %i[MATCH COLON].include?(current_token.type)
+
+    advance
+
+    value_token = current_token
+    value = parse_value
+    check_value("=~", value, value_token)
+    Archsight::Query::AST::TextCondition.new(keys, "=~", value)
+  end
+
+  def parse_text_keys
+    keys = []
+    loop do
+      raise Archsight::Query::ParseError.new("Expected an annotation key in text(...)", position: current_token.position, source: nil) unless %i[IDENTIFIER STRING].include?(current_token.type)
+
+      keys << current_token.value
+      advance
+      break unless current_token.type == :COMMA
+
+      advance
+    end
+    keys
   end
 
   # Names contain colons (`Archsight:CLI`, `ITGS:A001`). A bare name written without spaces around its colons is
