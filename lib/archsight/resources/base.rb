@@ -195,7 +195,7 @@ module Archsight
       def initialize(raw, path_ref)
         @raw = raw
         @path_ref = path_ref
-        @merged_refs = []
+        @merged_refs = [] # : Array[LineReference]
         @references = []
         # Auto-discover annotation keys
         return unless annotations
