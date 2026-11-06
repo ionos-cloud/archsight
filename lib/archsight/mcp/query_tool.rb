@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "base"
+require_relative "query_hints"
 
 class Archsight::MCP::QueryTool < FastMcp::Tool
   tool_name "query"
@@ -38,6 +39,22 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     '-> none & <- none' - true orphans with no relations at all
     '~> $(web-checkout)' - transitively reaches instance matching "web-checkout"
     '<- $(TechnologyArtifact: activity/status == "active")' - referenced by active artifacts
+    'ApplicationComponent: <- none & -> none' - components nothing refers to and that refer to nothing (orphans of one kind)
+    'ApplicationComponent: ~> $(name == "web-checkout")' - components that transitively reach web-checkout
+    'ApplicationService: -{realizedThrough}> ApplicationComponent' - only along one relation verb (<{verb}- for incoming)
+    For the impact of changing a resource use analyze_resource(impact=true) with kinds/exclude_kinds/depth/limit.
+
+    TYPICAL FLOW: find the exact name with a name search (output='brief' shows kind, name and source file),
+    then call analyze_resource or relations with that kind and name. Use output='count' first to see how big
+    a result is, 'brief' to list it, and 'complete' (with fields=[...] and a small limit) only for details.
+
+    PITFALLS:
+    • A filter on an annotation key that does not exist matches nothing; the result then carries a warning
+      'unknown annotation key ...' listing the known keys. Keys are exact and case-sensitive.
+    • Annotation values are strings: compare with == "x", numbers with > < >=, regex with =~.
+    • output='complete' returns every annotation and relation of each hit: combine it with fields and limit.
+    • Add a Kind: prefix when you can; without it every kind is searched, which is slower and noisier.
+    • Pages and menus are resources too (Page, PageMenu): exclude them with a Kind: prefix when you look for architecture.
   DESC
   arguments do
     required(:query).filled(:string).description(
@@ -76,7 +93,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
       # it, so a hit can feed analyze_resource(kind, name) without guessing
       omit_kind = !parsed_query.kind_filter.nil?
 
-      conditions = Archsight::MCP.relation_conditions(parsed_query.ast)
+      conditions = Archsight::MCP::QueryHints.relation_conditions(parsed_query.ast)
 
       # Count-only mode: return totals grouped by kind
       if output == "count"
@@ -113,6 +130,9 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
         }
       end
 
+      warnings = Archsight::MCP::QueryHints.unknown_key_warnings(parsed_query)
+      result = result.merge(warnings: warnings) unless warnings.empty?
+
       fit_response(result, output, fields)
     rescue Archsight::Query::QueryError => e
       JSON.pretty_generate({
@@ -130,7 +150,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     return if conditions.empty?
 
     summaries.zip(resources).each do |summary, resource|
-      via = Archsight::MCP.matched_via(resource, conditions)
+      via = Archsight::MCP::QueryHints.matched_via(resource, conditions)
       summary[:matched_via] = via unless via.empty?
     end
   end

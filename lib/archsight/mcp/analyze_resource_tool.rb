@@ -23,6 +23,22 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
        kind/verb/depth with summary statistics. Essential for change impact assessment.
        Example: kind="ApplicationInterface", name="Kubernetes:RestAPI", impact=true
 
+    EXAMPLES:
+    kind="ApplicationComponent", name="X", depth=2 - what X depends on and what depends on X, two levels
+    kind="ApplicationComponent", name="X", impact=true, exclude_kinds=["Page","PageMenu"], depth=2, limit=50 -
+    a small, filtered impact list; direction="out" turns it around (what X relies on)
+
+    TYPICAL FLOW: find the exact name with query (output='brief'), call this tool in basic mode, and go to
+    depth or impact only for the question that needs it. For just the direct relations of one verb use the
+    relations tool instead.
+
+    PITFALLS:
+    • kind and name are exact and case-sensitive; a wrong name returns 'did you mean' suggestions across all kinds.
+    • impact=true on a hub resource can list hundreds of entries: set limit, depth and exclude_kinds first.
+      The summary (counts by kind) always covers everything, even when the list is cut.
+    • depth > 0 returns the whole tree both ways and grows fast; keep it at 1 to 3.
+    • The response is cut when it exceeds the size budget; a 'truncated' note says how to narrow it.
+
     RESOURCE KINDS: TechnologyArtifact, ApplicationComponent, ApplicationInterface,
     ApplicationService, MotivationRequirement, ComplianceEvidence, and more.
   DESC
