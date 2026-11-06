@@ -159,7 +159,7 @@ class McpToolsDirectTest < Minitest::Test
     result = call_tool(Archsight::MCP::ResourceDocTool)
 
     assert result.key?("resource_kinds")
-    kinds = result["resource_kinds"].map { |k| k["kind"] }
+    kinds = result["resource_kinds"].map { |k| k[/\A\w+/] }
 
     assert_includes kinds, "TechnologyArtifact"
     assert_includes kinds, "ApplicationComponent"
