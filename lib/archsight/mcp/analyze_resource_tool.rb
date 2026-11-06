@@ -78,7 +78,7 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
     return error_response("Unknown resource kind: #{kind}") unless klass
 
     instance = db.instance_by_kind(kind, name)
-    return error_response("Resource not found: #{kind}/#{name}") unless instance
+    return not_found_response(kind, name) unless instance
 
     depth = [[depth.to_i, 0].max, 10].min # Clamp to 0-10
 
@@ -93,6 +93,13 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
   end
 
   private
+
+  # Not found: the closest names across all kinds, so a typo or a wrong kind is one call away from the answer
+  def not_found_response(kind, name)
+    suggestions = Archsight::MCP.suggest(name, kind: kind)
+    message = ["Resource not found: #{kind}/#{name}", Archsight::MCP.did_you_mean(suggestions)].compact.join(". ")
+    JSON.pretty_generate({ error: "Error", message: message, suggestions: suggestions })
+  end
 
   def error_response(message, error_type = "Error", backtrace = nil)
     result = {
