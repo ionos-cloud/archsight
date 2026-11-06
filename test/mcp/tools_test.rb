@@ -125,6 +125,24 @@ class McpToolsTest < Minitest::Test
     assert(result["related"].all? { |r| r.key?("source") && r.key?("generated") })
   end
 
+  def test_query_tool_fields_projects_annotations_and_relations
+    result = call_tool(Archsight::MCP::QueryTool, query: "ApplicationComponent: MyService",
+                                                  fields: ["activity/status", "exposes"])
+    hit = result["resources"].first
+
+    assert_equal({ "activity/status" => "active" }, hit["metadata"]["annotations"])
+    assert_equal ["exposes"], hit["spec"].keys
+  end
+
+  def test_query_tool_cuts_oversized_result_and_says_how_to_narrow
+    stub_const_budget(300) do
+      result = call_tool(Archsight::MCP::QueryTool, query: "repo")
+
+      assert_operator result["resources"].length, :<, 2
+      assert_match(/size budget/, result["truncated"])
+    end
+  end
+
   def test_query_tool_brief_output
     result = call_tool(Archsight::MCP::QueryTool, query: "repo-active", output: "brief")
 
@@ -285,6 +303,48 @@ class McpToolsTest < Minitest::Test
   end
 
   # Impact analysis test
+  def test_impact_exclude_kinds_verbs_direction_and_limit
+    base = { kind: "ApplicationInterface", name: "Kubernetes:RestAPI", impact: true }
+    all = call_tool(Archsight::MCP::AnalyzeResourceTool, **base)
+
+    assert_equal 1, all["summary"]["total_impacted"]
+
+    excluded = call_tool(Archsight::MCP::AnalyzeResourceTool, **base, exclude_kinds: ["ApplicationComponent"])
+
+    assert_equal 0, excluded["summary"]["total_impacted"]
+
+    only = call_tool(Archsight::MCP::AnalyzeResourceTool, **base, kinds: ["ApplicationComponent"], verbs: ["exposes"])
+
+    assert_equal 1, only["summary"]["total_impacted"]
+    assert_equal({ "kinds" => ["ApplicationComponent"], "verbs" => ["exposes"] }, only["filters"])
+
+    out = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationComponent", name: "MyService",
+                                                         impact: true, direction: "out")
+
+    assert_equal %w[ApplicationInterface TechnologyArtifact], out["summary"]["by_kind"].keys.sort
+
+    limited = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationComponent", name: "MyService",
+                                                             impact: true, direction: "out", limit: 1)
+
+    assert_equal 2, limited["summary"]["total_impacted"]
+    assert_equal 1, limited["impacted_resources"].values.flatten.length
+    assert_match(/1 more entries not listed/, limited["truncated"])
+  end
+
+  def test_resource_doc_list_is_compact_and_sections_work
+    list = Archsight::MCP::ResourceDocTool.new.call
+
+    assert_operator list.length, :<, 6_000
+
+    description = call_tool(Archsight::MCP::ResourceDocTool, kind: "ApplicationComponent", section: "description")
+    annotations = call_tool(Archsight::MCP::ResourceDocTool, kind: "ApplicationComponent", section: "annotations")
+
+    refute_match(/^## Annotations/, description["documentation"])
+    assert_match(/^## Annotations/, annotations["documentation"])
+    refute_match(/^## Relations/, annotations["documentation"])
+    assert_match(/Unknown section/, call_tool(Archsight::MCP::ResourceDocTool, kind: "ApplicationComponent", section: "x")["message"])
+  end
+
   def test_analyze_resource_tool_with_impact
     result = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationInterface", name: "Kubernetes:RestAPI",
                                                             impact: true)
@@ -429,6 +489,16 @@ class McpToolsTest < Minitest::Test
     assert result.key?("error_count")
     assert_equal 0, result["warning_count"]
     assert_equal 0, result["error_count"]
+  end
+
+  def stub_const_budget(chars)
+    old = Archsight::MCP::MAX_RESPONSE_CHARS
+    Archsight::MCP.send(:remove_const, :MAX_RESPONSE_CHARS)
+    Archsight::MCP.const_set(:MAX_RESPONSE_CHARS, chars)
+    yield
+  ensure
+    Archsight::MCP.send(:remove_const, :MAX_RESPONSE_CHARS)
+    Archsight::MCP.const_set(:MAX_RESPONSE_CHARS, old)
   end
 
   # Mock Database class

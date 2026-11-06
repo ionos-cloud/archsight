@@ -29,15 +29,21 @@ class Archsight::MCP::ResourceDocTool < FastMcp::Tool
   arguments do
     optional(:kind).filled(:string).description(
       'Resource kind to get documentation for (e.g., "TechnologyArtifact", "ApplicationComponent"). ' \
-      "If not specified, returns a list of all available resource kinds."
+      "If not specified, returns a compact list of all available resource kinds (one line each)."
+    )
+    optional(:section).filled(:string).description(
+      "Only this part of a kind's documentation: 'description' (everything before the annotations), " \
+      "'annotations', 'relations' or 'example'. Default: the whole document. Needs a kind."
     )
   end
 
-  def call(kind: nil)
+  SECTIONS = %w[description annotations relations example].freeze
+
+  def call(kind: nil, section: nil)
     if kind.nil? || kind.empty?
       list_resource_kinds
     else
-      get_resource_documentation(kind)
+      get_resource_documentation(kind, section)
     end
   rescue StandardError => e
     error_response(e.message, e.class.name)
@@ -52,36 +58,44 @@ class Archsight::MCP::ResourceDocTool < FastMcp::Tool
                          })
   end
 
+  # One line per kind ("Kind (layer): first sentence"), so the whole list stays a few KB
   def list_resource_kinds
     kinds = []
 
     Archsight::Resources.each do |kind_symbol|
       klass = Archsight::Resources.const_get(kind_symbol)
-      kinds << {
-        kind: kind_symbol.to_s,
-        description: klass.description || "No description available",
-        annotation_count: klass.annotations.count,
-        relation_count: klass.declared_relations.count
-      }
+      text = Archsight::MCP.one_liner(klass.description, max: 80)
+      text = "No description available" if text.empty?
+      kinds << "#{kind_symbol} (#{klass.layer}): #{text}"
     end
 
-    result = {
-      total: kinds.length,
-      resource_kinds: kinds
-    }
+    JSON.pretty_generate({
+                           total: kinds.length,
+                           hint: 'Call resource_doc(kind: "<Kind>") for the full documentation, add section: ' \
+                                 "description|annotations|relations|example for one part.",
+                           resource_kinds: kinds
+                         })
+  end
+
+  def get_resource_documentation(kind, section)
+    klass = Archsight::Resources[kind]
+    return error_response("Unknown resource kind: #{kind}") unless klass
+
+    return error_response("Unknown section: #{section}. Use one of #{SECTIONS.join(", ")}") if section && !SECTIONS.include?(section)
+
+    content = Archsight::Documentation.generate(kind)
+    content = extract_section(content, section) if section
+    result = { kind: kind }
+    result[:section] = section if section
+    result[:documentation] = content
 
     JSON.pretty_generate(result)
   end
 
-  def get_resource_documentation(kind)
-    klass = Archsight::Resources[kind]
-    return error_response("Unknown resource kind: #{kind}") unless klass
+  # "description" is everything before `## Annotations`; the others are the `## Name` block of that heading
+  def extract_section(content, section)
+    return content.split(/^## Annotations$/, 2).first.to_s.strip if section == "description"
 
-    content = Archsight::Documentation.generate(kind)
-
-    JSON.pretty_generate({
-                           kind: kind,
-                           documentation: content
-                         })
+    content[/^## #{section.capitalize}$.*?(?=^## |\z)/m].to_s.strip
   end
 end

@@ -6,8 +6,43 @@ require_relative "../resources"
 
 # Shared database and helper methods for MCP tools
 module Archsight::MCP
+  # Size budget of a tool response (characters of JSON). Larger results are cut down, with a pointer on how to
+  # narrow the request, because an agent cannot read a payload this size anyway.
+  MAX_RESPONSE_CHARS = 100_000
+
   class << self
     attr_accessor :db
+
+    # Pretty JSON of `result`; when it exceeds the budget, `shrink` (called with the attempt number, 1, 2, ...) must
+    # return a smaller result. Gives up after a few attempts with the last, smallest one.
+    def fit(result, max_chars: MAX_RESPONSE_CHARS, attempts: 8)
+      json = JSON.pretty_generate(result)
+      attempt = 0
+      while json.length > max_chars && attempt < attempts
+        attempt += 1
+        result = yield(attempt)
+        json = JSON.pretty_generate(result)
+      end
+      json
+    end
+
+    # The first sentence or line of a (markdown) description, at most `max` characters
+    def one_liner(text, max: 140)
+      line = text.to_s.strip.split(/\n\s*\n|\n/).first.to_s.strip
+      line = line[/\A.+?[.!?](?=\s|\z)/m] || line
+      line.length > max ? "#{line[0, max - 1].rstrip}…" : line
+    end
+
+    # `complete_summary` reduced to the given annotation keys and relation verbs (nil = everything)
+    def project(summary, fields)
+      return summary if fields.nil? || fields.empty?
+
+      wanted = fields.map(&:to_s)
+      summary = summary.dup
+      summary[:metadata] = { annotations: summary[:metadata][:annotations].slice(*wanted) } if summary[:metadata]
+      summary[:spec] = summary[:spec].select { |verb, _| wanted.include?(verb.to_s) } if summary[:spec]
+      summary
+    end
 
     def complete_summary(resource, omit_kind: false, with_source: false)
       result = {

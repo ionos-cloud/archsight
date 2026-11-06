@@ -46,6 +46,22 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
       "if this resource is deprecated or removed. Returns grouped results with statistics. " \
       "Useful for change management and deprecation planning."
     )
+    optional(:kinds).array(:string).description(
+      "Impact mode: only follow and report these kinds (e.g. ['ApplicationComponent']). Default: all kinds."
+    )
+    optional(:exclude_kinds).array(:string).description(
+      "Impact mode: skip these kinds and do not follow through them (e.g. ['Page', 'PageMenu'])."
+    )
+    optional(:verbs).array(:string).description(
+      "Impact mode: only follow these relation verbs (e.g. ['realizedThrough', 'servedBy'])."
+    )
+    optional(:direction).filled(:string).description(
+      "Impact mode: 'in' = what depends on this resource (default), 'out' = what this resource depends on."
+    )
+    optional(:limit).filled(:integer).description(
+      "Impact mode: maximum entries listed (nearest first). The summary (counts by kind) always covers all of " \
+      "them and says how many were left out."
+    )
     optional(:group_by).filled(:string).description(
       "How to group impact analysis results: " \
       "'kind' = group by resource type (default, good for understanding scope), " \
@@ -54,7 +70,8 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
     )
   end
 
-  def call(kind:, name:, depth: 0, impact: false, group_by: "kind")
+  def call(kind:, name:, depth: 0, impact: false, group_by: "kind", kinds: nil, exclude_kinds: nil, verbs: nil,
+           direction: "in", limit: nil)
     db = Archsight::MCP.db
 
     klass = Archsight::Resources[kind]
@@ -66,7 +83,8 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
     depth = [[depth.to_i, 0].max, 10].min # Clamp to 0-10
 
     if impact
-      build_impact_analysis(db, instance, kind, name, depth, group_by)
+      filter = { kinds: kinds, exclude_kinds: exclude_kinds, verbs: verbs&.map(&:to_s), direction: direction.to_s }
+      build_impact_analysis(db, instance, kind, name, depth, group_by, filter, limit)
     else
       build_resource_analysis(db, instance, kind, name, depth)
     end
@@ -108,27 +126,15 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
     JSON.pretty_generate(result)
   end
 
-  def build_impact_analysis(db, instance, kind, name, max_depth, group_by)
+  def build_impact_analysis(db, instance, kind, name, max_depth, group_by, filter, limit)
     max_depth = 5 if max_depth.zero? # Default depth for impact analysis
+    limit = [limit.to_i, 1].max if limit
 
-    # Collect all impacted resources
     impacted = []
-    visited = Set.new
-    collect_impact(db, instance, 0, max_depth, visited, impacted)
+    edges = ImpactEdges.new(db, filter)
+    collect_impact(edges, instance, 0, max_depth, Set.new, impacted)
 
-    # Group results
-    grouped = case group_by
-              when "verb"
-                impacted.group_by { |i| i[:verb].to_s }
-              when "kind"
-                impacted.group_by { |i| i[:kind] }
-              when "depth"
-                impacted.group_by { |i| i[:depth] }
-              else
-                { "all" => impacted }
-              end
-
-    # Calculate summary statistics
+    # Summary statistics always cover everything found, whatever is listed
     summary = {
       total_impacted: impacted.length,
       unique_resources: impacted.map { |i| "#{i[:kind]}/#{i[:name]}" }.uniq.length,
@@ -139,16 +145,97 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
     result = {
       target: { kind: kind, name: name },
       analysis: "impact",
+      direction: filter[:direction],
       max_depth: max_depth,
       group_by: group_by,
-      summary: summary,
-      impacted_resources: grouped
+      summary: summary
     }
+    result[:filters] = filter.slice(:kinds, :exclude_kinds, :verbs).compact unless filter.slice(:kinds, :exclude_kinds, :verbs).compact.empty?
 
-    JSON.pretty_generate(result)
+    ordered = impacted.each_with_index.sort_by { |entry, index| [entry[:depth], index] }.map(&:first)
+    shown = limit ? ordered.take(limit) : ordered
+    result[:impacted_resources] = group_impacted(shown, group_by)
+
+    Archsight::MCP.fit(truncation_note(result, impacted.length, shown.length)) do |attempt|
+      keep = [shown.length / (2**attempt), 1].max
+      result[:impacted_resources] = group_impacted(ordered.take(keep), group_by)
+      truncation_note(result, impacted.length, keep, budget: true)
+    end
   end
 
-  def collect_impact(db, resource, current_depth, max_depth, visited, collector)
+  def group_impacted(entries, group_by)
+    case group_by
+    when "verb" then entries.group_by { |i| i[:verb].to_s }
+    when "kind" then entries.group_by { |i| i[:kind] }
+    when "depth" then entries.group_by { |i| i[:depth] }
+    else { "all" => entries }
+    end
+  end
+
+  # Says how many entries are left out and how to narrow the request
+  def truncation_note(result, total, shown, budget: false)
+    return result if shown >= total
+
+    reason = budget ? "size budget" : "limit"
+    result.merge(
+      truncated: "#{total - shown} more entries not listed (#{reason}); #{shown} of #{total} shown, nearest first. " \
+                 "Narrow with exclude_kinds, kinds, verbs, a smaller depth or direction."
+    )
+  end
+
+  # The relations to follow from a resource, filtered by kind and verb. `in` finds the resources that point at it
+  # (via an index over all relations, built once), `out` the ones it points at.
+  class ImpactEdges
+    def initialize(db, filter)
+      @db = db
+      @filter = filter
+      @incoming = nil
+    end
+
+    # [[resource, verb], ...]
+    def next_from(resource)
+      pairs = @filter[:direction] == "out" ? outgoing(resource) : incoming(resource)
+      pairs.select { |other, verb| allowed?(other, verb) }
+    end
+
+    private
+
+    def allowed?(other, verb)
+      kind = other.class.to_s.split("::").last
+      return false if @filter[:kinds] && !@filter[:kinds].empty? && !@filter[:kinds].include?(kind)
+      return false if @filter[:exclude_kinds]&.include?(kind)
+
+      @filter[:verbs].nil? || @filter[:verbs].empty? || @filter[:verbs].include?(verb.to_s)
+    end
+
+    def outgoing(resource)
+      resource.class.relations.flat_map do |verb, kind_name, _|
+        resource.relations(verb, kind_name).map { |target| [target, verb] }
+      end
+    end
+
+    def incoming(resource)
+      build_index unless @incoming
+      @incoming[resource] || []
+    end
+
+    def build_index
+      @incoming = {}
+      @db.instances.each_value do |instances_hash|
+        instances_hash.each_value do |other|
+          other.class.relations.each do |verb, kind_name, _|
+            other.relations(verb, kind_name).each do |target|
+              next if target == other
+
+              (@incoming[target] ||= []) << [other, verb]
+            end
+          end
+        end
+      end
+    end
+  end
+
+  def collect_impact(edges, resource, current_depth, max_depth, visited, collector)
     return if current_depth >= max_depth
 
     key = "#{resource.class.to_s.split("::").last}/#{resource.name}"
@@ -156,24 +243,15 @@ class Archsight::MCP::AnalyzeResourceTool < FastMcp::Tool
 
     visited.add(key)
 
-    db.instances.each_value do |instances_hash|
-      instances_hash.each_value do |other|
-        next if other == resource
+    edges.next_from(resource).each do |other, verb|
+      collector << {
+        kind: other.class.to_s.split("::").last,
+        name: other.name,
+        verb: verb,
+        depth: current_depth + 1
+      }
 
-        other.class.relations.each do |verb, kind_name, _|
-          rels = other.relations(verb, kind_name)
-          next unless rels.include?(resource)
-
-          collector << {
-            kind: other.class.to_s.split("::").last,
-            name: other.name,
-            verb: verb,
-            depth: current_depth + 1
-          }
-
-          collect_impact(db, other, current_depth + 1, max_depth, visited.dup, collector)
-        end
-      end
+      collect_impact(edges, other, current_depth + 1, max_depth, visited.dup, collector)
     end
   end
 

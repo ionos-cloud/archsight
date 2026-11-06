@@ -51,6 +51,10 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
       "'brief' = minimal output with just kind and name for each resource, " \
       "'count' = only totals grouped by kind, no individual resources returned"
     )
+    optional(:fields).array(:string).description(
+      "Only these annotation keys and relation verbs in output='complete' " \
+      "(e.g. ['activity/status', 'maintainedBy']). Default: all. Keeps results small."
+    )
     optional(:limit).filled(:integer).description(
       "Maximum results to return (1-500). Use with offset for pagination. Ignored when output='count'."
     )
@@ -60,7 +64,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     )
   end
 
-  def call(query:, output: "complete", limit: 50, offset: 0)
+  def call(query:, output: "complete", limit: 50, offset: 0, fields: nil)
     db = Archsight::MCP.db
 
     begin
@@ -89,7 +93,10 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
                     when "brief"
                       paginated.map { |r| Archsight::MCP.brief_summary(r, with_source: true) }
                     else # "complete"
-                      paginated.map { |r| Archsight::MCP.complete_summary(r, omit_kind: omit_kind, with_source: true) }
+                      paginated.map do |r|
+                        summary = Archsight::MCP.complete_summary(r, omit_kind: omit_kind, with_source: true)
+                        Archsight::MCP.project(summary, fields)
+                      end
                     end
 
         result = {
@@ -102,7 +109,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
         }
       end
 
-      JSON.pretty_generate(result)
+      fit_response(result, output, fields)
     rescue Archsight::Query::QueryError => e
       JSON.pretty_generate({
                              error: "Query error",
@@ -110,5 +117,29 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
                              query: query
                            })
     end
+  end
+
+  private
+
+  # Cuts the resources of an oversized result down (halving until it fits) and says how to get the rest
+  def fit_response(result, output, fields)
+    return JSON.pretty_generate(result) unless result[:resources]
+
+    full = result[:resources]
+    Archsight::MCP.fit(result) do |attempt|
+      keep = [full.length / (2**attempt), 1].max
+      result.merge(
+        resources: full.take(keep),
+        count: keep,
+        truncated: "Response cut to #{keep} of #{full.length} resources (size budget). " \
+                   "#{hint_for(output, fields)}"
+      )
+    end
+  end
+
+  def hint_for(output, fields)
+    return "Use a smaller limit with offset, or output='brief'/'count'." if output == "complete" && fields.nil?
+
+    "Use a smaller limit with offset."
   end
 end
