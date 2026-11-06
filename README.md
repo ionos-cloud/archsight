@@ -106,6 +106,7 @@ time out the long-lived SSE connection.
 
 - `query` - Search and filter resources using the query language
 - `analyze_resource` - Get detailed resource information and impact analysis
+- `summary` - Explain a resource in context from its name, through a lens chosen by its layer (tunable by a `Config` of type `summary`)
 - `relations` - Direct relations of one resource, filtered by verb, direction and target kind
 - `resource_doc` - Get documentation for resource kinds
 
