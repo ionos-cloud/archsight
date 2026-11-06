@@ -20,6 +20,46 @@ class ParserTest < Minitest::Test
     assert_nil ast.kind_filter
   end
 
+  # Free-text condition tests
+  def test_text_condition_forms
+    ['text =~ "failover"', 'text: "failover"', 'text:"failover"'].each do |source|
+      expr = parse(source).expression
+
+      assert_instance_of Archsight::Query::AST::TextCondition, expr, source
+      assert_nil expr.keys
+      assert_equal "failover", expr.value.value
+    end
+  end
+
+  def test_text_condition_with_keys_and_regex
+    expr = parse("text(architecture/description, link/*) =~ /Fail.ver/i").expression
+
+    assert_equal ["architecture/description", "link/*"], expr.keys
+    assert_instance_of Archsight::Query::AST::RegexValue, expr.value
+    assert_equal ["link/*"], parse('text("link/*"): "x"').expression.keys
+  end
+
+  def test_text_condition_combines_with_kind_and_relations
+    ast = parse('ApplicationService: text =~ "failover" & -> ApplicationComponent')
+
+    assert_equal "ApplicationService", ast.kind_filter
+    assert_instance_of Archsight::Query::AST::BinaryOp, ast.expression
+    assert_instance_of Archsight::Query::AST::TextCondition, ast.expression.left
+  end
+
+  def test_bare_text_stays_a_name_search
+    expr = parse("text").expression
+
+    assert_instance_of Archsight::Query::AST::NameCondition, expr
+    assert_equal "text", expr.value.value
+  end
+
+  def test_text_condition_errors
+    assert_raises(Archsight::Query::QueryError) { parse("text(architecture/description)") }
+    assert_raises(Archsight::Query::QueryError) { parse('text(1) =~ "x"') }
+    assert_raises(Archsight::Query::QueryError) { parse('text =~ "("') }
+  end
+
   # Annotation condition tests
   def test_simple_annotation_condition
     ast = parse('activity/status == "active"')

@@ -897,6 +897,23 @@ class EvaluatorTest < Minitest::Test
   end
 
   # Verb filter tests
+  def test_text_search_over_annotations
+    @db.add_instance("ApplicationService", "Billing", {
+                       "architecture/description" => "Handles invoices.\nFailover to the standby region.",
+                       "link/jira" => "https://tracker.example/PROJ-1234"
+                     })
+    @db.add_instance("ApplicationService", "Mailer", { "architecture/description" => "Sends mail" })
+
+    assert_equal ["Billing"], @db.query('text =~ "failover"').map(&:name)
+    assert_equal ["Billing"], @db.query('text: "FAILOVER"').map(&:name)
+    assert_equal ["Billing"], @db.query('text(architecture/description) =~ "standby"').map(&:name)
+    assert_empty @db.query('text(link/*) =~ "standby"')
+    assert_equal ["Billing"], @db.query('text(link/*) =~ /PROJ-\\d+/').map(&:name)
+    assert_equal ["Billing"], @db.query("text =~ /proj-1234/i").map(&:name)
+    assert_equal ["Mailer"], @db.query('ApplicationService: !(text =~ "failover")').map(&:name)
+    assert_empty @db.query('TechnologyArtifact: text =~ "failover"')
+  end
+
   def setup_verb_filter_data
     # Create teams (BusinessActor)
     @db.add_instance("BusinessActor", "TeamA:Team", { "activity/status" => "active" })

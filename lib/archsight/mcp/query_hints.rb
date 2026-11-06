@@ -30,6 +30,8 @@ module Archsight::MCP::QueryHints
         annotation_keys(node.left, found)
         annotation_keys(node.right, found)
       when Archsight::Query::AST::NotOp then annotation_keys(node.operand, found)
+      when Archsight::Query::AST::TextCondition
+        found.concat(node.keys.to_a.reject { |key| key.include?("*") })
       when Archsight::Query::AST::AnnotationCondition, Archsight::Query::AST::AnnotationExistsCondition,
            Archsight::Query::AST::AnnotationInCondition
         found << node.path
@@ -50,6 +52,29 @@ module Archsight::MCP::QueryHints
         used = (Archsight::MCP.db.instances[klass] || {}).each_value.flat_map { |inst| inst.annotations.keys }
         declared + used
       end.uniq
+    end
+
+    # The free-text conditions (`text =~ "x"`) of a query that are not negated, as AST nodes
+    def text_conditions(node, found = [])
+      case node
+      when Archsight::Query::AST::QueryNode then text_conditions(node.expression, found)
+      when Archsight::Query::AST::BinaryOp
+        text_conditions(node.left, found)
+        text_conditions(node.right, found)
+      when Archsight::Query::AST::TextCondition then found << node
+      end
+      found
+    end
+
+    # Where the text of the conditions was found in `instance`: [{key:, snippet:}], at most `limit` entries
+    def matched_text(instance, conditions, limit: 3)
+      hits = []
+      conditions.each do |condition|
+        Archsight::Query::TextSearch.each_match(instance, condition) do |key, value, match|
+          hits << { key: key, snippet: Archsight::Query::TextSearch.snippet(value, match) }
+        end
+      end
+      hits.uniq.first(limit)
     end
 
     # The direct relation conditions of a query (`-> Kind`, `<- "Name"`, with verb filters) that are not negated,

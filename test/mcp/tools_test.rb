@@ -175,6 +175,26 @@ class McpToolsTest < Minitest::Test
     refute call_tool(Archsight::MCP::QueryTool, query: "repo").key?("warnings")
   end
 
+  def test_query_tool_text_search_shows_key_and_snippet
+    @db.add_instance("ApplicationService", "Billing", {
+                       "architecture/description" => "#{"Handles invoices for all customers in the shop. " * 3}Failover goes to the standby region.",
+                       "link/jira" => "https://tracker.example/PROJ-1234"
+                     })
+    result = call_tool(Archsight::MCP::QueryTool, query: 'text =~ "failover"', output: "brief")
+    hit = result["resources"].first
+
+    assert_equal "Billing", hit["name"]
+    assert_equal "architecture/description", hit["matched_text"].first["key"]
+    assert_match(/\A….*Failover goes to the standby region\.\z/, hit["matched_text"].first["snippet"])
+
+    ticket = call_tool(Archsight::MCP::QueryTool, query: 'text(link/*) =~ "PROJ-1234"', output: "brief")
+
+    assert_equal "link/jira", ticket["resources"].first["matched_text"].first["key"]
+    refute call_tool(Archsight::MCP::QueryTool, query: "Billing", output: "brief")["resources"].first.key?("matched_text")
+    assert_match(%r{unknown annotation key "nope/key"},
+                 call_tool(Archsight::MCP::QueryTool, query: 'text(nope/key) =~ "x"')["warnings"].first)
+  end
+
   def test_tool_descriptions_carry_pitfalls_and_flows
     [Archsight::MCP::QueryTool, Archsight::MCP::AnalyzeResourceTool, Archsight::MCP::RelationsTool,
      Archsight::MCP::ResourceDocTool, Archsight::MCP::ExecuteAnalysisTool].each do |tool|

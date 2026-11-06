@@ -8,6 +8,7 @@ require_relative "query/errors"
 require_relative "query/ast"
 require_relative "query/lexer"
 require_relative "query/parser"
+require_relative "query/text_search"
 require_relative "query/evaluator"
 
 module Archsight

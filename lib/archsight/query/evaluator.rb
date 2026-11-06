@@ -143,6 +143,8 @@ class Archsight::Query::Evaluator
       evaluate_annotation_exists_condition(node, instance)
     when Archsight::Query::AST::AnnotationInCondition
       evaluate_annotation_in_condition(node, instance)
+    when Archsight::Query::AST::TextCondition
+      Archsight::Query::TextSearch.matches?(instance, node)
     when Archsight::Query::AST::KindCondition
       evaluate_kind_condition(node, instance)
     when Archsight::Query::AST::KindInCondition

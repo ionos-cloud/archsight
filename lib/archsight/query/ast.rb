@@ -93,6 +93,34 @@ module Archsight::Query::AST
     end
   end
 
+  # Free-text condition: text =~ "pattern", text: "pattern", text(key, key/*) =~ "pattern". Matches when a string
+  # annotation (all of them, or the ones named by `keys`, which may end in a `*` wildcard) contains the pattern.
+  class TextCondition < Node
+    attr_reader :keys, :operator, :value
+
+    def initialize(keys, operator, value)
+      @keys = keys         # Array of String (annotation keys or key patterns), or nil for every annotation
+      @operator = operator # "=~"
+      @value = value       # StringValue or RegexValue
+    end
+
+    # The compiled pattern, built once per query (every resource is checked against it)
+    def regexp
+      @regexp ||= Archsight::Query::AST.regexp_for(value)
+    end
+
+    # The key patterns as regular expressions (`*` = any run of characters), nil = every key
+    def key_patterns
+      return nil unless keys
+
+      @key_patterns ||= keys.map { |key| Regexp.new("\\A#{Regexp.escape(key).gsub("\\*", ".+")}\\z") }
+    end
+
+    def accept(visitor)
+      visitor.visit_text_condition(self)
+    end
+  end
+
   # Kind condition: kind == "SomeKind" or kind =~ "pattern"
   class KindCondition < Node
     attr_reader :operator, :value

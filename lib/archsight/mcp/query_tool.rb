@@ -18,6 +18,11 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     • Annotation filters: 'activity/status == "active"', 'scc/language/Go/loc > 5000'
       Operators: == (equals), != (not equals), =~ (regex match), >, <, >=, <=
 
+    • Free-text search over the string annotations (descriptions, links, titles, ...):
+      text =~ "failover" (also text: "failover"; case-insensitive regex, like name =~)
+      text(architecture/description) =~ "x", text(link/*, page/content) =~ "x" restrict the keys (* = any run)
+      Each hit shows matched_text: the annotation key and a snippet around the match.
+
     • Relation queries:
       -> Kind (has outgoing relation to kind), -> "Name" (to specific instance)
       <- Kind (has incoming relation from kind), <- "Name" (from specific instance)
@@ -42,6 +47,8 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     'ApplicationComponent: <- none & -> none' - components nothing refers to and that refer to nothing (orphans of one kind)
     'ApplicationComponent: ~> $(name == "web-checkout")' - components that transitively reach web-checkout
     'ApplicationService: -{realizedThrough}> ApplicationComponent' - only along one relation verb (<{verb}- for incoming)
+    'ApplicationService: text =~ "failover" & -> ApplicationComponent' - services whose text mentions failover and that have components
+    'text(link/*) =~ "PROJ-1234"' - every resource that links ticket PROJ-1234
     For the impact of changing a resource use analyze_resource(impact=true) with kinds/exclude_kinds/depth/limit.
 
     TYPICAL FLOW: find the exact name with a name search (output='brief' shows kind, name and source file),
@@ -94,6 +101,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
       omit_kind = !parsed_query.kind_filter.nil?
 
       conditions = Archsight::MCP::QueryHints.relation_conditions(parsed_query.ast)
+      text_conditions = Archsight::MCP::QueryHints.text_conditions(parsed_query.ast)
 
       # Count-only mode: return totals grouped by kind
       if output == "count"
@@ -119,6 +127,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
                     end
 
         add_matched_via(resources, paginated, conditions)
+        add_matched_text(resources, paginated, text_conditions)
 
         result = {
           query: query,
@@ -144,6 +153,16 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
   end
 
   private
+
+  # For text queries (`text =~ "x"`): the annotation and the snippet around the match, per hit
+  def add_matched_text(summaries, resources, conditions)
+    return if conditions.empty?
+
+    summaries.zip(resources).each do |summary, resource|
+      found = Archsight::MCP::QueryHints.matched_text(resource, conditions)
+      summary[:matched_text] = found unless found.empty?
+    end
+  end
 
   # For relation queries (`-> Kind`, `<- "Name"`): the direct relations that made each hit match
   def add_matched_via(summaries, resources, conditions)
