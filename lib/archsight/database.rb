@@ -91,7 +91,7 @@ module Archsight
     end
 
     def instance_by_kind(kind, instance)
-      @instances[Archsight::Resources[kind]][instance]
+      instances_by_kind(kind)[instance]
     end
 
     # The resource of a kind that has `identifier` as one of its aliases (a value of a unique annotation), when exactly

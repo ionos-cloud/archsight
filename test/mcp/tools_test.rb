@@ -143,6 +143,20 @@ class McpToolsTest < Minitest::Test
     end
   end
 
+  def test_query_tool_relation_query_shows_why_it_matched
+    result = call_tool(Archsight::MCP::QueryTool, query: "-> TechnologyArtifact", output: "brief")
+    hit = result["resources"].first
+
+    assert_equal "MyService", hit["name"]
+    assert_equal [{ "verb" => "realizedThrough", "direction" => "out", "kind" => "TechnologyArtifact", "name" => "repo-active" }],
+                 hit["matched_via"]
+
+    incoming = call_tool(Archsight::MCP::QueryTool, query: '<- "MyService"', output: "brief")
+
+    assert_includes incoming["resources"].map { |r| r["matched_via"].first["verb"] }, "realizedThrough"
+    refute call_tool(Archsight::MCP::QueryTool, query: "repo", output: "brief")["resources"].first.key?("matched_via")
+  end
+
   def test_query_tool_brief_output
     result = call_tool(Archsight::MCP::QueryTool, query: "repo-active", output: "brief")
 
@@ -329,6 +343,45 @@ class McpToolsTest < Minitest::Test
     assert_equal 2, limited["summary"]["total_impacted"]
     assert_equal 1, limited["impacted_resources"].values.flatten.length
     assert_match(/1 more entries not listed/, limited["truncated"])
+  end
+
+  def test_relations_tool_filters_direct_relations
+    tool = Archsight::MCP::RelationsTool
+    all = call_tool(tool, kind: "ApplicationComponent", name: "MyService")
+
+    assert_equal 2, all["total"]
+    assert_equal %w[exposes realizedThrough], all["relations"].keys.sort
+
+    one = call_tool(tool, kind: "ApplicationComponent", name: "MyService", verb: "realizedThrough")
+
+    assert_equal [{ "verb" => "realizedThrough", "direction" => "out", "kind" => "TechnologyArtifact", "name" => "repo-active" }],
+                 one["relations"]["realizedThrough"]
+
+    incoming = call_tool(tool, kind: "TechnologyArtifact", name: "repo-active", direction: "in", target_kind: "ApplicationComponent")
+
+    assert_equal "MyService", incoming["relations"]["realizedThrough"].first["name"]
+    assert_equal "in", incoming["relations"]["realizedThrough"].first["direction"]
+
+    none = call_tool(tool, kind: "ApplicationComponent", name: "MyService", verb: "servedBy")
+
+    assert_equal 0, none["total"]
+    assert_match(/Verbs present: exposes, realizedThrough/, none["warning"])
+  end
+
+  def test_unknown_names_get_suggestions_across_kinds
+    miss = call_tool(Archsight::MCP::RelationsTool, kind: "ApplicationComponent", name: "myservice")
+
+    assert_equal({ "kind" => "ApplicationComponent", "name" => "MyService" }, miss["suggestions"].first)
+
+    typo = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "ApplicationInterface", name: "Kubernetes:RestAPl")
+
+    assert_match(%r{Did you mean: ApplicationInterface/Kubernetes:RestAPI}, typo["message"])
+
+    wrong_kind = call_tool(Archsight::MCP::AnalyzeResourceTool, kind: "TechnologyArtifact", name: "MyService")
+
+    assert_equal "ApplicationComponent", wrong_kind["suggestions"].first["kind"]
+    assert_operator Archsight::MCP.suggest("repo", limit: 5).length, :<=, 5
+    assert_empty Archsight::MCP.suggest("zzzzzzzzzz")
   end
 
   def test_resource_doc_list_is_compact_and_sections_work
@@ -539,7 +592,7 @@ class McpToolsTest < Minitest::Test
       from_instance.raw["spec"][verb.to_s][relation_kind.to_s] ||= []
       from_instance.raw["spec"][verb.to_s][relation_kind.to_s] << to_instance
 
-      to_instance.referenced_by(from_instance)
+      to_instance.referenced_by(from_instance, verb)
     end
 
     def instances_by_kind(kind)

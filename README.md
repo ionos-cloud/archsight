@@ -106,6 +106,7 @@ time out the long-lived SSE connection.
 
 - `query` - Search and filter resources using the query language
 - `analyze_resource` - Get detailed resource information and impact analysis
+- `relations` - Direct relations of one resource, filtered by verb, direction and target kind
 - `resource_doc` - Get documentation for resource kinds
 
 **Export to Confluence**: `archsight export --to confluence` publishes pages to the Confluence page they link to, with images, diagrams and draw.io, views and requirements as tables, and refuses to overwrite edits made in Confluence unless `--force` ([Wiki pages](docs/pages.md#exporting-to-confluence)).

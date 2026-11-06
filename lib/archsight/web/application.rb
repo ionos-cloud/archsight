@@ -92,6 +92,7 @@ class Archsight::Web::Application < Sinatra::Base
 
     mcp_server.register_tool(Archsight::MCP::QueryTool)
     mcp_server.register_tool(Archsight::MCP::AnalyzeResourceTool)
+    mcp_server.register_tool(Archsight::MCP::RelationsTool)
     mcp_server.register_tool(Archsight::MCP::ResourceDocTool)
     mcp_server.register_tool(Archsight::MCP::ExecuteAnalysisTool)
 

@@ -76,6 +76,8 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
       # it, so a hit can feed analyze_resource(kind, name) without guessing
       omit_kind = !parsed_query.kind_filter.nil?
 
+      conditions = Archsight::MCP.relation_conditions(parsed_query.ast)
+
       # Count-only mode: return totals grouped by kind
       if output == "count"
         by_kind = results.group_by { |r| r.class.to_s.split("::").last }
@@ -99,6 +101,8 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
                       end
                     end
 
+        add_matched_via(resources, paginated, conditions)
+
         result = {
           query: query,
           total: total,
@@ -120,6 +124,16 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
   end
 
   private
+
+  # For relation queries (`-> Kind`, `<- "Name"`): the direct relations that made each hit match
+  def add_matched_via(summaries, resources, conditions)
+    return if conditions.empty?
+
+    summaries.zip(resources).each do |summary, resource|
+      via = Archsight::MCP.matched_via(resource, conditions)
+      summary[:matched_via] = via unless via.empty?
+    end
+  end
 
   # Cuts the resources of an oversized result down (halving until it fits) and says how to get the rest
   def fit_response(result, output, fields)

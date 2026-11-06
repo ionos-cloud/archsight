@@ -72,6 +72,90 @@ module Archsight::MCP
       info
     end
 
+    # The direct relations of a resource, both ways, as [{verb:, direction: "out"|"in", kind:, name:}]
+    # ("out": the resource points at the target, "in": the other resource points at it)
+    def direct_relations(instance)
+      outgoing = instance.relations_grouped.flat_map do |verb, kinds|
+        kinds.flat_map do |kind, targets|
+          targets.map { |target| { verb: verb.to_s, direction: "out", kind: kind, name: target.name } }
+        end
+      end
+      incoming = instance.references.map do |ref|
+        { verb: ref[:verb].to_s, direction: "in", kind: kind_of(ref[:instance]), name: ref[:instance].name }
+      end
+      (outgoing + incoming).uniq
+    end
+
+    # The direct relation conditions of a query (`-> Kind`, `<- "Name"`, with verb filters) that are not negated,
+    # as AST nodes. Transitive, `none` and sub-query targets are left out: they have no single relation to show.
+    def relation_conditions(node, found = [])
+      case node
+      when Archsight::Query::AST::QueryNode then relation_conditions(node.expression, found)
+      when Archsight::Query::AST::BinaryOp
+        relation_conditions(node.left, found)
+        relation_conditions(node.right, found)
+      when Archsight::Query::AST::OutgoingDirectRelation, Archsight::Query::AST::IncomingDirectRelation
+        found << node if [Archsight::Query::AST::KindTarget, Archsight::Query::AST::InstanceTarget].any? { |t| node.target.is_a?(t) }
+      end
+      found
+    end
+
+    # The direct relations of `instance` that satisfy the given relation conditions: why a relation query matched it
+    def matched_via(instance, conditions)
+      relations = direct_relations(instance)
+      conditions.flat_map do |cond|
+        direction = cond.is_a?(Archsight::Query::AST::OutgoingDirectRelation) ? "out" : "in"
+        relations.select do |rel|
+          rel[:direction] == direction && relation_target_match?(cond.target, rel) && relation_verb_match?(cond, rel)
+        end
+      end.uniq
+    end
+
+    def relation_target_match?(target, rel)
+      if target.is_a?(Archsight::Query::AST::KindTarget)
+        rel[:kind] == target.kind_name
+      else
+        rel[:name] == target.instance_name
+      end
+    end
+
+    def relation_verb_match?(cond, rel)
+      return true if cond.verbs.nil?
+
+      cond.verbs.include?(rel[:verb]) != cond.exclude_verbs
+    end
+
+    # Up to `limit` resources whose name is close to `name`, as [{kind:, name:}]: same name in other letter case
+    # first, then names containing it (or contained in it), then small edit distances. Resources of `kind` win ties.
+    def suggest(name, kind: nil, limit: 5)
+      wanted = name.to_s.downcase
+      return [] if wanted.empty?
+
+      threshold = [[wanted.length / 3, 2].max, 5].min
+      scored = db.instances.flat_map do |klass, by_name|
+        by_name.each_key.filter_map do |candidate|
+          rank = suggestion_rank(wanted, candidate.to_s.downcase, threshold)
+          [rank, klass.to_s.split("::").last == kind ? 0 : 1, candidate, klass.to_s.split("::").last] if rank
+        end
+      end
+      scored.sort.first(limit).map { |(_, _, candidate, candidate_kind)| { kind: candidate_kind, name: candidate } }
+    end
+
+    def suggestion_rank(wanted, candidate, threshold)
+      return [0, 0] if candidate == wanted
+      return [1, (candidate.length - wanted.length).abs] if candidate.include?(wanted) || wanted.include?(candidate)
+
+      distance = DidYouMean::Levenshtein.distance(wanted, candidate)
+      [2, distance] if distance <= threshold
+    end
+
+    # "Did you mean ..." text for suggestions, or nil
+    def did_you_mean(suggestions)
+      return nil if suggestions.empty?
+
+      "Did you mean: #{suggestions.map { |s| "#{s[:kind]}/#{s[:name]}" }.join(", ")}?"
+    end
+
     # `kind`, `name`, `source` and `generated` of each direct relation target, as [{kind:, name:, source:, generated:}]
     def related_sources(instance)
       targets = instance.class.relations.flat_map do |verb, kind_name, _|
