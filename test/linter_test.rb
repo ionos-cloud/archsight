@@ -47,6 +47,28 @@ class LinterTest < Minitest::Test
     assert_match(/ImplementationPlateau 'Plateau:\w' is part of a relation cycle \(Plateau:\w -triggers-> Plateau:\w -triggers-> Plateau:\w -triggers-> Plateau:\w\)/, errors.first)
   end
 
+  def summary_config(*lenses)
+    annotations = lenses.map { |key, text| "    #{key}: #{text}" }.join("\n")
+    "---\napiVersion: architecture/v1alpha1\nkind: Config\nmetadata:\n  name: default\n  annotations:\n    config/type: summary\n#{annotations}\n"
+  end
+
+  def test_validate_accepts_summary_lens_of_a_layer_and_of_a_kind
+    assert_empty lint_yaml(summary_config(["summary/lens-application", "'out exposes: APIs'"], ["summary/lens-BusinessActor", "'in ownedBy: Owns'"]))
+  end
+
+  def test_validate_reports_a_summary_lens_for_neither_layer_nor_kind
+    errors = lint_yaml(summary_config(["summary/lens-Busines", "'in ownedBy: Owns'"]))
+
+    assert_equal 1, errors.length
+    assert_match(%r{Annotation 'summary/lens-Busines' expected a layer \(.*\) or a kind, not Busines}, errors.first)
+  end
+
+  def test_validate_reports_a_broken_summary_lens
+    errors = lint_yaml(summary_config(["summary/lens-application", "'out nope: X'"]))
+
+    assert_match(%r{Annotation 'summary/lens-application' .*unknown verb nope}, errors.join)
+  end
+
   def requirements(*chain)
     chain.map { |name, refined| "---\napiVersion: architecture/v1alpha1\nkind: MotivationRequirement\nmetadata:\n  name: #{name}\nspec:\n  refinedBy:\n    motivationRequirements: #{refined.inspect}\n" }.join
   end

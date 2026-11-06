@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../summary/lens"
+
 # Config holds settings of a feature of the tool, kept with the model so they are shared and versioned like it
 class Archsight::Resources::Config < Archsight::Resources::Base
   include_annotations :architecture
@@ -22,9 +24,28 @@ class Archsight::Resources::Config < Archsight::Resources::Base
     | `config/type` | Settings | Used by |
     |---------------|----------|---------|
     | `pdf` | `pdf/*`: colours, fonts, logo, header and footer | [PDF export](/doc/pdf-export) |
+    | `summary` | `summary/lens-<layer>`: what the MCP `summary` tool follows per layer | MCP `summary` tool |
 
     A document picks a different Config of the type with the tag `pdf:template:<name>`; without a tag the one named
     `default` is used, and without any the export has a neutral built-in look.
+
+    ## Summary lenses
+
+    The MCP `summary` tool explains a resource through a lens chosen by its kind or layer. A Config of type `summary`
+    (the one named `default`) replaces the built-in lens of a layer with `summary/lens-<layer>` (`motivation`, `strategy`,
+    `implementation`, `business`, `application`, `technology`, `other`) and the one of a single kind with
+    `summary/lens-<Kind>` (for example `summary/lens-BusinessActor`); the kind wins over the layer. The built-in lenses
+    end with `in mentions, depicts: Documented in` (the pages that describe the resource); a lens of your own has to
+    list it to keep that section. One section per line,
+    `<out|in> <verb>[, <verb>...] [depth=N][: <title>]`; `out` = the resource declares the relation, `in` = the other
+    resource points at it, `*` = every verb:
+
+    ```yaml
+    summary/lens-application: |
+      out exposes: Interfaces
+      in dependsOn: Used by
+      out servedBy depth=2: Runs on
+    ```
 
     ## PDF settings
 
@@ -138,6 +159,13 @@ class Archsight::Resources::Config < Archsight::Resources::Base
              title: "Space a heading needs",
              sidebar: false,
              validator: ->(value) { Archsight::Resources::Config.keep_space_error(value) }
+
+  annotation "summary/lens-*",
+             description: "Lens of a layer (summary/lens-application) or of one kind (summary/lens-BusinessActor) for the " \
+                          "MCP summary tool: one section per line, `<out|in> <verb>[, <verb>] [depth=N][: <title>]`",
+             title: "Summary lens",
+             sidebar: false,
+             validator: ->(value) { Archsight::Summary::Lens.parse_error(value) }
 
   HEADER_PARTS = %w[id version date owner].freeze
   HEADING_LEVELS = (1..6).to_a.freeze

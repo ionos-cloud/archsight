@@ -306,6 +306,8 @@ module Archsight
           next
         end
 
+        validate_summary_lens_key(instance, key)
+
         # Content checks don't depend on enum/type constraints
         validate_markdown(instance, key, value) if annotation.markdown?
         validate_diagram(instance, key, value) if annotation.diagram?
@@ -318,6 +320,15 @@ module Archsight
         errors.each { |error| @errors << "#{instance.path_ref}: Annotation '#{key}' #{error}" }
         validate_resource_reference(instance, key, value) if annotation.resource? && errors.empty?
       end
+    end
+
+    # `summary/lens-<layer or Kind>`: a suffix that names neither would be ignored silently
+    def validate_summary_lens_key(instance, key)
+      suffix = key[%r{\Asummary/lens-(.+)\z}, 1]
+      return unless suffix && instance.klass == "Config"
+
+      problem = Archsight::Summary::Lens.key_error(suffix)
+      @errors << "#{instance.path_ref}: Annotation '#{key}' #{problem}" if problem
     end
 
     # The resource a `Name` / `Kind/Name` annotation points to must exist; a bare `Name` means the same kind
