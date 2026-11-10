@@ -194,7 +194,7 @@ status: [implemented, partial]                 # optional: implemented, partial,
 ````
 
 The table has one row per requirement of all selected resources. Its status is the best one any of them gives it
-(`realizes` = implemented, then `partially`, then `plans` = planned), and a "Realized by" column names the resources with their own
+(`realizes` = implemented, then `partially`, then `plans` = planned; an `ImplementationWorkPackage` uses `plans` for requirements of work that is not done yet), and a "Realized by" column names the resources with their own
 status (left out when only one resource is selected). Rows are sorted by priority, then name; `priority` and `status` filter the rows.
 Like views, the block is only a placeholder on the server (`<div class="requirements-embed" data-title data-of data-priority
 data-status>` around the source): the frontend loads the rows from `GET /api/v1/requirements?of=&priority=&status=`, so rendering a page
