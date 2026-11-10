@@ -17,6 +17,11 @@ const hasProperties = computed(() => {
   return !!(p && (p.status || p.author || p.owner || p.created || p.updated || p.tags.length || p.properties?.length || Object.keys(p.links || {}).length))
 })
 
+function readingTitle(r) {
+  const diagrams = r.diagrams ? `, ${r.diagrams} diagram${r.diagrams === 1 ? '' : 's'}` : ''
+  return `${r.words} words${diagrams}`
+}
+
 async function load() {
   error.value = null
   try {
@@ -85,6 +90,10 @@ function tagQuery(tag) {
         <div v-if="page.updated" class="prop">
           <dt>Updated</dt>
           <dd :title="page.updated">{{ day(page.updated) }}</dd>
+        </div>
+        <div v-if="page.reading" class="prop">
+          <dt>Reading time</dt>
+          <dd :title="readingTitle(page.reading)">~{{ page.reading.minutes }} min</dd>
         </div>
         <div v-if="page.tags.length" class="prop">
           <dt>Tags</dt>

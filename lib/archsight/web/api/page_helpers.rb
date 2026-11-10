@@ -2,6 +2,7 @@
 
 require_relative "../../page_tree"
 require_relative "../../slides"
+require_relative "../../reading_time"
 
 module Archsight; end
 module Archsight::Web; end
@@ -33,6 +34,7 @@ module Archsight::Web::API::PageHelpers
     annotations = page.annotations
     body = strip_duplicate_title(annotations["page/content"].to_s, page)
     tree = Archsight::PageTree.new(db)
+    base = Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir)
     {
       name: page.name,
       title: page.title,
@@ -45,9 +47,11 @@ module Archsight::Web::API::PageHelpers
       links: annotations.select { |key, _| key.start_with?("link/") }.transform_keys { |key| key.delete_prefix("link/") },
       tags: Archsight::Resources::Page.annotation_matching("page/tags")&.value_for(page) || [],
       slides: Archsight::Slides.for_page(page),
+      reading: Archsight::ReadingTime.estimate(body, base_dir: base, resources_dir: Archsight.resources_dir,
+                                                     includes: Archsight::Helpers::DiagramIncludes.for(db)),
       toc: annotations["page/toc"] == "yes" ? Archsight::PageTree.toc(body) : [],
       breadcrumb: tree.breadcrumb(page),
-      html: markdown(body, base: Archsight::Assets.base_dir_for(page, resources_dir: Archsight.resources_dir), page: page),
+      html: markdown(body, base: base, page: page),
       backlinks: page_backlinks(page)
     }
   end

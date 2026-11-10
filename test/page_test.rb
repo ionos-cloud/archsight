@@ -492,6 +492,20 @@ class PageDatabaseTest < Minitest::Test
     end
   end
 
+  def test_api_page_has_reading_time
+    Dir.mktmpdir do |dir|
+      write(dir, "r.md", "---\ntitle: R\n---\n\n#{"word " * 450}\n")
+      write(dir, "menus.yaml", MENUS.sub("pages: [language-strategy]", "pages: [r]"))
+      previous = app.instance_variable_get(:@database)
+      app.instance_variable_set(:@database, Archsight::Database.new(dir).tap(&:reload!))
+      get "/api/v1/pages/r"
+
+      assert_equal({ "minutes" => 3, "words" => 450, "diagrams" => 0 }, JSON.parse(last_response.body)["reading"])
+    ensure
+      app.instance_variable_set(:@database, previous)
+    end
+  end
+
   def test_api_tree_and_page
     with_application_db do
       get "/api/v1/pages"
