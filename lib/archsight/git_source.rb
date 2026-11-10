@@ -11,7 +11,7 @@ module Archsight
   # file, its `origin` remote, the checked out branch), nothing goes over the network.
   #
   # The web URL is `https://<host>/<owner>/<repo>` of the remote, without the user, password or token a remote URL
-  # may carry. GitHub files are `/blob/<ref>/<path>`, GitLab files `/-/blob/<ref>/<path>`; on other hosts, and for a
+  # may carry. GitHub files are `/blob/<ref>/<path>`, GitLab files `/-/blob/<ref>/<path>`, Gitea/Forgejo files `/src/branch/<ref>/<path>` (`/src/commit/<sha>/<path>`); on other hosts, and for a
   # file git does not track, only the repository is linked. The ref is the checked out branch, the commit when the
   # HEAD is detached (CI).
   module GitSource
@@ -58,8 +58,10 @@ module Archsight
     end
 
     def file_url(host, repository_url, ref, path)
-      blob = if host.match?(/(\A|\.)github\./) then "blob"
-             elsif host.match?(/(\A|\.)gitlab\./) then "-/blob"
+      blob = case host
+             when /(\A|\.)github\./ then "blob"
+             when /(\A|\.)gitlab\./ then "-/blob"
+             when /(\A|\.)(gitea|forgejo|codeberg)\./ then ref&.match?(/\A\h{40,64}\z/) ? "src/commit" : "src/branch"
              end
       return nil unless blob && ref
 

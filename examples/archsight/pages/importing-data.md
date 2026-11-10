@@ -19,7 +19,7 @@ to fetch them and Archsight writes the resulting YAML into the resources directo
 layer "flow" {
   label "Import flow"
   component "import" { label "**Import**\nresource" }
-  component "handler" { label "**Handler**\n(GitHub, GitLab, git, REST)" }
+  component "handler" { label "**Handler**\n(GitHub, GitLab, Gitea, git, REST)" }
   component "yaml" { label "**Generated**\nYAML" }
   component "db" { label "Database"; resource "Archsight:Core:Database" }
 }

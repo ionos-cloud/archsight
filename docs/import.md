@@ -1,6 +1,6 @@
 # Import System
 
-The import system allows you to declaratively define data imports that generate architecture resources from external sources like GitLab, GitHub, and git repositories.
+The import system allows you to declaratively define data imports that generate architecture resources from external sources like GitLab, GitHub, Gitea, and git repositories.
 
 ## Overview
 
@@ -183,6 +183,27 @@ Lists repositories from a GitHub organization and generates child Import resourc
   - If you have `gh` CLI authenticated: `export GITHUB_TOKEN=$(gh auth token)`
 
 **Output:** Generates `Import:Repo:github:*` resources for each repository.
+
+### gitea
+
+Lists repositories from a Gitea (or Forgejo) server and generates child Import resources.
+
+**Configuration:**
+- `host` - Gitea host, e.g. `gitea.example.com` (required)
+- `org` - Organization or user to list; without it every repository the token can see is listed
+- `scheme` - `https` (default) or `http`
+- `verifySSL` - `"false"` skips certificate verification (default: true)
+- `rateLimitMs` - Pause between API requests in milliseconds (default: 0)
+- `repoOutputPath` - Output path for repository handler results
+- `fallbackTeam`, `botTeam`, `corporateAffixes` - Team matching, propagated to child imports like for GitHub
+- `defaultVisibility` - Visibility of private repositories (default: `internal`; public ones are `open-source`)
+
+**Environment:**
+- `GITEA_TOKEN` - Access token (required), created at `<host>/user/settings/applications`; scope `read:repository`, plus `read:organization` when `org` is set
+
+Repositories are cloned over SSH, so the SSH keys of the user must work for the host.
+
+**Output:** Generates `Import:Repo:gitea:<owner>:<repo>` resources for each repository.
 
 ### repository
 
@@ -555,7 +576,7 @@ spec: {}
 
 ### Shared state and outputs
 
-- `cache_root` (Ruby) and `ARCHSIGHT_CACHE_DIR` (command) are the directory the GitHub, GitLab and repository
+- `cache_root` (Ruby) and `ARCHSIGHT_CACHE_DIR` (command) are the directory the GitHub, GitLab, Gitea and repository
   imports clone into: `import/config/cacheRoot`, else `import.cache_root` in the
   [configuration](configuration.md) (`ARCHSIGHT_IMPORT_CACHE_ROOT`), else `~/.cache/archsight/git`.
 - `database` holds the model as loaded after the dependencies ran (the import command loads the kinds the importers

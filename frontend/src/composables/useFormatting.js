@@ -54,7 +54,7 @@ export function timeAgo(timestamp) {
 export function iconForUrl(url) {
   if (/docs\.google\.com\/(document|spreadsheets|presentation)/.test(url)) return 'iconoir-google-docs'
   if (/github\.com/.test(url)) return 'iconoir-github'
-  if (/gitlab/.test(url)) return 'iconoir-git-fork'
+  if (/gitlab|gitea|forgejo|codeberg/.test(url)) return 'iconoir-git-fork'
   if (/confluence\.|atlassian\.net/.test(url)) return 'iconoir-page-edit'
   if (/jira\.|atlassian\.net.*jira/.test(url)) return 'iconoir-list'
   if (/grafana/.test(url)) return 'iconoir-graph-up'
@@ -66,7 +66,7 @@ export function iconForUrl(url) {
 
 export function categoryForUrl(url) {
   if (/docs\.google\.com/.test(url)) return 'Documentation'
-  if (/github\.com|gitlab/.test(url)) return 'Code Repository'
+  if (/github\.com|gitlab|gitea|forgejo|codeberg/.test(url)) return 'Code Repository'
   if (/confluence\.|atlassian\.net/.test(url)) return 'Documentation'
   if (/jira\.|atlassian\.net.*jira/.test(url)) return 'Project Management'
   if (/grafana|prometheus/.test(url)) return 'Monitoring'
