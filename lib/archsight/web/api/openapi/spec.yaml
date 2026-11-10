@@ -313,6 +313,10 @@ paths:
                 tags:
                   - howto
                   - wiki
+                reading:
+                  minutes: 2
+                  words: 310
+                  diagrams: 1
                 toc:
                   - level: 2
                     id: create-a-page
@@ -2289,7 +2293,7 @@ components:
 
     PageResponse:
       type: object
-      required: [name, title, status, author, owner, created, updated, properties, links, tags, slides, toc, breadcrumb, html, backlinks]
+      required: [name, title, status, author, owner, created, updated, properties, links, tags, slides, reading, toc, breadcrumb, html, backlinks]
       properties:
         name:
           type: string
@@ -2344,6 +2348,21 @@ components:
             - $ref: '#/components/schemas/PageSlides'
             - type: 'null'
           description: The slide deck of the page, null if it has none or the file cannot be served
+        reading:
+          type: object
+          description: Estimated reading time of the body, its words plus its `asd` diagrams (more nodes and edges take longer)
+          required: [minutes, words, diagrams]
+          properties:
+            minutes:
+              type: integer
+              minimum: 1
+              description: Rounded up, at least 1
+            words:
+              type: integer
+              description: Words of the text (code blocks and diagram sources not included)
+            diagrams:
+              type: integer
+              description: Number of `asd` diagrams (fenced blocks and embedded `.asd` files)
         toc:
           type: array
           description: Headings of the body; empty unless the frontmatter has `toc` `yes`
