@@ -356,10 +356,7 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     spec = {}
 
     # Technology component (Git provider)
-    if git_url
-      provider = git_url.include?("github") ? "Git:Github" : "Git:Gitlab"
-      spec["suppliedBy"] = { "technologyComponents" => [provider] }
-    end
+    spec["suppliedBy"] = { "technologyComponents" => [git_service(git_url)] } if git_url
 
     # Team relations from contributor matching
     if team_result
@@ -384,6 +381,12 @@ class Archsight::Import::Handlers::Repository < Archsight::Import::Handler
     return nil unless url_line
 
     url_line.split("=").last.strip
+  end
+
+  # The TechnologyService that supplies the repository: `gitService` as passed by the listing import
+  # (github, gitlab, gitea), else guessed from the clone URL for repository imports written by hand
+  def git_service(git_url)
+    config("gitService") || (git_url.include?("github") ? "Git:Github" : "Git:Gitlab")
   end
 
   def repository_name(git_url_or_path)

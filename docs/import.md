@@ -159,6 +159,7 @@ Lists repositories from a GitLab instance and generates child Import resources.
 - `fallbackTeam` - Default team when no contributor match found (propagated to child imports)
 - `botTeam` - Team for bot-only repositories (propagated to child imports)
 - `corporateAffixes` - Comma-separated corporate username affixes for team matching, e.g., "ionos,1and1" (propagated to child imports)
+- `gitService` - TechnologyService that supplies the repositories (default: `Git:Gitlab` for gitlab, `Git:Github` for github; propagated to child imports)
 
 **Environment:**
 - `GITLAB_TOKEN` - Personal access token (required)
@@ -175,6 +176,7 @@ Lists repositories from a GitHub organization and generates child Import resourc
 - `fallbackTeam` - Default team when no contributor match found (propagated to child imports)
 - `botTeam` - Team for bot-only repositories (propagated to child imports)
 - `corporateAffixes` - Comma-separated corporate username affixes for team matching, e.g., "ionos,1and1" (propagated to child imports)
+- `gitService` - TechnologyService that supplies the repositories (default: `Git:Gitlab` for gitlab, `Git:Github` for github; propagated to child imports)
 
 **Environment:**
 - `GITHUB_TOKEN` - GitHub Personal Access Token (required)
@@ -196,6 +198,7 @@ Lists repositories from a Gitea (or Forgejo) server and generates child Import r
 - `rateLimitMs` - Pause between API requests in milliseconds (default: 0)
 - `repoOutputPath` - Output path for repository handler results
 - `fallbackTeam`, `botTeam`, `corporateAffixes` - Team matching, propagated to child imports like for GitHub
+- `gitService` - TechnologyService that supplies the repositories (default: `Git:Gitea`; propagated to child imports)
 - `defaultVisibility` - Visibility of private repositories (default: `internal`; public ones are `open-source`)
 
 **Environment:**
@@ -217,6 +220,7 @@ Analyzes a single git repository and generates a TechnologyArtifact resource.
 - `sccPath` - Path to scc binary (default: scc)
 - `fallbackTeam` - Default team when no contributor match found
 - `botTeam` - Team for bot-only repositories
+- `gitService` - TechnologyService the repository is `suppliedBy`, set by the listing import; without it the service is guessed from `gitUrl` (`Git:Github` when it contains `github`, else `Git:Gitlab`)
 - `corporateAffixes` - Comma-separated corporate username affixes for team matching (e.g., "ionos,1and1"). Enables matching git usernames like `jsmith-ionos` or `ionos-jsmith` to team member "John Smith". Without this, corporate username pattern matching is inactive.
 
 **Output:** Generates one TechnologyArtifact resource with:

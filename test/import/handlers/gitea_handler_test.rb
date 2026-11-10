@@ -117,6 +117,13 @@ class GiteaHandlerTest < Minitest::Test
     assert_includes output, "acme"
   end
 
+  def test_passes_gitea_service_to_child_imports
+    stub_org([repo("repo1")])
+    create_handler(org: "test-org").execute
+
+    assert_includes output, "Git:Gitea"
+  end
+
   def test_omits_team_config_when_not_set
     stub_org([repo("repo1")])
     create_handler(org: "test-org").execute

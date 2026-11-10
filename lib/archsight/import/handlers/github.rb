@@ -165,6 +165,7 @@ class Archsight::Import::Handlers::Github < Archsight::Import::Handler
       child_config["fallbackTeam"] = config("fallbackTeam") if config("fallbackTeam")
       child_config["botTeam"] = config("botTeam") if config("botTeam")
       child_config["corporateAffixes"] = config("corporateAffixes") if config("corporateAffixes")
+      child_config["gitService"] = config("gitService", default: "Git:Github")
 
       import_yaml(
         name: "Import:Repo:github:#{@org}:#{repo_name}",

@@ -175,6 +175,7 @@ class Archsight::Import::Handlers::Gitea < Archsight::Import::Handler
       child_config["fallbackTeam"] = config("fallbackTeam") if config("fallbackTeam")
       child_config["botTeam"] = config("botTeam") if config("botTeam")
       child_config["corporateAffixes"] = config("corporateAffixes") if config("corporateAffixes")
+      child_config["gitService"] = config("gitService", default: "Git:Gitea")
 
       import_yaml(
         name: "Import:Repo:gitea:#{repo["owner"]}:#{repo["name"]}",
