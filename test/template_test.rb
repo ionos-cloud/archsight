@@ -69,6 +69,13 @@ class TemplateTest < Minitest::Test
     end
   end
 
+  def test_work_package_can_plan_and_realize_requirements
+    spec = YAML.safe_load(Archsight::Template.generate("ImplementationWorkPackage"))["spec"]
+
+    assert spec.key?("realizes")
+    assert spec.key?("plans"), "ImplementationWorkPackage should be able to plan requirements"
+  end
+
   def test_all_resource_kinds_generate_valid_yaml
     Archsight::Resources.each do |kind|
       output = Archsight::Template.generate(kind.to_s)

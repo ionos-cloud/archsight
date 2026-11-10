@@ -129,6 +129,64 @@ class RequirementsTest < Minitest::Test
   end
 end
 
+# Open work plans its requirements instead of realizing them (planned, not implemented)
+class WorkPackageRequirementsTest < Minitest::Test
+  YAML_DOC = <<~YAML
+    apiVersion: architecture/v1alpha1
+    kind: MotivationRequirement
+    metadata:
+      name: Req:Shared
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: MotivationRequirement
+    metadata:
+      name: Req:Done
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ImplementationWorkPackage
+    metadata:
+      name: Migration:One
+    spec:
+      plans:
+        motivationRequirements: [Req:Shared]
+      realizes:
+        motivationRequirements: [Req:Done]
+    ---
+    apiVersion: architecture/v1alpha1
+    kind: ImplementationWorkPackage
+    metadata:
+      name: Migration:Two
+    spec:
+      plans:
+        motivationRequirements: [Req:Shared]
+  YAML
+
+  def setup
+    @dir = Dir.mktmpdir
+    File.write(File.join(@dir, "all.yaml"), YAML_DOC)
+    @db = Archsight::Database.new(@dir)
+    @db.reload!
+  end
+
+  def teardown
+    FileUtils.rm_rf(@dir)
+  end
+
+  def test_planned_and_realized_requirements_of_work_packages
+    entries = Archsight::Requirements.collect(@db, of: "ImplementationWorkPackage:")
+
+    assert_equal "planned", entries.find { |e| e[:name] == "Req:Shared" }[:status]
+    assert_equal "implemented", entries.find { |e| e[:name] == "Req:Done" }[:status]
+  end
+
+  def test_one_work_package_does_not_mix_in_the_requirements_of_another
+    entries = Archsight::Requirements.collect(@db, of: 'ImplementationWorkPackage: name == "Migration:Two"')
+
+    assert_equal(["Req:Shared"], entries.map { |e| e[:name] })
+    assert_equal(["Migration:Two"], entries.first[:by].map { |b| b[:name] })
+  end
+end
+
 # Components answer requirements themselves (not only through a service) and carry their own evidence
 class ApplicationComponentRequirementsTest < Minitest::Test
   YAML_DOC = <<~YAML
