@@ -66,6 +66,11 @@ class HelpersTest < Minitest::Test
     assert_equal "iconoir-git-fork", icon_for_url("https://gitlab.com/owner/repo")
   end
 
+  def test_icon_and_category_for_gitea
+    assert_equal "iconoir-git-fork", icon_for_url("https://gitea.example.com/owner/repo")
+    assert_equal "Code Repository", category_for_url("https://gitea.example.com/owner/repo")
+  end
+
   def test_icon_for_google_docs
     assert_equal "iconoir-google-docs", icon_for_url("https://docs.google.com/document/d/123")
   end

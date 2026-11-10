@@ -83,6 +83,8 @@ module Archsight
         "iconoir-github"
       when /gitlab/
         "iconoir-git-fork"
+      when /gitea|forgejo|codeberg/
+        "iconoir-git-fork"
       when /confluence\.|atlassian\.net/
         "iconoir-page-edit"
       when /jira\.|atlassian\.net.*jira/
@@ -138,7 +140,7 @@ module Archsight
       case url
       when %r{docs\.google\.com/(document|spreadsheets|presentation)}
         "Documentation"
-      when /github\.com|gitlab/
+      when /github\.com|gitlab|gitea|forgejo|codeberg/
         "Code Repository"
       when /confluence\.|atlassian\.net/
         "Documentation"

@@ -43,6 +43,20 @@ class GitSourceTest < Minitest::Test
     assert_equal "https://gitlab.example.com/group/sub/architecture/-/blob/main/arch/pages/my%20page.md", G.locate(@file).url
   end
 
+  def test_a_gitea_file_links_to_its_branch
+    git("remote", "add", "origin", "git@gitea.example.com:group/architecture.git")
+
+    assert_equal "https://gitea.example.com/group/architecture/src/branch/main/arch/pages/my%20page.md", G.locate(@file).url
+  end
+
+  def test_a_gitea_detached_head_links_to_the_commit
+    git("remote", "add", "origin", "git@gitea.example.com:group/architecture.git")
+    git("checkout", "-q", "--detach")
+    sha, = Open3.capture2("git", "-C", @dir, "rev-parse", "HEAD")
+
+    assert_equal "https://gitea.example.com/group/architecture/src/commit/#{sha.strip}/arch/pages/my%20page.md", G.locate(@file).url
+  end
+
   def test_a_detached_head_links_to_the_commit
     git("remote", "add", "origin", "https://github.com/example/architecture")
     git("checkout", "-q", "--detach")

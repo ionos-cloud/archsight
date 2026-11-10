@@ -1,6 +1,6 @@
 # Import System
 
-The import system allows you to declaratively define data imports that generate architecture resources from external sources like GitLab, GitHub, and git repositories.
+The import system allows you to declaratively define data imports that generate architecture resources from external sources like GitLab, GitHub, Gitea, and git repositories.
 
 ## Overview
 
@@ -159,6 +159,7 @@ Lists repositories from a GitLab instance and generates child Import resources.
 - `fallbackTeam` - Default team when no contributor match found (propagated to child imports)
 - `botTeam` - Team for bot-only repositories (propagated to child imports)
 - `corporateAffixes` - Comma-separated corporate username affixes for team matching, e.g., "ionos,1and1" (propagated to child imports)
+- `gitService` - TechnologyService that supplies the repositories (default: `Git:Gitlab` for gitlab, `Git:Github` for github; propagated to child imports)
 
 **Environment:**
 - `GITLAB_TOKEN` - Personal access token (required)
@@ -175,6 +176,7 @@ Lists repositories from a GitHub organization and generates child Import resourc
 - `fallbackTeam` - Default team when no contributor match found (propagated to child imports)
 - `botTeam` - Team for bot-only repositories (propagated to child imports)
 - `corporateAffixes` - Comma-separated corporate username affixes for team matching, e.g., "ionos,1and1" (propagated to child imports)
+- `gitService` - TechnologyService that supplies the repositories (default: `Git:Gitlab` for gitlab, `Git:Github` for github; propagated to child imports)
 
 **Environment:**
 - `GITHUB_TOKEN` - GitHub Personal Access Token (required)
@@ -183,6 +185,28 @@ Lists repositories from a GitHub organization and generates child Import resourc
   - If you have `gh` CLI authenticated: `export GITHUB_TOKEN=$(gh auth token)`
 
 **Output:** Generates `Import:Repo:github:*` resources for each repository.
+
+### gitea
+
+Lists repositories from a Gitea (or Forgejo) server and generates child Import resources.
+
+**Configuration:**
+- `host` - Gitea host, e.g. `gitea.example.com` (required)
+- `org` - Organization or user to list; without it every repository the token can see is listed
+- `scheme` - `https` (default) or `http`
+- `verifySSL` - `"false"` skips certificate verification (default: true)
+- `rateLimitMs` - Pause between API requests in milliseconds (default: 0)
+- `repoOutputPath` - Output path for repository handler results
+- `fallbackTeam`, `botTeam`, `corporateAffixes` - Team matching, propagated to child imports like for GitHub
+- `gitService` - TechnologyService that supplies the repositories (default: `Git:Gitea`; propagated to child imports)
+- `defaultVisibility` - Visibility of private repositories (default: `internal`; public ones are `open-source`)
+
+**Environment:**
+- `GITEA_TOKEN` - Access token (required), created at `<host>/user/settings/applications`; scope `read:repository`, plus `read:organization` when `org` is set
+
+Repositories are cloned over SSH, so the SSH keys of the user must work for the host.
+
+**Output:** Generates `Import:Repo:gitea:<owner>:<repo>` resources for each repository.
 
 ### repository
 
@@ -196,6 +220,7 @@ Analyzes a single git repository and generates a TechnologyArtifact resource.
 - `sccPath` - Path to scc binary (default: scc)
 - `fallbackTeam` - Default team when no contributor match found
 - `botTeam` - Team for bot-only repositories
+- `gitService` - TechnologyService the repository is `suppliedBy`, set by the listing import; without it the service is guessed from `gitUrl` (`Git:Github` when it contains `github`, else `Git:Gitlab`)
 - `corporateAffixes` - Comma-separated corporate username affixes for team matching (e.g., "ionos,1and1"). Enables matching git usernames like `jsmith-ionos` or `ionos-jsmith` to team member "John Smith". Without this, corporate username pattern matching is inactive.
 
 **Output:** Generates one TechnologyArtifact resource with:
@@ -555,7 +580,7 @@ spec: {}
 
 ### Shared state and outputs
 
-- `cache_root` (Ruby) and `ARCHSIGHT_CACHE_DIR` (command) are the directory the GitHub, GitLab and repository
+- `cache_root` (Ruby) and `ARCHSIGHT_CACHE_DIR` (command) are the directory the GitHub, GitLab, Gitea and repository
   imports clone into: `import/config/cacheRoot`, else `import.cache_root` in the
   [configuration](configuration.md) (`ARCHSIGHT_IMPORT_CACHE_ROOT`), else `~/.cache/archsight/git`.
 - `database` holds the model as loaded after the dependencies ran (the import command loads the kinds the importers

@@ -214,6 +214,7 @@ class Archsight::Import::Handlers::Gitlab < Archsight::Import::Handler
       child_config["fallbackTeam"] = config("fallbackTeam") if config("fallbackTeam")
       child_config["botTeam"] = config("botTeam") if config("botTeam")
       child_config["corporateAffixes"] = config("corporateAffixes") if config("corporateAffixes")
+      child_config["gitService"] = config("gitService", default: "Git:Gitlab")
 
       import_yaml(
         name: "Import:Repo:gitlab:#{dir_name}",

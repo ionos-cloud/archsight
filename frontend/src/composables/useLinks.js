@@ -6,6 +6,8 @@ const SYSTEMS = {
   jira: 'Jira',
   github: 'GitHub',
   gitlab: 'GitLab',
+  gitea: 'Gitea',
+  forgejo: 'Forgejo',
   servicenow: 'ServiceNow',
   grafana: 'Grafana',
   prometheus: 'Prometheus',

@@ -53,6 +53,18 @@ class RepositoryHandlerTest < Minitest::Test
     assert_equal "second", File.read(File.join(@clone, "README")).strip
   end
 
+  def test_git_service_comes_from_the_listing_import
+    h = handler
+    h.import_resource.annotations["import/config/gitService"] = "Git:Gitea"
+
+    assert_equal "Git:Gitea", h.send(:git_service, "gitea@git.example.com:org/repo.git")
+  end
+
+  def test_git_service_falls_back_to_the_clone_url
+    assert_equal "Git:Github", handler.send(:git_service, "git@github.com:org/repo.git")
+    assert_equal "Git:Gitlab", handler.send(:git_service, "git@gitlab.example.com:org/repo.git")
+  end
+
   private
 
   def push_commit(text = "hello")
