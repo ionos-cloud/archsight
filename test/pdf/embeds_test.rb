@@ -161,7 +161,8 @@ class PdfEmbedsTest < Minitest::Test
   def test_an_analysis_is_run_and_its_sections_are_the_content
     out = render("![[Analysis/Analysis:Count]]")
 
-    assert_includes out, '#strong[#"Analysis:Count"]'
+    assert_match(/#source-note\(theme: theme\)\[#"Analysis:Count"\]\z/, out.strip, "the name is a note below the result")
+    refute_includes out, '#strong[#"Analysis:Count"]'
     assert_includes out, "#heading(level: 2)"
     assert_includes out, '#"Totals"'
     assert_includes out, "table.header("

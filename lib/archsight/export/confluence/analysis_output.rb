@@ -25,14 +25,21 @@ module Archsight
 
         # @return [String] block XML
         def xml(name, result)
-          out = %(<p><strong>#{h(name)}</strong> (result of the analysis at the export)</p>\n)
-          return out << %(<p><em>The analysis failed: #{h(result.error)}</em></p>\n) unless result.success?
-
-          result.sections.each { |section| out << section_xml(section).to_s }
-          out
+          out = +""
+          if result.success?
+            result.sections.each { |section| out << section_xml(section).to_s }
+          else
+            out << %(<p><em>The analysis failed: #{h(result.error)}</em></p>\n)
+          end
+          out << source_note(name)
         end
 
         private
+
+        # Where the content comes from, not a part of it: small, gray, at the right below the result
+        def source_note(name)
+          %(<p style="text-align: right;"><small><span style="color: rgb(151,160,175);">#{h(name)} (result at the export)</span></small></p>\n)
+        end
 
         def section_xml(section)
           case section[:type]

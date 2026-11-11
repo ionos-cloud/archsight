@@ -525,7 +525,9 @@ class ConfluenceStorageTest < Minitest::Test
     body = result.body
     well_formed!(body)
 
-    assert_includes body, "<p><strong>Check</strong> (result of the analysis at the export)</p>"
+    assert_match(%r{</ul>.*<p style="text-align: right;"><small><span style="color: rgb\(151,160,175\);">Check \(result at the export\)</span></small></p>\n\n<p>See}m, body,
+                 "the name is a small gray note below the result")
+    refute_includes body, "<strong>Check</strong>"
     assert_includes body, "<h3>Services</h3>"
     assert_includes body, "All <strong>services</strong> of Storage."
     assert_includes body, "<th>Name</th><th>Note</th>"

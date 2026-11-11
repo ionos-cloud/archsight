@@ -111,10 +111,11 @@ module Archsight
         @analyses += 1
         result = self.class.result(@database, instance)
         renderer = Archsight::Analysis::TypstRenderer.new([result], full: true)
-        parts = ["#strong[#{Typst.str(instance.name)}]"]
+        parts = []
         parts << renderer.error(result) if result.failed?
         parts.concat(result.sections.filter_map { |section| analysis_section(renderer, section) })
-        parts.join("\n\n")
+        # the name is where the content comes from, not a part of it: a small gray note below
+        parts.join("\n\n") + "\n#source-note(theme: theme)[#{Typst.str(instance.name)}]"
       end
 
       def analysis_section(renderer, section)
