@@ -138,6 +138,50 @@ module Archsight
           m.to_s
         end
       end
+
+      # A port tab (see `NodeRenderer#render_ports`).
+      class PortRow < Row
+        def id_key = "port"
+
+        def icon(cx, cy, id:)
+          m = Renderer::Markup.new
+          m.element("rect", id: "#{id}__icon", x: SvgFormat.fmt(cx - 11), y: SvgFormat.fmt(cy - 6), width: 22, height: 12, rx: 3,
+                            class: %w[asd-port asd-stroke-blue-0])
+          m.to_s
+        end
+      end
+
+      # A dashed/dotted edge line, explained by a top-level `line "dashed" { label "..." }`.
+      class LineRow < Row
+        def initialize(label, line_style:)
+          super(label)
+          @line_style = line_style
+        end
+
+        def id_key = "line-#{@line_style}"
+
+        def icon(cx, cy, id:)
+          legend_line_sample(cx, cy, css_class: ["asd-relation-dependency", "asd-stroke-thin", "asd-line-#{@line_style}"],
+                                     marker_id: Renderer::MarkerDefs.marker_id("dependency"), id: "#{id}__icon")
+        end
+      end
+
+      # A badge dot (`badge "id" { tint; label }`).
+      class BadgeRow < Row
+        def initialize(label, tint:, badge:)
+          super(label)
+          @tint = tint
+          @badge = badge
+        end
+
+        def id_key = "badge-#{Renderer::ElementIds.slug(@badge)}"
+
+        def icon(cx, cy, id:)
+          m = Renderer::Markup.new
+          m.element("circle", id: "#{id}__icon", cx: SvgFormat.fmt(cx), cy: SvgFormat.fmt(cy), r: 4, class: "asd-badge-#{@tint}")
+          m.to_s
+        end
+      end
     end
   end
 end

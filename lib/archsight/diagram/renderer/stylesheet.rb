@@ -55,7 +55,7 @@ module Archsight
         end
 
         def style_block
-          css = [text_css, line_css, relation_css, shape_css, tint_css, legend_css, line_color_css].join("\n")
+          css = [text_css, line_css, relation_css, shape_css, tint_css, port_css, legend_css, line_color_css].join("\n")
           wrap(css)
         end
 
@@ -233,6 +233,7 @@ module Archsight
             .asd-underline { text-decoration: underline; }
             .asd-run-bold { font-weight: bold; }
             .asd-run-italic { font-style: italic; }
+            .asd-run-code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", monospace; }
             .asd-run-underline { text-decoration: underline; }
             .asd-broken-text { opacity: 0.6; text-decoration: underline dashed; }
             .asd-text-hit { fill: transparent; stroke: none; }
@@ -244,6 +245,8 @@ module Archsight
             .asd-line { fill: none; }
             .asd-stroke-thin { stroke-width: #{EDGE_STROKE_WIDTH}; }
             .asd-stroke-application { stroke-width: 2.5; }
+            .asd-line.asd-line-dashed { stroke-dasharray: 6 4; }
+            .asd-line.asd-line-dotted { stroke-dasharray: 1.5 3; stroke-linecap: round; }
             .asd-dataflow-line { stroke-width: #{DATAFLOW_STROKE_WIDTH}; transition: stroke-width 0.15s ease; }
             .asd-dataflow-halo { fill: none; stroke: #fff; stroke-width: #{DataflowRenderer::DATAFLOW_HALO_WIDTH}; stroke-linecap: round; }
           CSS
@@ -292,6 +295,12 @@ module Archsight
                ".#{tint.border_class(level)} { stroke: #{tint.border(level)}; }"]
             end
           end.join("\n")
+        end
+
+        # Port tabs (see `NodeRenderer#render_ports`) and badge dots, one fill rule per tint.
+        def port_css
+          badges = Tints.names.map { |name| ".asd-badge-#{name} { fill: #{Tints.for(name).border(0)}; }" }
+          [".asd-port { fill: #fff; stroke-width: 1.1; }", *badges].join("\n")
         end
 
         def legend_css

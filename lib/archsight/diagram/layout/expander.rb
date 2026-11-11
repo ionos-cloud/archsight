@@ -46,6 +46,7 @@ module Archsight
             # tied to its box size in ways that break if stretched to match
             # an unrelated, much larger sibling).
             return if target_size <= current
+            return if natural_size?(node)
             return unless node.representer.stretchable?
 
             axis.set_size(box, target_size)
@@ -109,6 +110,7 @@ module Archsight
               node.children.each do |c|
                 expand(c, axis, inner, inherited: extend)
                 axis.set_position(@boxes[c.id], center)
+                place_natural(c, axis, inner, center) if natural_size?(c)
               end
             end
             return
@@ -119,6 +121,17 @@ module Archsight
           return unless node.children.length == 1
 
           expand(node.children.first, axis, own_target - inset(node, axis), inherited: extend)
+        end
+
+        # A leaf with `extend "false"` keeps its own size inside a wider stack or layer.
+        def natural_size?(node) = node.leaf? && node.attrs["extend"] == "false"
+
+        # Puts such a leaf at its `anchor` (centered by default) inside the `room` long stretch of `axis`
+        # around `center` that its stack or layer gave it.
+        def place_natural(node, axis, room, center)
+          box = @boxes[node.id]
+          extra = [room - axis.size(box), 0.0].max
+          axis.set_position(box, center - (room / 2.0) + (axis.size(box) / 2.0) + node.anchor_shift(axis, extra, default: :center))
         end
 
         # `extend "height"`: grows `node` to `target` height keeping its

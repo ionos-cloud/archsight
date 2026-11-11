@@ -14,12 +14,15 @@ module Archsight
     #
     # Grammar (informal):
     #   program    := statement*
-    #   statement  := block | dataflow | edge | setting | include
+    #   statement  := block | dataflow | edge | setting | include | definition
+    #   definition := ("badge" | "line") STRING "{" attr* "}"   -- top level only
     #   include    := "include" STRING ["{" "namespace" STRING "}"] [";"]
     #                 -- top level, or where a container may hold blocks and edges
     #   setting    := ("theme" | "legend" | "ranks") STRING [";"]   -- top level only
-    #   block      := (CONTAINER_KEYWORD | LEAF_KEYWORD) [STRING] "{" (attr | block | edge | include)* "}"
-    #                 -- the id is required except for ANONYMOUS_KEYWORDS
+    #   block      := (CONTAINER_KEYWORD | LEAF_KEYWORD) [STRING] "{" (attr | block | edge | include | port)* "}"
+    #                 -- the id is required except for ANONYMOUS_KEYWORDS; a leaf holds
+    #                    only attrs and ports, a container no ports
+    #   port       := "port" STRING "{" attr* "}"
     #   dataflow   := "dataflow" STRING "{" (hop | hop_group | attr)* "}"
     #                 -- needs >= 2 hops (per branch, if a hop_group is present);
     #                    at most one hop_group per dataflow
@@ -50,6 +53,7 @@ module Archsight
       NAMESPACE = /\A[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*\z/
       ANONYMOUS_KEYWORDS = %w[layer stack].freeze
       SETTING_KEYWORDS = %w[theme legend ranks].freeze
+      DEFINITION_KEYWORDS = %w[badge line].freeze
       EDGE_ARROWS = {
         arrow: :directed,
         biarrow: :bidirectional,
@@ -89,6 +93,8 @@ module Archsight
           edge
         elsif SETTING_KEYWORDS.any? { |k| cursor.check(:ident, k) } && cursor.peek_type(1) == :string
           setting
+        elsif definition?
+          definition
         else
           t = cursor.current
           raise ParseError, "expected #{BLOCK_KEYWORDS.map(&:inspect).join(", ")}, 'dataflow', or an edge " \
@@ -123,9 +129,13 @@ module Archsight
 
         cursor.expect(:rbrace, "expected '}' to close #{label}")
 
-        if LEAF_KEYWORDS.include?(kind_token.value) && !children.empty?
+        leaf = LEAF_KEYWORDS.include?(kind_token.value)
+        if leaf && children.any? { |c| !c.is_a?(AST::Port) }
           raise ParseError, "#{label} at line #{kind_token.line} cannot " \
                             "contain nested blocks, edges or includes (did you mean 'group'?)"
+        end
+        if !leaf && (port = children.find { |c| c.is_a?(AST::Port) })
+          raise ParseError, "port #{port.id.inspect} at line #{port.line}: only a leaf (component, database, ...) has ports, not #{label}"
         end
 
         raise ParseError, "#{label} at line #{kind_token.line}: columns only applies to containers" if LEAF_KEYWORDS.include?(kind_token.value) && attrs.key?("columns")
@@ -135,10 +145,12 @@ module Archsight
         AST::Block.new(kind: kind, id: id, anonymous: anonymous, attrs: attrs, children: children, line: kind_token.line)
       end
 
-      # The nested block, edge or include at the cursor, nil if it is something else (an attribute)
+      # The nested block, edge, include or port at the cursor, nil if it is something else (an attribute)
       def container_child
         if check_block_keyword?
           block
+        elsif keyword_block?("port")
+          port
         elsif include_directive?
           include_statement
         elsif cursor.check(:ident) && EDGE_ARROWS.key?(cursor.peek_type(1))
@@ -183,6 +195,45 @@ module Archsight
         value_token = cursor.advance
         cursor.consume(:semi)
         AST::Setting.new(key: key_token.value, value: value_token.value, line: key_token.line)
+      end
+
+      # `port "id" { ... }` -- `port "x"` without a block stays an (unknown) attribute, so it is reported as one
+      def port
+        keyword = cursor.advance
+        id = cursor.advance
+        label = "port #{id.value.inspect}"
+        raise ParseError, "port at line #{keyword.line} has an empty id" if id.value.strip.empty?
+        raise ParseError, "#{label} at line #{keyword.line}: a port id cannot contain '.'" if id.value.include?(".")
+
+        attrs = read_attr_block(label)
+        AST::Port.new(id: id.value, attrs: attrs, line: keyword.line)
+      end
+
+      def definition?
+        DEFINITION_KEYWORDS.any? { |k| keyword_block?(k) }
+      end
+
+      # `badge "id" { ... }` / `line "dashed" { ... }` at the top level
+      def definition
+        keyword = cursor.advance
+        id = cursor.advance
+        attrs = read_attr_block("#{keyword.value} #{id.value.inspect}")
+        AST::Definition.new(kind: keyword.value.to_sym, id: id.value, attrs: attrs, line: keyword.line)
+      end
+
+      # `KEYWORD STRING {` -- the brace tells it apart from an attribute (`badge "x"`) or an edge (`line -> x`)
+      def keyword_block?(keyword)
+        cursor.check(:ident, keyword) && cursor.peek_type(1) == :string && cursor.peek_type(2) == :lbrace
+      end
+
+      # `{ attr* }`, read into a fresh hash
+      def read_attr_block(label)
+        cursor.expect(:lbrace, "expected '{' to open #{label}")
+        attrs = {}
+        parse_attrs_until_rbrace(attrs, label, expected: "an attribute") { false }
+        cursor.expect(:rbrace, "expected '}' to close #{label}")
+        cursor.consume(:semi)
+        attrs
       end
 
       def next_anonymous_id

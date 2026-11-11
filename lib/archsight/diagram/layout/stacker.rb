@@ -28,7 +28,8 @@ module Archsight
         # `related_pairs`, otherwise `default_gap`; a label gap is only a
         # minimum on top of that (room for the label), so it can widen the
         # gap but never shrink a larger one -- e.g. an explicit `gap "150"`.
-        def pack(children, axis:, default_gap:, related_gap:, label_gaps: {}, related_pairs: [])
+        # `extra_gaps` (by sorted id pair) is added on top of the pair's gap, e.g. for port tabs sticking out.
+        def pack(children, axis:, default_gap:, related_gap:, label_gaps: {}, related_pairs: [], extra_gaps: {})
           return if children.empty?
 
           cross = axis.cross
@@ -40,7 +41,7 @@ module Archsight
             unless i.zero?
               pair = [children[i - 1].id, c.id].sort
               base = related_pairs.include?(pair) ? related_gap : default_gap
-              pos += [label_gaps[pair], base].compact.max
+              pos += [label_gaps[pair], base].compact.max + extra_gaps.fetch(pair, 0.0)
             end
 
             size = axis.size(box)

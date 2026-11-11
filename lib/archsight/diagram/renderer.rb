@@ -74,16 +74,20 @@ module Archsight
         # The legend's frame is as solid as a node box, as far as a label is
         # concerned.
         legend_boxes = @layout.legend ? @boxes.slice(@layout.legend.frame.id) : {}
-        @label_placer = LabelPlacer.new(@boxes.slice(*nodes.select(&:leaf?).map(&:id)).merge(legend_boxes),
+        ports = layout.ports || {}
+        port_boxes = ports.transform_keys { |ref| "port:#{ref}" }
+        @label_placer = LabelPlacer.new(@boxes.slice(*nodes.select(&:leaf?).map(&:id)).merge(legend_boxes, port_boxes, title_boxes(nodes, theme)),
                                         containers: @boxes.slice(*nodes.reject { |n| n.leaf? || n.anonymous? }.map(&:id)))
         @node_renderer = NodeRenderer.new(@boxes, @text_renderer, ids: @ids, theme: theme,
-                                                                  hover_sources: drawn_edges.to_set { |e| e.from.id })
+                                                                  hover_sources: drawn_edges.to_set { |e| e.from.id },
+                                                                  ports: ports, graph: @graph)
         @implements_tree_renderer = ImplementsTreeRenderer.new(@boxes, path_renderer: @path_renderer, text_renderer: @text_renderer,
                                                                        ids: @ids, theme: theme)
         # Both routing stages avoid the same boxes, so they share one map
         # (and, with the native kernels, one packed box table).
-        obstacle_map = ObstacleMap.new(@boxes, ignoring: nodes.select { |n| n.anonymous? && !n.leaf? }.map(&:id))
-        @edge_routing = EdgeRouting.new(@graph, @boxes, obstacle_map: obstacle_map)
+        # Port tabs are obstacles too, so other lines don't end on top of one.
+        obstacle_map = ObstacleMap.new(@boxes.merge(port_boxes), ignoring: nodes.select { |n| n.anonymous? && !n.leaf? }.map(&:id))
+        @edge_routing = EdgeRouting.new(@graph, @boxes, obstacle_map: obstacle_map, ports: ports)
         @edge_renderer = EdgeRenderer.new(path_renderer: @path_renderer, text_renderer: @text_renderer, label_placer: @label_placer,
                                           ids: @ids, theme: theme)
         @dataflow_routing = DataflowRouting.new(@graph, @boxes, obstacle_map: obstacle_map)
@@ -230,7 +234,7 @@ module Archsight
         # default `hash`/`==`.
         @implements_tree_groups ||=
           drawn_edges
-          .select { |e| e.relation_type.tree_grouped? && e.direction == :directed && !e.attrs.key?("style") && e.tint.nil? }
+          .select { |e| e.relation_type.tree_grouped? && e.direction == :directed && !e.attrs.key?("style") && e.tint.nil? && !e.attrs.key?("line") && !e.to_port && !e.from_port }
           .group_by { |e| e.to.id }
           .filter_map { |_id, edges| [edges.first.to, edges] if edges.length > 1 }
       end
@@ -244,6 +248,18 @@ module Archsight
 
       def tree_grouped_edges
         @tree_grouped_edges ||= implements_tree_groups.flat_map { |_target, edges| edges }
+      end
+
+      # Where each named container's title is written (see `NodeRenderer#render_container`), so edge labels
+      # keep off it like off a node.
+      def title_boxes(nodes, theme)
+        nodes.select { |n| n.container? && !n.anonymous? && @boxes[n.id] }.to_h do |n|
+          box = @boxes[n.id]
+          size = n.boundary? ? theme.boundary_title_font_size : theme.group_title_font_size
+          width = TextMetrics.rendered_width(MarkdownText.new("**#{n.label}**"), font_size: size)
+          height = n.layout_title_height(theme)
+          ["title:#{n.id}", Layout::Box.new(box.left + theme.title_inset_x + (width / 2.0), box.top + (height / 2.0), width, height)]
+        end
       end
 
       # --- edges -------------------------------------------------------------

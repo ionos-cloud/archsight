@@ -153,18 +153,25 @@ hint for near misses), never silently ignored.
 | `resource` | nodes, containers | a resource name (`Archsight:Web`) or `Kind/Name` (`ApplicationService/Archsight:Web`); see *Linking to resources* |
 | `extend` | nodes, containers | `true`, `false`; containers also `height`, and `width` on a direct child of a `layer` |
 | `width` | `text` | characters per line (positive integer); wraps the label |
-| `anchor` | containers | `top`, `bottom`, `left`, `right`, `center` |
+| `anchor` | containers; leaves with `no-extend` | `top`, `bottom`, `left`, `right`, `center` |
+| `badge` | nodes, ports | the id of a top-level `badge` definition (see *Badges and line styles*) |
+| `legend` | nodes, containers | the text of the node's tint row in the legend (see *Legend*) |
+| `align` | nodes, containers | `[edge] id` of another node to line up with, e.g. `top worker`; up to one horizontal and one vertical entry, comma-separated (see *Aligning across containers*) |
 
 `extend "height"` on a direct child of a `layer` grows it to its tallest sibling. Inside such a box (also through a `boundary` around a `stack`), a `stack` child carrying `extend "height"` takes the extra height and moves the ranks below it down, so e.g. a footer rank lines up across the columns. The child can be a `layer` too; its own `extend "height"` children then fill the layer's new height.
 
 `extend "width"` is the same for the other axis. When a `layer` is made wider than its content (for example it sits in a `stack` next to a wider sibling), its children normally stay together as one block placed by `anchor`. A direct child of the layer with `extend "width"` instead takes the spare width and pushes the siblings after it to the right edge, so `main` can sit at the left edge and `aside` at the right edge, and the `aside` columns line up across stacked layers. Several children with `extend "width"` share the spare width equally. The child's own content stays at its `anchor` (`left` by default) at its natural size. The attribute is an error anywhere but on a direct child of a `layer`; edges to boxes inside the pushed siblings follow their new positions.
 
 `anchor` says where a container's content sits when its box grows: `bottom` (or `top`) when it is made taller, `right` (or `left`) when it is made wider, `center` for the middle. Default: top for `extend "height"`, left for `extend "width"`, centered otherwise. It is not inherited, and has no effect on a box whose room is taken by a stack child with `extend "height"`.
+
+`no-extend` on a leaf keeps it at its own size inside a wider `stack` (which otherwise stretches every rank to the widest one), centered there; `anchor "left"`/`"right"` puts it at that edge instead (an error without `no-extend`).
 | `shape` | leaves | `rectangle`, `circle`, `cylinder`, `pipe`, `actor`, `file`, `module` |
 | `gap` | containers | pixels (`40`), a percentage (`150%`) or a signed one (`+20%`, `-50%`) |
+| `padding` | containers | the room between the box and its content, same values as `gap` (default: the theme's) |
 | `ranks` | containers | `auto`, `on`, `down`, `right`, `off` |
 | `columns` | containers | a positive integer |
 | `style` | edges | `straight`, `orthogonal` |
+| `line` | edges | `solid` (default), `dashed`, `dotted`: the stroke only, the relation keeps its arrowhead |
 | `relation` | edges | `dependency`, `implements`, `control`, `data` |
 | `color` | dataflows | a hex color such as `#1a56db` |
 
@@ -182,8 +189,10 @@ empty id, and an edge from a node to itself are errors too.
 Any label anywhere (node, container, edge, dataflow) supports:
 
 - A small inline markdown-lite: `**bold**`, `*italic*`, `__underline__`,
-  and `[text](url)` for a link on just that run of text (independent of
-  a node-level `link` — a label can have both, or just one).
+  `` `code` `` (monospace, for commands, file names and ports), and
+  `[text](url)` for a link on just that run of text (independent of
+  a node-level `link` — a label can have both, or just one). Runs don't
+  nest: `` **`x`** `` shows the backticks.
 - Multi-line text, written either with an explicit `\n` escape
   (`label "Line one\nLine two"`) or by literally spanning multiple lines
   in the source; in the latter case each line's leading/trailing
@@ -213,6 +222,89 @@ Edge attributes:
   dependency-first: only `dependency`/`implements` edges are drawn unless
   you pass `--relation=`, though layout always accounts for every edge
   regardless of what's shown.
+
+### Ports
+
+A port is a small labelled tab on a leaf's border -- a TCP port, a socket,
+a file a process listens on -- that edges attach to instead of the leaf as a
+whole. Declare it inside the leaf and name it in an edge as `leaf.port`:
+
+```
+component "mgr" {
+  label "**manager**"
+  port "tcp"  { label "tcp :8075"; side "top" }
+  port "sock" { label "unix mgr.sock"; side "top"; badge "beta" }
+}
+client -> mgr.tcp { label "requests" }
+agent -> mgr.sock
+mgr.sock -> logger
+```
+
+- `label` is drawn in monospace (default: the id), `side` is `top`,
+  `bottom`, `left` or `right`, `at` is `left`, `center`, `right` (`top`,
+  `center`, `bottom` on a left/right side) or a percentage of the side
+  (`25%`), and `badge` names a badge (see below).
+- Without `side`, the port goes on the side facing what its edges connect
+  it to (`top` without edges). Without `at`, it slides along its side to
+  line up with what its edges connect it to (the mean of their centers),
+  unless that spans the whole side; ports without a preference share the
+  side evenly in declaration order. Tabs on one side never overlap.
+- The leaf grows to hold its tabs, and a `stack` leaves room between two
+  ranks for tabs sticking out of the sides they face.
+- An edge to a port ends on the tab's outer side and never runs through
+  its own leaf; several edges on one tab are spread over it. Tabs are
+  obstacles to every other line, so no line ends on top of one.
+- Ports need a box-shaped leaf (`rectangle`, `file`, `module` shapes). A
+  port id is local to its leaf and has no `.`. `leaf.port` resolves to a
+  node with that whole id first (ids of a namespaced include contain dots),
+  and an unknown port is an error listing the leaf's ports. Dataflow hops
+  name nodes, not ports.
+
+### Badges and line styles
+
+Top-level definitions give the legend its text for a marker:
+
+```
+badge "beta" { tint "orange"; label "beta channel only" }
+line "dashed" { label "read only at start" }
+
+component "agent" { badge "beta" }
+config -> mgr { line "dashed"; label "read at start" }
+```
+
+- `badge "id" { tint; label }` defines a dot that nodes and ports carry
+  with `badge "id"` (inside a node's top-right corner, at a port tab's right
+  end). Each badge used gets a legend row.
+- `line "dashed" { label }` (or `"dotted"`) gives that line style its
+  legend row; without the definition, `line "dashed"` edges still draw
+  dashed but have no row. A diagram with ports gets a "Port" row.
+- An included diagram's definitions count at the top level; the same
+  definition twice is fine, two different ones with one id are an error.
+  Inside a container-level include they are ignored with a warning.
+
+### Aligning across containers
+
+`align "<edge> other"` moves a node (or container) until that edge of it
+lines up with the same edge of `other`, which may sit in a different
+container -- like the align buttons of a drawing editor:
+
+| edge | lines up |
+|---|---|
+| `left`, `center`, `right` | the left edges, centers, right edges (horizontally) |
+| `top`, `middle`, `bottom` | the top edges, centers, bottom edges (vertically) |
+
+A bare id means `center` (`align "api"` puts a node under `api`).
+One horizontal and one vertical entry can be combined with a comma:
+`align "left db, top worker"`.
+
+It only uses the room its container already has and never grows one.
+Where the container packs along that axis (a `layer` for left/right, a
+`stack` for up/down) the node's siblings keep their order and are pushed
+along only when they would come closer than the sibling gap (plus half a
+port tab on each facing side); elsewhere the node moves within its
+container's inner box (an anonymous `layer`/`stack` lends it the room of
+its own container on its packing axis). It stops as close as it gets. A
+leaf a `stack` stretches has no room to move sideways; give it `no-extend`.
 
 ### Dataflows
 
@@ -269,7 +361,12 @@ isn't affected.
 ### Legend
 
 A legend is added automatically, listing only the shapes, relations,
-boundary styles and dataflows actually used. It's left out entirely for a
+boundary styles, dataflows, ports, badges and defined line styles actually used.
+A tint set on a leaf gets a row named after the leaves carrying it (the first
+line of each label, without markup, joined with commas), or by the `legend`
+text of one of them; a tint whose leaves all sit inside a container of the
+same tint gets none, the container's row explains it. A tinted container's
+row reads `Boundary <label>` (or `Group <label>`), unless it has a `legend` text. It's left out entirely for a
 plain diagram of components and dependency edges.
 
 It's laid out like the rest of the drawing: a `layer` of `stack`s (its

@@ -56,6 +56,8 @@ module Archsight
         611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584
       ].freeze
       FALLBACK_WIDTH = 700
+      # Every char of a monospace (`` `code` ``) run: the advance of Menlo, Consolas, DejaVu Sans Mono...
+      MONO_WIDTH = 602
 
       # The rendered width, in px, of `text`'s widest line at `font_size`
       # -- markdown-lite markers don't take up room, and `**bold**` runs
@@ -68,6 +70,8 @@ module Archsight
 
       def line_units(line)
         markdown_runs(line).sum do |content, style|
+          next content.length * MONO_WIDTH if style[:code]
+
           table = style[:bold] ? HELVETICA_BOLD_WIDTHS : HELVETICA_WIDTHS
           content.each_char.sum do |char|
             index = char.ord - 32
@@ -79,7 +83,7 @@ module Archsight
       # A small, deliberately non-nested markdown-lite: `**bold**`,
       # `*italic*`, `__underline__` (a separate marker from bold's `**` so
       # the two never collide, since real Markdown has no underline
-      # syntax), and `[text](url)` for an inline link. Scans left to
+      # syntax), `` `code` `` (monospace) and `[text](url)` for an inline link. Scans left to
       # right, splitting `text` into `[content, style]` pairs -- `style`
       # is `{}` for a plain run. Only a `MarkdownText` is scanned (the lexer
       # flags every string literal a marker could start in); any other
@@ -109,7 +113,7 @@ module Archsight
       end
 
       # Checked in this order, so `**` wins over `*`.
-      PAIRED_MARKERS = { "**" => :bold, "__" => :underline, "*" => :italic }.freeze
+      PAIRED_MARKERS = { "`" => :code, "**" => :bold, "__" => :underline, "*" => :italic }.freeze
 
       # The formatted `[content, style]` run starting at `text[i]`, plus the
       # index just past it -- or nil when no (closed) marker starts there.
@@ -151,7 +155,7 @@ module Archsight
         lines.empty? ? [line] : lines.map { |l| runs_to_markdown(source, l) }
       end
 
-      MARKERS = { bold: "**", italic: "*", underline: "__" }.freeze
+      MARKERS = { bold: "**", italic: "*", underline: "__", code: "`" }.freeze
 
       def runs_to_markdown(source, chars)
         out = chars.chunk_while { |a, b| a[1] == b[1] }.map do |group|

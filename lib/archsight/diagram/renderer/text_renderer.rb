@@ -123,6 +123,7 @@ module Archsight
           classes << "asd-run-bold" if style[:bold]
           classes << "asd-run-italic" if style[:italic]
           classes << "asd-run-underline" if style[:underline] || style[:link]
+          classes << "asd-run-code" if style[:code]
 
           span = Markup.tag("tspan", escape(content), class: classes)
           return span if style[:link].nil? || suppress_inline_links

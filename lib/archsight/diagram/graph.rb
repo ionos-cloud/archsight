@@ -8,6 +8,7 @@ require_relative "style/relations"
 require_relative "style/theme"
 require_relative "legend/modes"
 require_relative "graph/node"
+require_relative "graph/port"
 require_relative "graph/edge"
 require_relative "graph/dataflow"
 require_relative "graph/attributes"
@@ -30,7 +31,7 @@ module Archsight
       SETTING_VALUES = { "theme" => -> { Theme.names }, "legend" => -> { Legend::MODES }, "ranks" => -> { RANKS_MODES } }.freeze
       SETTING_IVARS = { "theme" => :@theme_name, "legend" => :@legend_mode, "ranks" => :@ranks_mode }.freeze
 
-      attr_reader :roots, :nodes_by_id, :edges, :dataflows, :theme_name, :legend_mode, :ranks_mode
+      attr_reader :roots, :nodes_by_id, :edges, :dataflows, :theme_name, :legend_mode, :ranks_mode, :definitions
 
       def self.build(statements)
         new(statements)
@@ -38,6 +39,7 @@ module Archsight
 
       def initialize(statements)
         @nodes_by_id = {}
+        @definitions = {}
         @roots = []
         raw_edges = []
         raw_dataflows = []
@@ -52,8 +54,11 @@ module Archsight
             raw_dataflows << stmt
           when AST::Setting
             apply_setting(stmt)
+          when AST::Definition
+            add_definition(stmt)
           end
         end
+        check_references!
 
         raw_edges.each { |e| Attributes.check_edge!(e) }
         raw_dataflows.each_with_object({}) do |df, seen|
@@ -70,9 +75,21 @@ module Archsight
 
       def node(id)
         @nodes_by_id.fetch(id) do
+          owner = port_owner(id)
+          raise GraphError, "#{id.inspect} is a port of #{owner.id.inspect}; only edges attach to ports" if owner&.port(id.delete_prefix("#{owner.id}."))
+
           raise GraphError, "unknown id #{id.inspect}"
         end
       end
+
+      # The `badge "id"` definition, `nil` if there is none.
+      def badge_definition(id) = @definitions[[:badge, id]]
+
+      # The legend text a top-level `line "dashed" { label }` gives that line style, `nil` without one.
+      def line_definition(style) = @definitions[[:line, style]]
+
+      # Every port of every leaf, in declaration order.
+      def ports = @nodes_by_id.values.flat_map(&:ports)
     end
   end
 end

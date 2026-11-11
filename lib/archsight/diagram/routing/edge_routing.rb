@@ -76,11 +76,18 @@ module Archsight
       # instead (see `port_order`).
       PORT_ORDER_TOLERANCE = PORT_MIN_GAP / 2.0
 
+      # A port end is routed to its tab, a box of its own (always a rectangle).
+      PortEnd = Struct.new(:box) do
+        def shape = "rectangle"
+      end
+
       # `obstacle_map` can be shared with `DataflowRouting` over the same boxes.
-      def initialize(graph, boxes, obstacle_map: ObstacleMap.new(boxes))
+      # `ports` are the port tabs (`Layout::Result#ports`) an edge may attach to instead of its node.
+      def initialize(graph, boxes, obstacle_map: ObstacleMap.new(boxes), ports: {})
         @graph = graph
         @boxes = boxes
         @obstacle_map = obstacle_map
+        @ports = ports
       end
 
       # Every edge's route, computed up front (rather than immediately
@@ -89,11 +96,13 @@ module Archsight
       # split into multiple attachment points.
       def compute_paths(edges)
         edges.map do |edge|
-          from = positioned(edge.from)
-          to = positioned(edge.to)
+          from = positioned(edge.from, edge.from_port)
+          to = positioned(edge.to, edge.to_port)
           obstacles = @obstacle_map.excluding(edge.from, edge.to)
           candidates = EdgeRouter.candidate_paths(from.box, to.box, edge.attrs["style"],
                                                   from_shape: from.shape, to_shape: to.shape, obstacles: obstacles)
+          candidates = tab_free_lanes(edge, from, to) + candidates
+          candidates = through_ports(candidates, edge) if edge.from_port || edge.to_port
           scored = EdgeRouter.score_candidates(candidates, obstacles)
           points = EdgeRouter.select_best(scored, sibling_paths: [])
           RoutedEdge.new(edge: edge, points: points, from_box: from.box, to_box: to.box, obstacles: obstacles, scored: scored)
@@ -234,8 +243,100 @@ module Archsight
         points.map { |point| point.dup.tap { |p| p[index] += delta } }
       end
 
-      def positioned(node)
-        Layout::PositionedNode.new(node, @boxes[node.id])
+      def positioned(node, port = nil)
+        tab = port && @ports[port.ref]
+        tab ? PortEnd.new(tab) : Layout::PositionedNode.new(node, @boxes[node.id])
+      end
+
+      # Only lines that leave a tab on its outer side (away from its leaf) and never run through the leaf
+      # itself, which is not an obstacle to its own edges. If no candidate does, all of them are kept.
+      def through_ports(candidates, edge)
+        ends = [[edge.from_port, edge.from, :first], [edge.to_port, edge.to, :last]].select { |port, _, _| port && @ports[port.ref] }
+        kept = candidates.select do |points|
+          ends.all? do |port, node, at|
+            tab = @ports[port.ref]
+            outward?(tab, node, points.public_send(at)) && !EdgeRouter::PathMetrics.enters_interior?(points, @boxes[node.id])
+          end
+        end
+        kept.empty? ? candidates : kept
+      end
+
+      # A straight line between two boxes one above the other (or side by side) normally runs at one box's
+      # center, which may be where a port tab sits on a side it attaches to (a tab is an obstacle). This
+      # offers the same line in the middle of the widest stretch the two boxes share that no tab on the facing
+      # sides covers -- only when such a tab is in the way, so other diagrams route as before.
+      def tab_free_lanes(edge, from, to)
+        a = from.box
+        b = to.box
+        return [] if [from, to].any? { |e| Representers.for(e.shape).elliptical? }
+
+        vertical = !a.overlaps_y?(b) && a.overlaps_x?(b)
+        horizontal = !a.overlaps_x?(b) && a.overlaps_y?(b)
+        return [] unless vertical || horizontal
+
+        axis = vertical ? %i[left right x] : %i[top bottom y]
+        margin = EdgeRouter::StraightPath::ALIGNED_CORNER_MARGIN
+        lo = [a.public_send(axis[0]), b.public_send(axis[0])].max + margin
+        hi = [a.public_send(axis[1]), b.public_send(axis[1])].min - margin
+        blocked = facing_tabs(edge, a, b, vertical).map { |t| [t.public_send(axis[0]) - margin, t.public_send(axis[1]) + margin] }
+        return [] if blocked.none? { |l, h| h > lo && l < hi }
+
+        lane = widest_free(lo, hi, blocked)
+        return [] unless lane
+
+        [lane_line(a, b, (lane[0] + lane[1]) / 2.0, vertical)]
+      end
+
+      # The straight line at `c` between the facing sides of `a` and `b`.
+      def lane_line(a, b, c, vertical)
+        if vertical
+          down = a.y < b.y
+          [[c, down ? a.bottom : a.top], [c, down ? b.top : b.bottom]]
+        else
+          right = a.x < b.x
+          [[right ? a.right : a.left, c], [right ? b.left : b.right, c]]
+        end
+      end
+
+      # The tabs on the sides of the edge's two leaves that face each other (a port end itself is its own box).
+      def facing_tabs(edge, a, b, vertical)
+        [[edge.from, edge.from_port, a, b], [edge.to, edge.to_port, b, a]].flat_map do |node, port, own, other|
+          next [] if port
+
+          side = if vertical
+                   own.y < other.y ? :bottom : :top
+                 else
+                   own.x < other.x ? :right : :left
+                 end
+          node.ports.filter_map { |p| @ports[p.ref] }.select { |tab| tab_on_side?(tab, @boxes[node.id], side) }
+        end
+      end
+
+      def tab_on_side?(tab, box, side)
+        case side
+        when :top then EdgeRouter::PathMetrics.close?(tab.y, box.top)
+        when :bottom then EdgeRouter::PathMetrics.close?(tab.y, box.bottom)
+        when :left then EdgeRouter::PathMetrics.close?(tab.x, box.left)
+        else EdgeRouter::PathMetrics.close?(tab.x, box.right)
+        end
+      end
+
+      # The widest part of `lo..hi` outside every `blocked` interval, `nil` if none is left.
+      def widest_free(lo, hi, blocked)
+        cursor = lo
+        free = []
+        blocked.sort.each do |l, h|
+          free << [cursor, l] if l > cursor
+          cursor = [cursor, h].max
+        end
+        free << [cursor, hi] if hi > cursor
+        free.map { |l, h| [l, [h, hi].min] }.select { |l, h| h - l >= 1.0 }.max_by { |l, h| h - l }
+      end
+
+      # Whether `point` (an end of a line) is on the side of `tab` that faces away from its leaf.
+      def outward?(tab, node, point)
+        side = tab.side_of(point)
+        !side.nil? && tab_on_side?(tab, @boxes[node.id], side)
       end
 
       # Returns whether any edge's `points` actually changed this round.

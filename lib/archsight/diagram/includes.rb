@@ -93,11 +93,16 @@ module Archsight
         raise IncludeError, "in include #{path.inspect}: #{e.message}"
       end
 
-      # Dataflows and settings apply to the whole diagram, so inside a container they are ignored (with a warning)
+      # Dataflows, settings and badge/line definitions apply to the whole diagram, so inside a container they are
+      # ignored (with a warning)
       def drop_whole_diagram_statements(path, parsed, line)
-        dropped, kept = parsed.partition { |s| s.is_a?(AST::DataFlow) || s.is_a?(AST::Setting) }
+        dropped, kept = parsed.partition { |s| s.is_a?(AST::DataFlow) || s.is_a?(AST::Setting) || s.is_a?(AST::Definition) }
         dropped.each do |s|
-          what = s.is_a?(AST::DataFlow) ? "dataflow #{s.id.inspect}" : "#{s.key} setting"
+          what = case s
+                 when AST::DataFlow then "dataflow #{s.id.inspect}"
+                 when AST::Definition then "#{s.kind} #{s.id.inspect}"
+                 else "#{s.key} setting"
+                 end
           @warnings << "include #{path.inspect} (line #{line}): the #{what} (line #{s.line}) is ignored, it only applies when included at the top level"
         end
         kept
@@ -145,7 +150,16 @@ module Archsight
             block.attrs["label"] ||= block.id # the label defaults to the id
             block.id = ref(block.id)
           end
+          block.attrs["align"] = rename_align(block.attrs["align"]) if block.attrs.key?("align")
           block.children.each { |child| rename(child) }
+        end
+
+        # `top a, b` -> `top ns.a, ns.b`: the id of each entry, after its edge word if it has one
+        def rename_align(value)
+          value.split(",").map(&:strip).map do |entry|
+            word, rest = entry.split(/\s+/, 2)
+            rest && Graph::Node::ALIGN_EDGES.key?(word) ? "#{word} #{ref(rest.strip)}" : ref(entry)
+          end.join(", ")
         end
 
         def rename_dataflow(flow)
@@ -159,8 +173,12 @@ module Archsight
           group
         end
 
+        # A defined id, or `node.port` of a defined node
         def ref(id)
-          @defined[id] ? "#{@prefix}#{id}" : id
+          return "#{@prefix}#{id}" if @defined[id]
+
+          owner, dot, = id.rpartition(".")
+          !dot.empty? && @defined[owner] ? "#{@prefix}#{id}" : id
         end
       end
     end

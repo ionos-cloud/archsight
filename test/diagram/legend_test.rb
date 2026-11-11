@@ -123,6 +123,32 @@ class DiagramLegendTest < Minitest::Test
     assert_empty(crossing.map { |p| p.attributes["id"] })
   end
 
+  def tint_row_labels(source)
+    graph = Archsight::Diagram::Graph.build(Archsight::Diagram::Parser.parse(source))
+    Archsight::Diagram::Legend.rows(graph, relation_filter: Archsight::Diagram::Relations::DEFAULT_FILTER)
+                              .grep(Archsight::Diagram::Legend::SwatchRow).map(&:label)
+  end
+
+  def test_a_leaf_tint_row_is_named_after_its_leaves_not_the_color
+    labels = tint_row_labels(%(component "a" { label "**gateway**\nroutes requests"; tint "teal" }\ncomponent "b" { label "x"; tint "orange" }\n) +
+                             %(component "c" { label "y"; tint "orange" }\ncomponent "d" { label "x"; tint "orange" }\n))
+
+    assert_equal ["x, y", "gateway"], labels
+  end
+
+  def test_a_legend_attribute_names_the_row
+    labels = tint_row_labels(%(component "a" { tint "orange"; legend "beta only" }\ncomponent "b" { tint "orange" }\n) +
+                             %(boundary "k" { label "K"; tint "purple"; legend "the kernel"; component "c" { } }\n))
+
+    assert_equal ["the kernel", "beta only"], labels
+  end
+
+  def test_leaves_inside_a_container_of_their_tint_add_no_row
+    labels = tint_row_labels(%(boundary "k" { label "KERNEL"; tint "purple"; layer { component "a" { tint "purple" } component "b" { tint "purple" } } }\n))
+
+    assert_equal ["Boundary KERNEL"], labels
+  end
+
   private
 
   def layout(source, legend: nil)

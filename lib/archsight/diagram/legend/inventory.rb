@@ -10,6 +10,7 @@ module Archsight
       # decides *how* those rows look once assembled. `relations` are the
       # relations actually drawn (see `Legend.rows`).
       class Inventory
+        Attributes = Graph::Attributes
         def initialize(graph, relations:)
           @graph = graph
           @relations = relations
@@ -18,7 +19,7 @@ module Archsight
         def rows
           return @rows if defined?(@rows)
 
-          @rows = trivial? ? [] : shape_rows + relation_rows + dataflow_rows + swatch_rows
+          @rows = trivial? ? [] : shape_rows + port_rows + relation_rows + line_rows + dataflow_rows + swatch_rows + badge_rows
         end
 
         private
@@ -28,7 +29,29 @@ module Archsight
         def trivial?
           (used_shapes - ["rectangle"]).empty? && @relations.all? { |r| Relations.for(r).default? } &&
             !boundary_present? && !application_present? && @graph.dataflows.empty? && used_tints.empty? &&
-            tinted_containers.empty?
+            tinted_containers.empty? && @graph.ports.empty? && used_badges.empty? && used_lines.empty?
+        end
+
+        def port_rows = @graph.ports.empty? ? [] : [PortRow.new("Port")]
+
+        # A row per line style that is drawn and has its legend text from a top-level `line "..." { label }`.
+        def line_rows = used_lines.map { |d| LineRow.new(d.label, line_style: d.id) }
+
+        def badge_rows = used_badges.map { |d| BadgeRow.new(d.label, tint: d.tint, badge: d.id) }
+
+        def used_lines
+          @used_lines ||= Attributes::LINE_STYLES.filter_map do |style|
+            definition = @graph.line_definition(style)
+            definition if definition && @graph.edges.any? { |e| e.line_style == style && @relations.include?(e.relation) }
+          end
+        end
+
+        # Badges in the order they are defined.
+        def used_badges
+          @used_badges ||= begin
+            ids = (@graph.nodes_by_id.values.filter_map(&:badge) + @graph.ports.filter_map(&:badge)).uniq
+            @graph.definitions.values.select { |d| d.kind == :badge && ids.include?(d.id) }
+          end
         end
 
         def shape_rows
@@ -62,9 +85,34 @@ module Archsight
           rows << SwatchRow.new("Trust boundary", tint: Tints.for("red"), dash_class: "asd-swatch-boundary") if default_boundary_present?
           tinted_containers.each do |n|
             dash_class = n.boundary? ? "asd-swatch-boundary" : "asd-swatch-container"
-            rows << SwatchRow.new(MarkdownText.like(n.label, "#{n.kind.to_s.capitalize} #{n.label}"), tint: Tints.for(n.effective_tint), dash_class: dash_class)
+            label = n.legend_label || MarkdownText.like(n.label, "#{n.kind.to_s.capitalize} #{n.label}")
+            rows << SwatchRow.new(label, tint: Tints.for(n.effective_tint), dash_class: dash_class)
           end
-          rows + used_tints.map { |t| SwatchRow.new(t.name.capitalize, tint: t) }
+          rows + tint_rows
+        end
+
+        # One row per tint set on a leaf, named by a `legend "..."` of one of those leaves, else by the leaves'
+        # own names -- not by the color, which says nothing. Left out when every such leaf sits inside a
+        # container of the same tint, whose own row already explains it.
+        def tint_rows
+          used_tints.filter_map do |tint|
+            leaves = tinted_leaves.select { |n| n.tint == tint.name }
+            next if leaves.all? { |n| inside_same_tinted_container?(n) }
+
+            label = leaves.filter_map(&:legend_label).first || leaves.map { |n| display_name(n) }.uniq.join(", ")
+            SwatchRow.new(label, tint: tint)
+          end
+        end
+
+        def tinted_leaves = @graph.nodes_by_id.values.reject { |n| n.container? || n.kind == :text || n.tint.nil? }
+
+        def inside_same_tinted_container?(node)
+          node.ancestors.drop(1).any? { |a| !a.anonymous? && a.tint == node.tint }
+        end
+
+        # A node's name as its label shows it: the first line, without markdown markers.
+        def display_name(node)
+          TextMetrics.markdown_runs(TextMetrics.lines(node.label).first).map(&:first).join.strip
         end
 
         def used_shapes
