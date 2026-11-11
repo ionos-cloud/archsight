@@ -16,6 +16,8 @@ require_relative "layout/ranked_arranger"
 require_relative "layout/rank_arranger"
 require_relative "layout/root_alignment"
 require_relative "layout/globalizer"
+require_relative "layout/alignment"
+require_relative "layout/ports"
 require_relative "legend"
 
 module Archsight
@@ -74,8 +76,9 @@ module Archsight
       # font sizes/title offsets the boxes were sized for; `legend` (a
       # `Legend::Placement`, or nil for none) is where the legend went --
       # its boxes are in `boxes` like any node's.
-      Result = Struct.new(:boxes, :width, :height, :theme, :legend, keyword_init: true) do
-        def initialize(theme: Theme::DEFAULT, **) = super
+      # `ports` holds each port's tab (`{ "node.port" => Box }`, see `PortPlacement`).
+      Result = Struct.new(:boxes, :width, :height, :theme, :legend, :ports, keyword_init: true) do
+        def initialize(theme: Theme::DEFAULT, ports: {}, **) = super
       end
 
       # Pairs a Graph::Node with its computed Box, for the routing stages
@@ -129,10 +132,11 @@ module Archsight
           @root_alignment.align_connected_roots
         end
         @globalizer.globalize_all(@graph.roots)
+        Alignment.new(@graph, @boxes, theme: @theme).apply
         legend = place_legend
         normalize_to_canvas
         @boxes.each_value(&:freeze_bounds!)
-        Result.new(boxes: @boxes, width: @canvas_width, height: @canvas_height, theme: @theme, legend: legend)
+        Result.new(boxes: @boxes, width: @canvas_width, height: @canvas_height, theme: @theme, legend: legend, ports: place_ports)
       end
 
       # See `Layout.attach_legend`: the canvas only ever grows to take the
@@ -145,10 +149,12 @@ module Archsight
         frame = @boxes[legend.frame.id]
         width = [result.width, frame.right + @theme.canvas_margin].max
         height = [result.height, frame.bottom + @theme.canvas_margin].max
-        Result.new(boxes: @boxes, width: width, height: height, theme: @theme, legend: legend)
+        Result.new(boxes: @boxes, width: width, height: height, theme: @theme, legend: legend, ports: result.ports)
       end
 
       private
+
+      def place_ports = PortPlacement.new(@graph, @boxes, theme: @theme).place
 
       # Bottom-up: determine width/height for every node, and (for groups)
       # position children relative to the group's own local origin (0, 0).
@@ -177,7 +183,11 @@ module Archsight
         return text_size(node, extra_height) if node.kind == :text
 
         width = [label_width(node) + @theme.node_label_padding, @theme.node_min_width].max
-        [width, @theme.node_height + extra_height]
+        height = @theme.node_height + extra_height
+        return [width, height] if node.ports.empty?
+
+        min_width, min_height = PortMetrics.new(@theme).leaf_minimum(node.ports)
+        [[width, min_width].max, [height, min_height].max]
       end
 
       # A text node has no box to pad out: one line height per line and a little air, and no minimum width, so a

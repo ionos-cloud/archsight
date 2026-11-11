@@ -331,7 +331,7 @@ class DiagramRendererTest < Minitest::Test
 
     assert_includes texts, "Boundary Kubernetes"
     assert_includes texts, "Trust boundary"
-    assert_includes texts, "Teal"
+    assert_includes texts, "c"
 
     boundary_row_rect = doc.root.get_elements("//rect").find do |r|
       classes = r.attributes["class"].to_s.split
@@ -340,9 +340,8 @@ class DiagramRendererTest < Minitest::Test
 
     assert_includes boundary_row_rect.attributes["class"], Archsight::Diagram::Tints.for("teal").border_class
 
-    # "c" (a plain leaf, no name of its own worth borrowing) still falls
-    # back to a flat, solid "Teal" swatch -- distinct from the dashed
-    # boundary row above.
+    # "c" (a plain leaf) gets a flat, solid teal swatch named after it --
+    # distinct from the dashed boundary row above.
     flat_teal_swatch = doc.root.get_elements("//rect").find do |r|
       classes = r.attributes["class"].to_s.split
       classes.include?("asd-swatch") && classes.include?(Archsight::Diagram::Tints.for("teal").fill_class) &&

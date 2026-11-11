@@ -18,13 +18,13 @@ module Archsight
         # replaces the default `asd-stroke-thin` width when the caller
         # needs its own (only a dataflow's thicker, hover-animated line does).
         def draw_relation_path(body, points, relation, marker_end: false, marker_start: false, color: nil, curve: false,
-                               css_class: nil, id: nil)
+                               css_class: nil, id: nil, line_style: "solid")
           path_d = PathGeometry.path_d_string(points, curve: curve)
           marker_id = "url(##{MarkerDefs.marker_id(relation, color: color)})"
 
           body.element("path", id: id, d: path_d,
                                class: ["asd-line", "asd-relation-#{relation}", css_class || "asd-stroke-thin",
-                                       (MarkerDefs.color_class(color) if color)],
+                                       (MarkerDefs.color_class(color) if color), ("asd-line-#{line_style}" unless line_style == "solid")],
                                "marker-end": (marker_id if marker_end),
                                "marker-start": (marker_id if marker_start))
         end

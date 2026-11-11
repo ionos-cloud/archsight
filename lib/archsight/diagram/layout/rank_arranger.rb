@@ -101,6 +101,30 @@ module Archsight
         # up, not necessarily through the narrow strip between the ranks, so
         # widening the strip for it doesn't reliably help and just leaves an
         # oversized gap.
+        # How much further apart two ranks go because port tabs stick out of the sides they face (half a tab
+        # each), keyed like `Stacker#pack`'s gaps.
+        def port_overhangs(children)
+          metrics = PortMetrics.new(@theme)
+          children.each_cons(2).with_object({}) do |(a, b), gaps|
+            extra = overhang(a, "bottom", metrics) + overhang(b, "top", metrics)
+            gaps[[a.id, b.id].sort] = extra if extra.positive?
+          end
+        end
+
+        # Half a tab if a port sits on `side` of `node`, or of a leaf an anonymous layer/stack puts on that side
+        # (a named container's padding already leaves room). A port without a `side` may end up on any side.
+        def overhang(node, side, metrics)
+          if node.leaf?
+            node.ports.any? { |p| p.side.nil? || p.side == side } ? metrics.height / 2.0 : 0.0
+          elsif !node.anonymous? || node.children.empty?
+            0.0
+          elsif node.stack?
+            overhang(side == "top" ? node.children.first : node.children.last, side, metrics)
+          else
+            node.children.map { |c| overhang(c, side, metrics) }.max
+          end
+        end
+
         def arrange_stack(group, children)
           return if children.empty?
 
@@ -114,8 +138,10 @@ module Archsight
             children, axis: Axis::HEIGHT, default_gap: group.gap(@theme.stack_gap),
                       related_gap: group.gap(@theme.sibling_gap),
                       label_gaps: @rank_topology.rank_label_gaps(rank_edges),
-                      related_pairs: rank_edges.map { |(ra, rb, _e)| [ra.id, rb.id].sort }
+                      related_pairs: rank_edges.map { |(ra, rb, _e)| [ra.id, rb.id].sort },
+                      extra_gaps: port_overhangs(children)
           )
+          children.each { |c| expander.place_natural(c, Axis::WIDTH, max_width, max_width / 2.0) if expander.natural_size?(c) }
         end
       end
     end

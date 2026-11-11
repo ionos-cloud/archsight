@@ -29,7 +29,7 @@ module Archsight
             @path_renderer.draw_relation_path(body, points, edge.relation,
                                               marker_end: edge.direction != :undirected,
                                               marker_start: edge.direction == :bidirectional,
-                                              curve: curve, color: color, id: @ids.part(edge, "line"))
+                                              curve: curve, color: color, id: @ids.part(edge, "line"), line_style: edge.line_style)
             @path_renderer.draw_hit_path(body, points, curve: curve, id: @ids.part(edge, "hit"))
           end
 

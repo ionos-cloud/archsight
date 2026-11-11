@@ -15,8 +15,12 @@ module Archsight
         # `Stylesheet#edge_hover_css`), so its hover target -- a leaf's own
         # `<g>`, a container's frame -- and its label are marked for the
         # stylesheet's dim-everything-else rule.
-        def initialize(boxes, text_renderer, ids:, theme:, hover_sources: Set.new)
+        # `ports` are the port tabs (`Layout::Result#ports`), `graph` names the badges' tints.
+        def initialize(boxes, text_renderer, ids:, theme:, hover_sources: Set.new, ports: {}, graph: nil)
           @boxes = boxes
+          @ports = ports
+          @graph = graph
+          @port_metrics = Layout::PortMetrics.new(theme)
           @text_renderer = text_renderer
           @ids = ids
           @hover_sources = hover_sources
@@ -47,6 +51,9 @@ module Archsight
         end
 
         HOVER_SOURCE_CLASS = "asd-hover-source"
+        # How far a node's badge dot sits from its top-right corner, and its radius.
+        BADGE_INSET = 9.0
+        BADGE_RADIUS = 4.0
         # A node whose `resource` reference didn't resolve (see `ResourceLinks`)
         BROKEN_LINK_CLASS = "asd-broken-link"
 
@@ -104,6 +111,33 @@ module Archsight
           body.raw(@text_renderer.label_text(representer.label_x(box), representer.label_y(box, @theme), node.label,
                                              font_size: representer.label_font_size(@theme), link: node.link,
                                              attrs: @ids.label_attrs(node), extra_class: label_class(node)))
+          badge_dot(body, box.right - BADGE_INSET, box.top + BADGE_INSET, node.badge, id: @ids.part(node, "badge")) if node.badge
+          render_ports(body, node, style[:stroke_class])
+        end
+
+        # Each port as a small white tab straddling the border, its label in monospace, its badge at its right end.
+        def render_ports(body, node, stroke_class)
+          node.ports.each do |port|
+            tab = @ports[port.ref]
+            next unless tab
+
+            name = "port-#{port.id.gsub(/[^A-Za-z0-9_-]/, "_")}"
+            body.element("rect", id: @ids.part(node, name), x: fmt(tab.left), y: fmt(tab.top), width: fmt(tab.width), height: fmt(tab.height),
+                                 rx: 4, class: ["asd-port", stroke_class], "data-asd-port": port.id)
+            room = port.badge ? Layout::PortMetrics::BADGE_ROOM : 0.0
+            body.raw(@text_renderer.label_text(tab.x - (room / 2.0), tab.y, port.label, font_size: @port_metrics.font_size,
+                                                                                        attrs: { id: @ids.part(node, "#{name}-label"), "data-asd-owner": @ids.id(node), "data-asd-line": port.line },
+                                                                                        extra_class: "asd-port-text asd-run-code"))
+            badge_dot(body, tab.right - Layout::PortMetrics::PADDING_X - 1.0, tab.y, port.badge, id: @ids.part(node, "#{name}-badge")) if port.badge
+          end
+        end
+
+        def badge_dot(body, cx, cy, badge, id:)
+          definition = @graph&.badge_definition(badge)
+          tint = definition ? definition.tint : "gray"
+          body.element("circle", id: id, cx: fmt(cx), cy: fmt(cy), r: fmt(BADGE_RADIUS), class: "asd-badge-#{tint}") do
+            body.raw(Markup.tag("title", escape(definition.label))) if definition
+          end
         end
 
         # A `text` has no shape for the broken-link styling to dash, so its label is dimmed and dashed itself.

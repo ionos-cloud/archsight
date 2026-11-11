@@ -165,6 +165,30 @@ module Archsight
           attrs["link"]
         end
 
+        # The leaf's `port "id" { ... }` tabs, in declaration order (see `Graph::Port`).
+        def ports = (@ports ||= [])
+        def port(id) = ports.find { |p| p.id == id }
+
+        # The id of the top-level `badge` definition this node shows, if any.
+        def badge = attrs["badge"]
+
+        # The explicit text of this node's legend row (`legend "..."`), if any.
+        def legend_label = attrs["legend"]
+
+        # The raw `align` attr (see `Layout::Alignment`), if any.
+        def align = attrs["align"]
+
+        # `align "top a, left b"` as `[[axis, edge, id], ...]`; a bare id means `center`. The first word is an
+        # edge only when an id follows it, so a node named "top" can still be aligned to.
+        def alignments
+          return [] unless align
+
+          align.split(",").map(&:strip).map do |entry|
+            word, rest = entry.split(/\s+/, 2)
+            rest && Node::ALIGN_EDGES.key?(word) ? [Node::ALIGN_EDGES[word], word, rest.strip] : [:x, "center", entry]
+          end
+        end
+
         # Why this node's `resource` reference couldn't be resolved (see
         # `ResourceLinks`), or `nil` when it has none or it resolved.
         def broken_link
@@ -174,7 +198,8 @@ module Archsight
         # The padding and title band `Layout` reserves inside a container's
         # box -- none for an anonymous `layer`/`stack`, which never draws a
         # box of its own; `Legend::Frame` has its own fixed ones.
-        def layout_padding(theme) = anonymous? ? 0.0 : theme.padding
+        # `padding` (same syntax as `gap`) overrides the theme's on a named container.
+        def layout_padding(theme) = anonymous? ? 0.0 : GapSpec.parse(attrs["padding"]).apply(theme.padding)
         def layout_title_height(theme) = anonymous? ? 0.0 : theme.title_height
 
         # See `Legend::Entry`, sized by `Layout` from its row instead of from
@@ -266,6 +291,9 @@ module Archsight
       class Stack < Node
         def main_axis = Axis::HEIGHT
       end
+
+      # Which edge of another node an `align` entry lines a node up with, and on which axis.
+      Node::ALIGN_EDGES = { "left" => :x, "center" => :x, "right" => :x, "top" => :y, "middle" => :y, "bottom" => :y }.freeze
 
       Node::KIND_CLASSES = {
         component: Component, application: Application, api: Api, database: Database,

@@ -332,7 +332,7 @@ class DiagramGraphTest < Minitest::Test
   def test_rejects_an_unknown_attribute_on_a_leaf_with_a_suggestion
     message = build_error(%(component "a" { lable "x" }\n))
 
-    assert_equal 'unknown attribute "lable" on component "a" (line 1); expected one of label, tint, link, resource, extend, shape -- did you mean "label"?', message
+    assert_equal 'unknown attribute "lable" on component "a" (line 1); expected one of label, tint, link, resource, extend, badge, align, legend, shape, anchor -- did you mean "label"?', message
   end
 
   def test_rejects_an_attribute_that_does_not_apply_to_a_leaf_or_to_a_container
@@ -369,7 +369,7 @@ class DiagramGraphTest < Minitest::Test
     assert_match(/unknown shape "circel" on component "a".*did you mean "circle"/, build_error(%(component "a" { shape "circel" }\n)))
     assert_match(/unknown tint "bleu" on component "a".*did you mean "blue"/, build_error(%(component "a" { tint "bleu" }\n)))
     assert_match(/unknown anchor "middle" on layer "l".*expected one of top, bottom, left, right, center/, build_error(%(layer "l" { anchor "middle" }\n)))
-    assert_match(/unknown attribute "anchor" on component "a"/, build_error(%(component "a" { anchor "top" }\n)))
+    assert_match(/anchor on component "a" \(line 1\) only places a leaf that keeps its own size: add no-extend/, build_error(%(component "a" { anchor "top" }\n)))
     assert_match(/unknown extend "yes" on layer "l".*expected one of true, false, height, width/, build_error(%(layer "l" { extend "yes" }\n)))
     assert_match(/unknown extend "height" on component "a".*expected one of true, false\z/, build_error(%(component "a" { extend "height" }\n)))
     assert_match(/invalid gap "wide" on group "g"/, build_error(%(group "g" { gap "wide" }\n)))

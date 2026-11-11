@@ -3,7 +3,8 @@
 module Archsight
   module Diagram
     class Graph
-      Edge = Struct.new(:from, :to, :attrs, :direction, :line, keyword_init: true) do
+      # `from_port`/`to_port` are the `Graph::Port` an end attaches to (`a -> b.port`), `nil` for the node itself.
+      Edge = Struct.new(:from, :to, :attrs, :direction, :line, :from_port, :to_port, keyword_init: true) do
         def label
           attrs["label"]
         end
@@ -14,6 +15,11 @@ module Archsight
 
         def relation
           attrs.fetch("relation", "dependency")
+        end
+
+        # `solid` (the relation's own stroke), `dashed` or `dotted`.
+        def line_style
+          attrs.fetch("line", "solid")
         end
 
         # The explicit `tint` attr, if any -- `nil` when unset, meaning

@@ -51,6 +51,15 @@ module Archsight
       # A top-level diagram-wide `key "value"` setting -- currently only
       # `theme "compact"` (see `Theme`).
       Setting = Struct.new(:key, :value, :line, keyword_init: true)
+
+      # `port "id" { label "..."; side "top"; at "left"; badge "..." }` inside a leaf: a labelled tab on
+      # the leaf's border that edges attach to (`a -> leaf.id`). Its id is local to the leaf.
+      Port = Struct.new(:id, :attrs, :line, keyword_init: true)
+
+      # A top-level legend definition: `badge "id" { tint "orange"; label "..." }` (a dot nodes and
+      # ports carry with `badge "id"`) or `line "dashed" { label "..." }` (the legend text of edges
+      # drawn with `line "dashed"`). `kind` is :badge or :line.
+      Definition = Struct.new(:kind, :id, :attrs, :line, keyword_init: true)
     end
   end
 end
