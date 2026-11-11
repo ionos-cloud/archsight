@@ -133,6 +133,10 @@
   if intro != none { block(above: 8pt, below: 6pt, text(size: 9pt, fill: theme.muted, intro)) }
 }
 
+// Where embedded content comes from (e.g. the analysis name below its result): small, gray, at the right, close to the
+// content it belongs to
+#let source-note(theme: none, body) = block(above: 3pt, width: 100%, align(right, text(size: 7pt, fill: theme.muted.lighten(20%), body)))
+
 // A cover page without header and footer: a band with the logo at its bottom left, kind, title and a short rule, the
 // document meta at the bottom left of the page. The pages after it are numbered from 1.
 #let cover-page(theme: none, title: "", kind: none, doc-id: none, version: none, date: none, owner: none, classification: none) = {
