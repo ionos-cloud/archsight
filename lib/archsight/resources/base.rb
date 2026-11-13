@@ -25,6 +25,11 @@ module Archsight
         @declared_relations || []
       end
 
+      # The relations the template of the kind (`archsight template`, the example of its docs page) shows
+      def self.template_relations
+        declared_relations
+      end
+
       # Every relation a resource of this kind can have: the declared ones and the derived ones (`mentions`,
       # `depicts`, see Archsight::References). Everything that follows relations (queries, graphs, impact analysis)
       # uses this; what lets a user write or choose relations uses declared_relations.

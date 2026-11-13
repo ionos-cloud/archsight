@@ -936,9 +936,10 @@ How to model it:
 - **Vulnerability scan.** One `MotivationAssessment` of type `vulnerability` per finding, `assesses` every node it was
   found on, `influences` the loss events and risks it makes possible. Business impact follows from the model: the node
   serves services, services serve processes.
-- **Grouping (risk domains).** ArchiMate has no domain element; set `risk/domain` (and `risk/category`: hazard,
+- **Risk domains.** Set `risk/domain` (and `risk/category`: hazard,
   financial, operational, strategic, compliance, security) on events, assessments, drivers, requirements, controls and
-  assets, and query or build a `View` per domain to see its threats, risks, measures and assets together.
+  assets, and query or build a `View` per domain to see its threats, risks, measures and assets together. A `Grouping`
+  is only worth it when the domain itself has an owner, a description or members that share no annotation.
 - **Policies.** The text of a policy is a `Page`; the structured statement (owner, validity, status, framework) is a
   `MotivationPrinciple` that links to the page with `[[Page]]`.
 - **Initial and residual risk.** Record both on the assessment (`risk/initial-*`, `risk/residual-*`) and the decision
@@ -974,6 +975,37 @@ A ComplianceEvidence answers "how is the requirement met" in structured markdown
 `evidence/operatorView` (does it hold against operators or only against other tenants),
 `evidence/verification`, `evidence/gaps` and `evidence/sources`. Because they are separate annotations they can be
 queried, for example `ComplianceEvidence: evidence/gaps =~ "needs review"`.
+
+### Grouping
+
+A `Grouping` gathers resources that belong together by a criterion that is not a place: a domain, the scope of a
+programme or review, a product family that spans layers. It holds resources of every kind, other groupings included, so
+groups nest. The members are listed on the grouping only, one key per kind under one of two verbs:
+
+| Verb | Means | Example |
+|------|-------|---------|
+| `aggregates` | the member belongs to the group and stands on its own; it can be in several groups | a shared service in two domains |
+| `composedOf` | the member is a part of this whole and of no other | the components that exist only for the domain |
+
+```yaml
+kind: Grouping
+metadata:
+  name: Domain:Payments
+spec:
+  aggregates:
+    strategyCapabilities: [Payment Processing]
+    groupings: [Domain:Payments:Refunds]
+  composedOf:
+    applicationComponents: [Payments:API, CardVault:API]
+```
+
+A member's page lists its groups under Relations, and the MCP `summary` names them ("Groups" or "Part of"). Queries
+follow membership like any relation: `ApplicationComponent: <- Grouping` (in some group), `Grouping: -> "Payments:API"`.
+A grouping that contains itself through other groupings is a cycle that `archsight lint` reports.
+
+Use a grouping when the set is a thing of its own (it has an owner, a description, a page). Resources that only share an
+attribute (a team, a tag, a risk domain) are found by a query or a `View`; a place is a `Location`; the wiki menu is a
+`PageMenu`.
 
 ### Derived References
 

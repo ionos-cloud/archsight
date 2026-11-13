@@ -43,6 +43,31 @@ module Archsight
     # The derived relations of every class, next to the ones it declares: [verb, key, kind]
     DERIVED_RELATIONS = DERIVED_VERBS.map { |verb| [verb, DERIVED_KEY, "Resource"] }.freeze
 
+    # Relation keys that do not follow the rule of #relation_key (lowerCamel kind name, made plural): the keys the
+    # model has used for these kinds from the start
+    IRREGULAR_RELATION_KEYS = {
+      "Analysis" => "analyses",
+      "MotivationGoal" => "goals",
+      "MotivationOutcome" => "outcomes",
+      "Page" => "pages",
+      "PageMenu" => "menus",
+      "TechnologyEquipment" => "technologyEquipment",
+      "TechnologySystemSoftware" => "technologySystemSoftware"
+    }.freeze
+
+    # The key under `spec.<verb>` that holds resources of a kind (ApplicationComponent -> applicationComponents),
+    # for relations that are declared for many kinds at once (see Grouping)
+    def self.relation_key(kind_name)
+      name = kind_name.to_s
+      IRREGULAR_RELATION_KEYS.fetch(name) do
+        key = name[0].downcase + name[1..]
+        if key.end_with?("y") && !key.end_with?("ay", "ey", "oy", "uy") then "#{key.chop}ies"
+        elsif key.end_with?("s", "x", "ch", "sh") then "#{key}es"
+        else "#{key}s"
+        end
+      end
+    end
+
     # The current name of a kind, whichever of its names is given
     def self.canonical(klass_name)
       name = klass_name.to_s
@@ -90,3 +115,6 @@ module Archsight::Annotations; end
 Dir[File.join(__dir__, "annotations", "*.rb")].each { |file| require_relative file }
 require_relative "resources/base"
 Dir[File.join(__dir__, "resources", "*.rb")].each { |file| require_relative file }
+
+# A Grouping holds resources of every kind, so its relations can only be declared once all kinds are known
+Archsight::Resources::Grouping.declare_members!

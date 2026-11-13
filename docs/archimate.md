@@ -44,8 +44,8 @@ ArchiMate is an open and independent enterprise architecture modeling language d
 | Relationship | Supported as |
 |--------------|--------------|
 | **Specialization** | `specializes` between technology elements of one kind (node, system software, service), see "Concept and Implementation" in the modeling guide |
-| **Composition** | `composedOf` between nodes and between system software |
-| **Aggregation** | `aggregates` between technology artifacts (an image contains packages), see "Deployment" in the modeling guide |
+| **Composition** | `composedOf` between nodes and between system software; from a `Grouping` to resources of any kind |
+| **Aggregation** | `aggregates` between technology artifacts (an image contains packages), see "Deployment" in the modeling guide; from a `Grouping` to resources of any kind |
 | **Assignment** | `assignedTo` from a node or system software to the technology artifacts deployed on it |
 
 ### Relationship Connectors
@@ -198,7 +198,8 @@ call-offs, SLAs and amendments, `stipulates` the requirements and constraints it
 | **Grouping** | Aggregates or composes concepts that belong together based on some common characteristic. |
 | **Location** | A conceptual or physical place or position where concepts are located (structure elements) or performed (behavior elements). |
 
-**Supported in archsight:** Location (`Location`) is modelled and shown under Other. Grouping is not.
+**Supported in archsight:** Location (`Location`) and Grouping (`Grouping`) are modelled and shown under Other. A
+grouping aggregates or composes resources of every kind, groupings included, see "Grouping" in the modeling guide.
 
 ## ArchiMate Layers
 

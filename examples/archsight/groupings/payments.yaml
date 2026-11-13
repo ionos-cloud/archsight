@@ -1,0 +1,41 @@
+apiVersion: architecture/v1alpha1
+kind: Grouping
+metadata:
+  name: Domain:Payments
+  annotations:
+    architecture/description: |
+      Everything that moves money for the online checkout: the capability, the product, the services and
+      components that realize it, and the platform they run on. Refunds form a group of their own inside it.
+spec:
+  aggregates:
+    strategyCapabilities:
+      - Payment Processing
+    businessProducts:
+      - Online Checkout
+    applicationServices:
+      - Payment Authorization
+    technologyServices:
+      - Payments:Cluster
+    groupings:
+      - Domain:Payments:Refunds
+  composedOf:
+    applicationComponents:
+      - Payments:API
+      - CardVault:API
+      - Payments:ClusterOperator
+---
+apiVersion: architecture/v1alpha1
+kind: Grouping
+metadata:
+  name: Domain:Payments:Refunds
+  annotations:
+    architecture/description: Giving money back to customers, from the service to the worker that does it.
+spec:
+  aggregates:
+    applicationServices:
+      - Refunds
+  composedOf:
+    applicationComponents:
+      - Refunds:Worker
+    technologyArtifacts:
+      - Repo:refunds-worker

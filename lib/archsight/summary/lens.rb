@@ -40,6 +40,7 @@ module Archsight
           in assesses, influences: Assessed and influenced by
           out evidencedBy: Evidence
           out ownedBy: Owners
+          in aggregates, composedOf: Groups
           in mentions, depicts: Documented in
         LENS
         "strategy" => <<~LENS,
@@ -47,6 +48,7 @@ module Archsight
           out servedBy: Served by
           in hasConcern: Stakeholders
           in realizes: Realized by
+          in aggregates, composedOf: Groups
           in mentions, depicts: Documented in
         LENS
         "implementation" => <<~LENS,
@@ -59,6 +61,7 @@ module Archsight
           out realizes: Realizes
           in realizes: Realized by
           out performedBy, ownedBy: People
+          in aggregates, composedOf: Groups
           in mentions, depicts: Documented in
         LENS
         "business" => <<~LENS,
@@ -88,6 +91,7 @@ module Archsight
           out evidencedBy: Evidence
           in servedBy: Served
           in exposes: Exposed by
+          in aggregates, composedOf: Groups
           in mentions, depicts: Documented in
         LENS
         "technology" => <<~LENS,
@@ -111,6 +115,12 @@ module Archsight
 
       # Kinds whose layer lens is too coarse; looked up before the lens of the layer
       KIND_DEFAULTS = {
+        "Grouping" => <<~LENS,
+          out aggregates: Members
+          out composedOf: Composed of
+          in aggregates, composedOf: Part of
+          in mentions, depicts: Documented in
+        LENS
         "BusinessActor" => <<~LENS,
           in performedBy, executedBy: Performs
           in ownedBy: Owns
