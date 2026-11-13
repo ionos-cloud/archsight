@@ -50,6 +50,12 @@ class Archsight::Resources::TechnologyService < Archsight::Resources::Base
     "servedBy" from ApplicationComponent on its page. An ApplicationService that is `servedBy` the service uses it as a
     whole; list a cluster there only when the service's own components run in it.
 
+    ## Virtualization
+
+    A service that hands out virtual machines is `suppliedBy` the hypervisor (`TechnologySystemSoftware`). The VM nodes
+    (`infrastructure/type: vm`) are `servedBy` it and listed as incoming "servedBy" from TechnologyNode on its page.
+    See `TechnologyNode`.
+
     ## Teams
 
     A service is `maintainedBy` the team (`BusinessActor`) that builds and changes it and `operatedBy` the team

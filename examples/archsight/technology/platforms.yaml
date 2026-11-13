@@ -15,7 +15,7 @@ metadata:
   name: Tech:RegionalCluster:Hypervisor
   annotations:
     architecture/description: Regional cluster implemented with a hypervisor and a cluster API.
-    infrastructure/type: vm
+    infrastructure/type: bare-metal
     capacity/spareHosts: '1'
 spec:
   specializes:
@@ -67,6 +67,9 @@ spec:
   composedOf:
     technologySystemSoftware:
       - Tech:ClusterPlatform:Controller
+  realizedBy:
+    technologyComponents:
+      - Tech:RegionalCluster:Host
 ---
 apiVersion: architecture/v1alpha1
 kind: TechnologySystemSoftware
@@ -94,3 +97,20 @@ spec:
   specializes:
     technologyServices:
       - Tech:Compute
+  suppliedBy:
+    technologyComponents:
+      - Tech:ClusterPlatform:Hypervisor
+---
+# A virtual machine and where it runs: served by the compute service, which the hypervisor supplies, which the
+# hosts realize (see "Virtualization" in the modeling guide)
+apiVersion: architecture/v1alpha1
+kind: TechnologyNode
+metadata:
+  name: Tech:RegionalCluster:Guests
+  annotations:
+    architecture/description: The virtual machines of the regional cluster, handed out by the compute service.
+    infrastructure/type: vm
+spec:
+  servedBy:
+    technologyServices:
+      - Tech:Compute:VirtualMachines

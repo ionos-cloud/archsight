@@ -222,4 +222,20 @@ class TechnologySpecializationTest < Minitest::Test
     assert_equal %w[Tech:RegionalCluster:BareMetal Tech:RegionalCluster:Hypervisor], concept.references_grouped.dig("TechnologyNode", :specializes).map(&:name).sort
     assert_equal [concept], implementation.relations_grouped.dig("specializes", "TechnologyNode")
   end
+
+  # Where a VM runs (issue #252): guests -servedBy-> service -suppliedBy-> hypervisor -realizedBy-> hosts, each page
+  # lists the step below as outgoing and the step above as incoming
+  def test_example_resources_place_the_vms_on_the_hypervisor_hosts
+    db = Archsight::Database.new(File.expand_path("../examples/archsight", __dir__), verbose: false, compute_annotations: false)
+    db.reload!
+    guests = db.instance_by_kind("TechnologyNode", "Tech:RegionalCluster:Guests")
+    service = db.instance_by_kind("TechnologyService", "Tech:Compute:VirtualMachines")
+    hypervisor = db.instance_by_kind("TechnologySystemSoftware", "Tech:ClusterPlatform:Hypervisor")
+    hosts = db.instance_by_kind("TechnologyNode", "Tech:RegionalCluster:Host")
+
+    assert_equal [service], guests.relations_grouped.dig("servedBy", "TechnologyService")
+    assert_equal [guests], service.references_grouped.dig("TechnologyNode", :servedBy)
+    assert_equal [hypervisor], service.relations_grouped.dig("suppliedBy", "TechnologySystemSoftware")
+    assert_equal [hypervisor], hosts.references_grouped.dig("TechnologySystemSoftware", :realizedBy)
+  end
 end

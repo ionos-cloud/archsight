@@ -2,9 +2,9 @@
 
 module Archsight
   class Linter
-    # Structural checks over the declared relations, the rules of "Choosing the Kind" and "Choosing the Kind:
-    # Infrastructure" in the modeling guide. All findings are warnings: they point at modeling decisions to review and
-    # have legitimate exceptions (internal services, capabilities that no product carries yet).
+    # Structural checks over the declared relations, the rules of "Choosing the Kind", "Choosing the Kind:
+    # Infrastructure" and "Virtualization" in the modeling guide. All findings are warnings: they point at modeling
+    # decisions to review and have legitimate exceptions (internal services, capabilities that no product carries yet).
     class Structure
       # Network types that run over another network and need one that serves them
       OVERLAY_TYPES = %w[overlay vpn].freeze
@@ -28,6 +28,7 @@ module Archsight
           generated_component_in_several_repositories,
           link_not_between_two_facilities,
           overlay_without_underlay,
+          vm_without_platform,
           facility_without_location,
           equipment_without_facility,
           device_without_facility,
@@ -161,6 +162,19 @@ module Archsight
           next unless targets(network, :servedBy, :technologyCommunicationNetworks).empty?
 
           warning(network, "is #{type == "overlay" ? "an" : "a"} #{type} network served by no network")
+        end
+      end
+
+      # A virtual machine runs on a platform: it is servedBy a TechnologyService that is suppliedBy the hypervisor, or,
+      # virtualized on one machine (an isolated session of a workstation), realizedBy that TechnologyDevice. Fixed
+      # hops, no traversal.
+      def vm_without_platform
+        instances("TechnologyNode").filter_map do |node|
+          next unless node.annotations["infrastructure/type"] == "vm"
+          next if targets(node, :realizedBy, :technologyDevices).any?
+          next if targets(node, :servedBy, :technologyServices).any? { |service| targets(service, :suppliedBy, :technologyComponents).any? }
+
+          warning(node, "is a vm served by no technology service supplied by system software (its virtualization platform)")
         end
       end
 

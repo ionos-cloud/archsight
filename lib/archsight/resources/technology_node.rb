@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-# TechnologyNode represents physical infrastructure (VMs, servers, Kubernetes nodes)
+# TechnologyNode represents physical and virtual infrastructure (VMs, servers, Kubernetes nodes)
 class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
   include_annotations :git, :architecture, :asset, :risk, :capacity
 
   description <<~MD
-    Represents physical infrastructure hosting application components.
+    Represents physical or virtual infrastructure hosting application components.
 
     ## ArchiMate Definition
 
@@ -53,6 +53,21 @@ class Archsight::Resources::TechnologyNode < Archsight::Resources::Base
     A node is `realizedBy` the `TechnologyEquipment` it consists of or stands on (a router on its rack); see `TechnologyEquipment`.
     A logical node (a host role, "the hypervisors of the platform") is `realizedBy` the `TechnologyDevice`s, the
     physical machines, that make it up.
+
+    ## Virtualization
+
+    A virtual machine (`infrastructure/type: vm`) runs on a virtualization platform, reached through the service that
+    hands out the VMs. Every step is written on the upper element and points down:
+
+    - the VM node is `servedBy` the `TechnologyService` that provides it ("virtual machines")
+    - the service is `suppliedBy` the hypervisor, a `TechnologySystemSoftware`
+    - the hypervisor is `realizedBy` the host nodes (`infrastructure/type: bare-metal`) it runs on
+
+    The service page lists its guests as incoming "servedBy"; impact analysis on the hosts (incoming, depth 3) reaches
+    them. A VM virtualized on one machine (an isolated session of a workstation) is `realizedBy` that
+    `TechnologyDevice` instead. Do not use `composedOf` for this: the hosts' cluster consists of its hosts, not of
+    the VMs that run on it. `archsight lint` warns about a vm with neither, and reports as an error a platform that
+    contains (`composedOf`, `aggregates`) a VM that runs on it. See "Virtualization" in the modeling guide.
 
     ## Spare hosts
 

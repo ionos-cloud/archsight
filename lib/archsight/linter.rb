@@ -22,6 +22,17 @@ module Archsight
     # general check above so that a cycle is reported once.
     HIERARCHY_VERBS = %i[specializes composedOf aggregates refinedBy].freeze
 
+    # Where a virtual machine runs (see "Virtualization" in the modeling guide): the node is served by a service,
+    # the service is supplied by the hypervisor, the hypervisor is realized by its hosts. Together with the
+    # structure verbs below these may not lead back to where they started, a cycle neither check above sees
+    # because each leaves out the other's verbs: a platform would then consist of its own guest.
+    VIRTUALIZATION_CHAIN = {
+      "TechnologyNode" => %i[servedBy technologyServices],
+      "TechnologyService" => %i[suppliedBy technologyComponents],
+      "TechnologySystemSoftware" => %i[realizedBy technologyComponents]
+    }.freeze
+    VIRTUALIZATION_STRUCTURE_VERBS = %i[composedOf aggregates].freeze
+
     def initialize(database)
       @database = database
       @errors = []
@@ -40,6 +51,7 @@ module Archsight
       end
       validate_relation_cycles
       validate_hierarchy_cycles
+      validate_virtualization_cycles
       validate_unique_annotations
 
       @errors
@@ -200,24 +212,38 @@ module Archsight
       end
     end
 
+    # The virtualization chain mixed with composition/aggregation must not lead back to where it started. Only
+    # cycles that use both a chain and a structure relation are reported here; the others are reported above.
+    def validate_virtualization_cycles
+      graph = relation_graph do |verb, key, instance|
+        VIRTUALIZATION_STRUCTURE_VERBS.include?(verb) || VIRTUALIZATION_CHAIN[instance.klass] == [verb, key]
+      end
+      report_cycles(graph, only: ->(cycle) { cycle.map { |step| VIRTUALIZATION_STRUCTURE_VERBS.include?(step[:verb]) }.uniq.length == 2 }) do |start, path|
+        "#{start.path_ref}: #{start.klass} '#{start.name}' is part of a cycle of virtualization and composition relations, " \
+          "a platform would contain what runs on it (#{path})"
+      end
+    end
+
     # Adds one error per group of instances that reach each other; the block builds the message from the first
-    # instance of the group and the path of one concrete cycle
-    def report_cycles(graph)
+    # instance of the group and the path of one concrete cycle; `only` skips groups whose cycle it rejects
+    def report_cycles(graph, only: nil)
       strongly_connected_groups(graph).each do |group|
         cycle = cycle_through(group.first, group, graph)
+        next if only && !only.call(cycle)
+
         start = group.first
         path = ([start.name] + cycle.map { |step| step[:to].name }).zip(cycle.map { |step| step[:verb] }).flat_map { |name, verb| [name, verb && "-#{verb}->"] }.compact
         @errors << yield(start, path.join(" "))
       end
     end
 
-    # { instance => [{ verb:, to: }] } over the declared relations whose verb the block accepts
+    # { instance => [{ verb:, to: }] } over the declared relations the block accepts (verb, key, instance)
     def relation_graph
       graph = {}
       @database.instances.each_value do |instances_hash|
         instances_hash.each_value do |instance|
           graph[instance] = instance.class.declared_relations.flat_map do |verb, key, _kind|
-            next [] unless yield(verb)
+            next [] unless yield(verb, key, instance)
 
             instance.relations(verb, key).map { |target| { verb: verb, to: target } }
           end

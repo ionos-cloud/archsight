@@ -225,6 +225,8 @@ TechnologySystemSoftware, TechnologyService, TechnologyArtifact). The same princ
     (`connects`), never on the device, because a network is `realizedBy` its switches and the reverse arrow would
     close a cycle. A machine that reaches no network (air-gapped) has neither relation. Who uses it is the team or role
     (`servedBy`), not a person; groups of machines are tags and the end of support is `lifecycle/endOfLifeAt`.
+15. A virtual machine (`infrastructure/type: vm`) is `servedBy` the TechnologyService that hands out the VMs, which is
+    `suppliedBy` the hypervisor, which is `realizedBy` its hosts; see [Virtualization](#virtualization).
 
 **Checked by `archsight lint`**
 
@@ -240,6 +242,7 @@ As above, these are **warnings** in the "Modeling warnings" section and never fa
 | `TechnologyDevice 'Device:Switch01' is connectedTo itself` | 12 |
 | `TechnologyDevice 'Device:Router01' is a router that realizes no TechnologyCommunicationNetwork` | 11 |
 | `TechnologyDevice 'Device:a:server-3' is servedBy 'Kernel:Team', not by the team of its equipment ('Compute:Team')` | 13 |
+| `TechnologyNode 'Node:Web:VMs' is a vm served by no technology service supplied by system software (its virtualization platform)` | 15 |
 
 Nested facilities need no location of their own (the outermost facility has it), and TechnologyEquipment that is part of other
 TechnologyEquipment, or composed of placed parts, needs no facility of its own. The same holds for a device inside a
@@ -735,6 +738,40 @@ deployed on it as incoming `servedBy` from ApplicationComponent. The `deployment
 favour of the relation, which the graph, views and analyses see; it still loads, and `archsight lint` lists every use
 as a deprecation without failing. See
 `examples/archsight/technology/payments-platform.yaml`.
+
+### Virtualization
+
+A virtual machine runs on a virtualization platform, reached through the service that hands out the VMs. Every step is
+written on the upper element and points down, like every relation:
+
+```
+TechnologyNode (infrastructure/type: vm)          the guests
+       ↓ servedBy
+TechnologyService                                 "virtual machines"
+       ↓ suppliedBy
+TechnologySystemSoftware                          the hypervisor
+       ↓ realizedBy
+TechnologyNode (infrastructure/type: bare-metal)  the hosts
+```
+
+| From | Verb | To |
+|------|------|----|
+| `TechnologyNode` (vm) | `servedBy` | `TechnologyService` (the service that provides the VM) |
+| `TechnologyService` | `suppliedBy` | `TechnologySystemSoftware` (the hypervisor) |
+| `TechnologySystemSoftware` | `realizedBy` | `TechnologyNode` (the hosts) |
+
+- The service page lists the guests as incoming `servedBy`, the hosts' page the hypervisor as incoming `realizedBy`.
+  "What is affected if the hosts go away" is the impact analysis of the host node (incoming, depth 3).
+- Not `composedOf`: the hosts' cluster consists of its hosts, not of the VMs that run on it. Not `realizedBy` between
+  the VM node and the host node either: realization goes across kinds (see [Concept and Implementation](#concept-and-implementation)).
+- A VM virtualized on one machine (an isolated session of a hardened workstation) is `realizedBy` that
+  `TechnologyDevice` instead.
+- Nested virtualization is the same chain again: the inner hypervisor is `realizedBy` the outer VM node.
+
+`archsight lint` warns about a vm node that is neither `servedBy` a service with a `suppliedBy` nor `realizedBy` a
+device. A chain that leads back to the VM is an error: through the chain alone (a hypervisor realized by its own
+guest) it is a relation cycle, and mixed with `composedOf` or `aggregates` (a host cluster composed of a VM that runs
+on it) it is a "cycle of virtualization and composition relations". See `examples/archsight/technology/platforms.yaml`.
 
 ### Concept and Implementation
 
