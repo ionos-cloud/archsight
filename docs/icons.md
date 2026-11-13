@@ -40,6 +40,7 @@ Current icon assignments for each resource type:
 | TechnologyDevice | `server` | <i class="iconoir-server"></i> |
 | TechnologyFacility | `building` | <i class="iconoir-building"></i> |
 | Location | `map-pin` | <i class="iconoir-map-pin"></i> |
+| Grouping | `square-dashed` | <i class="iconoir-square-dashed"></i> |
 | TechnologyNode | `server-connection` | <i class="iconoir-server-connection"></i> |
 | StrategyCapability | `strategy` | <i class="iconoir-strategy"></i> |
 | TechnologyArtifact | `puzzle` | <i class="iconoir-puzzle"></i> |
