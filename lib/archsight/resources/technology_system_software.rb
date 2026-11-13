@@ -43,6 +43,11 @@ class Archsight::Resources::TechnologySystemSoftware < Archsight::Resources::Bas
     System software `assignedTo` the artifacts it executes (ArchiMate assignment), written on the system software.
     The artifact's page shows it as incoming "deployed on".
 
+    ## Virtualization
+
+    A hypervisor is `realizedBy` the host nodes it runs on and supplies the `TechnologyService` that hands out the
+    virtual machines (the service is `suppliedBy` it). See `TechnologyNode`.
+
     ## Concept and implementation
 
     System software can `specialize` other system software (ArchiMate specialization): the general one is the

@@ -455,6 +455,67 @@ class LinterTest < Minitest::Test
     assert_empty structural_warnings(underlay, overlay)
   end
 
+  # A vm runs on a platform (issue #252): VM -servedBy-> service -suppliedBy-> hypervisor -realizedBy-> hosts
+  def vm(name, spec = {}) = annotated(resource("TechnologyNode", name, spec), "infrastructure/type" => "vm")
+
+  def platform(service: "Svc:VMs", hypervisor: "Sw:Hypervisor", hosts: ["Node:Hosts"], supplied: true)
+    resource("TechnologyService", service, supplied ? { suppliedBy: { technologyComponents: [hypervisor] } } : {}) +
+      resource("TechnologySystemSoftware", hypervisor, { realizedBy: { technologyComponents: hosts } })
+  end
+
+  def test_structure_warns_about_a_vm_without_a_platform
+    on_nothing = vm("Node:VM:A")
+    on_bare_service = vm("Node:VM:B", { servedBy: { technologyServices: ["Svc:VMs"] } })
+    warnings = structural_warnings(on_nothing, on_bare_service, platform(supplied: false), resource("TechnologyNode", "Node:Hosts")).join("\n")
+
+    assert_includes warnings, "TechnologyNode 'Node:VM:A' is a vm served by no technology service supplied by system software"
+    assert_includes warnings, "TechnologyNode 'Node:VM:B' is a vm served by no technology service supplied by system software"
+  end
+
+  def test_structure_accepts_a_vm_on_a_platform_on_a_device_and_other_node_types
+    guests = vm("Node:VM:A", { servedBy: { technologyServices: ["Svc:VMs"] } })
+    session = vm("Node:VM:Session", { realizedBy: { technologyDevices: ["Device:Workstation"] } })
+    hosts = annotated(resource("TechnologyNode", "Node:Hosts"), "infrastructure/type" => "bare-metal")
+
+    warnings = structural_warnings(guests, session, hosts, platform, resource("TechnologyDevice", "Device:Workstation"))
+
+    assert_empty(warnings.grep(/is a vm/))
+  end
+
+  def test_validate_reports_a_vm_that_its_own_platform_is_realized_by
+    errors = lint_yaml(vm("Node:VM:A", { servedBy: { technologyServices: ["Svc:VMs"] } }) + platform(hosts: ["Node:VM:A"]))
+
+    assert_equal 1, errors.length
+    assert_includes errors.first, "is part of a relation cycle"
+    %w[servedBy suppliedBy realizedBy].each { |verb| assert_includes errors.first, "-#{verb}->" }
+  end
+
+  def test_validate_reports_a_platform_that_contains_its_own_guest_once
+    cluster = resource("TechnologyNode", "Node:Hosts", { composedOf: { technologyNodes: ["Node:VM:A"] } })
+    errors = lint_yaml(vm("Node:VM:A", { servedBy: { technologyServices: ["Svc:VMs"] } }) + platform + cluster)
+
+    assert_equal 1, errors.length, errors.join("\n")
+    assert_includes errors.first, "is part of a cycle of virtualization and composition relations, a platform would contain what runs on it"
+    assert_match(/-composedOf-> /, errors.first)
+  end
+
+  def test_validate_reports_a_pure_cycle_of_composition_only_once
+    errors = lint_yaml(resource("TechnologyNode", "Node:A", { composedOf: { technologyNodes: ["Node:B"] } }) +
+                       resource("TechnologyNode", "Node:B", { composedOf: { technologyNodes: ["Node:A"] } }))
+
+    assert_equal 1, errors.length, errors.join("\n")
+    assert_includes errors.first, "cycle of composedOf relations"
+  end
+
+  def test_validate_accepts_nested_virtualization_without_a_cycle
+    outer = vm("Node:VM:Outer", { servedBy: { technologyServices: ["Svc:VMs"] } })
+    inner = vm("Node:VM:Inner", { servedBy: { technologyServices: ["Svc:Nested"] } })
+    nested = platform(service: "Svc:Nested", hypervisor: "Sw:Nested", hosts: ["Node:VM:Outer"])
+    cluster = resource("TechnologyNode", "Node:Hosts", { composedOf: { technologyNodes: ["Node:Host:1"] } }) + resource("TechnologyNode", "Node:Host:1")
+
+    assert_empty lint_yaml(outer + inner + platform + nested + cluster)
+  end
+
   def test_structure_warns_about_a_facility_without_location
     warnings = structural_warnings(resource("TechnologyFacility", "DC:A"))
 
