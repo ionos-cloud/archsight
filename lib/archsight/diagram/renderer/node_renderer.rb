@@ -122,14 +122,28 @@ module Archsight
             next unless tab
 
             name = "port-#{port.id.gsub(/[^A-Za-z0-9_-]/, "_")}"
-            body.element("rect", id: @ids.part(node, name), x: fmt(tab.left), y: fmt(tab.top), width: fmt(tab.width), height: fmt(tab.height),
-                                 rx: 4, class: ["asd-port", stroke_class], "data-asd-port": port.id)
-            room = port.badge ? Layout::PortMetrics::BADGE_ROOM : 0.0
-            body.raw(@text_renderer.label_text(tab.x - (room / 2.0), tab.y, port.label, font_size: @port_metrics.font_size,
-                                                                                        attrs: { id: @ids.part(node, "#{name}-label"), "data-asd-owner": @ids.id(node), "data-asd-line": port.line },
-                                                                                        extra_class: "asd-port-text asd-run-code"))
-            badge_dot(body, tab.right - Layout::PortMetrics::PADDING_X - 1.0, tab.y, port.badge, id: @ids.part(node, "#{name}-badge")) if port.badge
+            if port.broken_link
+              body.element("g", class: BROKEN_LINK_CLASS) do
+                body.raw(Markup.tag("title", escape(port.broken_link)))
+                render_port(body, node, port, tab, name, stroke_class)
+              end
+            else
+              render_port(body, node, port, tab, name, stroke_class)
+            end
           end
+        end
+
+        # The tab, its label and badge; a `link` (or resolved `resource`) wraps the tab and the label.
+        def render_port(body, node, port, tab, name, stroke_class)
+          rect = Markup.new
+          rect.element("rect", id: @ids.part(node, name), x: fmt(tab.left), y: fmt(tab.top), width: fmt(tab.width), height: fmt(tab.height),
+                               rx: 4, class: ["asd-port", stroke_class], "data-asd-port": port.id)
+          body.raw(@text_renderer.wrap_link(rect.to_s, port.link))
+          room = port.badge ? Layout::PortMetrics::BADGE_ROOM : 0.0
+          body.raw(@text_renderer.label_text(tab.x - (room / 2.0), tab.y, port.label, font_size: @port_metrics.font_size, link: port.link,
+                                                                                      attrs: { id: @ids.part(node, "#{name}-label"), "data-asd-owner": @ids.id(node), "data-asd-line": port.line },
+                                                                                      extra_class: "asd-port-text asd-run-code"))
+          badge_dot(body, tab.right - Layout::PortMetrics::PADDING_X - 1.0, tab.y, port.badge, id: @ids.part(node, "#{name}-badge")) if port.badge
         end
 
         def badge_dot(body, cx, cy, badge, id:)

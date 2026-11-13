@@ -149,8 +149,8 @@ hint for near misses), never silently ignored.
 |---|---|---|
 | `label` | everything | any text (see *Label text*) |
 | `tint` | nodes, containers, edges | `gray`, `blue`, `indigo`, `purple`, `pink`, `red`, `orange`, `yellow`, `green`, `teal`, `cyan`, `brown` |
-| `link` | nodes, containers | `http(s)://…`, `mailto:…` or a relative URL |
-| `resource` | nodes, containers | a resource name (`Archsight:Web`) or `Kind/Name` (`ApplicationService/Archsight:Web`); see *Linking to resources* |
+| `link` | nodes, containers, ports | `http(s)://…`, `mailto:…` or a relative URL |
+| `resource` | nodes, containers, ports | a resource name (`Archsight:Web`) or `Kind/Name` (`ApplicationService/Archsight:Web`); see *Linking to resources* |
 | `extend` | nodes, containers | `true`, `false`; containers also `height`, and `width` on a direct child of a `layer` |
 | `width` | `text` | characters per line (positive integer); wraps the label |
 | `anchor` | containers; leaves with `no-extend` | `top`, `bottom`, `left`, `right`, `center` |
@@ -244,6 +244,10 @@ mgr.sock -> logger
   `bottom`, `left` or `right`, `at` is `left`, `center`, `right` (`top`,
   `center`, `bottom` on a left/right side) or a percentage of the side
   (`25%`), and `badge` names a badge (see below).
+- `link` and `resource` make the tab and its label a link, like on a node
+  (`port "api" { label "https"; resource "ApplicationInterface/Web:API" }`);
+  an unresolved `resource` draws the tab dashed with a tooltip, and
+  `archsight lint` reports it as `leaf.port`.
 - Without `side`, the port goes on the side facing what its edges connect
   it to (`top` without edges). Without `at`, it slides along its side to
   line up with what its edges connect it to (the mean of their centers),
