@@ -33,7 +33,10 @@ module Archsight
             @path_renderer.draw_hit_path(body, points, curve: curve, id: @ids.part(edge, "hit"))
           end
 
-          pt = @label_placer.place_label_along(points, edge.label, font_size: @theme.edge_label_font_size)
+          arrow = MarkerDefs::MARKER_SIZE * EDGE_STROKE_WIDTH
+          pt = @label_placer.place_label_along(points, edge.label, font_size: @theme.edge_label_font_size,
+                                                                   arrow_start: edge.direction == :bidirectional ? arrow : 0.0,
+                                                                   arrow_end: edge.direction == :undirected ? 0.0 : arrow)
           return unless pt
 
           body.raw(@text_renderer.halo_text(pt[0], pt[1] - 6, edge.label, font_size: @theme.edge_label_font_size,
