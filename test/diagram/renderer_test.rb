@@ -1427,6 +1427,47 @@ class DiagramRendererTest < Minitest::Test
     assert_equal [260.0, 100.0], straddled.place_label_along(own, "calls")
   end
 
+  # A short upward line between two stacked nodes: the label box sits above its anchor, so the midpoint put the
+  # text onto the arrowhead at the top. It moves down the shaft, clear of the arrowhead and of both nodes.
+  def test_keeps_a_short_line_s_label_off_its_arrowhead
+    boxes = { "top" => Archsight::Diagram::Layout::Box.new(100, 360, 200, 94), "bottom" => Archsight::Diagram::Layout::Box.new(100, 497, 200, 100) }
+    own = [[100.0, 447.0], [100.0, 407.0]]
+    placer = Archsight::Diagram::Renderer::LabelPlacer.new(boxes)
+    pt = placer.place_label_along(own, "publish", arrow_end: 10.5)
+    label = Archsight::Diagram::Renderer::LabelPlacer.label_bbox(pt[0], pt[1] - 6, "publish", 11)
+
+    assert_operator label[:top], :>=, 407.0 + 10.5 + Archsight::Diagram::Renderer::LabelPlacer::ARROWHEAD_CLEARANCE
+    assert_operator label[:bottom], :<=, 447.0
+    # without an arrowhead the midpoint's label touches the upper node, so the 0.35 spot wins (short lines try it too now)
+    assert_equal [100.0, 433.0], Archsight::Diagram::Renderer::LabelPlacer.new(boxes).place_label_along(own, "publish")
+  end
+
+  def test_keeps_a_label_off_the_arrowheads_of_both_ends
+    own = [[0.0, 100.0], [0.0, 160.0]]
+    pt = Archsight::Diagram::Renderer::LabelPlacer.new({}).place_label_along(own, "both", arrow_start: 10.5, arrow_end: 10.5)
+    label = Archsight::Diagram::Renderer::LabelPlacer.label_bbox(pt[0], pt[1] - 6, "both", 11)
+
+    assert_operator label[:top], :>=, 100.0 + 10.5
+    assert_operator label[:bottom], :<=, 160.0 - 10.5
+  end
+
+  def test_renders_a_short_upward_edge_label_below_its_arrowhead
+    svg = Archsight::Diagram.render(<<~SRC)
+      stack {
+        component "gateway" { label "Gateway" }
+        component "producer" { label "Producer" }
+      }
+      producer -> gateway { label "publish" }
+    SRC
+    doc = REXML::Document.new(svg)
+    line = REXML::XPath.first(doc, "//path[@id='asd-edge-producer__gateway__line']").attributes["d"].scan(/-?[\d.]+/).map(&:to_f)
+    text_y = REXML::XPath.first(doc, "//text[@id='asd-edge-producer__gateway__label']").attributes["y"].to_f
+    tip_y = line[3]
+
+    assert_operator line[1], :>, tip_y, "the edge points up"
+    assert_operator text_y - (11 * Archsight::Diagram::Renderer::TextRenderer::LABEL_LINE_HEIGHT_EM), :>=, tip_y + 10.5
+  end
+
   def test_places_a_label_off_its_own_line_s_bend
     # The 0.35 spot (y=114 on the vertical leg) sits right at the corner,
     # with the horizontal leg running through the label too.

@@ -46,7 +46,8 @@ module Archsight
                                                                     css_class: "asd-dataflow-line", id: @ids.part(df, "line"))
           end
 
-          pt = @label_placer.place_label_along(points, df.label, font_size: @theme.edge_label_font_size)
+          pt = @label_placer.place_label_along(points, df.label, font_size: @theme.edge_label_font_size,
+                                                                 arrow_end: MarkerDefs::DATAFLOW_MARKER_SIZE.to_f)
           return unless pt
 
           body.raw(@text_renderer.halo_text(pt[0], pt[1] - 6, df.label, font_size: @theme.edge_label_font_size,
