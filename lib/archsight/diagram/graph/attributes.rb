@@ -34,7 +34,7 @@ module Archsight
         CONTAINER = (NODE + %w[gap padding ranks columns anchor]).freeze
         EDGE = %w[label style relation tint line].freeze
         DATAFLOW = %w[label color].freeze
-        PORT = %w[label side at badge].freeze
+        PORT = %w[label side at badge link resource].freeze
         BADGE_DEFINITION = %w[label tint].freeze
         LINE_DEFINITION = %w[label].freeze
 
@@ -102,6 +102,8 @@ module Archsight
             when "label" then check_label!(value, where, ast_port.line)
             when "side" then check_value!(key, value, PORT_SIDES, where, ast_port.line)
             when "at" then check_port_at!(value, ast_port.attrs["side"], where, ast_port.line)
+            when "link" then check_link!(value, where, ast_port.line)
+            when "resource" then check_resource!(value, ast_port.attrs, where, ast_port.line)
             end
           end
         end
@@ -181,7 +183,7 @@ module Archsight
           when "gap", "padding" then check_format!(key, value, GAP_FORMAT, "a pixel count (40), a percentage (150%) or a signed one (+20%, -50%)", where, line)
           when "width" then check_format!(key, value, WIDTH_FORMAT, "a positive number of characters per line", where, line)
           when "link" then check_link!(value, where, line)
-          when "resource" then check_resource!(value, block, where, line)
+          when "resource" then check_resource!(value, block.attrs, where, line)
           end
         end
 
@@ -223,11 +225,11 @@ module Archsight
         end
 
         # Resolved against the resource database when rendering (see
-        # `ResourceLinks`), which turns it into the node's `link`, so it
-        # can't share a node with an explicit one.
-        def check_resource!(value, block, where, line)
+        # `ResourceLinks`), which turns it into the node's/port's `link`, so it
+        # can't share one with an explicit one.
+        def check_resource!(value, attrs, where, line)
           check_format!("resource", value, RESOURCE_FORMAT, "a resource name (Archsight:Web) or Kind/Name (ApplicationService/Archsight:Web)", where, line)
-          return unless block.attrs.key?("link")
+          return unless attrs.key?("link")
 
           raise GraphError, "#{where} (line #{line}) has both `link` and `resource`; a resource reference already provides the link"
         end

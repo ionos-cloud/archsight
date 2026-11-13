@@ -10,6 +10,9 @@ module Archsight
         def side = attrs["side"]
         def at = attrs["at"]
         def badge = attrs["badge"]
+        def link = attrs["link"]
+        # Why its `resource` reference couldn't be resolved (see `ResourceLinks`), like `Node#broken_link`.
+        def broken_link = attrs["broken"]
 
         # `node.port`, as an edge names it
         def ref = "#{node.id}.#{id}"

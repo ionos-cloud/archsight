@@ -75,4 +75,42 @@ class DiagramResourceLinksTest < Minitest::Test
     assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(component "a" { resource "a b" })) }
     assert_raises(Archsight::Diagram::GraphError) { Archsight::Diagram.render(%(component "a" { resource "A/B/C" })) }
   end
+
+  PORTS = <<~SRC
+    component "mgr" {
+      port "tcp" { resource "Archsight:Web" }
+      port "sock" { resource "Nope" }
+      port "doc" { link "https://example.com/doc" }
+    }
+    component "client" { label "Client" }
+    client -> mgr.tcp
+  SRC
+
+  def test_a_port_resource_becomes_a_link_on_its_tab_and_label
+    svg = Archsight::Diagram.render(PORTS, resolver: RESOLVER)
+    doc = REXML::Document.new(svg)
+    anchors = doc.root.get_elements("//a[@href='/kinds/ApplicationService/instances/Archsight:Web']")
+
+    assert_equal(%w[rect text], anchors.map { |a| a.elements[1].name }.sort)
+    assert_equal "tcp", anchors.map { |a| a.elements[1] }.find { |e| e.name == "rect" }.attributes["data-asd-port"]
+    assert_equal 2, doc.root.get_elements("//a[@href='https://example.com/doc']").length
+  end
+
+  def test_an_unresolved_port_resource_is_marked_broken_and_reported_as_leaf_port
+    unresolved = []
+    svg = Archsight::Diagram.render(PORTS, resolver: RESOLVER, unresolved: unresolved)
+    broken = REXML::Document.new(svg).root.get_elements("//g[@class='asd-broken-link']")
+
+    assert_equal(["Resource Nope not found"], broken.map { |g| g.elements["title"].text })
+    assert_equal "sock", broken.first.elements["rect"].attributes["data-asd-port"]
+    assert_equal [{ node: "mgr.sock", reference: "Nope", reason: "not found", line: 3 }], unresolved
+  end
+
+  def test_a_port_cannot_have_both_link_and_resource
+    error = assert_raises(Archsight::Diagram::Error) do
+      Archsight::Diagram.render(%(component "a" { port "p" { link "/x"; resource "Archsight:Web" } }\n))
+    end
+
+    assert_includes error.message, "has both `link` and `resource`"
+  end
 end
