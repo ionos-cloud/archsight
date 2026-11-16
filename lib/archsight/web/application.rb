@@ -293,6 +293,12 @@ class Archsight::Web::Application < Sinatra::Base
     serve_vue
   end
 
+  # GET /error - the SPA's error page only lives inside the app (its error comes along in the URL
+  # from a failed reload and is stale on a fresh load), so a direct request goes home.
+  get "/error" do
+    redirect "/"
+  end
+
   get "/dot" do
     content_type "text/plain"
     create_graph_all(db)

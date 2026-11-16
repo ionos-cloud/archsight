@@ -41,6 +41,14 @@ class ApplicationTest < Minitest::Test
     assert last_response.location.end_with?("/kinds/TechnologyArtifact")
   end
 
+  # the error in the URL is from an earlier reload, a fresh request goes home instead
+  def test_get_error_redirects_home
+    get "/error", data: '{"error":"stale","path":"resources/menu.yaml","line_no":1}'
+
+    assert_predicate last_response, :redirect?
+    assert last_response.location.end_with?("/")
+  end
+
   # an alias in the URL opens the resource under its real name
   def test_instance_page_redirects_an_alias_to_the_name
     get "/kinds/ApplicationService/instances/ITGS:A001"
