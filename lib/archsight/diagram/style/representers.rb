@@ -172,7 +172,9 @@ module Archsight
       # nowhere to put text "inside" it the way a rect or ellipse does.
       class Actor < Base
         def figure_geometry(box, theme)
-          [box.x, box.top + (theme.actor_figure_height / 2.0), box.width, theme.actor_figure_height]
+          # Only the label grows with the text; the figure keeps its natural proportions, centred in the box.
+          figure_width = [box.width, theme.actor_figure_height * 0.9].min
+          [box.x, box.top + (theme.actor_figure_height / 2.0), figure_width, theme.actor_figure_height]
         end
 
         def label_y(box, theme) = box.top + theme.actor_figure_height + (theme.actor_label_height / 2.0)

@@ -4,6 +4,16 @@ require_relative "../test_helper"
 require "rexml/document"
 
 class DiagramRendererTest < Minitest::Test
+  def test_an_actor_figure_keeps_its_size_when_the_label_is_long
+    arm_span = lambda do |label|
+      svg = Archsight::Diagram.render(%(actor "act" { label "#{label}" }))
+      arms = REXML::XPath.first(REXML::Document.new(svg), "//*[@id='act-arms' or contains(@id,'arms')]")
+      (arms.attributes["x2"].to_f - arms.attributes["x1"].to_f)
+    end
+
+    assert_in_delta arm_span.call("Op"), arm_span.call("A very long actor label that goes on and on"), 0.01
+  end
+
   def test_renders_a_well_formed_svg_document_with_nodes_groups_and_edges
     source = <<~SRC
       group "vpc" {
