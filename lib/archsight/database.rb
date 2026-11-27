@@ -6,6 +6,7 @@ require_relative "resources"
 require_relative "page_loader"
 require_relative "query"
 require_relative "references"
+require_relative "text_index"
 
 module Archsight
   # LineReference combines a path and line reference
@@ -63,11 +64,14 @@ module Archsight
       @only_kinds = only_kinds
       @instances = {}
       @deprecations = []
+      @text_index_mutex = Mutex.new
     end
 
     def reload!
       @instances = {}
       @deprecations = []
+      @text_index = nil
+      @search_weights = nil
 
       # load all resources
       Dir.glob(File.join(@path, "**/*.{yaml,md}")).each do |path|
@@ -125,6 +129,16 @@ module Archsight
       klass.filterable_annotations
            .map { |a| [a, annotation_values(kind, a)] }
            .reject { |_, values| values.empty? }
+    end
+
+    # The full-text index of the resources (see TextIndex), built on first use and dropped by reload!
+    def text_index
+      @text_index_mutex.synchronize { @text_index ||= Archsight::TextIndex.new(self) }
+    end
+
+    # How much a hit of each kind counts in the ranking of a text search (see TextIndex::Weights)
+    def search_weights
+      @search_weights ||= Archsight::TextIndex::Weights.for(self)
     end
 
     # Execute a query string and return matching instances

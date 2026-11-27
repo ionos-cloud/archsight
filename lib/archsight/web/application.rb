@@ -25,7 +25,10 @@ class Archsight::Web::Application < Sinatra::Base
     attr_accessor :db
 
     def database
-      @database ||= Archsight::Database.new(Archsight.resources_dir).tap(&:reload!).tap { |db| load_import_handlers(db) }
+      @database ||= Archsight::Database.new(Archsight.resources_dir).tap(&:reload!).tap do |db|
+        load_import_handlers(db)
+        warm_text_index(db)
+      end
     end
 
     def reload!
@@ -33,8 +36,18 @@ class Archsight::Web::Application < Sinatra::Base
       puts "== Reloading ..." if database.verbose
       database.reload!
       load_import_handlers(database)
+      warm_text_index(database)
       dur = (Time.new - start) * 1000
       puts format("== done %0.2f ms", dur) if database.verbose
+    end
+
+    # Builds the full-text index in the background, so the first search does not wait for it
+    def warm_text_index(db)
+      Thread.new do
+        db.text_index
+      rescue StandardError => e
+        warn "Text index: #{e.message}"
+      end
     end
 
     # The import handlers, built-in and of the resources repository (import/handlerPath), so the editor knows the

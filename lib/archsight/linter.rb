@@ -332,7 +332,7 @@ module Archsight
           next
         end
 
-        validate_summary_lens_key(instance, key)
+        validate_layer_or_kind_key(instance, key)
 
         # Content checks don't depend on enum/type constraints
         validate_markdown(instance, key, value) if annotation.markdown?
@@ -348,10 +348,13 @@ module Archsight
       end
     end
 
-    # `summary/lens-<layer or Kind>`: a suffix that names neither would be ignored silently
-    def validate_summary_lens_key(instance, key)
-      suffix = key[%r{\Asummary/lens-(.+)\z}, 1]
-      return unless suffix && instance.klass == "Config"
+    # `summary/lens-<layer or Kind>` / `search/weight-<layer or Kind>`: a suffix that names neither would be ignored
+    # silently
+    def validate_layer_or_kind_key(instance, key)
+      return unless instance.klass == "Config"
+
+      suffix = key[%r{\A(?:summary/lens|search/weight)-(.+)\z}, 1]
+      return unless suffix
 
       problem = Archsight::Summary::Lens.key_error(suffix)
       @errors << "#{instance.path_ref}: Annotation '#{key}' #{problem}" if problem

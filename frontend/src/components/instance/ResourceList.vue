@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { computed, ref, inject, onMounted, onBeforeUnmount, watch } from 'vue'
 import { timeAgo, fieldValue, isIdentityField } from '../../composables/useFormatting.js'
 import HighlightList from '../search/HighlightList.vue'
+import MarkedText from '../search/MarkedText.vue'
 
 const props = defineProps({
   instances: { type: Array, required: true },
@@ -42,12 +43,12 @@ function linkTo(inst) {
 }
 
 function labelOf(inst) {
-  return (isPageLink(inst) && pageTitles?.value?.[inst.name]) || inst.name
+  return inst.title || (isPageLink(inst) && pageTitles?.value?.[inst.name]) || inst.name
 }
 
 // the file/page name, when it differs from the title shown
 function subLabelOf(inst) {
-  return isPageLink(inst) && labelOf(inst) !== inst.name ? inst.name : null
+  return labelOf(inst) !== inst.name ? inst.name : null
 }
 
 const sentinel = ref(null)
@@ -133,16 +134,24 @@ function isTimeField(key) {
   </table>
 
   <ul v-else class="search-instance-list" :class="{ rows }">
-    <li v-for="inst in instances" :key="inst.name" class="search-instance-item">
+    <li v-for="inst in instances" :key="`${inst.kind}/${inst.name}`" class="search-instance-item">
       <div class="instance-main">
         <router-link class="instance-name" :to="linkTo(inst)">
           <i v-if="inst.icon" :class="`iconoir-${inst.icon} icon-${inst.layer}`"></i>
-          {{ labelOf(inst) }}
+          <MarkedText v-if="inst.title" :text="inst.title" :marks="inst.title_marks" />
+          <template v-else>{{ labelOf(inst) }}</template>
         </router-link>
         <span v-if="subLabelOf(inst)" class="instance-sub">{{ subLabelOf(inst) }}</span>
         <span v-if="!omitKind && !isPageLink(inst)" class="instance-kind">{{ inst.kind }}</span>
       </div>
       <HighlightList v-if="inst.highlights?.length" :items="inst.highlights" :kind="inst.kind" />
+      <!-- text search: where the words occur, with the field they are in -->
+      <ul v-if="inst.matches?.length" class="instance-matches">
+        <li v-for="match in inst.matches" :key="match.key">
+          <span class="match-field">{{ match.title }}</span>
+          <span class="match-text"><MarkedText :text="match.text" :marks="match.marks" /></span>
+        </li>
+      </ul>
     </li>
   </ul>
 
@@ -225,6 +234,34 @@ function isTimeField(key) {
   content: '';
   position: absolute;
   inset: 0;
+}
+
+/* excerpts of a text search hit: a line per field, below the name */
+.instance-matches {
+  flex-basis: 100%;
+  margin: 0.15rem 0 0;
+  padding: 0 0 0 1.6rem;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--pico-muted-color);
+}
+
+.instance-matches li {
+  margin: 0.1rem 0;
+  list-style: none;
+  line-height: 1.45;
+}
+
+.match-field {
+  margin-right: 0.5rem;
+  font-size: var(--fs-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.match-text {
+  color: var(--pico-color);
+  overflow-wrap: anywhere;
 }
 
 .instance-kind {

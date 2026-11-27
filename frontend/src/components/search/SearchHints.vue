@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject } from 'vue'
+import { computed } from 'vue'
 import { searchParams } from '../../composables/useSearchScope.js'
 
 // What the page says when there is nothing to list: before the first query (intro) and after a query without hits (empty)
@@ -9,18 +9,16 @@ const props = defineProps({
   scope: { type: String, default: 'kinds' },
 })
 
-const pages = inject('pages', null)
-const hasPages = computed(() => !!pages?.value?.length)
-
 const EXAMPLES = {
   kinds: [
-    { query: 'kubernetes', note: 'names that contain a word' },
+    { query: 'kubernetes failover', note: 'words in names and texts, best matches first' },
+    { query: 'text: "active standby"', note: 'an exact phrase in the text' },
     { query: 'TechnologyArtifact: activity/status == "active"', note: 'active repositories' },
     { query: 'MotivationRequirement: requirement/priority == "must"', note: 'requirements that must be met' },
     { query: '-> ApplicationInterface', note: 'resources that use an interface' },
   ],
   pages: [
-    { query: 'handbook', note: 'words in a page title, name or text' },
+    { query: 'handbook', note: 'words in a page title, name or text, best matches first' },
     { query: 'page/status == "rfc"', note: 'pages in review' },
   ],
 }
@@ -35,7 +33,7 @@ function to(example) {
 
 <template>
   <section v-if="mode === 'intro'" class="search-hints">
-    <p class="hint-lead">Search {{ noun }} by name, or filter them with a query.</p>
+    <p class="hint-lead">Search {{ noun }} by words in their names and texts, or filter them with a query.</p>
     <ul class="hint-examples">
       <li v-for="example in examples" :key="example.query">
         <router-link :to="to(example)"><code>{{ example.query }}</code></router-link>
@@ -48,8 +46,7 @@ function to(example) {
   <section v-else class="search-hints">
     <p class="hint-lead">No {{ noun }} match <code>{{ query }}</code>.</p>
     <ul class="hint-tips">
-      <li>Check the spelling, or try a shorter word.</li>
-      <li v-if="scope === 'kinds' && hasPages">Page texts are searched from the Pages tab.</li>
+      <li>Check the spelling, try fewer words, or a word start such as <code>kube*</code>.</li>
       <li v-if="scope === 'pages'">Switch to the Kinds tab to search resources.</li>
     </ul>
     <p><router-link to="/doc/search">Query syntax</router-link></p>

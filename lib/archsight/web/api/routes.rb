@@ -133,15 +133,19 @@ module Archsight::Web::API::Routes
     start_time = Time.now
 
     begin
-      parsed_query = Archsight::Query.parse(query)
-      results = parsed_query.filter(db)
+      # fulltext=1 (the search box): bare words search names and text, hits come ranked by relevance
+      bare_words = %w[1 true].include?(params[:fulltext].to_s) ? :search : :name
+      parsed_query = Archsight::Query.parse(query, bare_words: bare_words)
+      # a text search comes ranked by relevance unless sort=name asks for the name order
+      scored = params[:sort] == "name" ? nil : parsed_query.scored(db)
+      results = scored ? scored.map(&:first) : parsed_query.filter(db).sort_by(&:name)
       query_time_ms = ((Time.now - start_time) * 1000).round(2)
       output = parse_output_param
 
       if output == "count"
         json_response(build_count_response(query, results, query_time_ms))
       else
-        json_response(build_search_response(query, results, parsed_query, query_time_ms))
+        json_response(build_search_response(query, results, parsed_query, query_time_ms, scores: scored&.to_h))
       end
     rescue Archsight::Query::QueryError => e
       json_error(e.message, status: 400, error_type: "QueryError", query: query)

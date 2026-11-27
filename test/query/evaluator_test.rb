@@ -912,6 +912,18 @@ class EvaluatorTest < Minitest::Test
     assert_equal ["Billing"], @db.query("text =~ /proj-1234/i").map(&:name)
     assert_equal ["Mailer"], @db.query('ApplicationService: !(text =~ "failover")').map(&:name)
     assert_empty @db.query('TechnologyArtifact: text =~ "failover"')
+    # a string is a full-text search: whole words (and word forms), across annotations; a regex finds parts of words
+    assert_equal ["Billing"], @db.query('text: "invoice standby"').map(&:name)
+    assert_empty @db.query('text: "ailove"')
+    assert_equal ["Billing"], @db.query("text =~ /ailove/").map(&:name)
+    assert_equal ["Billing"], @db.query('text: "PROJ-1234"').map(&:name)
+  end
+
+  def test_full_text_search_in_a_sub_query
+    @db.add_instance("ApplicationService", "Billing", { "architecture/description" => "Failover to the standby region." })
+    @db.link("ApplicationService", "Billing", :realizedThrough, :applicationComponents, "ApplicationComponent", "MyService")
+
+    assert_equal ["MyService"], @db.query('ApplicationComponent: <- $(text: "failover")').map(&:name)
   end
 
   def setup_verb_filter_data

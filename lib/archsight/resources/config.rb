@@ -25,6 +25,7 @@ class Archsight::Resources::Config < Archsight::Resources::Base
     |---------------|----------|---------|
     | `pdf` | `pdf/*`: colours, fonts, logo, header and footer | [PDF export](/doc/pdf-export) |
     | `summary` | `summary/lens-<layer>`: what the MCP `summary` tool follows per layer | MCP `summary` tool |
+    | `search` | `search/weight-<layer>`: how much a hit of a layer or kind counts in a text search | [Search](/doc/search) |
 
     A document picks a different Config of the type with the tag `pdf:template:<name>`; without a tag the one named
     `default` is used, and without any the export has a neutral built-in look.
@@ -45,6 +46,19 @@ class Archsight::Resources::Config < Archsight::Resources::Base
       out exposes: Interfaces
       in dependsOn: Used by
       out servedBy depth=2: Runs on
+    ```
+
+    ## Search weights
+
+    A text search (the words in the search box, `text: "..."`) orders its hits by relevance times the weight of their
+    kind. Built in: `Page` 3, `ApplicationService` and `ApplicationComponent` 2, `ApplicationInterface` and the layer
+    `application` 1.5, `business`, `strategy` and `motivation` 1.2, `technology` and `implementation` 1, `other` 0.5.
+    A Config of type `search` (the one named `default`) sets a layer with `search/weight-<layer>` and a single kind
+    with `search/weight-<Kind>`, numbers from 0 to 100. What the Config says comes first, the kind before the layer:
+
+    ```yaml
+    search/weight-technology: "0.8"
+    search/weight-TechnologyService: "1.2"
     ```
 
     ## PDF settings
@@ -166,6 +180,13 @@ class Archsight::Resources::Config < Archsight::Resources::Base
              title: "Summary lens",
              sidebar: false,
              validator: ->(value) { Archsight::Summary::Lens.parse_error(value) }
+
+  annotation "search/weight-*",
+             description: "Weight of a layer (search/weight-technology) or of one kind (search/weight-Page) in the ranking " \
+                          "of a text search: a number from 0 to 100, the relevance of a hit is multiplied by it",
+             title: "Search weight",
+             sidebar: false,
+             validator: ->(value) { Archsight::TextIndex::Weights.value_error(value) }
 
   HEADER_PARTS = %w[id version date owner].freeze
   HEADING_LEVELS = (1..6).to_a.freeze

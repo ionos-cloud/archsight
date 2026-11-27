@@ -6,18 +6,24 @@ The search box supports a powerful query language for filtering architecture res
 
 | Query | Description |
 |-------|-------------|
-| `kubernetes` | Name contains "kubernetes" (case-insensitive) |
+| `kubernetes` | Name contains "kubernetes" (in the search box: also the text, ranked) |
 | `TechnologyArtifact:` | All resources of a specific kind |
 | `activity/status == "active"` | Annotation equals value |
 | `scc/loc == 15000` | Numeric equality |
 | `activity/status?` | Annotation exists (is set) |
 | `! activity/status?` | Annotation doesn't exist |
 | `-> ApplicationInterface` | Has relation to a kind |
-| `text =~ "failover"` | Any string annotation contains the text |
+| `text: "failover standby"` | Full-text search: the text contains both words, best matches first |
 
 ## Name Search
 
-Type any word to search by name (case-insensitive regex match):
+In the **search box**, words find resources by name and by text: `kubernetes failover` lists everything whose name
+contains both words or whose text (descriptions, titles, page content, ...) contains both, also as the beginning of
+a longer word (`kube` finds kubernetes). The best matches come first, see [Ranking](#ranking). Mixed with a
+condition the words are one part of the query: `kubernetes failover & activity/status == "active"`.
+
+In saved views, embedded `view` blocks, sub-queries and the MCP `query` tool a bare word is a name search only
+(case-insensitive regex match), so their results do not change:
 
     kubernetes              # name =~ "kubernetes"
     name == "MyService"     # exact match
@@ -34,21 +40,67 @@ without spaces they are one word, found by name or alias like any other bare wor
 
 ## Text Search
 
-`text` searches the content of resources: every string annotation (descriptions, titles, `link/*`, page content, ...)
-is checked for the pattern, case-insensitively, like `name =~`:
+`text` searches the content of resources: every string annotation (descriptions, titles, `link/*`, page content, ...).
+A quoted string is a **full-text search** in an index of all texts:
 
-    text =~ "failover"                  # any annotation mentions failover
-    text: "failover"                    # the same, short
-    text =~ /fail(over|back)/i          # regex literal with flags
+    text: "failover"                    # the word failover (also failovers: word forms are found)
+    text =~ "failover"                  # the same
+    text: "failover standby"            # both words, anywhere in the resource
+    text: "failover OR standby"         # one of them
+    text: "failover NOT region"         # failover, but not region
+    text: "\"active standby\""          # the exact phrase (quotes inside the string)
+    text: "kube*"                       # words that start with kube
+    text: "PROJ-1234"                   # words with - : / . are searched as written, next to each other
+    ApplicationService: text: "failover" & -> ApplicationComponent   # combined with anything else
+
+Words are case-insensitive and accents are ignored. `AND`, `OR` and `NOT` are operators only in capitals; parentheses
+group. The hits of a full-text search come ranked by relevance, see [Ranking](#ranking).
+
+A **regex literal** or a **list of keys** scans the annotations with a case-insensitive regular expression instead,
+for parts of words and patterns:
+
+    text =~ /fail(over|back)/i                       # regex literal with flags
+    text =~ /ailove/                                 # part of a word (a full-text search finds whole words)
     text(architecture/description) =~ "standby"      # only this annotation
     text(link/*, page/content) =~ "PROJ-1234"        # several keys, `*` is any run of characters
-    ApplicationService: text =~ "failover" & -> ApplicationComponent   # combined with anything else
 
 In a quoted string a backslash only escapes the next character (`"\d"` is `d`); write patterns with escapes as `/regex/`.
 
-A resource matches when one of the checked annotations matches. The MCP `query` tool shows the annotation and a short
-snippet around the match for each hit (`matched_text`). The bare word `text` is still a name search; text in YAML
-comments is not searched.
+A resource matches the scan when one of the checked annotations matches. The MCP `query` tool shows the annotation
+and a short snippet around the match for each hit (`matched_text`), for full-text searches too. The bare word `text`
+is still a name search; text in YAML comments is not searched.
+
+### Ranking
+
+A query that searches text (the words of the search box, `text: "..."`) lists its hits by relevance: how often and
+where the words occur (a word in the name or title counts ten times a word in the body, rare words more than common
+ones), times the weight of the kind. Pages count most, then application services and components, interfaces, the
+other layers and technology; settings such as Config and PageMenu least:
+
+| Weight | Kinds |
+|--------|-------|
+| 3 | `Page` |
+| 2 | `ApplicationService`, `ApplicationComponent` |
+| 1.5 | `ApplicationInterface` and the rest of the application layer |
+| 1.2 | business, strategy and motivation layer |
+| 1 | technology and implementation layer |
+| 0.5 | other kinds (Config, PageMenu, Grouping, ...) |
+
+A [Config](/kinds/Config) of type `search` named `default` changes them, per layer or per kind (numbers from 0 to
+100, the kind before the layer):
+
+```yaml
+apiVersion: architecture/v1alpha1
+kind: Config
+metadata:
+  name: default
+  annotations:
+    config/type: search
+    search/weight-technology: "0.8"
+    search/weight-TechnologyService: "1.5"
+```
+
+Queries without a text search list their hits by name.
 
 ## Kind Filter
 
@@ -242,12 +294,12 @@ to search pages only.
 | `page/author`, `page/owner` | `Name <email>` |
 | `page/content` | The markdown body, without the frontmatter |
 
-A bare word (`kubernetes`) only matches the **name**. To search the text of pages, match `page/content`:
+Words typed in the Pages tab search the name, title and text of pages (`Page: handbook`), ranked. In a query, search
+the text of pages with `text:` or match `page/content`:
 
-    Page: page/content =~ "asd"                                   # pages that mention "asd"
-    Page: name =~ "query" | page/title =~ "query" | page/content =~ "query"
-                                                                  # name, title or text (what the Pages tab does)
-    Page: page/content =~ "asd" & page/status == "approved"       # text search plus a filter
+    Page: text: "asd"                                             # pages that mention "asd", best first
+    Page: text: "asd" & page/status == "approved"                 # text search plus a filter
+    Page: page/content =~ "asd"                                   # a regex on the markdown
     Page: page/tags == "howto"                                    # by tag
     Page: page/content =~ "```asd"                                # pages that contain a diagram
 
@@ -326,3 +378,25 @@ hits of the query) and, for each hit, `highlights`:
 
 Add `kind=TechnologyArtifact` to narrow the hits to one kind (`total` and paging follow, `by_kind` still counts
 all hits).
+
+### Hits of a text search
+
+When the query searches text (words in the search box, `text: "..."`, `text =~ /.../`), every hit shows where the
+words occur: its title with the words marked, and up to two **excerpts** from the fields with the most of the
+searched words (a description before a tag list), cut to the part that holds most of them, markdown taken off.
+Word forms are marked too (a search for `failovers` marks *Failover*). The hits come best match first; **Name**
+next to the result count lists them alphabetically instead.
+
+In the API (`fulltext=true` for the search box words, `sort=name` for the name order) such hits carry:
+
+    "title": "Diagrams in Pages",
+    "title_marks": [[0, 8]],
+    "relevance": 0.674,
+    "matches": [
+      { "key": "page/content", "title": "Content",
+        "text": "…They render to inline SVG, need no external tool…", "marks": [[5, 11]] }
+    ]
+
+`marks` are `[from, to)` ranges of characters (code points) in `text`; `relevance` is relative to the best hit
+(1.0), only when the hits are ranked. The response says `"sort": "relevance"` or `"name"`, and `"ranked": true`
+when the query searches text. The MCP `query` tool shows the same excerpts as `matched_text`.

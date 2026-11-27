@@ -57,7 +57,33 @@ class ParserTest < Minitest::Test
   def test_text_condition_errors
     assert_raises(Archsight::Query::QueryError) { parse("text(architecture/description)") }
     assert_raises(Archsight::Query::QueryError) { parse('text(1) =~ "x"') }
-    assert_raises(Archsight::Query::QueryError) { parse('text =~ "("') }
+    assert_raises(Archsight::Query::QueryError) { parse('text =~ "("') } # nothing to search for
+    assert_raises(Archsight::Query::QueryError) { parse('text(link/*) =~ "("') } # an invalid regex
+  end
+
+  def test_text_condition_with_a_string_is_full_text_and_needs_no_valid_regex
+    assert_predicate parse('text: "C++ (beta"').expression, :fulltext?
+    refute_predicate parse("text: /fail/").expression, :fulltext?
+    refute_predicate parse('text(link/*): "fail"').expression, :fulltext?
+  end
+
+  def test_bare_words_are_search_terms_only_in_search_mode
+    expr = Archsight::Query.parse("kubernetes ITGS:A001 fail*", bare_words: :search).ast.expression
+
+    assert_instance_of Archsight::Query::AST::SearchTerms, expr
+    assert_equal %w[kubernetes ITGS:A001 fail*], expr.words
+    assert_instance_of Archsight::Query::AST::NameCondition, parse("kubernetes").expression
+    assert_raises(Archsight::Query::QueryError) { parse("kubernetes failover") }
+  end
+
+  def test_search_terms_stop_at_a_condition
+    expr = Archsight::Query.parse('kube fail & activity/status == "active" | text: "x"', bare_words: :search).ast.expression
+
+    assert_instance_of Archsight::Query::AST::BinaryOp, expr
+    assert_equal %w[kube fail], expr.left.left.words
+    assert_instance_of Archsight::Query::AST::TextCondition, expr.right
+    assert_instance_of Archsight::Query::AST::AnnotationExistsCondition,
+                       Archsight::Query.parse("kube & activity/status?", bare_words: :search).ast.expression.right
   end
 
   # Annotation condition tests

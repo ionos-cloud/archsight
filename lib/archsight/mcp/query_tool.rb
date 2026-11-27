@@ -18,9 +18,11 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
     • Annotation filters: 'activity/status == "active"', 'scc/language/Go/loc > 5000'
       Operators: == (equals), != (not equals), =~ (regex match), >, <, >=, <=
 
-    • Free-text search over the string annotations (descriptions, links, titles, ...):
-      text =~ "failover" (also text: "failover"; case-insensitive regex, like name =~)
-      text(architecture/description) =~ "x", text(link/*, page/content) =~ "x" restrict the keys (* = any run)
+    • Full-text search over the string annotations (descriptions, links, titles, page content, ...):
+      text: "failover standby" (also text =~ "..."): words (all must occur, word forms match: failovers = failover),
+      OR, NOT, "exact phrase", prefix* ; hits come ranked by relevance (pages and application kinds first).
+      text =~ /fail(over|back)/i (regex literal) and text(architecture/description) =~ "x",
+      text(link/*, page/content) =~ "x" (restricted keys, * = any run) are case-insensitive regex scans instead.
       Each hit shows matched_text: the annotation key and a snippet around the match.
 
     • Relation queries:
@@ -93,7 +95,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
 
     begin
       parsed_query = Archsight::Query.parse(query)
-      results = parsed_query.filter(db)
+      results = parsed_query.ranked(db)
       total = results.length
 
       # Complete output omits the kind when filtering by a specific kind (it's redundant); brief always names
@@ -101,7 +103,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
       omit_kind = !parsed_query.kind_filter.nil?
 
       conditions = Archsight::MCP::QueryHints.relation_conditions(parsed_query.ast)
-      text_conditions = Archsight::MCP::QueryHints.text_conditions(parsed_query.ast)
+      matcher = Archsight::TextIndex::Matcher.for(parsed_query, db)
 
       # Count-only mode: return totals grouped by kind
       if output == "count"
@@ -115,7 +117,8 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
         }
       else
         # Complete or brief mode: return paginated resources
-        paginated = results.sort_by(&:name).drop(offset).take(limit)
+        ordered = parsed_query.ranked? ? results : results.sort_by(&:name)
+        paginated = ordered.drop(offset).take(limit)
         resources = case output
                     when "brief"
                       paginated.map { |r| Archsight::MCP.brief_summary(r, with_source: true) }
@@ -127,7 +130,7 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
                     end
 
         add_matched_via(resources, paginated, conditions)
-        add_matched_text(resources, paginated, text_conditions)
+        add_matched_text(resources, paginated, matcher)
 
         result = {
           query: query,
@@ -154,13 +157,13 @@ class Archsight::MCP::QueryTool < FastMcp::Tool
 
   private
 
-  # For text queries (`text =~ "x"`): the annotation and the snippet around the match, per hit
-  def add_matched_text(summaries, resources, conditions)
-    return if conditions.empty?
+  # For text queries (`text: "x"`, `text =~ /x/`): the annotations where the text occurs and an excerpt around it
+  def add_matched_text(summaries, resources, matcher)
+    return if matcher.empty?
 
     summaries.zip(resources).each do |summary, resource|
-      found = Archsight::MCP::QueryHints.matched_text(resource, conditions)
-      summary[:matched_text] = found unless found.empty?
+      found = Archsight::TextIndex::Snippets.for(resource, matcher, limit: 3, width: 140)
+      summary[:matched_text] = found.map { |hit| { key: hit[:key], snippet: hit[:text] } } unless found.empty?
     end
   end
 

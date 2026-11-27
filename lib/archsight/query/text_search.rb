@@ -2,11 +2,9 @@
 
 require_relative "ast"
 
-# Free-text search over the string annotations of a resource (`text =~ "x"`), shared by the evaluator and by the
-# MCP query tool, which shows where the text was found.
+# Regex search over the string annotations of a resource (`text =~ /x/`, `text(keys) =~ "x"`); where a text
+# condition matched is shown by Archsight::TextIndex::Snippets.
 module Archsight::Query::TextSearch
-  SNIPPET_WIDTH = 60
-
   class << self
     # Yields [key, value, MatchData] for every string annotation of `instance` the condition matches
     def each_match(instance, condition, &block)
@@ -25,14 +23,6 @@ module Archsight::Query::TextSearch
 
     def matches?(instance, condition)
       !each_match(instance, condition).first.nil?
-    end
-
-    # A short single-line excerpt of `value` around the match
-    def snippet(value, match, width: SNIPPET_WIDTH)
-      from = [match.begin(0) - width, 0].max
-      to = [match.end(0) + width, value.length].min
-      text = value[from...to].gsub(/\s+/, " ").strip
-      "#{"…" if from.positive?}#{text}#{"…" if to < value.length}"
     end
   end
 end

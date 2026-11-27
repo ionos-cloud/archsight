@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { search } from '../../api/client.js'
 import { scopedQuery } from '../../composables/useSearchScope.js'
 import ResourceList from './ResourceList.vue'
@@ -11,6 +11,7 @@ import SearchHints from '../search/SearchHints.vue'
 const PAGE_SIZE = 100
 
 const route = useRoute()
+const router = useRouter()
 const results = ref([])
 const total = ref(0)
 const byKind = ref({})
@@ -19,6 +20,8 @@ const queryStr = ref('')
 const effectiveQuery = ref('')
 const scope = ref('kinds')
 const kindFilter = ref(null)
+const ranked = ref(false) // the query searches text: hits can be ordered by relevance
+const sortBy = computed(() => (route.query.sort === 'name' ? 'name' : 'relevance'))
 const loading = ref(false)
 const loadingMore = ref(false)
 const error = ref(null)
@@ -54,11 +57,12 @@ async function doSearch() {
   moreError.value = false
   try {
     // the previous hits stay on screen (dimmed) until the new ones are here
-    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset: 0, output: 'brief', kind: kindFilter.value })
+    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset: 0, output: 'brief', kind: kindFilter.value, fulltext: true, sort: route.query.sort === 'name' ? 'name' : null })
     if (mine !== request) return
     results.value = data.instances || []
     total.value = data.total || 0
     byKind.value = data.by_kind || {}
+    ranked.value = !!data.ranked
     queryTime.value = data.query_time_ms || 0
     offset = results.value.length
   } catch (e) {
@@ -76,7 +80,7 @@ async function loadMore() {
   moreError.value = false
   const mine = request
   try {
-    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset, output: 'brief', kind: kindFilter.value })
+    const data = await search(effectiveQuery.value, { limit: PAGE_SIZE, offset, output: 'brief', kind: kindFilter.value, fulltext: true, sort: route.query.sort === 'name' ? 'name' : null })
     if (mine !== request) return
     const items = data.instances || []
     results.value = [...results.value, ...items]
@@ -88,7 +92,11 @@ async function loadMore() {
   }
 }
 
-watch(() => [route.query.q, route.query.scope, route.query.kind], doSearch, { immediate: true })
+function setSort(value) {
+  router.replace({ query: { ...route.query, sort: value === 'name' ? 'name' : undefined } })
+}
+
+watch(() => [route.query.q, route.query.scope, route.query.kind, route.query.sort], doSearch, { immediate: true })
 </script>
 
 <template>
@@ -114,6 +122,12 @@ watch(() => [route.query.q, route.query.scope, route.query.kind], doSearch, { im
       <p v-if="!error && results.length" class="search-summary">
         {{ countText }}
         <span class="search-meta">{{ queryTime }} ms</span>
+        <!-- no role="group": Pico turns it into a full-width button bar -->
+        <span v-if="ranked" class="search-sort">
+          <span class="sr-only">Order:</span>
+          <button type="button" :aria-pressed="sortBy === 'relevance'" @click="setSort('relevance')">Best matches</button>
+          <button type="button" :aria-pressed="sortBy === 'name'" @click="setSort('name')">Name</button>
+        </span>
         <span v-if="scope === 'pages' && effectiveQuery !== queryStr" class="search-meta">
           searched as <code>{{ effectiveQuery }}</code>
         </span>
@@ -169,6 +183,32 @@ watch(() => [route.query.q, route.query.scope, route.query.kind], doSearch, { im
 
 .search-meta {
   margin-left: 0.75rem;
+}
+
+.search-sort {
+  margin-left: 0.75rem;
+}
+
+.search-summary .search-sort button {
+  display: inline;
+  width: auto;
+  margin: 0 0.15rem 0 0;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--pico-muted-color);
+  font-size: inherit;
+  line-height: inherit;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+/* Pico redefines --pico-color inside a button (white), so the pressed one takes the primary colour */
+.search-summary .search-sort button[aria-pressed='true'] {
+  border-color: var(--line);
+  background-color: var(--tint);
+  color: var(--pico-primary);
 }
 
 .search-summary code {

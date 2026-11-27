@@ -388,8 +388,8 @@ tools reach them. It is read-only, pages cannot be created or edited through MCP
 1. Ask for totals or names first, this is cheap: `query` with `Page:` and `output: "count"` or `"brief"`.
    `brief` returns the page names (file names) only, not titles, tags or status.
 2. Narrow down with the [query language](/doc/search#searching-wiki-pages), for example
-   `Page: page/tags == "howto"`, or search the text with `Page: page/content =~ "asd"`. A bare word matches the
-   name only, so full-text search always goes through `page/content`.
+   `Page: page/tags == "howto"`, or search the text with `Page: text: "asd"` (words, ranked by relevance). A bare
+   word matches the name only, so full-text search goes through `text:`.
 3. Read one page with `analyze_resource` (`kind: "Page"`, `name: "<page name>"`): the result has the
    metadata (`page/title`, `page/tags`, `page/status`, ...) and the raw markdown in `page/content`.
 

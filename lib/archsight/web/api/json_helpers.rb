@@ -146,21 +146,25 @@ module Archsight::Web::API::JsonHelpers
     }
   end
 
-  def build_search_response(query, results, _parsed_query, query_time_ms)
+  # `results` come in their order (ranked or by name); `scores` ({instance => relevance}) when ranked
+  def build_search_response(query, results, parsed_query, query_time_ms, scores: nil)
     limit, offset = parse_pagination_params
     output = parse_output_param
-    sorted = results.sort_by(&:name)
     # `kind` narrows the hits to one kind; by_kind always counts all hits so the facets stay complete
     kind = params[:kind].to_s
-    visible = kind.empty? ? sorted : sorted.select { |r| Archsight::MCP.kind_of(r) == kind }
+    visible = kind.empty? ? results : results.select { |r| Archsight::MCP.kind_of(r) == kind }
     pagination = paginate(visible, limit: limit, offset: offset)
+    context = search_context(parsed_query, scores)
 
     instances = pagination[:items].map do |r|
-      resource_summary(r, output: output, omit_kind: false).merge(highlights: Archsight::MCP.highlights(r))
+      summary = resource_summary(r, output: output, omit_kind: false).merge(highlights: Archsight::MCP.highlights(r))
+      context ? summary.merge(context.call(r)) : summary
     end
 
     {
       query: query,
+      sort: scores ? "relevance" : "name",
+      ranked: parsed_query.ranked?,
       total: pagination[:total],
       limit: pagination[:limit],
       offset: pagination[:offset],
@@ -169,6 +173,21 @@ module Archsight::Web::API::JsonHelpers
       by_kind: Archsight::MCP.count_by_kind(results),
       instances: instances
     }
+  end
+
+  # For a query that searches text: what each hit gets to show it in context (title with the searched words marked,
+  # excerpts of the annotations they occur in, relevance relative to the best hit); nil for other queries
+  def search_context(parsed_query, scores)
+    matcher = Archsight::TextIndex::Matcher.for(parsed_query, db)
+    return nil if matcher.empty?
+
+    top = scores&.values&.max.to_f
+    lambda do |resource|
+      context = Archsight::TextIndex::Snippets.title(resource, matcher)
+      context[:matches] = Archsight::TextIndex::Snippets.for(resource, matcher)
+      context[:relevance] = (scores[resource] / top).round(3) if scores && top.positive?
+      context
+    end
   end
 
   def extract_relations(instance)

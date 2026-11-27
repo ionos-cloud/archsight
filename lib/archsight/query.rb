@@ -10,6 +10,7 @@ require_relative "query/lexer"
 require_relative "query/parser"
 require_relative "query/text_search"
 require_relative "query/evaluator"
+require_relative "text_index"
 
 module Archsight
   module Query
@@ -17,8 +18,10 @@ module Archsight
     class Query
       attr_reader :source, :ast
 
-      def initialize(source)
+      # @param bare_words [Symbol] :name (default) or :search, see Parser
+      def initialize(source, bare_words: :name)
         @source = source
+        @bare_words = bare_words
         @ast = parse(source)
       end
 
@@ -32,6 +35,24 @@ module Archsight
       def filter(database)
         evaluator = Evaluator.new(database)
         evaluator.filter(@ast)
+      end
+
+      # The matching instances ordered by relevance when the query searches text (full-text conditions, search box
+      # words), else as #filter returns them
+      def ranked(database)
+        evaluator = Evaluator.new(database)
+        evaluator.rank(@ast, evaluator.filter(@ast))
+      end
+
+      # [[instance, relevance]] best first when the query searches text, nil otherwise
+      def scored(database)
+        evaluator = Evaluator.new(database)
+        evaluator.scored(@ast, evaluator.filter(@ast))
+      end
+
+      # Whether the order of #ranked is a relevance order (the query searches text)
+      def ranked?
+        !FullText.ranking_nodes(@ast).empty?
       end
 
       # Return the kind filter if present (for optimization)
@@ -53,7 +74,7 @@ module Archsight
       def parse(source)
         lexer = Lexer.new(source)
         tokens = lexer.tokenize
-        parser = Parser.new(tokens, source: source)
+        parser = Parser.new(tokens, source: source, bare_words: @bare_words)
         parser.parse
       rescue LexerError, ParseError, InvalidRegexError => e
         # Re-raise with source context
@@ -62,8 +83,8 @@ module Archsight
     end
 
     # Convenience method for creating queries
-    def self.parse(source)
-      Query.new(source)
+    def self.parse(source, bare_words: :name)
+      Query.new(source, bare_words: bare_words)
     end
   end
 end
