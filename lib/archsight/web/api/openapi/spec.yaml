@@ -945,6 +945,11 @@ paths:
         `summary: true` in the kind definition, at most 3 per kind, computed ones included) that are set.
         `by_kind` counts all hits of the query per kind, also when `kind` narrows the list, so a client can show
         facets and let the user pick one.
+
+        A query that searches text (`text: "words"`, or bare words with `fulltext=true`) returns its hits ranked by
+        relevance (full-text score times the weight of the kind), every other query sorted by name. Every hit of a
+        query with text conditions also carries `title` / `title_marks`, `matches` (excerpts with the searched
+        words marked) and, when ranked, `relevance`.
       operationId: search
       tags:
         - Search
@@ -975,6 +980,23 @@ paths:
           schema:
             type: string
           example: TechnologyArtifact
+        - name: sort
+          in: query
+          required: false
+          description: "`name` lists a text search by name instead of by relevance (other queries are always by name)"
+          schema:
+            type: string
+            enum: [relevance, name]
+        - name: fulltext
+          in: query
+          required: false
+          description: |
+            Search box mode: bare words (`kubernetes failover`) match resources whose name contains every word or
+            whose text contains every word (also as prefix), ranked by relevance. Without it a bare word is a name
+            search only.
+          schema:
+            type: boolean
+            default: false
         - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/offset'
         - $ref: '#/components/parameters/output'
@@ -1784,6 +1806,21 @@ components:
           description: Values of the kind's summary attributes that are set (search results only)
           items:
             $ref: '#/components/schemas/Highlight'
+        title:
+          type: string
+          description: Title to show for a hit of a text search (page or architecture title, else the name)
+        title_marks:
+          $ref: '#/components/schemas/TextMarks'
+        relevance:
+          type: number
+          description: Relevance of a hit of a ranked text search, relative to the best hit (1.0)
+        matches:
+          type: array
+          description: |
+            Excerpts of a hit of a text search, best first (at most 2): the annotations the searched words occur in,
+            cut around them, markdown taken off
+          items:
+            $ref: '#/components/schemas/TextMatch'
         relations:
           type: object
           additionalProperties:
@@ -1812,6 +1849,32 @@ components:
               dependsOn:
                 - other-service
 
+    TextMarks:
+      type: array
+      description: Ranges of a text to highlight, [from, to) in characters (code points), ordered, not overlapping
+      items:
+        type: array
+        items:
+          type: integer
+        minItems: 2
+        maxItems: 2
+
+    TextMatch:
+      type: object
+      required: [key, title, text, marks]
+      properties:
+        key:
+          type: string
+          description: Annotation key the excerpt is from
+        title:
+          type: string
+          description: Title of the annotation
+        text:
+          type: string
+          description: Plain text excerpt, with … where it is cut
+        marks:
+          $ref: '#/components/schemas/TextMarks'
+
     InstanceList:
       type: object
       required:
@@ -1824,6 +1887,13 @@ components:
         query:
           type: string
           description: The executed query string (search only)
+        sort:
+          type: string
+          enum: [relevance, name]
+          description: Order of the hits (search only)
+        ranked:
+          type: boolean
+          description: The query searches text, so its hits can be ordered by relevance (search only)
         total:
           type: integer
           description: Total number of instances

@@ -93,8 +93,10 @@ module Archsight::Query::AST
     end
   end
 
-  # Free-text condition: text =~ "pattern", text: "pattern", text(key, key/*) =~ "pattern". Matches when a string
-  # annotation (all of them, or the ones named by `keys`, which may end in a `*` wildcard) contains the pattern.
+  # Free-text condition: text =~ "words", text: "words", text =~ /regex/, text(key, key/*) =~ "pattern". With a
+  # string and no keys it is a full-text search (Archsight::TextIndex: words, phrases, prefix*, ranked); a /regex/
+  # literal or a key list scans the string annotations (all, or the ones named by `keys`, which may end in a `*`
+  # wildcard) for the pattern.
   class TextCondition < Node
     attr_reader :keys, :operator, :value
 
@@ -102,6 +104,21 @@ module Archsight::Query::AST
       @keys = keys         # Array of String (annotation keys or key patterns), or nil for every annotation
       @operator = operator # "=~"
       @value = value       # StringValue or RegexValue
+    end
+
+    # Searched in the full-text index (a string over every annotation), not by regular expression
+    def fulltext?
+      keys.nil? && value.is_a?(StringValue)
+    end
+
+    # The FTS5 match expression of a full-text condition
+    def fulltext_expression
+      @fulltext_expression ||= Archsight::TextIndex::Expression.translate(value.value)
+    end
+
+    # The words the full-text condition looks for (to show where they occur)
+    def terms
+      Archsight::TextIndex::Expression.terms(value.value)
     end
 
     # The compiled pattern, built once per query (every resource is checked against it)
@@ -118,6 +135,33 @@ module Archsight::Query::AST
 
     def accept(visitor)
       visitor.visit_text_condition(self)
+    end
+  end
+
+  # Search box words (`kubernetes failover`, parsed with bare_words: :search): a resource matches when its name or an
+  # alias contains every word (as the bare word name search) or its text contains every word, also as prefix
+  class SearchTerms < Node
+    attr_reader :words
+
+    def initialize(words)
+      @words = words # Array of String
+    end
+
+    # The words as case-insensitive patterns for the name
+    def name_patterns
+      @name_patterns ||= words.map { |word| Regexp.new(Regexp.escape(word), Regexp::IGNORECASE) }
+    end
+
+    def fulltext_expression
+      @fulltext_expression ||= Archsight::TextIndex::Expression.translate(words.join(" "), prefix: true)
+    end
+
+    def terms
+      words
+    end
+
+    def accept(visitor)
+      visitor.visit_search_terms(self)
     end
   end
 

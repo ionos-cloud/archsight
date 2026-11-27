@@ -187,6 +187,10 @@ class McpToolsTest < Minitest::Test
     assert_equal "architecture/description", hit["matched_text"].first["key"]
     assert_match(/\A….*Failover goes to the standby region\.\z/, hit["matched_text"].first["snippet"])
 
+    stemmed = call_tool(Archsight::MCP::QueryTool, query: 'text: "failovers standby"', output: "brief")["resources"].first
+
+    assert_match(/Failover goes to the standby region/, stemmed["matched_text"].first["snippet"])
+
     ticket = call_tool(Archsight::MCP::QueryTool, query: 'text(link/*) =~ "PROJ-1234"', output: "brief")
 
     assert_equal "link/jira", ticket["resources"].first["matched_text"].first["key"]

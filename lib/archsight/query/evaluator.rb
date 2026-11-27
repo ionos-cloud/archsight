@@ -2,11 +2,15 @@
 
 require_relative "errors"
 require_relative "ast"
+require_relative "full_text"
 
 class Archsight::Query::Evaluator
+  include Archsight::Query::FullText
+
   def initialize(database)
     @database = database
     @subquery_cache = {} # Cache for pre-computed subquery results
+    @fulltext_cache = {}.compare_by_identity # Full-text hits per condition node: {instance => score}
   end
 
   # Main entry point: evaluate query against instance, returns boolean
@@ -144,7 +148,9 @@ class Archsight::Query::Evaluator
     when Archsight::Query::AST::AnnotationInCondition
       evaluate_annotation_in_condition(node, instance)
     when Archsight::Query::AST::TextCondition
-      Archsight::Query::TextSearch.matches?(instance, node)
+      evaluate_text_condition(node, instance)
+    when Archsight::Query::AST::SearchTerms
+      evaluate_search_terms(node, instance)
     when Archsight::Query::AST::KindCondition
       evaluate_kind_condition(node, instance)
     when Archsight::Query::AST::KindInCondition

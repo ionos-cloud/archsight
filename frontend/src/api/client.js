@@ -34,9 +34,13 @@ export function getInstance(kind, name) {
   return fetchJson(`${BASE}/kinds/${encodeURIComponent(kind)}/instances/${encodeURIComponent(name)}`)
 }
 
-export function search(query, { limit = 200, offset = 0, output = 'complete', kind = null } = {}) {
+// fulltext: search box mode, bare words search names and text, hits ranked by relevance
+// sort: 'name' lists a text search by name instead of by relevance
+export function search(query, { limit = 200, offset = 0, output = 'complete', kind = null, fulltext = false, sort = null } = {}) {
   const params = new URLSearchParams({ q: query, limit, offset, output })
   if (kind) params.set('kind', kind)
+  if (fulltext) params.set('fulltext', 'true')
+  if (sort) params.set('sort', sort)
   return fetchJson(`${BASE}/search?${params}`)
 }
 

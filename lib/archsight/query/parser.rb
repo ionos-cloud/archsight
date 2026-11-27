@@ -8,11 +8,17 @@ class Archsight::Query::Parser
   # Characters a resource name is made of, as the lexer reads an identifier
   NAME_CHAR = %r{[a-zA-Z0-9_\-/.]}
 
+  # Tokens after which an identifier is an annotation path, not a bare word
+  CONDITION_TOKENS = %i[EQ NEQ MATCH GT LT GTE LTE IN QUESTION].freeze
+
   # @param source [String, nil] the query text; with it, names that contain colons (`Archsight:CLI`, `ITGS:A001`)
   #   are read as one name instead of a kind prefix and a condition
-  def initialize(tokens, source: nil)
+  # @param bare_words [Symbol] :name (a bare word is a name search) or :search (a run of bare words is a
+  #   SearchTerms node: name or full text, what the search box does)
+  def initialize(tokens, source: nil, bare_words: :name)
     @tokens = tokens
     @source = source
+    @bare_words = bare_words
     @position = 0
   end
 
@@ -399,10 +405,35 @@ class Archsight::Query::Parser
       # Existence check: path?
       advance # consume ?
       Archsight::Query::AST::AnnotationExistsCondition.new(path)
+    elsif @bare_words == :search
+      parse_search_terms(glue_name(path))
     else
       # Bare identifier - treat as name =~ "identifier"
       Archsight::Query::AST::NameCondition.new("=~", Archsight::Query::AST::StringValue.new(glue_name(path)))
     end
+  end
+
+  # `kubernetes failover`: the bare words that follow each other, up to the first that starts a condition
+  def parse_search_terms(first)
+    words = [first]
+    while bare_word_ahead?
+      word = current_token.value
+      advance
+      words << glue_name(word)
+    end
+    Archsight::Query::AST::SearchTerms.new(words)
+  end
+
+  def bare_word_ahead?
+    return false unless current_token.type == :IDENTIFIER
+
+    following = peek_token&.type
+    return false if CONDITION_TOKENS.include?(following)
+    return false if current_token.value == "text" && %i[MATCH LPAREN COLON].include?(following)
+    # `Kind: ...` in the middle is no word; `ITGS:A001` (colon touching both words) is one
+    return false if following == :COLON && !@source.to_s[peek_token.position + 1].to_s.match?(NAME_CHAR)
+
+    true
   end
 
   # `text` starts a free-text condition when `=~`, `:` plus a value, or a key list in parentheses follows;
@@ -430,8 +461,10 @@ class Archsight::Query::Parser
 
     value_token = current_token
     value = parse_value
-    check_value("=~", value, value_token)
-    Archsight::Query::AST::TextCondition.new(keys, "=~", value)
+    condition = Archsight::Query::AST::TextCondition.new(keys, "=~", value)
+    # a full-text search is checked as such (`text: "C++"` is no regex); the others compile their pattern now
+    condition.fulltext? ? check_fulltext(condition, value_token) : check_value("=~", value, value_token)
+    condition
   end
 
   def parse_text_keys
@@ -495,7 +528,7 @@ class Archsight::Query::Parser
     return false unless stop
 
     following = @tokens.find { |token| token.position >= stop }
-    !(following && %i[EQ NEQ MATCH GT LT GTE LTE IN QUESTION].include?(following.type))
+    !(following && CONDITION_TOKENS.include?(following.type))
   end
 
   # Where `a:b:c` ends, starting at its first colon; nil when that colon does not touch a name character on both sides
@@ -610,6 +643,12 @@ class Archsight::Query::Parser
     end
   rescue Archsight::Query::InvalidRegexError => e
     raise Archsight::Query::InvalidRegexError.new(e.message, position: token.position, source: nil)
+  end
+
+  def check_fulltext(condition, token)
+    condition.fulltext_expression
+  rescue Archsight::Query::QueryError => e
+    raise Archsight::Query::ParseError.new(e.message, position: token.position, source: nil)
   end
 
   # One value of an `in (...)` list

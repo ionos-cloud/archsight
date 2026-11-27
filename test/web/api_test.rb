@@ -392,6 +392,48 @@ class APITest < Minitest::Test
     end
   end
 
+  def test_get_api_search_fulltext_finds_words_in_texts_ranked
+    get "/api/v1/search", q: "diagram", fulltext: "true"
+
+    assert_predicate last_response, :ok?
+    kinds = json_response["instances"].map { |i| i["kind"] }
+
+    assert_operator kinds.length, :>, 1
+    assert_equal "Page", kinds.first # pages weigh most
+    get "/api/v1/search", q: "diagram"
+
+    assert_operator json_response["total"], :<, kinds.length # without fulltext a bare word searches names only
+  end
+
+  def test_get_api_search_text_hits_carry_context
+    get "/api/v1/search", q: "diagram render", fulltext: "true"
+
+    data = json_response
+    best = data["instances"].first
+
+    assert_equal "relevance", data["sort"]
+    assert data["ranked"]
+    assert_in_delta 1.0, best["relevance"]
+    assert_operator data["instances"].last["relevance"], :<, 1.0
+    refute_empty best["title_marks"]
+    match = best["matches"].first
+
+    assert_equal %w[key marks text title], match.keys.sort
+    assert(match["marks"].all? { |from, to| match["text"][from...to].match?(/\A(diagram|render)/i) })
+
+    get "/api/v1/search", q: "diagram render", fulltext: "true", sort: "name"
+    names = json_response["instances"].map { |i| i["name"] }
+
+    assert_equal "name", json_response["sort"]
+    assert_equal names.sort, names
+    refute json_response["instances"].first.key?("relevance")
+
+    get "/api/v1/search", q: "TechnologyArtifact:"
+
+    refute json_response["ranked"]
+    refute json_response["instances"].first.key?("matches")
+  end
+
   def test_get_api_search_regex_literal
     get "/api/v1/search", q: "name =~ /^archsight$/i"
 

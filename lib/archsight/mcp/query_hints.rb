@@ -54,29 +54,6 @@ module Archsight::MCP::QueryHints
       end.uniq
     end
 
-    # The free-text conditions (`text =~ "x"`) of a query that are not negated, as AST nodes
-    def text_conditions(node, found = [])
-      case node
-      when Archsight::Query::AST::QueryNode then text_conditions(node.expression, found)
-      when Archsight::Query::AST::BinaryOp
-        text_conditions(node.left, found)
-        text_conditions(node.right, found)
-      when Archsight::Query::AST::TextCondition then found << node
-      end
-      found
-    end
-
-    # Where the text of the conditions was found in `instance`: [{key:, snippet:}], at most `limit` entries
-    def matched_text(instance, conditions, limit: 3)
-      hits = []
-      conditions.each do |condition|
-        Archsight::Query::TextSearch.each_match(instance, condition) do |key, value, match|
-          hits << { key: key, snippet: Archsight::Query::TextSearch.snippet(value, match) }
-        end
-      end
-      hits.uniq.first(limit)
-    end
-
     # The direct relation conditions of a query (`-> Kind`, `<- "Name"`, with verb filters) that are not negated,
     # as AST nodes. Transitive, `none` and sub-query targets are left out: they have no single relation to show.
     def relation_conditions(node, found = [])

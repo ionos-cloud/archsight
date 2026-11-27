@@ -63,6 +63,16 @@ class LinterTest < Minitest::Test
     assert_match(%r{Annotation 'summary/lens-Busines' expected a layer \(.*\) or a kind, not Busines}, errors.first)
   end
 
+  def test_validate_checks_search_weights
+    config = "---\napiVersion: architecture/v1alpha1\nkind: Config\nmetadata:\n  name: default\n  annotations:\n    " \
+             "config/type: search\n    search/weight-Page: \"4\"\n    search/weight-technolgy: \"1\"\n    search/weight-application: \"lots\"\n"
+    errors = lint_yaml(config).join("\n")
+
+    assert_match(%r{'search/weight-technolgy' expected a layer}, errors)
+    assert_match(%r{search/weight-application.*expected a number from 0 to 100}, errors)
+    refute_match(%r{search/weight-Page}, errors)
+  end
+
   def test_validate_reports_a_broken_summary_lens
     errors = lint_yaml(summary_config(["summary/lens-application", "'out nope: X'"]))
 
